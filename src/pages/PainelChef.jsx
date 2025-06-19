@@ -1,18 +1,25 @@
+// src/pages/PainelChef.jsx
 import React from 'react'
+import './PainelChef.css'
 
 export default function PainelChef() {
+  const nomeChef = 'Chef Bruno' // depois será dinâmico via login
+
   return (
-    <div style={styles.container}>
-      <h2 style={styles.titulo}>Painel do Chef</h2>
-      <p style={styles.texto}>Bem-vindo ao seu painel, chef! Aqui você poderá:</p>
-      <ul style={styles.lista}>
-        <li>📋 Ver seus pedidos</li>
-        <li>🍳 Gerenciar seu cardápio</li>
-        <li>🧾 Atualizar seus dados</li>
-        <li>💬 Ver mensagens de clientes</li>
-      </ul>
-      <button style={styles.botao}>Sair</button>
+    <div className="painel-container">
+      <h1>Bem-vindo, {nomeChef}!</h1>
+      <p>Esse é o seu painel. Aqui você gerencia seu perfil, pedidos e cardápio.</p>
+
+      <div className="painel-buttons">
+        <button>Editar Perfil</button>
+        <button>Ver Pedidos</button>
+        <button>Cadastro de Cardápio</button>
+      </div>
+
+      <a href="/" className="logout-link">Sair</a>
     </div>
+  )
+}
   )
 }
 
