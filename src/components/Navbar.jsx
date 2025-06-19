@@ -4,11 +4,41 @@ import { Link } from 'react-router-dom'
 
 export default function Navbar() {
   return (
-    <nav style={{ padding: '10px', background: '#eee', textAlign: 'center' }}>
-      <Link to="/" style={{ margin: '0 10px' }}>Home</Link>
-      <Link to="/sobre" style={{ margin: '0 10px' }}>Sobre</Link>
-      <Link to="/cadastro" style={{ margin: '0 10px' }}>Cadastro</Link>
-      <Link to="/login" style={{ margin: '0 10px' }}>Login</Link>
+    <nav style={styles.nav}>
+      <h1 style={styles.logo}>ChefJá</h1>
+      <div style={styles.links}>
+        <Link to="/" style={styles.link}>Home</Link>
+        <Link to="/sobre" style={styles.link}>Sobre</Link>
+        <Link to="/cadastro" style={styles.link}>Cadastro</Link>
+        <Link to="/login" style={styles.link}>Login</Link>
+        <Link to="/painel" style={styles.link}>Painel</Link>
+      </div>
     </nav>
   )
+}
+
+const styles = {
+  nav: {
+    backgroundColor: '#ff6b00',
+    padding: '10px 20px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    color: 'white'
+  },
+  logo: {
+    fontSize: '24px',
+    fontWeight: 'bold',
+    margin: 0
+  },
+  links: {
+    display: 'flex',
+    gap: '15px'
+  },
+  link: {
+    color: 'white',
+    textDecoration: 'none',
+    fontSize: '16px',
+    fontWeight: '500'
+  }
 }
