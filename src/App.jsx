@@ -5,6 +5,7 @@ import Sobre from './pages/Sobre'
 import Cadastro from './pages/Cadastro'
 import Login from './pages/Login'
 import PainelChef from './pages/PainelChef'
+import Navbar from './components/Navbar'
 
 function App() {
   return (
@@ -15,6 +16,12 @@ function App() {
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/login" element={<Login />} />
         <Route path="/painel" element={<PainelChef />} />
+        <>
+  <Navbar />
+  <Routes>
+    {/* suas rotas */}
+  </Routes>
+</>
       </Routes>
     </Router>
   )
