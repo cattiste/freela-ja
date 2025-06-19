@@ -1,41 +1,15 @@
-/* src/pages/PainelChef.css */
-.painel-container {
+.painel-chef {
+  padding: 2rem;
+  background-color: #f7f7f7;
+  border-radius: 8px;
   text-align: center;
-  padding: 50px 20px;
-  font-family: sans-serif;
 }
 
-.painel-buttons {
-  margin-top: 30px;
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  flex-wrap: wrap;
+.painel-chef h1 {
+  color: #333;
+  margin-bottom: 1rem;
 }
 
-.painel-buttons button {
-  padding: 15px 25px;
-  font-size: 16px;
-  background-color: #ff5c00;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.painel-buttons button:hover {
-  background-color: #e04e00;
-}
-
-.logout-link {
-  display: inline-block;
-  margin-top: 40px;
-  color: #666;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-.logout-link:hover {
-  color: #000;
+.painel-chef p {
+  color: #555;
 }
