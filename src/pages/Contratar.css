@@ -1,0 +1,72 @@
+.contratar-container {
+  padding: 40px;
+  text-align: center;
+  background-color: #fff9f2;
+}
+
+.contratar-title {
+  font-size: 36px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.contratar-subtitle {
+  font-size: 18px;
+  margin-bottom: 30px;
+  color: #777;
+}
+
+.chef-list {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 30px;
+}
+
+.chef-card {
+  width: 260px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.chef-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+}
+
+.chef-card img {
+  width: 100%;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.chef-card h3 {
+  margin: 10px 0 5px;
+  font-size: 20px;
+  color: #222;
+}
+
+.chef-card p {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 15px;
+}
+
+.chef-card button {
+  background-color: #ff6b00;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.chef-card button:hover {
+  background-color: #e85e00;
+}
