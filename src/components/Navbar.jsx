@@ -12,7 +12,7 @@ export default function Navbar() {
         <Link to="/cadastro" style={styles.link}>Cadastro</Link>
         <Link to="/login" style={styles.link}>Login</Link>
         <Link to="/painel" style={styles.link}>Painel</Link>
-        <Link to="/contratar">Contratar um Chef</Link>
+        <Link to="/contratar" style={styles.link}>Contratar um Chef</Link>
       </div>
     </nav>
   )
