@@ -7,6 +7,7 @@ import Cadastro from './pages/Cadastro'
 import Login from './pages/Login'
 import PainelChef from './pages/PainelChef'
 import Navbar from './components/Navbar'
+import Contratar from './pages/Contratar'
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/login" element={<Login />} />
         <Route path="/painel" element={<PainelChef />} />
+        <Route path="/contratar" element={<Contratar />} />
       </Routes>
     </Router>
   )
