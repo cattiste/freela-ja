@@ -8,6 +8,7 @@ import Login from './pages/Login'
 import PainelChef from './pages/PainelChef'
 import Navbar from './components/Navbar'
 import Contratar from './pages/Contratar'
+import ContratarChef from './pages/ContratarChef'
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/painel" element={<PainelChef />} />
         <Route path="/contratar" element={<Contratar />} />
+        <Route path="/contratar" element={<ContratarChef />} />
       </Routes>
     </Router>
   )
