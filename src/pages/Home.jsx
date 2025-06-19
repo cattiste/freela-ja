@@ -1,4 +1,3 @@
-// src/pages/Home.jsx
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Home.css'
@@ -15,6 +14,7 @@ export default function Home() {
         <button onClick={() => navigate('/cadastro')}>Sou um Chef</button>
         <button onClick={() => navigate('/cadastro')}>Sou um Restaurante</button>
         <button onClick={() => navigate('/login')}>Já tenho conta</button>
+        <button onClick={() => navigate('/contratar')}>Quero contratar um Chef</button>
       </div>
     </div>
   )
