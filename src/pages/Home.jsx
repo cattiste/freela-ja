@@ -1,10 +1,21 @@
+// src/pages/Home.jsx
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
+import './Home.css'
 
 export default function Home() {
+  const navigate = useNavigate()
+
   return (
-    <div style={{ padding: '2rem', textAlign: 'center' }}>
-      <h1>ChefJá</h1>
-      <p>Bem-vindo à plataforma ChefJá!</p>
+    <div className="home-container">
+      <h1 className="home-title">Bem-vindo ao ChefJá</h1>
+      <p className="home-description">Conectando Chefs e Restaurantes em uma plataforma simples, direta e eficiente.</p>
+
+      <div className="home-buttons">
+        <button onClick={() => navigate('/cadastro')}>Sou um Chef</button>
+        <button onClick={() => navigate('/cadastro')}>Sou um Restaurante</button>
+        <button onClick={() => navigate('/login')}>Já tenho conta</button>
+      </div>
     </div>
   )
 }
