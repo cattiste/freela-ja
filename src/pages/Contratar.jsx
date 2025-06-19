@@ -1,53 +1,48 @@
-import React, { useState } from 'react'
+// src/pages/Contratar.jsx
+import React from 'react'
+import './Contratar.css'
+import { useNavigate } from 'react-router-dom'
 
 export default function Contratar() {
-  const [formData, setFormData] = useState({
-    nome: '',
-    email: '',
-    data: '',
-    tipoServico: '',
-    detalhes: ''
-  })
+  const navigate = useNavigate()
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    alert(`Pedido enviado com sucesso! Obrigado, ${formData.nome}!`)
-    // Aqui você pode adicionar lógica de envio (ex: API ou banco)
-  }
+  // Exemplo estático de chefs — futuramente pode puxar de um banco
+  const chefs = [
+    {
+      id: 1,
+      nome: 'Chef Bruno Cattiste',
+      especialidade: 'Cozinha Italiana · Massas · Carnes',
+      imagem: 'https://source.unsplash.com/300x300/?chef,1'
+    },
+    {
+      id: 2,
+      nome: 'Chef Ana Clara',
+      especialidade: 'Cozinha Vegana · Saudável · Criativa',
+      imagem: 'https://source.unsplash.com/300x300/?chef,2'
+    },
+    {
+      id: 3,
+      nome: 'Chef Takeshi',
+      especialidade: 'Culinária Japonesa · Tradicional e Fusion',
+      imagem: 'https://source.unsplash.com/300x300/?chef,3'
+    }
+  ]
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <h2>Contratar um Chef</h2>
-      <p>Preencha os dados abaixo e aguarde a resposta de um chef disponível.</p>
+    <div className="contratar-container">
+      <h1 className="contratar-title">Encontre o Chef Ideal</h1>
+      <p className="contratar-subtitle">Perfis disponíveis para contratação imediata</p>
 
-      <form onSubmit={handleSubmit} style={{ maxWidth: '600px' }}>
-        <label>Nome completo:</label><br />
-        <input type="text" name="nome" value={formData.nome} onChange={handleChange} required /><br />
-
-        <label>Email para contato:</label><br />
-        <input type="email" name="email" value={formData.email} onChange={handleChange} required /><br />
-
-        <label>Data do evento:</label><br />
-        <input type="date" name="data" value={formData.data} onChange={handleChange} required /><br />
-
-        <label>Tipo de serviço:</label><br />
-        <select name="tipoServico" value={formData.tipoServico} onChange={handleChange} required>
-          <option value="">-- Selecione --</option>
-          <option value="Almoço">Almoço</option>
-          <option value="Jantar">Jantar</option>
-          <option value="Churrasco">Churrasco</option>
-          <option value="Evento completo">Evento completo</option>
-        </select><br />
-
-        <label>Detalhes do pedido:</label><br />
-        <textarea name="detalhes" value={formData.detalhes} onChange={handleChange} rows="5" /><br />
-
-        <button type="submit">Enviar pedido</button>
-      </form>
+      <div className="chef-list">
+        {chefs.map((chef) => (
+          <div key={chef.id} className="chef-card" onClick={() => navigate(`/perfil/${chef.id}`)}>
+            <img src={chef.imagem} alt={chef.nome} />
+            <h3>{chef.nome}</h3>
+            <p>{chef.especialidade}</p>
+            <button>Ver Perfil</button>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
