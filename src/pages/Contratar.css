@@ -1,120 +1,111 @@
+/* src/pages/Contratar.css */
+
 .contratar-container {
-  padding: 40px 20px;
   max-width: 1200px;
-  margin: auto;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: 'Segoe UI', sans-serif;
+  text-align: center;
 }
 
 .contratar-title {
   font-size: 2.5rem;
-  text-align: center;
-  margin-bottom: 10px;
-  color: #333;
+  color: #222;
+  margin-bottom: 0.5rem;
 }
 
 .contratar-subtitle {
-  text-align: center;
+  font-size: 1.2rem;
   color: #666;
-  margin-bottom: 30px;
-  font-size: 1.1rem;
+  margin-bottom: 2rem;
 }
 
 .filtros-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 1rem;
   justify-content: center;
-  margin-bottom: 40px;
+  margin-bottom: 2.5rem;
 }
 
 .filtros-container input,
 .filtros-container select {
-  padding: 10px;
+  padding: 0.8rem;
   font-size: 1rem;
-  border: 1px solid #ccc;
   border-radius: 6px;
+  border: 1px solid #ccc;
   width: 220px;
 }
 
 .filtros-container button {
-  padding: 10px 20px;
-  background-color: #ff7e00;
-  color: white;
-  border: none;
-  border-radius: 6px;
+  padding: 0.8rem 1.5rem;
   font-size: 1rem;
+  border: none;
+  background-color: #ff6a28;
+  color: white;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: 0.3s;
 }
 
 .filtros-container button:hover {
-  background-color: #e06900;
+  background-color: #e0571e;
 }
 
 .resultado-chefs {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: center;
 }
 
 .chef-card {
-  background: #fff;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 280px;
   text-align: center;
-  transition: transform 0.2s ease;
+  box-shadow: 0 0 12px rgba(0,0,0,0.05);
+  transition: 0.3s ease;
 }
 
 .chef-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.1);
 }
 
-.chef-foto {
+.chef-image {
   width: 100px;
   height: 100px;
-  object-fit: cover;
   border-radius: 50%;
-  margin-bottom: 15px;
-  border: 3px solid #ff7e00;
+  object-fit: cover;
+  margin-bottom: 1rem;
 }
 
 .chef-card h3 {
-  margin: 10px 0 5px;
-  color: #222;
+  margin: 0.5rem 0;
+  font-size: 1.4rem;
 }
 
 .chef-card p {
-  margin: 5px 0;
-  color: #555;
   font-size: 0.95rem;
+  color: #444;
+  margin: 0.3rem 0;
 }
 
 .chef-card button {
-  margin-top: 15px;
-  padding: 8px 16px;
-  background-color: #ff7e00;
+  margin-top: 0.8rem;
+  background-color: #2d89ef;
   color: white;
   border: none;
+  padding: 0.6rem 1.2rem;
   border-radius: 6px;
-  font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  font-size: 0.95rem;
+  transition: 0.3s;
 }
 
 .chef-card button:hover {
-  background-color: #e06900;
-}
-
-@media (max-width: 600px) {
-  .filtros-container {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .filtros-container input,
-  .filtros-container select {
-    width: 100%;
-    max-width: 300px;
-  }
+  background-color: #1a6ed1;
 }
