@@ -1,68 +1,75 @@
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
-import './Contratar.css'
+.perfil-container {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 30px;
+  background-color: #ffffff;
+  box-shadow: 0 0 18px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
 
-const profissionais = [
-  {
-    id: '1',
-    nome: 'João Silva',
-    especialidade: 'Comida Italiana',
-    cidade: 'São Paulo',
-    imagem: 'https://randomuser.me/api/portraits/men/32.jpg',
-    avaliacao: 4.8
-  },
-  {
-    id: '2',
-    nome: 'Ana Oliveira',
-    especialidade: 'Sushi Tradicional',
-    cidade: 'Rio de Janeiro',
-    imagem: 'https://randomuser.me/api/portraits/women/44.jpg',
-    avaliacao: 4.9
+.perfil-container img {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 20px;
+  border: 4px solid #ff914d;
+}
+
+.perfil-container h2 {
+  font-size: 28px;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.perfil-container p {
+  font-size: 16px;
+  color: #555;
+  margin: 6px 0;
+}
+
+.perfil-avaliacao {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ff914d;
+  margin-top: 12px;
+}
+
+.perfil-voltar {
+  margin-top: 30px;
+}
+
+.perfil-voltar button {
+  background-color: #ff914d;
+  color: #fff;
+  border: none;
+  padding: 10px 22px;
+  font-size: 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.perfil-voltar button:hover {
+  background-color: #e87530;
+}
+
+/* Responsivo */
+@media (max-width: 600px) {
+  .perfil-container {
+    padding: 20px;
   }
-]
 
-export default function Contratar() {
-  const navigate = useNavigate()
+  .perfil-container img {
+    width: 120px;
+    height: 120px;
+  }
 
-  return (
-    <div className="contratar-container">
-      <h2 className="contratar-title">Painel de Profissionais</h2>
-      <p className="contratar-subtitle">Filtre por especialidade, cidade ou disponibilidade</p>
-
-      <div className="filtros-container">
-        <input type="text" placeholder="Especialidade (ex: Sushi, Churrasco...)" />
-        <input type="text" placeholder="Cidade" />
-        <select>
-          <option>Disponibilidade</option>
-          <option>Hoje</option>
-          <option>Esta semana</option>
-          <option>Este mês</option>
-        </select>
-        <button>Buscar</button>
-      </div>
-
-      <div className="resultado-chefs">
-  <div className="chef-card">
-    <img src="https://i.pravatar.cc/300?img=1" alt="Chef João" />
-    <h3>João Silva</h3>
-    <p>Especialidade: Churrasqueiro Profissional</p>
-    <p>Cidade: São Paulo</p>
-    <p>Avaliação: ⭐ 4.7</p>
-    <Link to="/perfil/1">
-      <button>Ver Perfil</button>
-    </Link>
-  </div>
-
-  <div className="chef-card">
-    <img src="https://i.pravatar.cc/300?img=2" alt="Chef Ana" />
-    <h3>Ana Oliveira</h3>
-    <p>Especialidade: Garçonete de Eventos</p>
-    <p>Cidade: Rio de Janeiro</p>
-    <p>Avaliação: ⭐ 4.9</p>
-    <Link to="/perfil/2">
-      <button>Ver Perfil</button>
-    </Link>
-  </div>
-</div>
-  )
+  .perfil-container h2 {
+    font-size: 24px;
+  }
 }
