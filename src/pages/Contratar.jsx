@@ -20,9 +20,9 @@ export default function Contratar() {
   const resultado = filtrarProfissionais()
 
   return (
-    <div className="contratar-container">
-      <h2 className="contratar-title">Painel de Profissionais</h2>
-      <p className="contratar-subtitle">Filtre por especialidade, cidade ou disponibilidade</p>
+    <div className="max-w-6xl mx-auto px-4 py-10">
+      <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">Painel de Profissionais</h2>
+      <p className="text-center text-gray-500 mb-8">Filtre por especialidade, cidade ou disponibilidade</p>
 
       <FiltroForm
         filtroEspecialidade={filtroEspecialidade}
@@ -33,11 +33,11 @@ export default function Contratar() {
         setFiltroDisponibilidade={setFiltroDisponibilidade}
       />
 
-      <div className="resultado-chefs">
+      <div className="grid gap-6 mt-10 sm:grid-cols-2 lg:grid-cols-3">
         {resultado.length > 0 ? (
           resultado.map(prof => <ProfissionalCard key={prof.id} prof={prof} />)
         ) : (
-          <p style={{ gridColumn: '1 / -1', textAlign: 'center' }}>
+          <p className="col-span-full text-center text-gray-600">
             Nenhum profissional encontrado com esses filtros.
           </p>
         )}

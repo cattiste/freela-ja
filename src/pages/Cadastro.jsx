@@ -9,19 +9,18 @@ export default function Cadastro() {
     e.preventDefault()
     console.log('Cadastro enviado:', { nome, email, senha })
     alert('Cadastro enviado com sucesso!')
-    // Aqui você pode redirecionar ou limpar os campos
   }
 
   return (
-    <div style={styles.container}>
-      <h2 style={styles.titulo}>Cadastro de Freela</h2>
-      <form onSubmit={handleSubmit} style={styles.form}>
+    <div className="max-w-lg mx-auto mt-16 p-8 bg-orange-50 rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Cadastro de Freela</h2>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
           type="text"
           placeholder="Seu nome"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
-          style={styles.input}
+          className="px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
           required
         />
         <input
@@ -29,7 +28,7 @@ export default function Cadastro() {
           placeholder="Seu e-mail"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          style={styles.input}
+          className="px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
           required
         />
         <input
@@ -37,47 +36,16 @@ export default function Cadastro() {
           placeholder="Crie uma senha"
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
-          style={styles.input}
+          className="px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
           required
         />
-        <button type="submit" style={styles.botao}>Cadastrar</button>
+        <button
+          type="submit"
+          className="px-4 py-3 bg-orange-600 text-white font-bold rounded-md hover:bg-orange-700 transition"
+        >
+          Cadastrar
+        </button>
       </form>
     </div>
   )
 }
-
-const styles = {
-  container: {
-    maxWidth: '500px',
-    margin: '60px auto',
-    padding: '30px',
-    backgroundColor: '#fff8f0',
-    borderRadius: '8px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-  },
-  titulo: {
-    fontSize: '26px',
-    marginBottom: '20px',
-    color: '#333'
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '15px'
-  },
-  input: {
-    padding: '12px',
-    fontSize: '16px',
-    border: '1px solid #ddd',
-    borderRadius: '6px'
-  },
-  botao: {
-    padding: '12px',
-    backgroundColor: '#ff6b00',
-    color: '#fff',
-    fontWeight: 'bold',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer'
-  }
-        }

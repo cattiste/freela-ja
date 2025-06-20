@@ -1,20 +1,31 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import './Navbar.css'
 
 export default function Navbar() {
   return (
-    <nav className="navbar">
-      <div className="navbar-logo">
-        <Link to="/">Freela Já</Link>
+    <nav className="bg-white shadow-md px-6 py-4">
+      <div className="max-w-7xl mx-auto flex justify-between items-center">
+        <div className="text-2xl font-bold text-blue-600">
+          <Link to="/">Freela Já</Link>
+        </div>
+        <ul className="flex gap-4 text-sm sm:text-base">
+          <li>
+            <Link to="/" className="text-gray-700 hover:text-blue-600 transition">Início</Link>
+          </li>
+          <li>
+            <Link to="/sobre" className="text-gray-700 hover:text-blue-600 transition">Sobre</Link>
+          </li>
+          <li>
+            <Link to="/contratar" className="text-gray-700 hover:text-blue-600 transition">Profissionais</Link>
+          </li>
+          <li>
+            <Link to="/cadastro" className="text-gray-700 hover:text-blue-600 transition">Cadastro</Link>
+          </li>
+          <li>
+            <Link to="/login" className="text-gray-700 hover:text-blue-600 transition">Entrar</Link>
+          </li>
+        </ul>
       </div>
-      <ul className="navbar-links">
-        <li><Link to="/">Início</Link></li>
-        <li><Link to="/sobre">Sobre</Link></li>
-        <li><Link to="/contratar">Profissionais</Link></li>
-        <li><Link to="/cadastro">Cadastro</Link></li>
-        <li><Link to="/login">Entrar</Link></li>
-      </ul>
     </nav>
   )
 }

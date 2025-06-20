@@ -8,9 +8,6 @@ import Login from './pages/Login'
 import PainelChef from './pages/PainelChef'
 import Navbar from './components/Navbar'
 import Contratar from './pages/Contratar'
-import ContratarChef from './pages/ContratarChef'
-import PerfilChef from './pages/PerfilChef'
-import PerfilProfissional from './pages/PerfilProfissional'
 import Perfil from './pages/Perfil'
 
 function App() {
@@ -24,11 +21,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/painel" element={<PainelChef />} />
         <Route path="/contratar" element={<Contratar />} />
-        <Route path="/contratar" element={<ContratarChef />} />
-        <Route path="/perfil/:nome" element={<PerfilChef />} />
-        <Route path="/perfil/:id" element={<PerfilProfissional />} />
         <Route path="/perfil/:id" element={<Perfil />} />
-
       </Routes>
     </Router>
   )
