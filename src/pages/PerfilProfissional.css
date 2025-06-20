@@ -1,45 +1,68 @@
-.perfil-container {
-  padding: 2rem;
-  display: flex;
-  justify-content: center;
-}
+import React from 'react'
+import { useNavigate } from 'react-router-dom'
+import './Contratar.css'
 
-.perfil-card {
-  display: flex;
-  max-width: 800px;
-  background: #fff;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  border-radius: 10px;
-  overflow: hidden;
-  flex-wrap: wrap;
-}
+const profissionais = [
+  {
+    id: '1',
+    nome: 'João Silva',
+    especialidade: 'Comida Italiana',
+    cidade: 'São Paulo',
+    imagem: 'https://randomuser.me/api/portraits/men/32.jpg',
+    avaliacao: 4.8
+  },
+  {
+    id: '2',
+    nome: 'Ana Oliveira',
+    especialidade: 'Sushi Tradicional',
+    cidade: 'Rio de Janeiro',
+    imagem: 'https://randomuser.me/api/portraits/women/44.jpg',
+    avaliacao: 4.9
+  }
+]
 
-.perfil-foto {
-  width: 300px;
-  height: auto;
-  object-fit: cover;
-}
+export default function Contratar() {
+  const navigate = useNavigate()
 
-.perfil-info {
-  padding: 2rem;
-  flex: 1;
-}
+  return (
+    <div className="contratar-container">
+      <h2 className="contratar-title">Painel de Profissionais</h2>
+      <p className="contratar-subtitle">Filtre por especialidade, cidade ou disponibilidade</p>
 
-.perfil-info h2 {
-  margin-top: 0;
-}
+      <div className="filtros-container">
+        <input type="text" placeholder="Especialidade (ex: Sushi, Churrasco...)" />
+        <input type="text" placeholder="Cidade" />
+        <select>
+          <option>Disponibilidade</option>
+          <option>Hoje</option>
+          <option>Esta semana</option>
+          <option>Este mês</option>
+        </select>
+        <button>Buscar</button>
+      </div>
 
-.perfil-bio {
-  margin-top: 1rem;
-  font-style: italic;
-}
+      <div className="resultado-chefs">
+  <div className="chef-card">
+    <img src="https://i.pravatar.cc/300?img=1" alt="Chef João" />
+    <h3>João Silva</h3>
+    <p>Especialidade: Churrasqueiro Profissional</p>
+    <p>Cidade: São Paulo</p>
+    <p>Avaliação: ⭐ 4.7</p>
+    <Link to="/perfil/1">
+      <button>Ver Perfil</button>
+    </Link>
+  </div>
 
-.btn-contatar {
-  margin-top: 1.5rem;
-  padding: 0.75rem 1.5rem;
-  background-color: #ff6600;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+  <div className="chef-card">
+    <img src="https://i.pravatar.cc/300?img=2" alt="Chef Ana" />
+    <h3>Ana Oliveira</h3>
+    <p>Especialidade: Garçonete de Eventos</p>
+    <p>Cidade: Rio de Janeiro</p>
+    <p>Avaliação: ⭐ 4.9</p>
+    <Link to="/perfil/2">
+      <button>Ver Perfil</button>
+    </Link>
+  </div>
+</div>
+  )
 }
