@@ -1,8 +1,10 @@
-// src/pages/Contratar.jsx
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import './Contratar.css'
 
 export default function Contratar() {
+  const navigate = useNavigate()
+
   return (
     <div className="contratar-container">
       <h2 className="contratar-title">Encontre o Chef Perfeito</h2>
@@ -25,13 +27,13 @@ export default function Contratar() {
           <h3>Chef João Silva</h3>
           <p>Especialidade: Comida Italiana</p>
           <p>Cidade: São Paulo</p>
-          <button>Ver Perfil</button>
+          <button onClick={() => navigate('/perfil/joao-silva')}>Ver Perfil</button>
         </div>
         <div className="chef-card">
           <h3>Chef Ana Oliveira</h3>
           <p>Especialidade: Sushi Tradicional</p>
           <p>Cidade: Rio de Janeiro</p>
-          <button>Ver Perfil</button>
+          <button onClick={() => navigate('/perfil/ana-oliveira')}>Ver Perfil</button>
         </div>
       </div>
     </div>
