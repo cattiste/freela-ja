@@ -5,22 +5,36 @@ import './Contratar.css'
 export default function Contratar() {
   return (
     <div className="contratar-container">
-      <h1>Encontre o Chef Ideal</h1>
-      <p>
-        Aqui você pode encontrar chefs profissionais para atender seu restaurante, evento, cozinha particular ou operação delivery.
-      </p>
+      <h2 className="contratar-title">Encontre o Chef Perfeito</h2>
+      <p className="contratar-subtitle">Filtre por especialidade, cidade ou disponibilidade</p>
 
-      <div className="contratar-info">
-        <h2>Como funciona?</h2>
-        <ul>
-          <li>✅ Chefs verificados</li>
-          <li>📍 Filtragem por localização e especialidade</li>
-          <li>📆 Disponibilidade em tempo real</li>
-          <li>💬 Contato direto com o chef</li>
-        </ul>
+      <div className="filtros-container">
+        <input type="text" placeholder="Especialidade (ex: Sushi, Churrasco...)" />
+        <input type="text" placeholder="Cidade" />
+        <select>
+          <option>Disponibilidade</option>
+          <option>Hoje</option>
+          <option>Esta semana</option>
+          <option>Este mês</option>
+        </select>
+        <button>Buscar</button>
       </div>
 
-      <button className="btn-procurar">Começar busca</button>
+      <div className="resultado-chefs">
+        {/* Aqui no futuro será preenchido com os resultados vindos do backend */}
+        <div className="chef-card">
+          <h3>Chef João Silva</h3>
+          <p>Especialidade: Comida Italiana</p>
+          <p>Cidade: São Paulo</p>
+          <button>Ver Perfil</button>
+        </div>
+        <div className="chef-card">
+          <h3>Chef Ana Oliveira</h3>
+          <p>Especialidade: Sushi Tradicional</p>
+          <p>Cidade: Rio de Janeiro</p>
+          <button>Ver Perfil</button>
+        </div>
+      </div>
     </div>
   )
 }
