@@ -21,7 +21,6 @@ export default function Contratar() {
       </div>
 
       <div className="resultado-chefs">
-        {/* Aqui no futuro será preenchido com os resultados vindos do backend */}
         <div className="chef-card">
           <h3>Chef João Silva</h3>
           <p>Especialidade: Comida Italiana</p>
