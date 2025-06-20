@@ -1,6 +1,5 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import './ProfissionalCard.css'
 
 export default function ProfissionalCard({ prof }) {
   return (
