@@ -1,8 +1,8 @@
+// src/pages/Perfil.jsx
 import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import './perfilprofissional.css'
 
-// Mesma base de dados mock
 const profissionais = [
   {
     id: '1',
@@ -22,12 +22,30 @@ const profissionais = [
     avaliacao: 4.9,
     descricao: 'Atendimento impecável com simpatia e profissionalismo.'
   },
-  // ... outros
+  {
+    id: '3',
+    nome: 'Carlos Pereira',
+    especialidade: 'Segurança Privado',
+    cidade: 'Campinas',
+    imagem: 'https://i.pravatar.cc/300?img=3',
+    avaliacao: 4.6,
+    descricao: 'Especializado em segurança de festas VIP e controle de acesso.'
+  },
+  {
+    id: '4',
+    nome: 'Marina Dias',
+    especialidade: 'Bartender Profissional',
+    cidade: 'São Paulo',
+    imagem: 'https://i.pravatar.cc/300?img=4',
+    avaliacao: 4.8,
+    descricao: 'Drinks exclusivos com apresentação artística e experiência de bar show.'
+  }
 ]
 
 export default function Perfil() {
   const { id } = useParams()
   const navigate = useNavigate()
+
   const profissional = profissionais.find(p => p.id === id)
 
   if (!profissional) {
@@ -42,9 +60,10 @@ export default function Perfil() {
           <h2>{profissional.nome}</h2>
           <p><strong>Especialidade:</strong> {profissional.especialidade}</p>
           <p><strong>Cidade:</strong> {profissional.cidade}</p>
-          <p><strong>Avaliação:</strong> ⭐ {profissional.avaliacao}</p>
+          <p className="perfil-avaliacao">⭐ {profissional.avaliacao}</p>
         </div>
       </div>
+
       <p>{profissional.descricao}</p>
 
       <button className="botao-voltar" onClick={() => navigate(-1)}>
