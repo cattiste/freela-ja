@@ -1,6 +1,6 @@
 import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import './perfilprofissional.css'
+import './PerfilProfissional.css'
 import { profissionais } from '../data/profissionais' // ✅ Importa o array centralizado
 
 export default function Perfil() {
