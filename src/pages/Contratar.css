@@ -1,74 +1,92 @@
+/* src/pages/Contratar.css */
+
 .contratar-container {
   max-width: 900px;
-  margin: 60px auto;
-  padding: 30px;
-  background: #f8f8f8;
-  border-radius: 8px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
 }
 
 .contratar-title {
-  font-size: 28px;
-  text-align: center;
-  margin-bottom: 10px;
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  color: #333;
 }
 
 .contratar-subtitle {
-  font-size: 16px;
-  text-align: center;
-  color: #666;
-  margin-bottom: 30px;
+  font-size: 1.2rem;
+  color: #777;
+  margin-bottom: 2rem;
 }
 
 .filtros-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 1rem;
   justify-content: center;
-  margin-bottom: 30px;
+  margin-bottom: 2rem;
 }
 
 .filtros-container input,
-.filtros-container select,
-.filtros-container button {
-  padding: 10px;
-  font-size: 14px;
-  border-radius: 5px;
+.filtros-container select {
+  padding: 0.8rem;
   border: 1px solid #ccc;
+  border-radius: 8px;
+  min-width: 220px;
 }
 
 .filtros-container button {
-  background-color: #28a745;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-.resultado-chefs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
-}
-
-.chef-card {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  width: 260px;
-  box-shadow: 0 0 12px rgba(0,0,0,0.05);
-  text-align: center;
-}
-
-.chef-card h3 {
-  margin-bottom: 10px;
-}
-
-.chef-card button {
   background-color: #007bff;
   color: white;
+  padding: 0.8rem 1.5rem;
   border: none;
-  padding: 8px 20px;
-  border-radius: 5px;
-  margin-top: 10px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.filtros-container button:hover {
+  background-color: #0056b3;
+}
+
+.resultado-profissionais {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.profissional-card {
+  background-color: #f9f9f9;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 600px;
+  text-align: left;
+}
+
+.profissional-card h3 {
+  margin-bottom: 0.5rem;
+  color: #222;
+}
+
+.profissional-card p {
+  margin: 0.2rem 0;
+  color: #555;
+}
+
+.profissional-card button {
+  margin-top: 1rem;
+  background-color: #28a745;
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.profissional-card button:hover {
+  background-color: #1e7e34;
 }
