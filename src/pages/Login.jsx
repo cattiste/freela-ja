@@ -10,8 +10,10 @@ export default function Login() {
   const handleLogin = (e) => {
     e.preventDefault()
 
+    // Busca os usuários cadastrados
     const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]')
 
+    // Verifica se existe um com esse email e senha
     const encontrado = usuarios.find(u => u.email === email && u.senha === senha)
 
     if (encontrado) {
