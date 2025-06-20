@@ -10,8 +10,12 @@ export default function Login() {
   const handleLogin = (e) => {
     e.preventDefault()
 
-    // Simulação simples
-    if (email === 'chef@chefja.com' && senha === '123456') {
+    const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]')
+
+    const encontrado = usuarios.find(u => u.email === email && u.senha === senha)
+
+    if (encontrado) {
+      localStorage.setItem('usuarioLogado', JSON.stringify(encontrado))
       navigate('/painel')
     } else {
       setErro('E-mail ou senha incorretos.')

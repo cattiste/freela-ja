@@ -7,8 +7,17 @@ export default function Cadastro() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    console.log('Cadastro enviado:', { nome, email, senha })
+
+    const novoUsuario = { nome, email, senha }
+
+    const usuariosExistentes = JSON.parse(localStorage.getItem('usuarios') || '[]')
+    const atualizados = [...usuariosExistentes, novoUsuario]
+    localStorage.setItem('usuarios', JSON.stringify(atualizados))
+
     alert('Cadastro enviado com sucesso!')
+    setNome('')
+    setEmail('')
+    setSenha('')
   }
 
   return (
