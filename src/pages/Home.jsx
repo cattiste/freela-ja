@@ -21,7 +21,7 @@ export default function Home() {
           Sou um Freelancer
         </button>
         <button
-          onClick={() => navigate('/cadastro')}
+          onClick={() => navigate('/painel-estabelecimento')}
           className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition"
         >
           Sou um Estabelecimento

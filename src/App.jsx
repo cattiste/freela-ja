@@ -1,4 +1,3 @@
-// src/App.jsx
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Home from './pages/Home'
@@ -9,6 +8,8 @@ import PainelChef from './pages/PainelChef'
 import Navbar from './components/Navbar'
 import Contratar from './pages/Contratar'
 import Perfil from './pages/Perfil'
+import RotaProtegida from './components/RotaProtegida'
+import PainelEstabelecimento from './pages/PainelEstabelecimento'
 
 function App() {
   return (
@@ -19,9 +20,28 @@ function App() {
         <Route path="/sobre" element={<Sobre />} />
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/painel" element={<PainelChef />} />
         <Route path="/contratar" element={<Contratar />} />
         <Route path="/perfil/:id" element={<Perfil />} />
+        
+        {/* Painel do Chef protegido */}
+        <Route
+          path="/painel"
+          element={
+            <RotaProtegida>
+              <PainelChef />
+            </RotaProtegida>
+          }
+        />
+
+        {/* Painel do Estabelecimento protegido */}
+        <Route
+          path="/painel-estabelecimento"
+          element={
+            <RotaProtegida>
+              <PainelEstabelecimento />
+            </RotaProtegida>
+          }
+        />
       </Routes>
     </Router>
   )
