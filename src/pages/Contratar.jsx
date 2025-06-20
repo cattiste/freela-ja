@@ -42,17 +42,27 @@ export default function Contratar() {
       </div>
 
       <div className="resultado-chefs">
-        {profissionais.map((prof) => (
-          <div key={prof.id} className="chef-card">
-            <img src={prof.imagem} alt={prof.nome} className="chef-foto" />
-            <h3>{prof.nome}</h3>
-            <p><strong>Especialidade:</strong> {prof.especialidade}</p>
-            <p><strong>Cidade:</strong> {prof.cidade}</p>
-            <p><strong>Avaliação:</strong> ⭐ {prof.avaliacao}</p>
-            <button onClick={() => navigate(`/perfil/${prof.id}`)}>Ver Perfil</button>
-          </div>
-        ))}
-      </div>
-    </div>
+  <div className="chef-card">
+    <img src="https://i.pravatar.cc/300?img=1" alt="Chef João" />
+    <h3>João Silva</h3>
+    <p>Especialidade: Churrasqueiro Profissional</p>
+    <p>Cidade: São Paulo</p>
+    <p>Avaliação: ⭐ 4.7</p>
+    <Link to="/perfil/1">
+      <button>Ver Perfil</button>
+    </Link>
+  </div>
+
+  <div className="chef-card">
+    <img src="https://i.pravatar.cc/300?img=2" alt="Chef Ana" />
+    <h3>Ana Oliveira</h3>
+    <p>Especialidade: Garçonete de Eventos</p>
+    <p>Cidade: Rio de Janeiro</p>
+    <p>Avaliação: ⭐ 4.9</p>
+    <Link to="/perfil/2">
+      <button>Ver Perfil</button>
+    </Link>
+  </div>
+</div>
   )
 }
