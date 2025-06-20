@@ -2,6 +2,7 @@
 import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import './perfilprofissional.css'
+import { profissionais } from '../data/profissionais'
 
 const profissionais = [
   {
