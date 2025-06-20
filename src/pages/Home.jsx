@@ -10,12 +10,12 @@ export default function Home() {
     <div className="home-container">
       <h1 className="home-title">Bem-vindo ao ChefJá</h1>
       <p className="home-description">
-        Conectando Chefs e Restaurantes em uma plataforma simples, direta e eficiente.
+        Conectando profissionais e estabelecimentos do setor de alimentação e eventos.
       </p>
 
       <div className="home-buttons">
         <button onClick={() => navigate('/cadastro')}>Sou um Freelancer</button>
-        <button onClick={() => navigate('/cadastro')}>Sou um Restaurante</button>
+        <button onClick={() => navigate('/cadastro')}>Sou um Estabelecimento</button>
         <button onClick={() => navigate('/login')}>Já tenho conta</button>
         <button onClick={() => navigate('/contratar')}>Painel de Profissionais</button>
       </div>
