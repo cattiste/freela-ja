@@ -9,6 +9,7 @@ import PainelChef from './pages/PainelChef'
 import Navbar from './components/Navbar'
 import Contratar from './pages/Contratar'
 import ContratarChef from './pages/ContratarChef'
+import PerfilChef from './pages/PerfilChef'
 
 function App() {
   return (
@@ -22,7 +23,8 @@ function App() {
         <Route path="/painel" element={<PainelChef />} />
         <Route path="/contratar" element={<Contratar />} />
         <Route path="/contratar" element={<ContratarChef />} />
-       
+        <Route path="/perfil/:nome" element={<PerfilChef />} />
+
       </Routes>
     </Router>
   )
