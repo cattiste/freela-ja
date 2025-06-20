@@ -1,28 +1,43 @@
-# Freela Já
+# Freela Já 🚀
 
-**Freela Já** é uma plataforma moderna que conecta freelancers do setor de alimentação e eventos com estabelecimentos que precisam contratar mão de obra de forma rápida, segura e eficiente.
+**Plataforma de Conexão entre Freelancers e Estabelecimentos**
 
-## 🚀 Funcionalidades
+O **Freela Já** é um marketplace moderno e direto que conecta profissionais autônomos (chefs de cozinha, garçons, seguranças, faxineiros, maitres, etc.) com restaurantes, bares e eventos que precisam contratar mão de obra com agilidade.
 
-- Cadastro de profissionais (freelancers)
-- Cadastro de estabelecimentos (restaurantes, bares, buffets)
-- Página de contratação com filtros por cidade, especialidade e disponibilidade
-- Sistema de login e painel exclusivo para freelancers
-- Cards profissionais com avaliações e fotos
-- Interface responsiva e leve, otimizada com Vite + React
+## 🔧 Tecnologias Utilizadas
 
-## 🌐 Acesse
-
-👉 [www.freelaja.com](http://www.freelaja.com) *(em breve)*  
-👉 [Deploy atual (Vercel)](https://chefjaweb.vercel.app)
-
-## 📦 Tecnologias Utilizadas
-
-- React
-- Vite
+- ReactJS (com Vite)
 - React Router DOM
-- CSS Modules
-- Deploy: Vercel
+- CSS modularizado
+- Deploy automático com Vercel
 
-## 📁 Estrutura
+## 📂 Estrutura de Páginas
 
+- `/` Home
+- `/sobre` Sobre o Projeto
+- `/cadastro` Cadastro de Profissionais ou Estabelecimentos
+- `/login` Acesso à plataforma
+- `/painel` Painel Administrativo
+- `/contratar` Busca e visualização de freelancers
+
+## 🧑‍🍳 Público-Alvo
+
+- Estabelecimentos gastronômicos, eventos e empresas
+- Freelancers da área de alimentação, eventos e segurança
+
+## 📦 Deploy
+
+Acesse o projeto em produção:
+🌐 [https://chefjaweb.vercel.app](https://chefjaweb.vercel.app) (em breve será atualizado para **freelaja.com**)
+
+---
+
+### ✅ Como contribuir
+
+Pull requests são bem-vindos! Para mudanças maiores, abra uma issue antes de propor alterações.
+
+---
+
+### 📘 Licença
+
+Este projeto é de código aberto sob a licença MIT.
