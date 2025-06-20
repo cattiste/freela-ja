@@ -1,8 +1,7 @@
-// src/pages/Perfil.jsx
 import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import './PerfilProfissional.css'
-import { profissionais } from '../data/profissionais' // ✅ Mantém só esse
+import './perfilprofissional.css'
+import { profissionais } from '../data/profissionais' // ✅ Importa o array centralizado
 
 export default function Perfil() {
   const { id } = useParams()
