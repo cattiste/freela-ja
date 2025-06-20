@@ -1,63 +1,63 @@
 .contratar-container {
+  padding: 40px;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 20px;
-  text-align: center;
 }
 
 .contratar-title {
-  font-size: 2.5rem;
+  font-size: 32px;
+  font-weight: bold;
+  text-align: center;
   margin-bottom: 10px;
 }
 
 .contratar-subtitle {
-  font-size: 1.2rem;
+  text-align: center;
   margin-bottom: 30px;
-  color: #666;
+  font-size: 18px;
+  color: #555;
 }
 
 .filtros-container {
   display: flex;
-  flex-wrap: wrap;
   gap: 15px;
+  flex-wrap: wrap;
   justify-content: center;
   margin-bottom: 40px;
 }
 
 .filtros-container input,
-.filtros-container select,
-.filtros-container button {
-  padding: 10px 15px;
+.filtros-container select {
+  padding: 10px;
   border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: 6px;
+  width: 220px;
 }
 
 .filtros-container button {
-  background-color: #2e7d32;
-  color: #fff;
+  padding: 10px 20px;
+  background-color: #0d6efd;
+  color: white;
   border: none;
+  border-radius: 6px;
   cursor: pointer;
-  transition: 0.3s;
-}
-
-.filtros-container button:hover {
-  background-color: #1b5e20;
 }
 
 .resultado-chefs {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 30px;
+  justify-content: center;
 }
 
 .chef-card {
-  background-color: #f9f9f9;
+  background-color: #f8f9fa;
   padding: 20px;
-  border-radius: 16px;
+  border-radius: 12px;
+  width: 280px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   text-align: center;
-  transition: 0.3s;
+  transition: transform 0.2s ease;
 }
 
 .chef-card:hover {
@@ -67,28 +67,22 @@
 .foto-perfil {
   width: 100px;
   height: 100px;
-  object-fit: cover;
   border-radius: 50%;
+  object-fit: cover;
   margin-bottom: 15px;
-  border: 2px solid #ccc;
 }
 
 .avaliacao {
-  font-size: 1.2rem;
-  color: #FFD700;
+  font-size: 20px;
+  color: #ffc107;
   margin: 10px 0;
 }
 
-.chef-card button {
-  padding: 8px 16px;
+.botao-perfil {
+  background-color: #198754;
+  color: white;
   border: none;
-  background-color: #1976d2;
-  color: #fff;
+  padding: 10px 15px;
   border-radius: 6px;
   cursor: pointer;
-  transition: 0.3s;
-}
-
-.chef-card button:hover {
-  background-color: #0d47a1;
 }
