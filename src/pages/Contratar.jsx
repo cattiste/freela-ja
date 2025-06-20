@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import './Contratar.css'
 import { profissionais } from '../data/profissionais'
 import ProfissionalCard from '../components/ProfissionalCard'
 import FiltroForm from '../components/FiltroForm'
