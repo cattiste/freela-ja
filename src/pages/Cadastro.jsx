@@ -14,7 +14,7 @@ export default function Cadastro() {
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.titulo}>Cadastro de Chef</h2>
+      <h2 style={styles.titulo}>Cadastro de Freela</h2>
       <form onSubmit={handleSubmit} style={styles.form}>
         <input
           type="text"
