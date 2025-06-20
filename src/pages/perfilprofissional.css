@@ -1,53 +1,91 @@
+/* Container principal */
 .perfil-container {
   padding: 2rem;
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
-  font-family: sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
 }
 
+/* Cabeçalho do perfil */
 .perfil-header {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 2rem;
+  flex-wrap: wrap;
   margin-bottom: 2rem;
 }
 
+/* Imagem do profissional */
 .perfil-header img {
-  width: 150px;
-  height: 150px;
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
   object-fit: cover;
+  border: 4px solid #f3f3f3;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
 }
 
+/* Informações básicas */
 .perfil-info h2 {
-  margin: 0;
+  margin: 0 0 0.5rem;
   font-size: 2rem;
+  color: #222;
 }
 
 .perfil-info p {
-  margin: 0.25rem 0;
+  margin: 0.2rem 0;
   color: #555;
+  font-size: 1rem;
 }
 
+/* Avaliação em destaque */
 .perfil-avaliacao {
-  margin-top: 1rem;
-  font-size: 1.2rem;
-  color: gold;
+  font-size: 1.3rem;
+  color: #fbbf24; /* Dourado tipo estrela */
+  margin-top: 0.5rem;
 }
 
+/* Descrição do profissional */
+.perfil-container > p {
+  font-size: 1rem;
+  color: #444;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+/* Botão de voltar */
 .botao-voltar {
-  display: inline-block;
-  margin-top: 2rem;
-  padding: 0.5rem 1rem;
-  background-color: #222;
-  color: #fff;
+  padding: 0.6rem 1.4rem;
+  background-color: #1e293b;
+  color: white;
   border: none;
   border-radius: 8px;
-  text-decoration: none;
   cursor: pointer;
+  font-weight: 500;
   transition: background-color 0.3s ease;
 }
 
 .botao-voltar:hover {
-  background-color: #444;
+  background-color: #334155;
+}
+
+/* Responsividade */
+@media (max-width: 600px) {
+  .perfil-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .perfil-header img {
+    width: 120px;
+    height: 120px;
+  }
+
+  .perfil-info h2 {
+    font-size: 1.6rem;
+  }
 }
