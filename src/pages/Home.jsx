@@ -1,4 +1,3 @@
-// src/pages/Home.jsx
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Home.css'
@@ -9,7 +8,9 @@ export default function Home() {
   return (
     <div className="home-container">
       <h1 className="home-title">Bem-vindo ao ChefJá</h1>
-      <p className="home-description">Conectando profissionais e estabelecimentos do setor gastronômico e de eventos.</p>
+      <p className="home-description">
+        Conectando profissionais e estabelecimentos em uma plataforma simples, direta e eficiente.
+      </p>
 
       <div className="home-buttons">
         <button onClick={() => navigate('/cadastro')}>Sou um Freelancer</button>
