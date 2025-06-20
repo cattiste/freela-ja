@@ -25,7 +25,7 @@ function App() {
         <Route path="/contratar" element={<Contratar />} />
         <Route path="/contratar" element={<ContratarChef />} />
         <Route path="/perfil/:nome" element={<PerfilChef />} />
-        <Route path="/perfil" element={<PerfilProfissional />} />
+        <Route path="/perfil/:id" element={<PerfilProfissional />} />
 
       </Routes>
     </Router>
