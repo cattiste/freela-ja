@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 export default function PainelChef() {
+  const [usuario, setUsuario] = useState(null)
   const [pedidos, setPedidos] = useState([
     {
       id: 1,
@@ -17,6 +18,13 @@ export default function PainelChef() {
       status: 'pendente'
     }
   ])
+
+  useEffect(() => {
+    const logado = JSON.parse(localStorage.getItem('usuarioLogado'))
+    if (logado) {
+      setUsuario(logado)
+    }
+  }, [])
 
   const aceitarPedido = (id) => {
     setPedidos(prev =>
@@ -37,9 +45,9 @@ export default function PainelChef() {
   return (
     <div style={{ padding: '2rem' }}>
       <h2>Painel do Chef</h2>
-      <p>Bem-vindo, Chef Bruno!</p>
+      {usuario && <p>Bem-vindo, {usuario.nome}!</p>}
 
-      <h3>Pedidos Recebidos</h3>
+      <h3 style={{ marginTop: '2rem' }}>Pedidos Recebidos</h3>
       {pedidos.map(pedido => (
         <div key={pedido.id} style={{
           border: '1px solid #ccc',
