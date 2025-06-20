@@ -1,28 +1,32 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import './Contratar.css'
 
 export default function Contratar() {
   const profissionais = [
     {
+      id: 'joao-silva',
       nome: 'João Silva',
-      especialidade: 'Churrasqueiro',
+      especialidade: 'Comida Italiana',
       cidade: 'São Paulo',
-      avaliacao: 4,
-      foto: 'https://randomuser.me/api/portraits/men/32.jpg'
+      avaliacao: 4.8,
+      foto: 'https://i.pravatar.cc/150?img=1'
     },
     {
+      id: 'ana-oliveira',
       nome: 'Ana Oliveira',
-      especialidade: 'Sushiwoman',
+      especialidade: 'Sushi Tradicional',
       cidade: 'Rio de Janeiro',
-      avaliacao: 5,
-      foto: 'https://randomuser.me/api/portraits/women/44.jpg'
+      avaliacao: 4.9,
+      foto: 'https://i.pravatar.cc/150?img=2'
     },
     {
-      nome: 'Carlos Mendes',
-      especialidade: 'Garçom',
-      cidade: 'Belo Horizonte',
-      avaliacao: 3,
-      foto: 'https://randomuser.me/api/portraits/men/45.jpg'
+      id: 'bruno-cattiste',
+      nome: 'Bruno Cattiste',
+      especialidade: 'Churrasco Gaúcho',
+      cidade: 'Porto Alegre',
+      avaliacao: 5.0,
+      foto: 'https://i.pravatar.cc/150?img=3'
     }
   ]
 
@@ -32,7 +36,7 @@ export default function Contratar() {
       <p className="contratar-subtitle">Filtre por especialidade, cidade ou disponibilidade</p>
 
       <div className="filtros-container">
-        <input type="text" placeholder="Especialidade (ex: Garçom, Cozinheiro...)" />
+        <input type="text" placeholder="Especialidade (ex: Sushi, Churrasco...)" />
         <input type="text" placeholder="Cidade" />
         <select>
           <option>Disponibilidade</option>
@@ -44,16 +48,16 @@ export default function Contratar() {
       </div>
 
       <div className="resultado-chefs">
-        {profissionais.map((p, i) => (
-          <div className="chef-card" key={i}>
-            <img src={p.foto} alt={p.nome} className="foto-perfil" />
-            <h3>{p.nome}</h3>
-            <p><strong>Especialidade:</strong> {p.especialidade}</p>
-            <p><strong>Cidade:</strong> {p.cidade}</p>
-            <div className="avaliacao">
-              {'★'.repeat(p.avaliacao)}{'☆'.repeat(5 - p.avaliacao)}
-            </div>
-            <button className="botao-perfil">Ver Perfil</button>
+        {profissionais.map((prof) => (
+          <div className="chef-card" key={prof.id}>
+            <img src={prof.foto} alt={prof.nome} className="chef-foto" />
+            <h3>{prof.nome}</h3>
+            <p><strong>Especialidade:</strong> {prof.especialidade}</p>
+            <p><strong>Cidade:</strong> {prof.cidade}</p>
+            <p><strong>Avaliação:</strong> {prof.avaliacao} ⭐</p>
+            <Link to={`/perfil/${prof.id}`}>
+              <button>Ver Perfil</button>
+            </Link>
           </div>
         ))}
       </div>
