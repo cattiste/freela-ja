@@ -9,9 +9,7 @@ export default function Home() {
   return (
     <div className="home-container">
       <h1 className="home-title">Bem-vindo ao ChefJá</h1>
-      <p className="home-description">
-        Conectando profissionais e estabelecimentos do setor de alimentação e eventos.
-      </p>
+      <p className="home-description">Conectando profissionais e estabelecimentos do setor gastronômico e de eventos.</p>
 
       <div className="home-buttons">
         <button onClick={() => navigate('/cadastro')}>Sou um Freelancer</button>
