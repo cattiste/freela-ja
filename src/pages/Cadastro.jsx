@@ -10,8 +10,20 @@ export default function Cadastro() {
 
     const novoUsuario = { nome, email, senha }
 
+    // Pega os usuários existentes do localStorage
     const usuariosExistentes = JSON.parse(localStorage.getItem('usuarios') || '[]')
+
+    // Verifica se o e-mail já está cadastrado
+    const emailExistente = usuariosExistentes.some(u => u.email === email)
+    if (emailExistente) {
+      alert('E-mail já cadastrado. Tente outro.')
+      return
+    }
+
+    // Adiciona o novo
     const atualizados = [...usuariosExistentes, novoUsuario]
+
+    // Salva de volta
     localStorage.setItem('usuarios', JSON.stringify(atualizados))
 
     alert('Cadastro enviado com sucesso!')
