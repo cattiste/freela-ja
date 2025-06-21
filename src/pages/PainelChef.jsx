@@ -1,92 +1,89 @@
 // src/pages/PainelChef.jsx
-import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import avatar from '../assets/avatar.svg';
+import alarme from '../assets/alarme.mp3';
+
+const vagasMock = [
+  { id: 1, titulo: 'Garçom em evento - São Paulo', status: 'Disponível' },
+  { id: 2, titulo: 'Cozinheiro para buffet - ABC', status: 'Disponível' },
+  { id: 3, titulo: 'Barista freelance - Centro SP', status: 'Disponível' },
+];
 
 export default function PainelChef() {
-  const [usuario, setUsuario] = useState(null)
-  const [vagas, setVagas] = useState([])
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'))
-    if (!usuarioLogado) {
-      navigate('/login')
-      return
-    }
-    setUsuario(usuarioLogado)
-
-    // Mock de vagas disponíveis
-    setVagas([
-      { id: 1, nome: 'Garçom em evento - São Paulo', status: 'Disponível' },
-      { id: 2, nome: 'Cozinheiro para buffet - ABC', status: 'Disponível' },
-      { id: 3, nome: 'Barista freelance - Centro SP', status: 'Disponível' }
-    ])
-  }, [navigate])
-
-  const handleLogout = () => {
-    localStorage.removeItem('usuarioLogado')
-    navigate('/')
-  }
+  const navigate = useNavigate();
+  const [candidaturas, setCandidaturas] = useState([]);
+  const [vagas, setVagas] = useState(vagasMock);
 
   const tocarAlarme = () => {
-    const audio = new Audio('/alarme.mp3')
-    audio.play()
-  }
+    const audio = new Audio(alarme);
+    audio.play();
+  };
+
+  useEffect(() => {
+    const salvas = JSON.parse(localStorage.getItem('candidaturas')) || [];
+    setCandidaturas(salvas);
+  }, []);
+
+  const candidatar = (vaga) => {
+    const novas = [...candidaturas, vaga];
+    setCandidaturas(novas);
+    localStorage.setItem('candidaturas', JSON.stringify(novas));
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6 flex flex-col items-center">
-      <div className="max-w-2xl w-full bg-white p-6 rounded-lg shadow-md">
-        {usuario && (
-          <>
-            <div className="flex flex-col items-center text-center">
-              {usuario.foto ? (
-                <img src={usuario.foto} alt="Avatar" className="w-28 h-28 rounded-full object-cover mb-4" />
-              ) : (
-                <div className="w-28 h-28 rounded-full bg-orange-300 flex items-center justify-center text-white text-2xl font-bold mb-4">
-                  {usuario.nome.charAt(0)}
-                </div>
-              )}
-              <h2 className="text-2xl font-bold">{usuario.nome}</h2>
-              <p className="text-sm text-gray-500 mb-1">{usuario.funcao}</p>
-              <p className="text-sm">📧 {usuario.email}</p>
-              <p className="text-sm mb-4">📞 {usuario.telefone}</p>
-              <div className="flex gap-4 mt-4">
-                <button
-                  onClick={() => navigate('/cadastrofreela')}
-                  className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
-                >
-                  Editar Perfil
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
-                >
-                  Sair
-                </button>
-              </div>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-orange-100 to-orange-200 text-gray-800 p-4">
+      <div className="flex flex-col items-start mb-6">
+        <img src={avatar} alt="Avatar" className="w-16 h-16 rounded-full" />
+        <h2 className="text-xl font-bold mt-2">Bruno Free</h2>
+        <p className="text-sm text-gray-700">Chef de Cozinha</p>
+        <p className="text-sm mt-1">📧 bruno.cattiste@gmail.com</p>
+        <p className="text-sm">📞</p>
+        <div className="flex gap-2 mt-3">
+          <button className="bg-blue-500 text-white px-3 py-1 rounded" onClick={() => alert('Editar perfil')}>Editar Perfil</button>
+          <button className="bg-red-500 text-white px-3 py-1 rounded" onClick={() => navigate('/')}>Sair</button>
+        </div>
+      </div>
 
-            <hr className="my-6" />
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold mb-2">📄 Vagas Disponíveis</h3>
+        <ul className="space-y-3">
+          {vagas.map((vaga) => (
+            <li key={vaga.id} className="bg-white shadow-md p-3 rounded">
+              <p className="font-medium">{vaga.titulo}</p>
+              <p className="text-green-600 text-sm mb-2">{vaga.status}</p>
+              <button
+                className="bg-green-500 text-white px-3 py-1 rounded text-sm"
+                onClick={() => candidatar(vaga)}
+              >
+                Candidatar-se
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
 
-            <h3 className="text-lg font-bold mb-2">📋 Vagas Disponíveis</h3>
-            <ul className="flex flex-col gap-4">
-              {vagas.map((vaga) => (
-                <li key={vaga.id} className="border p-4 rounded shadow-sm bg-gray-50 hover:bg-gray-100">
-                  <p className="font-semibold">{vaga.nome}</p>
-                  <p className="text-sm text-green-600">{vaga.status}</p>
-                </li>
-              ))}
-            </ul>
-
-            <button
-              onClick={tocarAlarme}
-              className="mt-6 bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
-            >
-              🔔 Testar Alarme
-            </button>
-          </>
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold mb-2">✅ Minhas Candidaturas</h3>
+        {candidaturas.length === 0 ? (
+          <p className="text-sm text-gray-600">Você ainda não se candidatou a nenhuma vaga.</p>
+        ) : (
+          <ul className="space-y-2">
+            {candidaturas.map((vaga, index) => (
+              <li key={index} className="bg-white shadow-sm p-2 rounded text-sm">
+                {vaga.titulo}
+              </li>
+            ))}
+          </ul>
         )}
       </div>
+
+      <button
+        className="bg-yellow-500 text-white px-4 py-2 rounded flex items-center gap-2"
+        onClick={tocarAlarme}
+      >
+        ⚠️ Testar Alarme
+      </button>
     </div>
-  )
+  );
 }
