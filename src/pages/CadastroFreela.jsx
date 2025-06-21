@@ -1,14 +1,15 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import './Home.css'
 
 export default function CadastroFreela() {
+  const navigate = useNavigate()
+
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [celular, setCelular] = useState('')
   const [endereco, setEndereco] = useState('')
   const [funcao, setFuncao] = useState('')
-  const [senha, setSenha] = useState('')
-  const navigate = useNavigate()
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -19,40 +20,42 @@ export default function CadastroFreela() {
       celular,
       endereco,
       funcao,
-      senha,
       tipo: 'freela'
     }
 
-    const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]')
+    const cadastrados = JSON.parse(localStorage.getItem('usuarios') || '[]')
 
-    const jaExiste = usuarios.some(u => u.email === email)
+    const jaExiste = cadastrados.some(u => u.email === email)
     if (jaExiste) {
-      alert('Este e-mail já está cadastrado.')
+      alert('Esse e-mail já está cadastrado.')
       return
     }
 
-    const atualizados = [...usuarios, novoFreela]
-    localStorage.setItem('usuarios', JSON.stringify(atualizados))
-
+    localStorage.setItem('usuarios', JSON.stringify([...cadastrados, novoFreela]))
     alert('Cadastro realizado com sucesso!')
     navigate('/login')
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-orange-50 px-4 py-10">
-      <div className="w-full max-w-lg bg-white p-8 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold text-center text-orange-700 mb-6">Cadastro de Profissional</h2>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <input type="text" placeholder="Nome completo" value={nome} onChange={(e) => setNome(e.target.value)} required className="px-4 py-3 border rounded" />
-          <input type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} required className="px-4 py-3 border rounded" />
-          <input type="tel" placeholder="Celular com DDD" value={celular} onChange={(e) => setCelular(e.target.value)} required className="px-4 py-3 border rounded" />
-          <input type="text" placeholder="Endereço completo" value={endereco} onChange={(e) => setEndereco(e.target.value)} required className="px-4 py-3 border rounded" />
-          <input type="text" placeholder="Função (ex: Cozinheiro, Garçom...)" value={funcao} onChange={(e) => setFuncao(e.target.value)} required className="px-4 py-3 border rounded" />
-          <input type="password" placeholder="Crie uma senha" value={senha} onChange={(e) => setSenha(e.target.value)} required className="px-4 py-3 border rounded" />
+    <div className="home-container">
+      <h1 className="home-title">Cadastro de Freelancer</h1>
+      <p className="home-description">Preencha seus dados para se cadastrar como profissional.</p>
 
-          <button type="submit" className="bg-orange-600 text-white font-bold py-3 rounded hover:bg-orange-700 transition">Cadastrar</button>
-        </form>
-      </div>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-xl w-full mx-auto mt-6">
+        <input type="text" placeholder="Nome completo" value={nome} onChange={(e) => setNome(e.target.value)} required className="px-4 py-3 border rounded" />
+        <input type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} required className="px-4 py-3 border rounded" />
+        <input type="tel" placeholder="Celular" value={celular} onChange={(e) => setCelular(e.target.value)} required className="px-4 py-3 border rounded" />
+        <input type="text" placeholder="Endereço" value={endereco} onChange={(e) => setEndereco(e.target.value)} required className="px-4 py-3 border rounded" />
+        <input type="text" placeholder="Função (ex: Cozinheiro, Garçom...)" value={funcao} onChange={(e) => setFuncao(e.target.value)} required className="px-4 py-3 border rounded" />
+
+        <button type="submit" className="bg-orange-600 text-white font-bold py-3 rounded hover:bg-orange-700">
+          Cadastrar
+        </button>
+
+        <button type="button" onClick={() => navigate('/')} className="mt-2 text-orange-600 underline hover:text-orange-800 text-sm">
+          Voltar à página inicial
+        </button>
+      </form>
     </div>
   )
 }
