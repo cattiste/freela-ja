@@ -9,9 +9,6 @@ import PainelChef from './pages/PainelChef'
 import PainelEstabelecimento from './pages/PainelEstabelecimento'
 import Navbar from './components/Navbar'
 import Contratar from './pages/Contratar'
-// import ContratarChef from './pages/ContratarChef' // conflito com Contratar
-import PerfilChef from './pages/PerfilChef'
-// import PerfilProfissional from './pages/PerfilProfissional' // conflito com Perfil
 import Perfil from './pages/Perfil'
 import RotaProtegida from './components/RotaProtegida' // (caso exista essa proteção)
 
