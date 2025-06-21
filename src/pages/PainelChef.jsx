@@ -40,30 +40,37 @@ export default function PainelChef() {
       <p>Bem-vindo, Chef Bruno!</p>
 
       <h3>Pedidos Recebidos</h3>
-      {pedidos.map(pedido => (
-        <div key={pedido.id} style={{
-          border: '1px solid #ccc',
-          borderRadius: '8px',
-          padding: '1rem',
-          marginBottom: '1rem',
-          backgroundColor: '#f9f9f9'
-        }}>
-          <p><strong>Cliente:</strong> {pedido.cliente}</p>
-          <p><strong>Data:</strong> {pedido.data}</p>
-          <p><strong>Descrição:</strong> {pedido.descricao}</p>
-          <p><strong>Status:</strong> {pedido.status}</p>
-          {pedido.status === 'pendente' && (
-            <div>
-              <button onClick={() => aceitarPedido(pedido.id)} style={{ marginRight: '1rem' }}>
-                Aceitar
-              </button>
-              <button onClick={() => recusarPedido(pedido.id)}>
-                Recusar
-              </button>
-            </div>
-          )}
-        </div>
-      ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+        {pedidos.map(pedido => (
+          <div key={pedido.id} style={{
+            border: '1px solid #ccc',
+            borderRadius: '8px',
+            padding: '1rem',
+            backgroundColor: '#f9f9f9'
+          }}>
+            <p><strong>Cliente:</strong> {pedido.cliente}</p>
+            <p><strong>Data:</strong> {pedido.data}</p>
+            <p><strong>Descrição:</strong> {pedido.descricao}</p>
+            <p><strong>Status:</strong> {pedido.status}</p>
+            {pedido.status === 'pendente' && (
+              <div style={{ marginTop: '0.5rem' }}>
+                <button
+                  onClick={() => aceitarPedido(pedido.id)}
+                  style={{ marginRight: '1rem', padding: '6px 12px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  Aceitar
+                </button>
+                <button
+                  onClick={() => recusarPedido(pedido.id)}
+                  style={{ padding: '6px 12px', backgroundColor: '#dc3545', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  Recusar
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

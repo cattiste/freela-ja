@@ -6,12 +6,14 @@ import Sobre from './pages/Sobre'
 import Cadastro from './pages/Cadastro'
 import Login from './pages/Login'
 import PainelChef from './pages/PainelChef'
+import PainelEstabelecimento from './pages/PainelEstabelecimento'
 import Navbar from './components/Navbar'
 import Contratar from './pages/Contratar'
-import ContratarChef from './pages/ContratarChef'
+// import ContratarChef from './pages/ContratarChef' // conflito com Contratar
 import PerfilChef from './pages/PerfilChef'
-import PerfilProfissional from './pages/PerfilProfissional'
+// import PerfilProfissional from './pages/PerfilProfissional' // conflito com Perfil
 import Perfil from './pages/Perfil'
+import RotaProtegida from './components/RotaProtegida' // (caso exista essa proteção)
 
 function App() {
   return (
@@ -24,11 +26,19 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/painel" element={<PainelChef />} />
         <Route path="/contratar" element={<Contratar />} />
-        <Route path="/contratar" element={<ContratarChef />} />
-        <Route path="/perfil/:nome" element={<PerfilChef />} />
-        <Route path="/perfil/:id" element={<PerfilProfissional />} />
+
+        {/* Perfil unificado */}
         <Route path="/perfil/:id" element={<Perfil />} />
 
+        {/* Painel protegido do estabelecimento */}
+        <Route
+          path="/painel-estabelecimento"
+          element={
+            <RotaProtegida>
+              <PainelEstabelecimento />
+            </RotaProtegida>
+          }
+        />
       </Routes>
     </Router>
   )

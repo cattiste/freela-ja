@@ -15,30 +15,35 @@ export default function Login() {
       navigate('/painel')
     } else {
       setErro('E-mail ou senha incorretos.')
+      setSenha('') // limpa a senha após erro
     }
   }
 
   return (
-    <div style={styles.container}>
-      <h2 style={styles.title}>Login</h2>
-      <form onSubmit={handleLogin} style={styles.form}>
-        <input
-          type="email"
-          placeholder="E-mail"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={styles.input}
-        />
-        <input
-          type="password"
-          placeholder="Senha"
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-          style={styles.input}
-        />
-        {erro && <p style={styles.erro}>{erro}</p>}
-        <button type="submit" style={styles.botao}>Entrar</button>
-      </form>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4 sm:px-6">
+      <div style={styles.container}>
+        <h2 style={styles.title}>Login</h2>
+        <form onSubmit={handleLogin} style={styles.form}>
+          <input
+            type="email"
+            placeholder="E-mail"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={styles.input}
+            autoComplete="off"
+          />
+          <input
+            type="password"
+            placeholder="Senha"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            style={styles.input}
+            autoComplete="off"
+          />
+          {erro && <p style={styles.erro}>{erro}</p>}
+          <button type="submit" style={styles.botao}>Entrar</button>
+        </form>
+      </div>
     </div>
   )
 }
@@ -84,4 +89,4 @@ const styles = {
     textAlign: 'center',
     marginTop: '-10px'
   }
-    }
+}

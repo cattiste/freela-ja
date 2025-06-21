@@ -1,20 +1,34 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import './Navbar.css'
 
 export default function Navbar() {
+  const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'))
+
   return (
-    <nav className="navbar">
-      <div className="navbar-logo">
-        <Link to="/">Freela Já</Link>
+    <nav className="bg-orange-600 text-white p-4 flex justify-between items-center">
+      <div>
+        <Link to="/" className="font-bold text-xl">ChefJá</Link>
       </div>
-      <ul className="navbar-links">
-        <li><Link to="/">Início</Link></li>
-        <li><Link to="/sobre">Sobre</Link></li>
-        <li><Link to="/contratar">Profissionais</Link></li>
-        <li><Link to="/cadastro">Cadastro</Link></li>
-        <li><Link to="/login">Entrar</Link></li>
-      </ul>
+      <div className="flex gap-4">
+        <Link to="/" className="hover:underline">Início</Link>
+        <Link to="/sobre" className="hover:underline">Sobre</Link>
+        <Link to="/contratar" className="hover:underline">Contratar</Link>
+
+        {!usuarioLogado && (
+          <>
+            <Link to="/cadastro" className="hover:underline">Cadastro</Link>
+            <Link to="/login" className="hover:underline">Login</Link>
+          </>
+        )}
+
+        {usuarioLogado?.tipo === 'freela' && (
+          <Link to="/painel" className="hover:underline">Painel do Chef</Link>
+        )}
+
+        {usuarioLogado?.tipo === 'estabelecimento' && (
+          <Link to="/painel-estabelecimento" className="hover:underline">Painel do Estabelecimento</Link>
+        )}
+      </div>
     </nav>
   )
 }

@@ -13,35 +13,37 @@ export default function Cadastro() {
   }
 
   return (
-    <div style={styles.container}>
-      <h2 style={styles.titulo}>Cadastro de Freela</h2>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <input
-          type="text"
-          placeholder="Seu nome"
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          style={styles.input}
-          required
-        />
-        <input
-          type="email"
-          placeholder="Seu e-mail"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={styles.input}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Crie uma senha"
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-          style={styles.input}
-          required
-        />
-        <button type="submit" style={styles.botao}>Cadastrar</button>
-      </form>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4 sm:px-6">
+      <div style={styles.container}>
+        <h2 style={styles.titulo}>Cadastro de Freela</h2>
+        <form onSubmit={handleSubmit} style={styles.form}>
+          <input
+            type="text"
+            placeholder="Seu nome"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            style={styles.input}
+            required
+          />
+          <input
+            type="email"
+            placeholder="Seu e-mail"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={styles.input}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Crie uma senha"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            style={styles.input}
+            required
+          />
+          <button type="submit" style={styles.botao}>Cadastrar</button>
+        </form>
+      </div>
     </div>
   )
 }
@@ -80,4 +82,4 @@ const styles = {
     borderRadius: '6px',
     cursor: 'pointer'
   }
-        }
+}

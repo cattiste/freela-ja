@@ -12,7 +12,7 @@ export default function Home() {
         Conectando profissionais e estabelecimentos em uma plataforma simples, direta e eficiente.
       </p>
 
-      <div className="home-buttons">
+      <div className="home-buttons flex flex-col md:flex-row gap-4 justify-center mt-6">
         <button onClick={() => navigate('/cadastro')}>Sou um Freelancer</button>
         <button onClick={() => navigate('/cadastro')}>Sou um Estabelecimento</button>
         <button onClick={() => navigate('/login')}>Já tenho conta</button>
