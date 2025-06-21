@@ -1,15 +1,35 @@
 import React, { useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 export default function Cadastro() {
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
 
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  const tipo = new URLSearchParams(location.search).get('tipo') || 'freela'
+
   const handleSubmit = (e) => {
     e.preventDefault()
-    console.log('Cadastro enviado:', { nome, email, senha })
-    alert('Cadastro enviado com sucesso!')
-    // Aqui você pode redirecionar ou limpar os campos
+
+    const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]')
+
+    const novoUsuario = {
+      nome,
+      email,
+      senha,
+      tipo
+    }
+
+    usuarios.push(novoUsuario)
+    localStorage.setItem('usuarios', JSON.stringify(usuarios))
+    localStorage.setItem('usuarioLogado', JSON.stringify(novoUsuario))
+
+    alert('Cadastro realizado com sucesso!')
+
+    navigate(tipo === 'estabelecimento' ? '/painel-estabelecimento' : '/painel')
   }
 
   return (
@@ -55,31 +75,4 @@ const styles = {
     padding: '30px',
     backgroundColor: '#fff8f0',
     borderRadius: '8px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-  },
-  titulo: {
-    fontSize: '26px',
-    marginBottom: '20px',
-    color: '#333'
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '15px'
-  },
-  input: {
-    padding: '12px',
-    fontSize: '16px',
-    border: '1px solid #ddd',
-    borderRadius: '6px'
-  },
-  botao: {
-    padding: '12px',
-    backgroundColor: '#ff6b00',
-    color: '#fff',
-    fontWeight: 'bold',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer'
-  }
-}
+    boxShadow: '0 2px 8px rgba(0,0,0
