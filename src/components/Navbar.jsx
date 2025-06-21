@@ -9,7 +9,7 @@ export default function Navbar() {
       <div>
         <Link to="/" className="font-bold text-xl">ChefJá</Link>
       </div>
-      <div className="flex gap-4">
+      <div className="flex gap 4">
         <Link to="/" className="hover:underline">Início</Link>
         <Link to="/sobre" className="hover:underline">Sobre</Link>
         <Link to="/contratar" className="hover:underline">Contratar</Link>
