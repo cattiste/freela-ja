@@ -5,6 +5,7 @@ export default function Cadastro() {
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
+  const [tipo, setTipo] = useState('')
 
   const location = useLocation()
   const navigate = useNavigate()
