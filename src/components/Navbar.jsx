@@ -5,36 +5,41 @@ export default function Navbar() {
   const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'))
 
   return (
-    <nav className="bg-orange-600 text-white px-6 py-4 shadow-md">
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        
-        {/* Logo */}
-        <div className="text-2xl font-bold text-center sm:text-left">
-          <Link to="/">Freela Já!</Link>
-        </div>
+    <nav className="bg-orange-600 text-white p-4 flex justify-between items-center">
+      <div>
+        <Link to="/" className="font-bold text-xl">ChefJá</Link>
+      </div>
+      <div className="flex gap-4">
+        <Link to="/" className="hover:underline">Início</Link>
+        <Link to="/sobre" className="hover:underline">Sobre</Link>
+        <Link to="/contratar" className="hover:underline">Contratar</Link>
 
-        {/* Links */}
-        <div className="flex flex-wrap justify-center sm:justify-end gap-4 text-sm sm:text-base">
-          <Link to="/" className="hover:underline">Início</Link>
-          <Link to="/sobre" className="hover:underline">Sobre</Link>
-          <Link to="/contratar" className="hover:underline">Contratar</Link>
+        {!usuarioLogado && (
+          <>
+            <Link to="/cadastro" className="hover:underline">Cadastro</Link>
+            <Link to="/login" className="hover:underline">Login</Link>
+          </>
+        )}
 
-          {!usuarioLogado && (
-            <>
-              <Link to="/cadastro" className="hover:underline">Cadastro</Link>
-              <Link to="/login" className="hover:underline">Login</Link>
-            </>
-          )}
+        {usuarioLogado?.tipo === 'freela' && (
+          <Link to="/painel" className="hover:underline">Painel do Chef</Link>
+        )}
 
-          {usuarioLogado?.tipo === 'freela' && (
-            <Link to="/painel" className="hover:underline">Painel do Chef</Link>
-          )}
+        {usuarioLogado?.tipo === 'estabelecimento' && (
+          <Link to="/painel-estabelecimento" className="hover:underline">Painel do Estabelecimento</Link>
+        )}
 
-          {usuarioLogado?.tipo === 'estabelecimento' && (
-            <Link to="/painel-estabelecimento" className="hover:underline">Painel do Estabelecimento</Link>
-          )}
-        </div>
-        
+        {usuarioLogado && (
+          <button
+            onClick={() => {
+              localStorage.removeItem('usuarioLogado')
+              window.location.href = '/'
+            }}
+            className="hover:underline"
+          >
+            Sair
+          </button>
+        )}
       </div>
     </nav>
   )
