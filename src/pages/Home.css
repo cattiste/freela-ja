@@ -1,50 +1,59 @@
-/* src/pages/Home.css */
 .home-container {
   min-height: 100vh;
-  background: linear-gradient(to right, #fff3e0, #ffe0b2);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 2rem;
+  background-color: #ffffff;
   text-align: center;
+  font-family: 'Inter', sans-serif;
 }
 
 .home-title {
   font-size: 2.5rem;
   font-weight: bold;
-  color: #ff6b00;
+  color: #1a202c;
   margin-bottom: 1rem;
 }
 
 .home-description {
-  font-size: 1.2rem;
-  color: #555;
+  font-size: 1.25rem;
+  color: #4a5568;
   max-width: 600px;
   margin-bottom: 2rem;
 }
 
 .home-buttons button {
-  padding: 1rem 2rem;
-  background-color: #ff6b00;
-  color: white;
+  padding: 12px 24px;
+  font-size: 1rem;
   font-weight: 600;
   border: none;
-  border-radius: 8px;
-  transition: background-color 0.3s;
-  font-size: 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+  margin: 0.25rem;
+  min-width: 220px;
 }
 
-.home-buttons button:hover {
-  background-color: #e65a00;
+.home-buttons button:nth-child(1),
+.home-buttons button:nth-child(2) {
+  background-color: #f97316; /* laranja */
+  color: white;
 }
 
-@media (max-width: 768px) {
-  .home-title {
-    font-size: 2rem;
-  }
+.home-buttons button:nth-child(1):hover,
+.home-buttons button:nth-child(2):hover {
+  background-color: #ea580c;
+}
 
-  .home-buttons button {
-    width: 100%;
-  }
+.home-buttons button:nth-child(3),
+.home-buttons button:nth-child(4) {
+  background-color: #edf2f7;
+  color: #1a202c;
+}
+
+.home-buttons button:nth-child(3):hover,
+.home-buttons button:nth-child(4):hover {
+  background-color: #e2e8f0;
 }
