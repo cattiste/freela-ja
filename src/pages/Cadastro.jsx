@@ -1,102 +1,52 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 
-export default function Login() {
+export default function Cadastro() {
+  const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
-  const [erro, setErro] = useState('')
-  const navigate = useNavigate()
+  const [tipo, setTipo] = useState('freela') // freela ou estabelecimento
 
-  const handleLogin = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault()
 
-    const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]')
-    const encontrado = usuarios.find(
-      u => u.email.trim() === email.trim() && u.senha === senha
-    )
+    const novoUsuario = { nome, email, senha, tipo }
 
-    if (encontrado) {
-      localStorage.setItem('usuarioLogado', JSON.stringify(encontrado))
+    // Pega usuários existentes
+    const usuariosExistentes = JSON.parse(localStorage.getItem('usuarios') || '[]')
 
-      if (encontrado.tipo === 'estabelecimento') {
-        navigate('/painel-estabelecimento')
-      } else {
-        navigate('/painel')
-      }
-    } else {
-      setErro('E-mail ou senha incorretos.')
-      setSenha('')
+    // Verifica se já existe e-mail igual
+    const jaExiste = usuariosExistentes.some(u => u.email === email)
+    if (jaExiste) {
+      alert('Esse e-mail já está cadastrado.')
+      return
     }
+
+    // Salva no localStorage
+    const atualizados = [...usuariosExistentes, novoUsuario]
+    localStorage.setItem('usuarios', JSON.stringify(atualizados))
+
+    alert('Cadastro realizado com sucesso!')
+    setNome('')
+    setEmail('')
+    setSenha('')
+    setTipo('freela')
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4 sm:px-6">
-      <div style={styles.container}>
-        <h2 style={styles.title}>Login</h2>
-        <form onSubmit={handleLogin} style={styles.form}>
-          <input
-            type="email"
-            placeholder="E-mail"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={styles.input}
-            autoComplete="off"
-          />
-          <input
-            type="password"
-            placeholder="Senha"
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-            style={styles.input}
-            autoComplete="off"
-          />
-          {erro && <p style={styles.erro}>{erro}</p>}
-          <button type="submit" style={styles.botao}>Entrar</button>
-        </form>
-      </div>
+    <div className="max-w-lg mx-auto mt-16 p-8 bg-orange-50 rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Cadastro de Usuário</h2>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <input type="text" placeholder="Seu nome" value={nome} onChange={(e) => setNome(e.target.value)} required className="px-4 py-3 border rounded" />
+        <input type="email" placeholder="Seu e-mail" value={email} onChange={(e) => setEmail(e.target.value)} required className="px-4 py-3 border rounded" />
+        <input type="password" placeholder="Crie uma senha" value={senha} onChange={(e) => setSenha(e.target.value)} required className="px-4 py-3 border rounded" />
+
+        <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="px-4 py-3 border rounded" required>
+          <option value="freela">Sou um Profissional</option>
+          <option value="estabelecimento">Sou um Estabelecimento</option>
+        </select>
+
+        <button type="submit" className="bg-orange-600 text-white font-bold py-3 rounded hover:bg-orange-700">Cadastrar</button>
+      </form>
     </div>
   )
-}
-
-const styles = {
-  container: {
-    maxWidth: '400px',
-    margin: '60px auto',
-    padding: '20px',
-    border: '1px solid #ccc',
-    borderRadius: '8px',
-    background: '#fff',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-  },
-  title: {
-    textAlign: 'center',
-    marginBottom: '20px',
-    color: '#333'
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '15px'
-  },
-  input: {
-    padding: '10px',
-    fontSize: '16px',
-    border: '1px solid #ccc',
-    borderRadius: '4px'
-  },
-  botao: {
-    padding: '10px',
-    backgroundColor: '#ff6b00',
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: '16px',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer'
-  },
-  erro: {
-    color: 'red',
-    textAlign: 'center',
-    marginTop: '-10px'
-  }
 }
