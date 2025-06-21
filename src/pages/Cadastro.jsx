@@ -15,7 +15,7 @@ export default function Cadastro() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4 sm:px-6">
       <div style={styles.container}>
-        <h2 style={styles.titulo}>Cadastro de Freela</h2>
+        <h2 style={styles.titulo}>Cadastro</h2>
         <form onSubmit={handleSubmit} style={styles.form}>
           <input
             type="text"
