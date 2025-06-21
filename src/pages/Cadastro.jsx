@@ -5,12 +5,11 @@ export default function Cadastro() {
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
-  const [tipo, setTipo] = useState('')
 
   const location = useLocation()
   const navigate = useNavigate()
 
-  const tipo = new URLSearchParams(location.search).get('tipo') || 'freela'
+  const tipoURL = new URLSearchParams(location.search).get('tipo') || 'freela'
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -21,7 +20,7 @@ export default function Cadastro() {
       nome,
       email,
       senha,
-      tipo
+      tipo: tipoURL
     }
 
     usuarios.push(novoUsuario)
@@ -30,7 +29,7 @@ export default function Cadastro() {
 
     alert('Cadastro realizado com sucesso!')
 
-    navigate(tipo === 'estabelecimento' ? '/painel-estabelecimento' : '/painel')
+    navigate(tipoURL === 'estabelecimento' ? '/painel-estabelecimento' : '/painel')
   }
 
   return (
@@ -76,4 +75,31 @@ const styles = {
     padding: '30px',
     backgroundColor: '#fff8f0',
     borderRadius: '8px',
-    boxShadow: '0 2px 8px rgba(0,0,0
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+  },
+  titulo: {
+    fontSize: '26px',
+    marginBottom: '20px',
+    color: '#333'
+  },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '15px'
+  },
+  input: {
+    padding: '12px',
+    fontSize: '16px',
+    border: '1px solid #ddd',
+    borderRadius: '6px'
+  },
+  botao: {
+    padding: '12px',
+    backgroundColor: '#ff6b00',
+    color: '#fff',
+    fontWeight: 'bold',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer'
+  }
+}
