@@ -1,0 +1,50 @@
+/* src/pages/CadastroFreela.css */
+.home-container {
+  min-height: 100vh;
+  background: linear-gradient(to right, #fff3e0, #ffe0b2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.home-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #ff6b00;
+  margin-bottom: 1rem;
+}
+
+.home-description {
+  font-size: 1.2rem;
+  color: #555;
+  max-width: 600px;
+  margin-bottom: 2rem;
+}
+
+.home-buttons button {
+  padding: 1rem 2rem;
+  background-color: #ff6b00;
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  transition: background-color 0.3s;
+  font-size: 1rem;
+}
+
+.home-buttons button:hover {
+  background-color: #e65a00;
+}
+
+@media (max-width: 768px) {
+  .home-title {
+    font-size: 2rem;
+  }
+
+  .home-buttons button {
+    width: 100%;
+  }
+}

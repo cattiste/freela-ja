@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import './Home.css'
+import './CadastroFreela.css'
 
 export default function CadastroFreela() {
   const navigate = useNavigate()
