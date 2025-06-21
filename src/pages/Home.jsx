@@ -15,8 +15,8 @@ export default function Home() {
       <div className="home-buttons flex flex-col md:flex-row gap-4 justify-center mt-6">
         <button onClick={() => navigate("/cadastro?tipo=freela")}>Sou um Freelancer</button>
         <button onClick={() => navigate("/cadastro?tipo=estabelecimento")}>Sou um Estabelecimento</button>
-        <button onClick={() => navigate('/login')}>Já tenho conta</button>
-        <button onClick={() => navigate('/contratar')}>Painel de Profissionais</button>
+        <button onClick={() => navigate('/login')}>Login</button>
+        <button onClick={() => navigate('/contratar')}>Painel de Vagas</button>
       </div>
     </div>
   )
