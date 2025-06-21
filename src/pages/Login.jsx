@@ -10,12 +10,24 @@ export default function Login() {
   const handleLogin = (e) => {
     e.preventDefault()
 
-    // Autenticação fake só pra demonstração
-    if (email === 'chef@chefja.com' && senha === '123456') {
-      navigate('/painel')
+    const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]')
+    const encontrado = usuarios.find(
+      u =>
+        u.email.trim().toLowerCase() === email.trim().toLowerCase() &&
+        u.senha === senha
+    )
+
+    if (encontrado) {
+      localStorage.setItem('usuarioLogado', JSON.stringify(encontrado))
+
+      if (encontrado.tipo === 'estabelecimento') {
+        navigate('/painel-estabelecimento')
+      } else {
+        navigate('/painel')
+      }
     } else {
       setErro('E-mail ou senha incorretos.')
-      setSenha('') // limpa a senha após erro
+      setSenha('')
     }
   }
 

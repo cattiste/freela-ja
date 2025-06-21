@@ -4,24 +4,20 @@ export default function Cadastro() {
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
-  const [tipo, setTipo] = useState('freela') // freela ou estabelecimento
+  const [tipo, setTipo] = useState('freela')
 
   const handleSubmit = (e) => {
     e.preventDefault()
 
-    const novoUsuario = { nome, email, senha, tipo }
-
-    // Pega usuários existentes
+    const novoUsuario = { nome, email: email.trim().toLowerCase(), senha, tipo }
     const usuariosExistentes = JSON.parse(localStorage.getItem('usuarios') || '[]')
 
-    // Verifica se já existe e-mail igual
-    const jaExiste = usuariosExistentes.some(u => u.email === email)
+    const jaExiste = usuariosExistentes.some(u => u.email === novoUsuario.email)
     if (jaExiste) {
       alert('Esse e-mail já está cadastrado.')
       return
     }
 
-    // Salva no localStorage
     const atualizados = [...usuariosExistentes, novoUsuario]
     localStorage.setItem('usuarios', JSON.stringify(atualizados))
 
