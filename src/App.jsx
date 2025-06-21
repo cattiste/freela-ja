@@ -11,6 +11,8 @@ import Navbar from './components/Navbar'
 import Contratar from './pages/Contratar'
 import Perfil from './pages/Perfil'
 import RotaProtegida from './components/RotaProtegida' // (caso exista essa proteção)
+import CadastroFreela from './pages/CadastroFreela'
+import CadastroEstabelecimento from './pages/CadastroEstabelecimento'
 
 function App() {
   return (
@@ -23,6 +25,8 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/painel" element={<PainelChef />} />
         <Route path="/contratar" element={<Contratar />} />
+        <Route path="/cadastro-freela" element={<CadastroFreela />} />
+        <Route path="/cadastro-estabelecimento" element={<CadastroEstabelecimento />} />
 
         {/* Perfil unificado */}
         <Route path="/perfil/:id" element={<Perfil />} />
