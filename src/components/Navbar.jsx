@@ -7,12 +7,13 @@ export default function Navbar() {
   return (
     <nav className="bg-orange-600 text-white px-6 py-4 shadow-md">
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        
         {/* Logo */}
         <div className="text-2xl font-bold text-center sm:text-left">
           <Link to="/">Freela Já!</Link>
         </div>
 
-        {/* Links de navegação */}
+        {/* Links */}
         <div className="flex flex-wrap justify-center sm:justify-end gap-4 text-sm sm:text-base">
           <Link to="/" className="hover:underline">Início</Link>
           <Link to="/sobre" className="hover:underline">Sobre</Link>
@@ -33,6 +34,7 @@ export default function Navbar() {
             <Link to="/painel-estabelecimento" className="hover:underline">Painel do Estabelecimento</Link>
           )}
         </div>
+        
       </div>
     </nav>
   )
