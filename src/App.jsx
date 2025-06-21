@@ -23,7 +23,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/painel" element={<PainelChef />} />
         <Route path="/contratar" element={<Contratar />} />
-        <Route path="/cadastro-freela" element={<CadastroFreela />} />
+        <Route path="/cadastrofreela" element={<CadastroFreela />} />
         <Route path="/cadastro-estabelecimento" element={<CadastroEstabelecimento />} />
         <Route path="/perfil/:id" element={<Perfil />} />
         <Route
