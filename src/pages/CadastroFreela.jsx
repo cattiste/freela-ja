@@ -1,41 +1,64 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import './Home.css'
 
 export default function CadastroFreela() {
-  const navigate = useNavigate()
+  const [nome, setNome] = useState('')
+  const [email, setEmail] = useState('')
+  const [senha, setSenha] = useState('')
+  const [celular, setCelular] = useState('')
+  const [endereco, setEndereco] = useState('')
+  const [funcao, setFuncao] = useState('')
   const [foto, setFoto] = useState(null)
 
-  const handleFotoChange = (e) => {
-    setFoto(e.target.files[0])
-  }
+  const navigate = useNavigate()
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    console.log('Cadastro enviado')
+
+    const novoUsuario = {
+      nome,
+      email,
+      senha,
+      celular,
+      endereco,
+      funcao,
+      tipo: 'freela',
+      foto: foto ? URL.createObjectURL(foto) : null
+    }
+
+    const usuariosExistentes = JSON.parse(localStorage.getItem('usuarios') || '[]')
+    const jaExiste = usuariosExistentes.some(u => u.email === email)
+    if (jaExiste) {
+      alert('Esse e-mail já está cadastrado.')
+      return
+    }
+
+    const atualizados = [...usuariosExistentes, novoUsuario]
+    localStorage.setItem('usuarios', JSON.stringify(atualizados))
+
+    alert('Cadastro realizado com sucesso!')
+    navigate('/login')
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-orange-100 to-orange-200 p-6">
-      <h1 className="text-3xl font-bold text-orange-600 mb-4 text-center">Cadastro de Freelancer</h1>
-      <p className="text-gray-700 mb-6 text-center">
-        Preencha seus dados para se cadastrar como profissional.
-      </p>
+    <div className="home-container">
+      <h1 className="home-title">Cadastro de Freelancer</h1>
+      <p className="home-description">Preencha seus dados para começar a trabalhar com a gente.</p>
 
-      <form onSubmit={handleSubmit} className="w-full max-w-2xl flex flex-col gap-4">
-        <input type="file" accept="image/*" onChange={handleFotoChange} className="p-3 rounded-md border border-gray-300 w-full bg-white" />
-        <input type="text" placeholder="Nome completo" className="p-3 rounded-md border border-gray-300 w-full" />
-        <input type="email" placeholder="E-mail" className="p-3 rounded-md border border-gray-300 w-full" />
-        <input type="tel" placeholder="Celular" className="p-3 rounded-md border border-gray-300 w-full" />
-        <input type="text" placeholder="Endereço" className="p-3 rounded-md border border-gray-300 w-full" />
-        <input type="text" placeholder="Função (ex: Cozinheiro, Garçom...)" className="p-3 rounded-md border border-gray-300 w-full" />
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md mx-auto mt-6">
+        <input type="text" placeholder="Seu nome" value={nome} onChange={(e) => setNome(e.target.value)} required className="input" />
+        <input type="email" placeholder="Seu e-mail" value={email} onChange={(e) => setEmail(e.target.value)} required className="input" />
+        <input type="password" placeholder="Crie uma senha" value={senha} onChange={(e) => setSenha(e.target.value)} required className="input" />
+        <input type="tel" placeholder="Celular com DDD" value={celular} onChange={(e) => setCelular(e.target.value)} required className="input" />
+        <input type="text" placeholder="Endereço completo" value={endereco} onChange={(e) => setEndereco(e.target.value)} required className="input" />
+        <input type="text" placeholder="Função (ex: garçom, cozinheiro...)" value={funcao} onChange={(e) => setFuncao(e.target.value)} required className="input" />
 
-        <button type="submit" className="bg-orange-500 text-white font-semibold py-3 px-6 rounded-md hover:bg-orange-600 transition-all">
-          Cadastrar
-        </button>
+        <label className="text-gray-700 text-sm">Foto de Perfil:</label>
+        <input type="file" accept="image/*" onChange={(e) => setFoto(e.target.files[0])} className="mb-4" />
 
-        <button type="button" onClick={() => navigate('/')} className="mt-4 text-sm text-orange-600 underline hover:text-orange-800">
-          Voltar à página inicial
-        </button>
+        <button type="submit" className="home-button">Cadastrar</button>
+        <button type="button" onClick={() => navigate('/')} className="home-button bg-gray-500 hover:bg-gray-600">Voltar</button>
       </form>
     </div>
   )
