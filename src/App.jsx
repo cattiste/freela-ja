@@ -7,17 +7,15 @@ import Cadastro from './pages/Cadastro'
 import Login from './pages/Login'
 import PainelChef from './pages/PainelChef'
 import PainelEstabelecimento from './pages/PainelEstabelecimento'
-import Navbar from './components/Navbar'
 import Contratar from './pages/Contratar'
 import Perfil from './pages/Perfil'
-import RotaProtegida from './components/RotaProtegida' // (caso exista essa proteção)
+import RotaProtegida from './components/RotaProtegida'
 import CadastroFreela from './pages/CadastroFreela'
 import CadastroEstabelecimento from './pages/CadastroEstabelecimento'
 
 function App() {
   return (
     <Router>
-      <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/sobre" element={<Sobre />} />
@@ -27,11 +25,7 @@ function App() {
         <Route path="/contratar" element={<Contratar />} />
         <Route path="/cadastro-freela" element={<CadastroFreela />} />
         <Route path="/cadastro-estabelecimento" element={<CadastroEstabelecimento />} />
-
-        {/* Perfil unificado */}
         <Route path="/perfil/:id" element={<Perfil />} />
-
-        {/* Painel protegido do estabelecimento */}
         <Route
           path="/painel-estabelecimento"
           element={
