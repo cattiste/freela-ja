@@ -1,45 +1,27 @@
-import React from 'react'
 import { Link } from 'react-router-dom'
 
 export default function Navbar() {
-  const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'))
-
   return (
-    <nav className="bg-orange-600 text-white p-4 flex justify-between items-center">
-      <div>
-        <Link to="/" className="font-bold text-xl">Freela Já</Link>
-      </div>
-      <div className="flex gap 4">
-        <Link to="/" className="hover:underline">Início</Link>
-        <Link to="/sobre" className="hover:underline">Sobre</Link>
-        <Link to="/contratar" className="hover:underline">Contratar</Link>
+    <nav className="bg-white shadow-md px-8 py-4 flex flex-wrap justify-between items-center">
+      {/* Logo */}
+      <Link to="/" className="text-3xl font-extrabold text-orange-600 tracking-wide">
+        Freela <span className="text-gray-800">Já</span>
+      </Link>
 
-        {!usuarioLogado && (
-          <>
-            <Link to="/cadastro" className="hover:underline">Cadastro</Link>
-            <Link to="/login" className="hover:underline">Login</Link>
-          </>
-        )}
-
-        {usuarioLogado?.tipo === 'freela' && (
-          <Link to="/painel" className="hover:underline">Painel do Chef</Link>
-        )}
-
-        {usuarioLogado?.tipo === 'estabelecimento' && (
-          <Link to="/painel-estabelecimento" className="hover:underline">Painel do Estabelecimento</Link>
-        )}
-
-        {usuarioLogado && (
-          <button
-            onClick={() => {
-              localStorage.removeItem('usuarioLogado')
-              window.location.href = '/'
-            }}
-            className="hover:underline"
-          >
-            Sair
-          </button>
-        )}
+      {/* Menu */}
+      <div className="flex flex-wrap gap-6 items-center text-sm md:text-base mt-4 md:mt-0">
+        <Link to="/cadastro-freela" className="text-gray-700 hover:text-orange-600 transition duration-200">
+          Sou Profissional
+        </Link>
+        <Link to="/cadastro-estabelecimento" className="text-gray-700 hover:text-orange-600 transition duration-200">
+          Sou Estabelecimento
+        </Link>
+        <Link to="/cadastro" className="text-gray-700 hover:text-orange-600 transition duration-200">
+          Vaga Fixa
+        </Link>
+        <Link to="/login" className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 transition duration-200">
+          Login
+        </Link>
       </div>
     </nav>
   )
