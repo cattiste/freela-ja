@@ -74,7 +74,8 @@ function FormFreela() {
 // ⬇️ FORMULÁRIO DO ESTABELECIMENTO
 function FormEstabelecimento() {
   const [dados, setDados] = useState({
-    nome: '',
+    nomeEstabelecimento: '',
+    responsavel: '',
     email: '',
     telefone: '',
     endereco: '',
@@ -97,16 +98,69 @@ function FormEstabelecimento() {
 
     localStorage.setItem('usuarios', JSON.stringify([...usuarios, dados]))
     alert('Cadastro realizado com sucesso!')
-    setDados({ nome: '', email: '', telefone: '', endereco: '', senha: '', tipo: 'estabelecimento' })
+    setDados({
+      nomeEstabelecimento: '',
+      responsavel: '',
+      email: '',
+      telefone: '',
+      endereco: '',
+      senha: '',
+      tipo: 'estabelecimento'
+    })
   }
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-xl bg-white p-6 rounded-lg shadow-md flex flex-col gap-4">
-      <input name="nome" placeholder="Nome do estabelecimento" value={dados.nome} onChange={handleChange} required className="px-4 py-2 border rounded" />
-      <input name="email" type="email" placeholder="E-mail" value={dados.email} onChange={handleChange} required className="px-4 py-2 border rounded" />
-      <input name="telefone" placeholder="Telefone comercial" value={dados.telefone} onChange={handleChange} required className="px-4 py-2 border rounded" />
-      <input name="endereco" placeholder="Endereço completo" value={dados.endereco} onChange={handleChange} required className="px-4 py-2 border rounded" />
-      <input name="senha" type="password" placeholder="Senha" value={dados.senha} onChange={handleChange} required className="px-4 py-2 border rounded" />
+      <input
+        name="nomeEstabelecimento"
+        placeholder="Nome do Estabelecimento"
+        value={dados.nomeEstabelecimento}
+        onChange={handleChange}
+        required
+        className="px-4 py-2 border rounded"
+      />
+      <input
+        name="responsavel"
+        placeholder="Nome do Responsável"
+        value={dados.responsavel}
+        onChange={handleChange}
+        required
+        className="px-4 py-2 border rounded"
+      />
+      <input
+        name="email"
+        type="email"
+        placeholder="E-mail"
+        value={dados.email}
+        onChange={handleChange}
+        required
+        className="px-4 py-2 border rounded"
+      />
+      <input
+        name="telefone"
+        placeholder="Telefone Comercial"
+        value={dados.telefone}
+        onChange={handleChange}
+        required
+        className="px-4 py-2 border rounded"
+      />
+      <input
+        name="endereco"
+        placeholder="Endereço Completo"
+        value={dados.endereco}
+        onChange={handleChange}
+        required
+        className="px-4 py-2 border rounded"
+      />
+      <input
+        name="senha"
+        type="password"
+        placeholder="Senha"
+        value={dados.senha}
+        onChange={handleChange}
+        required
+        className="px-4 py-2 border rounded"
+      />
 
       <button type="submit" className="bg-orange-600 text-white font-bold py-2 rounded hover:bg-orange-700">
         Cadastrar
