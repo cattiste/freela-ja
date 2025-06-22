@@ -1,7 +1,7 @@
 // src/pages/PainelChef.jsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import avatar from '../assets/avatar.svg';
+import avatar from '../assets/avatar.png';
 import alarme from '../assets/alarme.mp3';
 
 const vagasMock = [
