@@ -1,3 +1,5 @@
+// PainelFreela.jsx — versão completa com upload para Cloudinary
+
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FaUserEdit, FaSignOutAlt, FaBell } from 'react-icons/fa'
@@ -11,6 +13,8 @@ export default function PainelFreela() {
   const [chamado, setChamado] = useState(false)
   const [editando, setEditando] = useState(false)
   const [historico, setHistorico] = useState([])
+  const [preview, setPreview] = useState(null)
+  const [tamanhoImagem, setTamanhoImagem] = useState(null)
 
   useEffect(() => {
     const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
@@ -63,13 +67,25 @@ export default function PainelFreela() {
 
   const salvarAlteracoes = () => {
     const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]')
-    const atualizados = usuarios.map(u =>
-      u.email === freela.email ? freela : u
-    )
+    const atualizados = usuarios.map(u => u.email === freela.email ? freela : u)
     localStorage.setItem('usuarios', JSON.stringify(atualizados))
     localStorage.setItem('usuarioLogado', JSON.stringify(freela))
     setEditando(false)
     alert('Perfil atualizado com sucesso!')
+  }
+
+  const uploadParaCloudinary = async (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('upload_preset', 'ml_default')
+
+    const res = await fetch('https://api.cloudinary.com/v1_1/dbemvuau3/image/upload', {
+      method: 'POST',
+      body: formData
+    })
+
+    const data = await res.json()
+    return data.secure_url
   }
 
   return (
@@ -94,13 +110,13 @@ export default function PainelFreela() {
             <div className="mt-6 flex justify-center gap-4">
               <button
                 onClick={() => setEditando(true)}
-                className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md transition"
+                className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md"
               >
                 <FaUserEdit /> Editar Perfil
               </button>
               <button
                 onClick={handleSair}
-                className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-md transition"
+                className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-md"
               >
                 <FaSignOutAlt /> Sair
               </button>
@@ -122,12 +138,8 @@ export default function PainelFreela() {
 
             <div>
               <label className="block text-left text-sm font-medium text-slate-600 mb-1">Foto de Perfil</label>
-              {freela.foto && (
-                <img
-                  src={freela.foto}
-                  alt="Preview"
-                  className="w-24 h-24 object-cover rounded-full mb-2 border-2 border-slate-400"
-                />
+              {preview && (
+                <img src={preview} className="w-24 h-24 object-cover rounded-full mb-2 border-2 border-slate-400" alt="preview" />
               )}
               <input
                 type="file"
@@ -136,37 +148,23 @@ export default function PainelFreela() {
                   const file = e.target.files[0]
                   if (!file) return
 
+                  const tamanhoKB = (file.size / 1024).toFixed(1)
+                  setTamanhoImagem(`${tamanhoKB} KB`)
+
                   if (file.size > 1024 * 1024) {
                     alert('Imagem muito grande. Envie uma com até 1MB.')
                     return
                   }
 
-                  const convertToWebP = async (file) => {
-                    return new Promise((resolve, reject) => {
-                      const img = new Image()
-                      const reader = new FileReader()
-                      reader.onload = () => {
-                        img.src = reader.result
-                      }
-                      img.onload = () => {
-                        const canvas = document.createElement('canvas')
-                        canvas.width = img.width
-                        canvas.height = img.height
-                        const ctx = canvas.getContext('2d')
-                        ctx.drawImage(img, 0, 0)
-                        const webpBase64 = canvas.toDataURL('image/webp', 0.8)
-                        resolve(webpBase64)
-                      }
-                      reader.onerror = reject
-                      reader.readAsDataURL(file)
-                    })
-                  }
-
-                  const webpFoto = await convertToWebP(file)
-                  setFreela({ ...freela, foto: webpFoto })
+                  setPreview(URL.createObjectURL(file))
+                  const urlFinal = await uploadParaCloudinary(file)
+                  setFreela({ ...freela, foto: urlFinal })
                 }}
                 className="w-full p-2 border rounded"
               />
+              {tamanhoImagem && (
+                <p className="text-sm text-slate-500 mt-1">Tamanho estimado: {tamanhoImagem}</p>
+              )}
             </div>
           </div>
 
