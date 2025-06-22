@@ -43,13 +43,13 @@ export default function PainelChef() {
       />
 
       {/* ✅ Informações fixas */}
-      <p className="text-lg font-medium text-gray-800">Nome: João da Silva</p>
-      <p className="text-gray-600">Função: Cozinheiro</p>
-      <p className="text-gray-600">E-mail: joao@email.com</p>
-      <p className="text-gray-600 mb-6">Telefone: (11) 99999-9999</p>
+      <p className="text-3xl font-bold mb-6 text-gray-800">Nome: João da Silva</p>
+      <p className="text-3xl font-bold mb-6 text-gray-600">Função: Cozinheiro</p>
+      <p className="text-3xl font-bold mb-6 text-gray-600">E-mail: joao@email.com</p>
+      <p className="text-3xl font-bold mb-6 text-gray-600">Telefone: (11) 99999-9999</p>
 
       {/* ✅ Botões com estilo da home */}
-      <div className="flex flex-col md:flex-row justify-center gap-4 mb-8">
+      <div className="flex flex-col md:flex-row gap-4 justify-center mt-6">
         <button
           onClick={() => navigate('/cadastrofreela')}
           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow transition-all"
@@ -65,7 +65,7 @@ export default function PainelChef() {
       </div>
 
       {/* ✅ Vagas */}
-      <h2 className="text-2xl font-semibold text-gray-800 mb-4">Vagas Disponíveis</h2>
+      <h2 className="flex flex-col md:flex-row gap-4 justify-center mt-6">Vagas Disponíveis</h2>
       <div className="w-full max-w-xl mb-10">
         {vagasDisponiveis.length === 0 && (
           <p className="text-gray-500">Nenhuma vaga disponível no momento.</p>
