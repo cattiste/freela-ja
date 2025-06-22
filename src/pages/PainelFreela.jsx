@@ -1,7 +1,9 @@
-// src/pages/PainelFreela.jsx
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import somAlarme from '../assets/alarme.mp3' // você pode adicionar esse som
+import { FaUserEdit, FaSignOutAlt, FaBell } from 'react-icons/fa'
+import somAlarme from '../assets/alarme.mp3'
+
+const avatarFallback = 'https://i.imgur.com/3W8i1sT.png' // ou qualquer URL de avatar padrão
 
 export default function PainelFreela() {
   const navigate = useNavigate()
@@ -43,31 +45,60 @@ export default function PainelFreela() {
   }
 
   return (
-    <div className="p-4 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Painel do Freelancer</h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-300 flex flex-col items-center p-6">
+      <div className="bg-white shadow-lg rounded-xl p-6 w-full max-w-md text-center">
+        <h1 className="text-3xl font-bold text-slate-800 mb-6">👨‍🍳 Painel do Freelancer</h1>
 
-      {freela && (
-        <div className="bg-white shadow-md p-4 rounded-lg mb-4">
-          <img src={freela.foto || 'https://via.placeholder.com/100'} alt="foto" className="w-24 h-24 rounded-full mb-2" />
-          <p><strong>Nome:</strong> {freela.nome}</p>
-          <p><strong>Função:</strong> {freela.funcao}</p>
-          <p><strong>Email:</strong> {freela.email}</p>
-          <p><strong>Celular:</strong> {freela.celular}</p>
+        {freela && (
+          <>
+            <img
+              src={freela.foto || avatarFallback}
+              onError={(e) => e.target.src = avatarFallback}
+              alt="Foto do Freela"
+              className="w-28 h-28 rounded-full mx-auto mb-4 object-cover border-4 border-slate-300"
+            />
+            <h2 className="text-xl font-semibold text-slate-700">{freela.nome}</h2>
+            <p className="text-slate-600 mb-1"><strong>Função:</strong> {freela.funcao}</p>
+            <p className="text-slate-600 mb-1"><strong>Email:</strong> {freela.email}</p>
+            <p className="text-slate-600"><strong>Celular:</strong> {freela.celular}</p>
 
-          <div className="mt-4 flex gap-4">
-            <button onClick={() => alert('Funcionalidade futura')} className="bg-yellow-500 text-white px-4 py-2 rounded">Editar Perfil</button>
-            <button onClick={handleSair} className="bg-red-500 text-white px-4 py-2 rounded">Sair</button>
-          </div>
-        </div>
-      )}
+            <div className="mt-6 flex justify-center gap-4">
+              <button
+                onClick={() => alert('Função futura')}
+                className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md transition"
+              >
+                <FaUserEdit /> Editar Perfil
+              </button>
+              <button
+                onClick={handleSair}
+                className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-md transition"
+              >
+                <FaSignOutAlt /> Sair
+              </button>
+            </div>
+          </>
+        )}
+      </div>
 
       {chamado && (
-        <div className="bg-red-100 border border-red-400 p-4 rounded-lg">
-          <h2 className="text-xl font-semibold text-red-700 mb-2">🚨 Você foi chamado!</h2>
-          <p>Um estabelecimento solicitou seus serviços. Deseja aceitar?</p>
-          <div className="flex gap-4 mt-2">
-            <button onClick={handleAceitar} className="bg-green-600 text-white px-4 py-2 rounded">Aceitar</button>
-            <button onClick={handleRecusar} className="bg-gray-500 text-white px-4 py-2 rounded">Recusar</button>
+        <div className="mt-6 w-full max-w-md bg-red-100 border-l-8 border-red-600 p-4 rounded-lg shadow-md">
+          <div className="flex items-center gap-2 text-red-700 text-lg font-bold mb-2">
+            <FaBell className="animate-bounce" /> Você foi chamado!
+          </div>
+          <p className="text-sm text-red-800">Um estabelecimento solicitou seus serviços. Deseja aceitar?</p>
+          <div className="flex justify-center gap-4 mt-4">
+            <button
+              onClick={handleAceitar}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition"
+            >
+              Aceitar
+            </button>
+            <button
+              onClick={handleRecusar}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition"
+            >
+              Recusar
+            </button>
           </div>
         </div>
       )}
