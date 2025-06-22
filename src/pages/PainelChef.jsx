@@ -1,105 +1,96 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-// Alarme simulado
-import alarme from '../assets/alarme.mp3'
-// Fallback se não tiver imagem
-import defaultAvatar from '../assets/avatar-fallback.png'
+import defaultAvatar from '../assets/avatar.png' // fallback se não houver imagem
+import alarmeSound from '../assets/alarme.mp3'
 
 export default function PainelChef() {
   const navigate = useNavigate()
-  const [imagemFreela, setImagemFreela] = useState(null)
+  const [vagasDisponiveis, setVagasDisponiveis] = useState([])
   const [candidaturas, setCandidaturas] = useState([])
-  const [vagas, setVagas] = useState([
-    { id: 1, titulo: 'Garçom para evento', local: 'São Paulo - SP' },
-    { id: 2, titulo: 'Cozinheiro noturno', local: 'Santo André - SP' }
-  ])
+  const [imagemFreela, setImagemFreela] = useState(null)
 
   useEffect(() => {
+    const vagas = JSON.parse(localStorage.getItem('vagas')) || []
     const candidaturasSalvas = JSON.parse(localStorage.getItem('candidaturas')) || []
+    const imagem = localStorage.getItem('imagemFreela')
+    setVagasDisponiveis(vagas)
     setCandidaturas(candidaturasSalvas)
+    setImagemFreela(imagem)
   }, [])
 
-  function handleCandidatar(vaga) {
-    const novas = [...candidaturas, vaga]
-    setCandidaturas(novas)
-    localStorage.setItem('candidaturas', JSON.stringify(novas))
+  const handleCandidatar = (vaga) => {
+    if (!candidaturas.includes(vaga)) {
+      const atualizadas = [...candidaturas, vaga]
+      setCandidaturas(atualizadas)
+      localStorage.setItem('candidaturas', JSON.stringify(atualizadas))
+    }
   }
 
-  function tocarAlarme() {
-    const audio = new Audio(alarme)
+  const tocarAlarme = () => {
+    const audio = new Audio(alarmeSound)
     audio.play()
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 text-center">
-      <h1 className="text-3xl font-bold mb-6">Painel do Freelancer</h1>
+    <div className="min-h-screen flex flex-col items-center justify-start p-6 bg-gray-50 text-center">
+      <h1 className="text-3xl font-bold mb-4 text-gray-800">Painel do Freelancer</h1>
 
-      {/* Imagem com fallback */}
-      <div className="flex justify-center mb-4">
-        <img
-          src={imagemFreela || defaultAvatar}
-          alt="Foto do Freelancer"
-          className="w-40 h-40 object-cover rounded-full shadow-lg border"
-          onError={(e) => (e.target.src = defaultAvatar)}
-        />
-      </div>
+      <img
+        src={imagemFreela || defaultAvatar}
+        alt="Foto do Freelancer"
+        className="w-40 h-40 object-cover rounded-full shadow-lg border-2 border-gray-300 mb-4"
+      />
 
-      {/* Dados básicos */}
-      <div className="mb-4">
-        <p><strong>Nome:</strong> João Silva</p>
-        <p><strong>Função:</strong> Cozinheiro</p>
-        <p><strong>Email:</strong> joao@email.com</p>
-        <p><strong>Telefone:</strong> (11) 99999-9999</p>
-      </div>
+      <p className="text-lg font-medium text-gray-700">Nome: João da Silva</p>
+      <p className="text-gray-600">Função: Cozinheiro</p>
+      <p className="text-gray-600">E-mail: joao@email.com</p>
+      <p className="text-gray-600 mb-6">Telefone: (11) 99999-9999</p>
 
-      {/* Botões padrão */}
       <div className="flex flex-col md:flex-row justify-center gap-4 mb-6">
-        <button onClick={() => navigate('/cadastrofreela')} className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow hover:bg-blue-700 transition">
+        <button
+          onClick={() => navigate('/cadastrofreela')}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-xl shadow transition-all duration-200"
+        >
           Editar Perfil
         </button>
-        <button onClick={() => navigate('/')} className="bg-red-500 text-white px-6 py-2 rounded-lg shadow hover:bg-red-600 transition">
+
+        <button
+          onClick={() => navigate('/')}
+          className="bg-red-500 hover:bg-red-600 text-white font-semibold px-6 py-2 rounded-xl shadow transition-all duration-200"
+        >
           Sair
         </button>
       </div>
 
-      {/* Vagas disponíveis */}
-      <h2 className="text-2xl font-semibold mb-4">Vagas Disponíveis</h2>
-      <ul className="space-y-3 mb-8">
-        {vagas.map((vaga) => (
-          <li key={vaga.id} className="border p-4 rounded-lg shadow">
-            <p className="font-semibold">{vaga.titulo}</p>
-            <p className="text-sm text-gray-600">{vaga.local}</p>
-            {!candidaturas.find((v) => v.id === vaga.id) && (
-              <button
-                onClick={() => handleCandidatar(vaga)}
-                className="mt-2 bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700 transition"
-              >
-                Candidatar-se
-              </button>
-            )}
-          </li>
+      <h2 className="text-2xl font-semibold text-gray-800 mt-4 mb-2">Vagas Disponíveis</h2>
+      <div className="w-full max-w-xl mb-10">
+        {vagasDisponiveis.length === 0 && <p className="text-gray-500">Nenhuma vaga disponível no momento.</p>}
+        {vagasDisponiveis.map((vaga, index) => (
+          <div key={index} className="bg-white p-4 rounded-lg shadow mb-4">
+            <p className="font-bold text-gray-700">{vaga}</p>
+            <button
+              onClick={() => handleCandidatar(vaga)}
+              className="mt-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-1 rounded-lg shadow transition-all"
+            >
+              Candidatar-se
+            </button>
+          </div>
         ))}
-      </ul>
+      </div>
 
-      {/* Minhas candidaturas */}
-      <h2 className="text-2xl font-semibold mb-4">Minhas Candidaturas</h2>
-      {candidaturas.length === 0 ? (
-        <p className="text-gray-500">Nenhuma candidatura ainda.</p>
-      ) : (
-        <ul className="space-y-3 mb-8">
-          {candidaturas.map((vaga, index) => (
-            <li key={index} className="border p-4 rounded-lg shadow">
-              <p className="font-semibold">{vaga.titulo}</p>
-              <p className="text-sm text-gray-600">{vaga.local}</p>
-            </li>
-          ))}
-        </ul>
-      )}
+      <h2 className="text-2xl font-semibold text-gray-800 mb-2">Minhas Candidaturas</h2>
+      <div className="w-full max-w-xl">
+        {candidaturas.length === 0 && <p className="text-gray-500">Você ainda não se candidatou a nenhuma vaga.</p>}
+        {candidaturas.map((vaga, index) => (
+          <div key={index} className="bg-yellow-50 p-4 rounded-lg border border-yellow-300 shadow mb-2">
+            <p className="text-yellow-800 font-medium">{vaga}</p>
+          </div>
+        ))}
+      </div>
 
-      {/* Simular chamado */}
       <button
         onClick={tocarAlarme}
-        className="bg-yellow-500 text-black font-semibold px-6 py-2 rounded-lg shadow hover:bg-yellow-600 transition"
+        className="mt-8 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-6 py-2 rounded-xl shadow transition-all duration-200"
       >
         Simular Chamado (Alarme)
       </button>
