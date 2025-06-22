@@ -111,29 +111,63 @@ export default function PainelFreela() {
 
       {editando && freela && (
         <div className="mt-6 bg-slate-50 p-4 rounded-lg shadow-inner w-full max-w-md">
-          <h3 className="text-lg font-semibold mb-2 text-slate-700">Editar Perfil</h3>
+          <h3 className="text-lg font-semibold mb-3 text-slate-700">Editar Perfil</h3>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <input type="text" value={freela.nome} onChange={e => setFreela({ ...freela, nome: e.target.value })} placeholder="Nome" className="w-full p-2 border rounded" />
             <input type="email" value={freela.email} onChange={e => setFreela({ ...freela, email: e.target.value })} placeholder="Email" className="w-full p-2 border rounded" />
             <input type="text" value={freela.celular} onChange={e => setFreela({ ...freela, celular: e.target.value })} placeholder="Celular" className="w-full p-2 border rounded" />
             <input type="text" value={freela.endereco} onChange={e => setFreela({ ...freela, endereco: e.target.value })} placeholder="Endereço" className="w-full p-2 border rounded" />
             <input type="text" value={freela.funcao} onChange={e => setFreela({ ...freela, funcao: e.target.value })} placeholder="Função" className="w-full p-2 border rounded" />
 
-            <input
-              type="file"
-              accept="image/*"
-              onChange={e => {
-                const file = e.target.files[0]
-                if (!file) return
-                const reader = new FileReader()
-                reader.onloadend = () => {
-                  setFreela({ ...freela, foto: reader.result })
-                }
-                reader.readAsDataURL(file)
-              }}
-              className="w-full p-2 border rounded"
-            />
+            <div>
+              <label className="block text-left text-sm font-medium text-slate-600 mb-1">Foto de Perfil</label>
+              {freela.foto && (
+                <img
+                  src={freela.foto}
+                  alt="Preview"
+                  className="w-24 h-24 object-cover rounded-full mb-2 border-2 border-slate-400"
+                />
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files[0]
+                  if (!file) return
+
+                  if (file.size > 1024 * 1024) {
+                    alert('Imagem muito grande. Envie uma com até 1MB.')
+                    return
+                  }
+
+                  const convertToWebP = async (file) => {
+                    return new Promise((resolve, reject) => {
+                      const img = new Image()
+                      const reader = new FileReader()
+                      reader.onload = () => {
+                        img.src = reader.result
+                      }
+                      img.onload = () => {
+                        const canvas = document.createElement('canvas')
+                        canvas.width = img.width
+                        canvas.height = img.height
+                        const ctx = canvas.getContext('2d')
+                        ctx.drawImage(img, 0, 0)
+                        const webpBase64 = canvas.toDataURL('image/webp', 0.8)
+                        resolve(webpBase64)
+                      }
+                      reader.onerror = reject
+                      reader.readAsDataURL(file)
+                    })
+                  }
+
+                  const webpFoto = await convertToWebP(file)
+                  setFreela({ ...freela, foto: webpFoto })
+                }}
+                className="w-full p-2 border rounded"
+              />
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 mt-4">
