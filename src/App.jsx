@@ -5,7 +5,7 @@ import Home from './pages/Home'
 import Sobre from './pages/Sobre'
 import Cadastro from './pages/Cadastro'
 import Login from './pages/Login'
-import PainelChef from './pages/PainelChef'
+import PainelChef from './pages/PainelFreela'
 import PainelEstabelecimento from './pages/PainelEstabelecimento'
 import Contratar from './pages/Contratar'
 import Perfil from './pages/Perfil'
@@ -21,7 +21,7 @@ function App() {
         <Route path="/sobre" element={<Sobre />} />
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/painel" element={<PainelChef />} />
+        <Route path="/painel" element={<PainelFreela />} />
         <Route path="/contratar" element={<Contratar />} />
         <Route path="/cadastrofreela" element={<CadastroFreela />} />
         <Route path="/cadastro-estabelecimento" element={<CadastroEstabelecimento />} />
