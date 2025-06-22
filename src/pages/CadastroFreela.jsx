@@ -1,8 +1,5 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import './Home.css'
-
-const avatarFallback = 'https://i.imgur.com/3W8i1sT.png'
 
 export default function CadastroFreela() {
   const navigate = useNavigate()
@@ -31,7 +28,7 @@ export default function CadastroFreela() {
 
     const formData = new FormData()
     formData.append('file', file)
-    formData.append('upload_preset', 'ml_default') // use o preset criado no Cloudinary
+    formData.append('upload_preset', 'ml_default')
     formData.append('cloud_name', 'dbemvuau3')
 
     const res = await fetch('https://api.cloudinary.com/v1_1/dbemvuau3/image/upload', {
@@ -73,30 +70,51 @@ export default function CadastroFreela() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-300 flex items-center justify-center p-4">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-md w-full max-w-md space-y-4">
-        <h2 className="text-2xl font-bold text-slate-800 text-center mb-4">Cadastro do Freelancer</h2>
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-300 flex items-center justify-center px-4">
+      <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-xl space-y-6">
+        <h2 className="text-3xl font-bold text-slate-800 text-center mb-4">Cadastro do Freelancer</h2>
 
-        <input type="text" placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="password" placeholder="Senha" value={senha} onChange={e => setSenha(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="text" placeholder="Celular" value={celular} onChange={e => setCelular(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="text" placeholder="Endereço" value={endereco} onChange={e => setEndereco(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="text" placeholder="Função" value={funcao} onChange={e => setFuncao(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Nome completo"
+          value={nome} onChange={e => setNome(e.target.value)}
+          className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-400 outline-none text-lg"
+        />
+        <input type="email" placeholder="Email"
+          value={email} onChange={e => setEmail(e.target.value)}
+          className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-400 outline-none text-lg"
+        />
+        <input type="password" placeholder="Senha"
+          value={senha} onChange={e => setSenha(e.target.value)}
+          className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-400 outline-none text-lg"
+        />
+        <input type="text" placeholder="Celular"
+          value={celular} onChange={e => setCelular(e.target.value)}
+          className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-400 outline-none text-lg"
+        />
+        <input type="text" placeholder="Endereço"
+          value={endereco} onChange={e => setEndereco(e.target.value)}
+          className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-400 outline-none text-lg"
+        />
+        <input type="text" placeholder="Função"
+          value={funcao} onChange={e => setFuncao(e.target.value)}
+          className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-400 outline-none text-lg"
+        />
 
         <div>
-          <label className="block font-medium mb-1">Foto de Perfil</label>
-          <input type="file" accept="image/*" onChange={handleUploadImagem} className="w-full p-2 border rounded" />
+          <label className="block text-slate-700 font-medium mb-2">Foto de Perfil</label>
+          <input type="file" accept="image/*" onChange={handleUploadImagem}
+            className="w-full px-4 py-2 rounded-xl border border-slate-300 bg-slate-50"
+          />
           {preview && (
-            <div className="mt-2">
+            <div className="mt-2 text-center">
               <p className="text-sm text-gray-500">Tamanho: {tamanhoImagem}</p>
-              <img src={preview} alt="Preview" className="w-24 h-24 rounded-full object-cover border mt-2" />
+              <img src={preview} alt="Preview" className="w-28 h-28 rounded-full object-cover border-4 mx-auto mt-2 border-slate-300" />
             </div>
           )}
         </div>
 
-        <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white w-full py-2 rounded-lg font-semibold">
-          Cadastrar
+        <button type="submit"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition shadow-md text-lg">
+          Finalizar Cadastro
         </button>
       </form>
     </div>
