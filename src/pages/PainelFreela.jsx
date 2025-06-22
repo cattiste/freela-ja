@@ -1,5 +1,4 @@
-// PainelFreela.jsx — versão completa com upload para Cloudinary
-
+// src/pages/PainelFreela.jsx
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FaUserEdit, FaSignOutAlt, FaBell } from 'react-icons/fa'
@@ -13,7 +12,6 @@ export default function PainelFreela() {
   const [chamado, setChamado] = useState(false)
   const [editando, setEditando] = useState(false)
   const [historico, setHistorico] = useState([])
-  const [preview, setPreview] = useState(null)
   const [tamanhoImagem, setTamanhoImagem] = useState(null)
 
   useEffect(() => {
@@ -67,17 +65,31 @@ export default function PainelFreela() {
 
   const salvarAlteracoes = () => {
     const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]')
-    const atualizados = usuarios.map(u => u.email === freela.email ? freela : u)
+    const atualizados = usuarios.map(u =>
+      u.email === freela.email ? freela : u
+    )
     localStorage.setItem('usuarios', JSON.stringify(atualizados))
     localStorage.setItem('usuarioLogado', JSON.stringify(freela))
     setEditando(false)
     alert('Perfil atualizado com sucesso!')
   }
 
-  const uploadParaCloudinary = async (file) => {
+  const handleUploadFoto = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    const tamanhoKB = (file.size / 1024).toFixed(1)
+    setTamanhoImagem(`${tamanhoKB} KB`)
+
+    if (file.size > 1024 * 1024) {
+      alert('Imagem muito grande. Envie uma com até 1MB.')
+      return
+    }
+
     const formData = new FormData()
     formData.append('file', file)
     formData.append('upload_preset', 'ml_default')
+    formData.append('cloud_name', 'dbemvuau3')
 
     const res = await fetch('https://api.cloudinary.com/v1_1/dbemvuau3/image/upload', {
       method: 'POST',
@@ -85,7 +97,7 @@ export default function PainelFreela() {
     })
 
     const data = await res.json()
-    return data.secure_url
+    setFreela({ ...freela, foto: data.secure_url })
   }
 
   return (
@@ -110,13 +122,13 @@ export default function PainelFreela() {
             <div className="mt-6 flex justify-center gap-4">
               <button
                 onClick={() => setEditando(true)}
-                className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md"
+                className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md transition"
               >
                 <FaUserEdit /> Editar Perfil
               </button>
               <button
                 onClick={handleSair}
-                className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-md"
+                className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-md transition"
               >
                 <FaSignOutAlt /> Sair
               </button>
@@ -138,28 +150,17 @@ export default function PainelFreela() {
 
             <div>
               <label className="block text-left text-sm font-medium text-slate-600 mb-1">Foto de Perfil</label>
-              {preview && (
-                <img src={preview} className="w-24 h-24 object-cover rounded-full mb-2 border-2 border-slate-400" alt="preview" />
+              {freela.foto && (
+                <img
+                  src={freela.foto}
+                  alt="Preview"
+                  className="w-24 h-24 object-cover rounded-full mb-2 border-2 border-slate-400"
+                />
               )}
               <input
                 type="file"
                 accept="image/*"
-                onChange={async (e) => {
-                  const file = e.target.files[0]
-                  if (!file) return
-
-                  const tamanhoKB = (file.size / 1024).toFixed(1)
-                  setTamanhoImagem(`${tamanhoKB} KB`)
-
-                  if (file.size > 1024 * 1024) {
-                    alert('Imagem muito grande. Envie uma com até 1MB.')
-                    return
-                  }
-
-                  setPreview(URL.createObjectURL(file))
-                  const urlFinal = await uploadParaCloudinary(file)
-                  setFreela({ ...freela, foto: urlFinal })
-                }}
+                onChange={handleUploadFoto}
                 className="w-full p-2 border rounded"
               />
               {tamanhoImagem && (
