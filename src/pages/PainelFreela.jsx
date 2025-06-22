@@ -61,6 +61,8 @@ export default function PainelFreela() {
             <p className="text-slate-600 mb-1"><strong>Função:</strong> {freela.funcao}</p>
             <p className="text-slate-600 mb-1"><strong>Email:</strong> {freela.email}</p>
             <p className="text-slate-600"><strong>Celular:</strong> {freela.celular}</p>
+            <p className="text-slate-600"><strong>Endereço:</strong> {freela.endereco}</p>
+
 
             <div className="mt-6 flex justify-center gap-4">
               <button
