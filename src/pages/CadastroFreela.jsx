@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import './CadastroFreela.css'
 
 export default function CadastroFreela() {
   const navigate = useNavigate()
@@ -71,50 +70,78 @@ export default function CadastroFreela() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-300 flex items-center justify-center px-4">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-xl space-y-6">
-        <h2 className="text-3xl font-bold text-slate-800 text-center mb-4">Cadastro do Freelancer</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-100 to-slate-200 p-4">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-xl bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl p-10 space-y-6 border border-slate-200"
+      >
+        <h2 className="text-4xl font-bold text-slate-800 text-center mb-6">Cadastro do Freelancer</h2>
 
-        <input type="text" placeholder="Nome completo"
-          value={nome} onChange={e => setNome(e.target.value)}
-          className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-400 outline-none text-lg"
-        />
-        <input type="email" placeholder="Email"
-          value={email} onChange={e => setEmail(e.target.value)}
-          className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-400 outline-none text-lg"
-        />
-        <input type="password" placeholder="Senha"
-          value={senha} onChange={e => setSenha(e.target.value)}
-          className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-400 outline-none text-lg"
-        />
-        <input type="text" placeholder="Celular"
-          value={celular} onChange={e => setCelular(e.target.value)}
-          className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-400 outline-none text-lg"
-        />
-        <input type="text" placeholder="Endereço"
-          value={endereco} onChange={e => setEndereco(e.target.value)}
-          className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-400 outline-none text-lg"
-        />
-        <input type="text" placeholder="Função"
-          value={funcao} onChange={e => setFuncao(e.target.value)}
-          className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-400 outline-none text-lg"
+        {preview && (
+          <div className="flex flex-col items-center">
+            <img
+              src={preview}
+              alt="Preview"
+              className="w-28 h-28 object-cover rounded-full border-4 border-blue-400 shadow-md"
+            />
+            <p className="text-sm text-slate-600 mt-1">Tamanho: {tamanhoImagem}</p>
+          </div>
+        )}
+
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleUploadImagem}
+          className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
 
-        <div>
-          <label className="block text-slate-700 font-medium mb-2">Foto de Perfil</label>
-          <input type="file" accept="image/*" onChange={handleUploadImagem}
-            className="w-full px-4 py-2 rounded-xl border border-slate-300 bg-slate-50"
-          />
-          {preview && (
-            <div className="mt-2 text-center">
-              <p className="text-sm text-gray-500">Tamanho: {tamanhoImagem}</p>
-              <img src={preview} alt="Preview" className="w-28 h-28 rounded-full object-cover border-4 mx-auto mt-2 border-slate-300" />
-            </div>
-          )}
-        </div>
+        <input
+          type="text"
+          placeholder="Nome completo"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          className="w-full p-4 text-lg border border-slate-300 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+        />
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full p-4 text-lg border border-slate-300 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+        />
+        <input
+          type="password"
+          placeholder="Senha"
+          value={senha}
+          onChange={(e) => setSenha(e.target.value)}
+          className="w-full p-4 text-lg border border-slate-300 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+        />
+        <input
+          type="text"
+          placeholder="Celular"
+          value={celular}
+          onChange={(e) => setCelular(e.target.value)}
+          className="w-full p-4 text-lg border border-slate-300 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+        />
+        <input
+          type="text"
+          placeholder="Endereço"
+          value={endereco}
+          onChange={(e) => setEndereco(e.target.value)}
+          className="w-full p-4 text-lg border border-slate-300 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+        />
+        <input
+          type="text"
+          placeholder="Função"
+          value={funcao}
+          onChange={(e) => setFuncao(e.target.value)}
+          className="w-full p-4 text-lg border border-slate-300 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+        />
 
-        <button type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition shadow-md text-lg">
+        <button
+          type="submit"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold py-4 rounded-xl shadow-md transition-all"
+        >
           Finalizar Cadastro
         </button>
       </form>
