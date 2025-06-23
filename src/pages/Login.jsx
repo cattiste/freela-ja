@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import './Home.css' // Reutiliza o mesmo estilo visual da plataforma
 
 export default function Login() {
   const [email, setEmail] = useState('')
