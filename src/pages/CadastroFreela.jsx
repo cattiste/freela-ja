@@ -132,8 +132,8 @@ export default function CadastroFreela() {
             className="w-24 h-24 rounded-full object-cover border-2 border-orange-500 mx-auto"
           />
           <p className="text-sm text-gray-600 mt-1">Pré-visualização da sua foto</p>
+       </div>
         )}
-
         <button type="submit" className="home-button">
           Cadastrar
         </button>
