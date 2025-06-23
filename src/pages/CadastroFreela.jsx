@@ -83,105 +83,106 @@ export default function CadastroFreela() {
   }
 
   return (
-  <>
-    <div className="w-full max-w-md flex justify-between fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
-      <button
-        onClick={() => navigate(-1)}
-        className="botao-voltar-home"
-        aria-label="Voltar"
-        style={{ left: '20px', right: 'auto', position: 'fixed' }}
-      >
-        ← Voltar
-      </button>
-
-      <button
-        onClick={() => navigate('/')}
-        className="botao-voltar-home botao-home-painel"
-        aria-label="Home"
-        style={{ right: '20px', left: 'auto', position: 'fixed' }}
-      >
-        🏠 Home
-      </button>
-    </div>
-
-    <div className="home-container">
-      <h1 className="home-title">Cadastro Freelancer</h1>
-
-      <form onSubmit={handleSubmit}>
-        <label>Nome completo</label>
-        <input
-          type="text"
-          placeholder="Nome completo"
-          value={nome}
-          onChange={e => setNome(e.target.value)}
-          className="input"
-          required
-        />
-        <label>Email</label>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          className="input"
-          required
-        />
-        <label>Senha</label>
-        <input
-          type="password"
-          placeholder="Senha"
-          value={senha}
-          onChange={e => setSenha(e.target.value)}
-          className="input"
-          required
-        />
-        <label>Celular</label>
-        <input
-          type="text"
-          placeholder="Celular"
-          value={celular}
-          onChange={e => setCelular(e.target.value)}
-          className="input"
-          required
-        />
-        <label>Endereço</label>
-        <input
-          type="text"
-          placeholder="Endereço"
-          value={endereco}
-          onChange={e => setEndereco(e.target.value)}
-          className="input"
-          required
-        />
-        <label>Função (ex: Cozinheiro, Garçom)</label>
-        <input
-          type="text"
-          placeholder="Função"
-          value={funcao}
-          onChange={e => setFuncao(e.target.value)}
-          className="input"
-          required
-        />
-        <label>Foto de Perfil</label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFotoChange}
-        />
-        {foto && (
-          <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-            <img
-              src={foto}
-              alt="Preview da foto"
-              className="w-24 h-24 rounded-full object-cover border-2 border-orange-500 mx-auto"
-            />
-            <p className="text-sm text-gray-600 mt-1">Pré-visualização da sua foto</p>
-          </div>
-        )}
-        <button type="submit" className="home-button">
-          Cadastrar
+    <>
+      <div className="w-full max-w-md flex justify-between fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
+        <button
+          onClick={() => navigate(-1)}
+          className="botao-voltar-home"
+          aria-label="Voltar"
+          style={{ left: '20px', right: 'auto', position: 'fixed' }}
+        >
+          ← Voltar
         </button>
-      </form>
-    </div>
-  </>
-)
+
+        <button
+          onClick={() => navigate('/')}
+          className="botao-voltar-home botao-home-painel"
+          aria-label="Home"
+          style={{ right: '20px', left: 'auto', position: 'fixed' }}
+        >
+          🏠 Home
+        </button>
+      </div>
+
+      <div className="home-container">
+        <h1 className="home-title">Cadastro Freelancer</h1>
+
+        <form onSubmit={handleSubmit}>
+          <label>Nome completo</label>
+          <input
+            type="text"
+            placeholder="Nome completo"
+            value={nome}
+            onChange={e => setNome(e.target.value)}
+            className="input"
+            required
+          />
+          <label>Email</label>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            className="input"
+            required
+          />
+          <label>Senha</label>
+          <input
+            type="password"
+            placeholder="Senha"
+            value={senha}
+            onChange={e => setSenha(e.target.value)}
+            className="input"
+            required
+          />
+          <label>Celular</label>
+          <input
+            type="text"
+            placeholder="Celular"
+            value={celular}
+            onChange={e => setCelular(e.target.value)}
+            className="input"
+            required
+          />
+          <label>Endereço</label>
+          <input
+            type="text"
+            placeholder="Endereço"
+            value={endereco}
+            onChange={e => setEndereco(e.target.value)}
+            className="input"
+            required
+          />
+          <label>Função (ex: Cozinheiro, Garçom)</label>
+          <input
+            type="text"
+            placeholder="Função"
+            value={funcao}
+            onChange={e => setFuncao(e.target.value)}
+            className="input"
+            required
+          />
+          <label>Foto de Perfil</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFotoChange}
+          />
+          {foto && (
+            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+              <img
+                src={foto}
+                alt="Preview da foto"
+                className="w-24 h-24 rounded-full object-cover border-2 border-orange-500 mx-auto"
+              />
+              <p className="text-sm text-gray-600 mt-1">Pré-visualização da sua foto</p>
+            </div>
+          )}
+          <button type="submit" className="home-button">
+            Cadastrar
+          </button>
+        </form>
+      </div>
+    </>
+  )
+}
