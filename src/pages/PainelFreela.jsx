@@ -260,4 +260,17 @@ export default function PainelFreela() {
 
         {historico.length > 0 && (
           <div className="mt-8 w-full max-w-md bg-white p-4 rounded-lg shadow">
-            <h
+            <h3 className="text-xl font-semibold mb-3">📋 Histórico de Chamados</h3>
+            <ul className="space-y-2 text-sm text-slate-700">
+              {historico.map((item, index) => (
+                <li key={index} className="border-b pb-2">
+                  <span className="font-bold">{item.status}</span> em {item.data}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
