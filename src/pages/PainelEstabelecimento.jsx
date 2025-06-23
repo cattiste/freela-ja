@@ -1,3 +1,19 @@
+<button
+  onClick={() => navigate(-1)}
+  className="botao-voltar-home"
+  aria-label="Voltar"
+>
+  ← Voltar
+</button>
+
+<button
+  onClick={() => navigate('/')}
+  className="botao-voltar-home botao-home-painel"
+  aria-label="Home"
+>
+  🏠 Home
+</button>
+
 // src/pages/PainelEstabelecimento.jsx
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
