@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FaUserEdit, FaSignOutAlt, FaBell } from 'react-icons/fa'
 import somAlarme from '../assets/alarme.mp3'
+import './Home.css'
 
 const avatarFallback = 'https://i.imgur.com/3W8i1sT.png'
 
@@ -111,7 +112,7 @@ export default function PainelFreela() {
               src={freela.foto || avatarFallback}
               onError={(e) => e.target.src = avatarFallback}
               alt="Foto do Freela"
-              className="w-28 h-28 rounded-full mx-auto mb-4 object-cover border-4 border-slate-300"
+              className="w-28 h-28 rounded-full mx-auto mb-4 object-cover border-4 border-slate-300 shadow-sm"
             />
             <h2 className="text-xl font-semibold text-slate-700">{freela.nome}</h2>
             <p className="text-slate-600 mb-1"><strong>Função:</strong> {freela.funcao}</p>
@@ -142,11 +143,11 @@ export default function PainelFreela() {
           <h3 className="text-lg font-semibold mb-3 text-slate-700">Editar Perfil</h3>
 
           <div className="space-y-3">
-            <input type="text" value={freela.nome} onChange={e => setFreela({ ...freela, nome: e.target.value })} placeholder="Nome" className="w-full p-2 border rounded" />
-            <input type="email" value={freela.email} onChange={e => setFreela({ ...freela, email: e.target.value })} placeholder="Email" className="w-full p-2 border rounded" />
-            <input type="text" value={freela.celular} onChange={e => setFreela({ ...freela, celular: e.target.value })} placeholder="Celular" className="w-full p-2 border rounded" />
-            <input type="text" value={freela.endereco} onChange={e => setFreela({ ...freela, endereco: e.target.value })} placeholder="Endereço" className="w-full p-2 border rounded" />
-            <input type="text" value={freela.funcao} onChange={e => setFreela({ ...freela, funcao: e.target.value })} placeholder="Função" className="w-full p-2 border rounded" />
+            <input type="text" value={freela.nome} onChange={e => setFreela({ ...freela, nome: e.target.value })} placeholder="Nome" className="input" />
+            <input type="email" value={freela.email} onChange={e => setFreela({ ...freela, email: e.target.value })} placeholder="Email" className="input" />
+            <input type="text" value={freela.celular} onChange={e => setFreela({ ...freela, celular: e.target.value })} placeholder="Celular" className="input" />
+            <input type="text" value={freela.endereco} onChange={e => setFreela({ ...freela, endereco: e.target.value })} placeholder="Endereço" className="input" />
+            <input type="text" value={freela.funcao} onChange={e => setFreela({ ...freela, funcao: e.target.value })} placeholder="Função" className="input" />
 
             <div>
               <label className="block text-left text-sm font-medium text-slate-600 mb-1">Foto de Perfil</label>
@@ -154,14 +155,14 @@ export default function PainelFreela() {
                 <img
                   src={freela.foto}
                   alt="Preview"
-                  className="w-24 h-24 object-cover rounded-full mb-2 border-2 border-slate-400"
+                  className="w-24 h-24 object-cover rounded-full mb-2 border-2 border-slate-400 shadow-sm"
                 />
               )}
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleUploadFoto}
-                className="w-full p-2 border rounded"
+                className="input"
               />
               {tamanhoImagem && (
                 <p className="text-sm text-slate-500 mt-1">Tamanho estimado: {tamanhoImagem}</p>

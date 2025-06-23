@@ -24,22 +24,22 @@ export default function PainelEstabelecimento() {
         return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) }
       }
     } catch (error) {
-      console.error("Erro ao geolocalizar endereço do estabelecimento:", error)
+      console.error("Erro ao geolocalizar endereço:", error)
     }
     return null
   }
 
   const calcularDistancia = (coord1, coord2) => {
     if (!coord1 || !coord2) return Infinity
-    const toRad = (deg) => (deg * Math.PI) / 180
+    const toRad = deg => deg * Math.PI / 180
     const R = 6371 // km
     const dLat = toRad(coord2.lat - coord1.lat)
     const dLon = toRad(coord2.lon - coord1.lon)
     const a =
       Math.sin(dLat / 2) ** 2 +
       Math.cos(toRad(coord1.lat)) *
-        Math.cos(toRad(coord2.lat)) *
-        Math.sin(dLon / 2) ** 2
+      Math.cos(toRad(coord2.lat)) *
+      Math.sin(dLon / 2) ** 2
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
     return R * c
   }
@@ -50,7 +50,10 @@ export default function PainelEstabelecimento() {
     if (!coords) return alert('Não foi possível localizar o endereço.')
 
     const filtrados = freelas
-      .map(f => ({ ...f, distancia: calcularDistancia(coords, f.coordenadas) }))
+      .map(f => ({
+        ...f,
+        distancia: calcularDistancia(coords, f.coordenadas)
+      }))
       .filter(f => f.distancia !== Infinity)
       .sort((a, b) => a.distancia - b.distancia)
 
@@ -58,37 +61,40 @@ export default function PainelEstabelecimento() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6 text-center">
-      <h1 className="text-3xl font-bold text-gray-800 mb-4">Painel do Estabelecimento</h1>
+    <div className="min-h-screen bg-orange-50 p-6 text-center">
+      <h1 className="text-3xl font-bold text-orange-700 mb-6">📍 Painel do Estabelecimento</h1>
 
-      <div className="max-w-xl mx-auto mb-6">
+      <div className="max-w-xl mx-auto mb-6 bg-white rounded-lg p-6 shadow">
         <input
           type="text"
           value={enderecoEstab}
           onChange={(e) => setEnderecoEstab(e.target.value)}
           placeholder="Digite o endereço do seu estabelecimento"
-          className="input w-full mb-4"
+          className="input mb-4"
         />
         <button
           onClick={filtrarProximos}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded"
+          className="home-button w-full"
         >
           Buscar Freelancers Próximos
         </button>
       </div>
 
-      <div className="max-w-3xl mx-auto">
-        {resultadoFiltro.length === 0 && <p className="text-gray-500">Nenhum freela filtrado ainda.</p>}
+      <div className="max-w-4xl mx-auto">
+        {resultadoFiltro.length === 0 && (
+          <p className="text-gray-500 mb-8">🔎 Nenhum freelancer filtrado ainda.</p>
+        )}
+
         {resultadoFiltro.map((freela, idx) => (
           <div
             key={idx}
-            className="bg-white rounded-lg shadow p-4 mb-4 text-left flex flex-col md:flex-row justify-between items-center"
+            className="bg-white rounded-xl shadow p-4 mb-4 flex flex-col md:flex-row justify-between items-center gap-4"
           >
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 text-left">
               <img
                 src={freela.foto || '/default-avatar.png'}
                 alt="freela"
-                className="w-16 h-16 rounded-full object-cover shadow"
+                className="w-16 h-16 rounded-full object-cover border border-orange-300 shadow-sm"
               />
               <div>
                 <p className="font-bold text-lg text-gray-800">{freela.nome}</p>
@@ -97,8 +103,11 @@ export default function PainelEstabelecimento() {
               </div>
             </div>
             <button
-              onClick={() => alert(`Você chamou ${freela.nome}`)}
-              className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded mt-4 md:mt-0"
+              onClick={() => {
+                localStorage.setItem('freelaChamado', freela.nome)
+                alert(`✅ Você chamou ${freela.nome}!`)
+              }}
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition"
             >
               Chamar
             </button>
