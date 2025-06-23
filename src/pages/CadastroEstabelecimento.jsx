@@ -1,19 +1,3 @@
-<button
-  onClick={() => navigate(-1)}
-  className="botao-voltar-home"
-  aria-label="Voltar"
->
-  ← Voltar
-</button>
-
-<button
-  onClick={() => navigate('/')}
-  className="botao-voltar-home botao-home-painel"
-  aria-label="Home"
->
-  🏠 Home
-</button>
-
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Home.css' // Reutiliza o mesmo estilo visual da plataforma
@@ -56,6 +40,26 @@ export default function CadastroEstabelecimento() {
   }
 
   return (
+    return (
+    <div className="w-full max-w-md flex justify-between fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
+  <button
+    onClick={() => navigate(-1)}
+    className="botao-voltar-home"
+    aria-label="Voltar"
+    style={{ left: '20px', right: 'auto', position: 'fixed' }}
+  >
+    ← Voltar
+  </button>
+
+  <button
+    onClick={() => navigate('/')}
+    className="botao-voltar-home botao-home-painel"
+    aria-label="Home"
+    style={{ right: '20px', left: 'auto', position: 'fixed' }}
+  >
+    🏠 Home
+  </button>
+</div>
     <div className="home-container">
       <h1 className="home-title">Cadastro de Estabelecimento</h1>
 

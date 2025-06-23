@@ -1,19 +1,3 @@
-<button
-  onClick={() => navigate(-1)}
-  className="botao-voltar-home"
-  aria-label="Voltar"
->
-  ← Voltar
-</button>
-
-<button
-  onClick={() => navigate('/')}
-  className="botao-voltar-home botao-home-painel"
-  aria-label="Home"
->
-  🏠 Home
-</button>
-
 // src/pages/PainelFreela.jsx
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -118,6 +102,26 @@ export default function PainelFreela() {
   }
 
   return (
+    <div className="w-full max-w-md flex justify-between fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
+  <button
+    onClick={() => navigate(-1)}
+    className="botao-voltar-home"
+    aria-label="Voltar"
+    style={{ left: '20px', right: 'auto', position: 'fixed' }}
+  >
+    ← Voltar
+  </button>
+
+  <button
+    onClick={() => navigate('/')}
+    className="botao-voltar-home botao-home-painel"
+    aria-label="Home"
+    style={{ right: '20px', left: 'auto', position: 'fixed' }}
+  >
+    🏠 Home
+  </button>
+</div>
+
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-300 flex flex-col items-center p-6">
       <div className="bg-white shadow-lg rounded-xl p-6 w-full max-w-md text-center">
         <h1 className="text-3xl font-bold text-slate-800 mb-6">👨‍🍳 Painel do Freelancer</h1>

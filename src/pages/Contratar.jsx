@@ -1,19 +1,3 @@
-<button
-  onClick={() => navigate(-1)}
-  className="botao-voltar-home"
-  aria-label="Voltar"
->
-  ← Voltar
-</button>
-
-<button
-  onClick={() => navigate('/')}
-  className="botao-voltar-home botao-home-painel"
-  aria-label="Home"
->
-  🏠 Home
-</button>
-
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Contratar.css'
@@ -37,6 +21,26 @@ export default function Contratar() {
   const resultado = filtrarProfissionais()
 
   return (
+    <div className="w-full max-w-md flex justify-between fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
+  <button
+    onClick={() => navigate(-1)}
+    className="botao-voltar-home"
+    aria-label="Voltar"
+    style={{ left: '20px', right: 'auto', position: 'fixed' }}
+  >
+    ← Voltar
+  </button>
+
+  <button
+    onClick={() => navigate('/')}
+    className="botao-voltar-home botao-home-painel"
+    aria-label="Home"
+    style={{ right: '20px', left: 'auto', position: 'fixed' }}
+  >
+    🏠 Home
+  </button>
+</div>
+
     <div className="contratar-container">
       <h2 className="contratar-title">Painel de Profissionais</h2>
       <p className="contratar-subtitle">Filtre por especialidade, cidade ou disponibilidade</p>
