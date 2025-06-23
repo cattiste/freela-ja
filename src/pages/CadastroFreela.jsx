@@ -83,25 +83,26 @@ export default function CadastroFreela() {
   }
 
   return (
+  <>
     <div className="w-full max-w-md flex justify-between fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
-  <button
-    onClick={() => navigate(-1)}
-    className="botao-voltar-home"
-    aria-label="Voltar"
-    style={{ left: '20px', right: 'auto', position: 'fixed' }}
-  >
-    ← Voltar
-  </button>
+      <button
+        onClick={() => navigate(-1)}
+        className="botao-voltar-home"
+        aria-label="Voltar"
+        style={{ left: '20px', right: 'auto', position: 'fixed' }}
+      >
+        ← Voltar
+      </button>
 
-  <button
-    onClick={() => navigate('/')}
-    className="botao-voltar-home botao-home-painel"
-    aria-label="Home"
-    style={{ right: '20px', left: 'auto', position: 'fixed' }}
-  >
-    🏠 Home
-  </button>
-</div>
+      <button
+        onClick={() => navigate('/')}
+        className="botao-voltar-home botao-home-painel"
+        aria-label="Home"
+        style={{ right: '20px', left: 'auto', position: 'fixed' }}
+      >
+        🏠 Home
+      </button>
+    </div>
 
     <div className="home-container">
       <h1 className="home-title">Cadastro Freelancer</h1>
@@ -116,7 +117,6 @@ export default function CadastroFreela() {
           className="input"
           required
         />
-
         <label>Email</label>
         <input
           type="email"
@@ -126,7 +126,6 @@ export default function CadastroFreela() {
           className="input"
           required
         />
-
         <label>Senha</label>
         <input
           type="password"
@@ -136,7 +135,6 @@ export default function CadastroFreela() {
           className="input"
           required
         />
-
         <label>Celular</label>
         <input
           type="text"
@@ -146,7 +144,6 @@ export default function CadastroFreela() {
           className="input"
           required
         />
-
         <label>Endereço</label>
         <input
           type="text"
@@ -156,7 +153,6 @@ export default function CadastroFreela() {
           className="input"
           required
         />
-
         <label>Função (ex: Cozinheiro, Garçom)</label>
         <input
           type="text"
@@ -166,7 +162,6 @@ export default function CadastroFreela() {
           className="input"
           required
         />
-
         <label>Foto de Perfil</label>
         <input
           type="file"
@@ -183,11 +178,10 @@ export default function CadastroFreela() {
             <p className="text-sm text-gray-600 mt-1">Pré-visualização da sua foto</p>
           </div>
         )}
-
         <button type="submit" className="home-button">
           Cadastrar
         </button>
       </form>
     </div>
-  )
-}
+  </>
+)

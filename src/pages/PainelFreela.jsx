@@ -102,26 +102,29 @@ export default function PainelFreela() {
   }
 
   return (
+  <>
+    {/* Botões fixos */}
     <div className="w-full max-w-md flex justify-between fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
-  <button
-    onClick={() => navigate(-1)}
-    className="botao-voltar-home"
-    aria-label="Voltar"
-    style={{ left: '20px', right: 'auto', position: 'fixed' }}
-  >
-    ← Voltar
-  </button>
+      <button
+        onClick={() => navigate(-1)}
+        className="botao-voltar-home"
+        aria-label="Voltar"
+        style={{ left: '20px', right: 'auto', position: 'fixed' }}
+      >
+        ← Voltar
+      </button>
 
-  <button
-    onClick={() => navigate('/')}
-    className="botao-voltar-home botao-home-painel"
-    aria-label="Home"
-    style={{ right: '20px', left: 'auto', position: 'fixed' }}
-  >
-    🏠 Home
-  </button>
-</div>
+      <button
+        onClick={() => navigate('/')}
+        className="botao-voltar-home botao-home-painel"
+        aria-label="Home"
+        style={{ right: '20px', left: 'auto', position: 'fixed' }}
+      >
+        🏠 Home
+      </button>
+    </div>
 
+    {/* Conteúdo principal */}
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-300 flex flex-col items-center p-6">
       <div className="bg-white shadow-lg rounded-xl p-6 w-full max-w-md text-center">
         <h1 className="text-3xl font-bold text-slate-800 mb-6">👨‍🍳 Painel do Freelancer</h1>
@@ -158,10 +161,10 @@ export default function PainelFreela() {
         )}
       </div>
 
+      {/* Formulário de edição */}
       {editando && freela && (
         <div className="mt-6 bg-slate-50 p-4 rounded-lg shadow-inner w-full max-w-md">
           <h3 className="text-lg font-semibold mb-3 text-slate-700">Editar Perfil</h3>
-
           <div className="space-y-3">
             <input type="text" value={freela.nome} onChange={e => setFreela({ ...freela, nome: e.target.value })} placeholder="Nome" className="input" />
             <input type="email" value={freela.email} onChange={e => setFreela({ ...freela, email: e.target.value })} placeholder="Email" className="input" />
@@ -197,6 +200,7 @@ export default function PainelFreela() {
         </div>
       )}
 
+      {/* Chamado ativo */}
       {chamado && (
         <div className="mt-6 w-full max-w-md bg-red-100 border-l-8 border-red-600 p-4 rounded-lg shadow-md">
           <div className="flex items-center gap-2 text-red-700 text-lg font-bold mb-2">
@@ -210,6 +214,7 @@ export default function PainelFreela() {
         </div>
       )}
 
+      {/* Histórico */}
       {historico.length > 0 && (
         <div className="mt-8 w-full max-w-md bg-white p-4 rounded-lg shadow">
           <h3 className="text-xl font-semibold mb-3">📋 Histórico de Chamados</h3>
@@ -223,5 +228,5 @@ export default function PainelFreela() {
         </div>
       )}
     </div>
-  )
-}
+  </>
+)

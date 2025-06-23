@@ -61,25 +61,26 @@ export default function PainelEstabelecimento() {
   }
 
  return (
- <div className="w-full max-w-md flex justify-between fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
-  <button
-    onClick={() => navigate(-1)}
-    className="botao-voltar-home"
-    aria-label="Voltar"
-    style={{ left: '20px', right: 'auto', position: 'fixed' }}
-  >
-    ← Voltar
-  </button>
+  <>
+    <div className="w-full max-w-md flex justify-between fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
+      <button
+        onClick={() => navigate(-1)}
+        className="botao-voltar-home"
+        aria-label="Voltar"
+        style={{ left: '20px', right: 'auto', position: 'fixed' }}
+      >
+        ← Voltar
+      </button>
 
-  <button
-    onClick={() => navigate('/')}
-    className="botao-voltar-home botao-home-painel"
-    aria-label="Home"
-    style={{ right: '20px', left: 'auto', position: 'fixed' }}
-  >
-    🏠 Home
-  </button>
-</div>  
+      <button
+        onClick={() => navigate('/')}
+        className="botao-voltar-home botao-home-painel"
+        aria-label="Home"
+        style={{ right: '20px', left: 'auto', position: 'fixed' }}
+      >
+        🏠 Home
+      </button>
+    </div>  
 
     <div className="min-h-screen bg-orange-50 p-6 text-center">
       <h1 className="text-3xl font-bold text-orange-700 mb-6">📍 Painel do Estabelecimento</h1>
@@ -142,5 +143,5 @@ export default function PainelEstabelecimento() {
         Voltar
       </button>
     </div>
-  )
-}
+  </>
+)
