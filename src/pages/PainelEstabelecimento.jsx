@@ -152,6 +152,13 @@ export default function PainelEstabelecimento() {
         >
           Voltar
         </button>
+
+        <button
+          onClick={() => navigate('/novavaga')}
+          className="bg-orange-600 hover:bg-orange-700 text-white py-2 px-4 rounded mt-4"
+        >
+          📢 Criar Nova Vaga
+        </button>
       </div>
     </>
   )
