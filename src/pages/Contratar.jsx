@@ -1,3 +1,4 @@
+// src/pages/Contratar.jsx
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Contratar.css'
@@ -66,4 +67,4 @@ export default function Contratar() {
       </div>
     </>
   )
-}  // <-- Falta fechar aqui!
+}
