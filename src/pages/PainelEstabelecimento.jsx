@@ -87,6 +87,14 @@ export default function PainelEstabelecimento() {
       <div className="min-h-screen bg-orange-50 p-6 text-center">
         <h1 className="text-3xl font-bold text-orange-700 mb-6">📍 Painel do Estabelecimento</h1>
 
+        {/* Botão Painel de Vagas */}
+        <button
+          onClick={() => navigate('/painel-vagas')}
+          className="home-button mb-6 w-full max-w-xl mx-auto"
+        >
+          Painel de Vagas
+        </button>
+
         <div className="max-w-xl mx-auto mb-6 bg-white rounded-lg p-6 shadow">
           <input
             type="text"
