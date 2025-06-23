@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import './Home.css' // Importa os estilos visuais
+import './Home.css'
 
 export default function CadastroFreela() {
   const [nome, setNome] = useState('')
@@ -36,11 +36,40 @@ export default function CadastroFreela() {
     setFoto(data.secure_url)
   }
 
-  const handleSubmit = (e) => {
+  const geolocalizarEndereco = async (enderecoTexto) => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoTexto)}`)
+      const data = await res.json()
+      if (data.length > 0) {
+        return {
+          lat: parseFloat(data[0].lat),
+          lon: parseFloat(data[0].lon)
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao geolocalizar:', error)
+    }
+    return null
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
+    const coordenadas = await geolocalizarEndereco(endereco)
+    if (!coordenadas) {
+      alert('Não foi possível localizar o endereço. Tente escrever de forma mais completa.')
+      return
+    }
+
     const novoFreela = {
-      nome, email, senha, celular, endereco, funcao, foto,
+      nome,
+      email,
+      senha,
+      celular,
+      endereco,
+      funcao,
+      foto,
+      coordenadas,
       tipo: 'freela'
     }
 
@@ -125,15 +154,16 @@ export default function CadastroFreela() {
           onChange={handleFotoChange}
         />
         {foto && (
-         <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-          <img
-            src={foto}
-            alt="Preview da foto"
-            className="w-24 h-24 rounded-full object-cover border-2 border-orange-500 mx-auto"
-          />
-          <p className="text-sm text-gray-600 mt-1">Pré-visualização da sua foto</p>
-       </div>
+          <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+            <img
+              src={foto}
+              alt="Preview da foto"
+              className="w-24 h-24 rounded-full object-cover border-2 border-orange-500 mx-auto"
+            />
+            <p className="text-sm text-gray-600 mt-1">Pré-visualização da sua foto</p>
+          </div>
         )}
+
         <button type="submit" className="home-button">
           Cadastrar
         </button>
