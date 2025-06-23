@@ -103,7 +103,6 @@ export default function PainelFreela() {
 
   return (
   <>
-    {/* Botões fixos */}
     <div className="w-full max-w-md flex justify-between fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
       <button
         onClick={() => navigate(-1)}
@@ -124,7 +123,6 @@ export default function PainelFreela() {
       </button>
     </div>
 
-    {/* Conteúdo principal */}
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-300 flex flex-col items-center p-6">
       <div className="bg-white shadow-lg rounded-xl p-6 w-full max-w-md text-center">
         <h1 className="text-3xl font-bold text-slate-800 mb-6">👨‍🍳 Painel do Freelancer</h1>
@@ -133,15 +131,23 @@ export default function PainelFreela() {
           <>
             <img
               src={freela.foto || avatarFallback}
-              onError={(e) => e.target.src = avatarFallback}
+              onError={(e) => (e.target.src = avatarFallback)}
               alt="Foto do Freela"
               className="w-28 h-28 rounded-full mx-auto mb-4 object-cover border-4 border-slate-300 shadow-sm"
             />
             <h2 className="text-xl font-semibold text-slate-700">{freela.nome}</h2>
-            <p className="text-slate-600 mb-1"><strong>Função:</strong> {freela.funcao}</p>
-            <p className="text-slate-600 mb-1"><strong>Email:</strong> {freela.email}</p>
-            <p className="text-slate-600 mb-1"><strong>Celular:</strong> {freela.celular}</p>
-            <p className="text-slate-600"><strong>Endereço:</strong> {freela.endereco}</p>
+            <p className="text-slate-600 mb-1">
+              <strong>Função:</strong> {freela.funcao}
+            </p>
+            <p className="text-slate-600 mb-1">
+              <strong>Email:</strong> {freela.email}
+            </p>
+            <p className="text-slate-600 mb-1">
+              <strong>Celular:</strong> {freela.celular}
+            </p>
+            <p className="text-slate-600">
+              <strong>Endereço:</strong> {freela.endereco}
+            </p>
 
             <div className="mt-6 flex justify-center gap-4">
               <button
@@ -161,19 +167,51 @@ export default function PainelFreela() {
         )}
       </div>
 
-      {/* Formulário de edição */}
       {editando && freela && (
         <div className="mt-6 bg-slate-50 p-4 rounded-lg shadow-inner w-full max-w-md">
           <h3 className="text-lg font-semibold mb-3 text-slate-700">Editar Perfil</h3>
+
           <div className="space-y-3">
-            <input type="text" value={freela.nome} onChange={e => setFreela({ ...freela, nome: e.target.value })} placeholder="Nome" className="input" />
-            <input type="email" value={freela.email} onChange={e => setFreela({ ...freela, email: e.target.value })} placeholder="Email" className="input" />
-            <input type="text" value={freela.celular} onChange={e => setFreela({ ...freela, celular: e.target.value })} placeholder="Celular" className="input" />
-            <input type="text" value={freela.endereco} onChange={e => setFreela({ ...freela, endereco: e.target.value })} placeholder="Endereço" className="input" />
-            <input type="text" value={freela.funcao} onChange={e => setFreela({ ...freela, funcao: e.target.value })} placeholder="Função" className="input" />
+            <input
+              type="text"
+              value={freela.nome}
+              onChange={(e) => setFreela({ ...freela, nome: e.target.value })}
+              placeholder="Nome"
+              className="input"
+            />
+            <input
+              type="email"
+              value={freela.email}
+              onChange={(e) => setFreela({ ...freela, email: e.target.value })}
+              placeholder="Email"
+              className="input"
+            />
+            <input
+              type="text"
+              value={freela.celular}
+              onChange={(e) => setFreela({ ...freela, celular: e.target.value })}
+              placeholder="Celular"
+              className="input"
+            />
+            <input
+              type="text"
+              value={freela.endereco}
+              onChange={(e) => setFreela({ ...freela, endereco: e.target.value })}
+              placeholder="Endereço"
+              className="input"
+            />
+            <input
+              type="text"
+              value={freela.funcao}
+              onChange={(e) => setFreela({ ...freela, funcao: e.target.value })}
+              placeholder="Função"
+              className="input"
+            />
 
             <div>
-              <label className="block text-left text-sm font-medium text-slate-600 mb-1">Foto de Perfil</label>
+              <label className="block text-left text-sm font-medium text-slate-600 mb-1">
+                Foto de Perfil
+              </label>
               {freela.foto && (
                 <img
                   src={freela.foto}
@@ -181,26 +219,22 @@ export default function PainelFreela() {
                   className="w-24 h-24 object-cover rounded-full mb-2 border-2 border-slate-400 shadow-sm"
                 />
               )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleUploadFoto}
-                className="input"
-              />
-              {tamanhoImagem && (
-                <p className="text-sm text-slate-500 mt-1">Tamanho estimado: {tamanhoImagem}</p>
-              )}
+              <input type="file" accept="image/*" onChange={handleUploadFoto} className="input" />
+              {tamanhoImagem && <p className="text-sm text-slate-500 mt-1">Tamanho estimado: {tamanhoImagem}</p>}
             </div>
           </div>
 
           <div className="flex justify-end gap-2 mt-4">
-            <button onClick={() => setEditando(false)} className="bg-gray-500 text-white px-4 py-2 rounded">Cancelar</button>
-            <button onClick={salvarAlteracoes} className="bg-green-600 text-white px-4 py-2 rounded">Salvar</button>
+            <button onClick={() => setEditando(false)} className="bg-gray-500 text-white px-4 py-2 rounded">
+              Cancelar
+            </button>
+            <button onClick={salvarAlteracoes} className="bg-green-600 text-white px-4 py-2 rounded">
+              Salvar
+            </button>
           </div>
         </div>
       )}
 
-      {/* Chamado ativo */}
       {chamado && (
         <div className="mt-6 w-full max-w-md bg-red-100 border-l-8 border-red-600 p-4 rounded-lg shadow-md">
           <div className="flex items-center gap-2 text-red-700 text-lg font-bold mb-2">
@@ -208,13 +242,22 @@ export default function PainelFreela() {
           </div>
           <p className="text-sm text-red-800">Um estabelecimento solicitou seus serviços. Deseja aceitar?</p>
           <div className="flex justify-center gap-4 mt-4">
-            <button onClick={handleAceitar} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition">Aceitar</button>
-            <button onClick={handleRecusar} className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition">Recusar</button>
+            <button
+              onClick={handleAceitar}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition"
+            >
+              Aceitar
+            </button>
+            <button
+              onClick={handleRecusar}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition"
+            >
+              Recusar
+            </button>
           </div>
         </div>
       )}
 
-      {/* Histórico */}
       {historico.length > 0 && (
         <div className="mt-8 w-full max-w-md bg-white p-4 rounded-lg shadow">
           <h3 className="text-xl font-semibold mb-3">📋 Histórico de Chamados</h3>
