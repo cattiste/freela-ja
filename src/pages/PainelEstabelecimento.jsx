@@ -1,4 +1,3 @@
-// src/pages/PainelEstabelecimento.jsx
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Home.css'
@@ -11,10 +10,16 @@ export default function PainelEstabelecimento() {
   const [resultadoFiltro, setResultadoFiltro] = useState([])
 
   useEffect(() => {
+    const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
+    if (!usuario || usuario.tipo !== 'estabelecimento') {
+      navigate('/login')
+      return
+    }
+
     const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]')
     const freelancers = usuarios.filter(u => u.tipo === 'freela')
     setFreelas(freelancers)
-  }, [])
+  }, [navigate])
 
   const geolocalizarEndereco = async (enderecoTexto) => {
     try {
@@ -34,14 +39,11 @@ export default function PainelEstabelecimento() {
   const calcularDistancia = (coord1, coord2) => {
     if (!coord1 || !coord2) return Infinity
     const toRad = deg => deg * Math.PI / 180
-    const R = 6371 // km
+    const R = 6371
     const dLat = toRad(coord2.lat - coord1.lat)
     const dLon = toRad(coord2.lon - coord1.lon)
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(toRad(coord1.lat)) *
-      Math.cos(toRad(coord2.lat)) *
-      Math.sin(dLon / 2) ** 2
+    const a = Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(coord1.lat)) * Math.cos(toRad(coord2.lat)) * Math.sin(dLon / 2) ** 2
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
     return R * c
   }
@@ -68,16 +70,13 @@ export default function PainelEstabelecimento() {
         <button
           onClick={() => navigate(-1)}
           className="botao-voltar-home"
-          aria-label="Voltar"
           style={{ left: '20px', right: 'auto', position: 'fixed' }}
         >
           ← Voltar
         </button>
-
         <button
           onClick={() => navigate('/')}
           className="botao-voltar-home botao-home-painel"
-          aria-label="Home"
           style={{ right: '20px', left: 'auto', position: 'fixed' }}
         >
           🏠 Home
@@ -87,14 +86,6 @@ export default function PainelEstabelecimento() {
       <div className="min-h-screen bg-orange-50 p-6 text-center">
         <h1 className="text-3xl font-bold text-orange-700 mb-6">📍 Painel do Estabelecimento</h1>
 
-        {/* Botão Painel de Vagas */}
-        <button
-          onClick={() => navigate('/painel-vagas')}
-          className="home-button mb-6 w-full max-w-xl mx-auto"
-        >
-          Painel de Vagas
-        </button>
-
         <div className="max-w-xl mx-auto mb-6 bg-white rounded-lg p-6 shadow">
           <input
             type="text"
@@ -103,10 +94,7 @@ export default function PainelEstabelecimento() {
             placeholder="Digite o endereço do seu estabelecimento"
             className="input mb-4"
           />
-          <button
-            onClick={filtrarProximos}
-            className="home-button w-full"
-          >
+          <button onClick={filtrarProximos} className="home-button w-full">
             Buscar Freelancers Próximos
           </button>
         </div>
@@ -123,14 +111,16 @@ export default function PainelEstabelecimento() {
             >
               <div className="flex items-center gap-4 text-left">
                 <img
-                  src={freela.foto || '/default-avatar.png'}
+                  src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'}
                   alt="freela"
                   className="w-16 h-16 rounded-full object-cover border border-orange-300 shadow-sm"
                 />
                 <div>
                   <p className="font-bold text-lg text-gray-800">{freela.nome}</p>
                   <p className="text-gray-600">{freela.funcao}</p>
-                  <p className="text-gray-500 text-sm">{freela.distancia.toFixed(2)} km de distância</p>
+                  <p className="text-gray-500 text-sm">
+                    {freela.distancia?.toFixed(2)} km de distância
+                  </p>
                 </div>
               </div>
               <button
@@ -145,20 +135,6 @@ export default function PainelEstabelecimento() {
             </div>
           ))}
         </div>
-
-        <button
-          onClick={() => navigate('/')}
-          className="mt-10 bg-gray-500 hover:bg-gray-600 text-white py-2 px-6 rounded"
-        >
-          Voltar
-        </button>
-
-        <button
-          onClick={() => navigate('/novavaga')}
-          className="bg-orange-600 hover:bg-orange-700 text-white py-2 px-4 rounded mt-4"
-        >
-          📢 Criar Nova Vaga
-        </button>
       </div>
     </>
   )
