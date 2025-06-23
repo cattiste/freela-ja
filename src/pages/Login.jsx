@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import './Home.css' // Reutilizando estilo base
+import './Home.css'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -19,8 +19,10 @@ export default function Login() {
 
       if (usuario.tipo === 'freela') {
         navigate('/painelfreela')
+      } else if (usuario.tipo === 'estabelecimento') {
+        navigate('/painelestabelecimento')
       } else {
-        navigate('/painel')
+        alert('Tipo de usuário desconhecido.')
       }
     } else {
       alert('E-mail ou senha inválidos.')
@@ -79,6 +81,15 @@ export default function Login() {
             Entrar
           </button>
         </form>
+
+        <div className="mt-6 flex justify-between">
+          <button onClick={() => navigate('/cadastrofreela')} className="text-sm text-blue-600 underline">
+            Sou Freelancer
+          </button>
+          <button onClick={() => navigate('/cadastroestabelecimento')} className="text-sm text-blue-600 underline">
+            Sou Estabelecimento
+          </button>
+        </div>
       </div>
     </>
   )
