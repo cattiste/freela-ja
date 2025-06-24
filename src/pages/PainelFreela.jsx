@@ -1,6 +1,8 @@
 // src/pages/PainelFreela.jsx
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { collection, getDocs } from 'firebase/firestore'
+import { db } from '../firebase'
 import './Home.css'
 
 export default function PainelFreela() {
@@ -14,22 +16,28 @@ export default function PainelFreela() {
       return
     }
 
-    // Simulando busca de vagas do localStorage ou futura API
-    const vagasDisponiveis = JSON.parse(localStorage.getItem('vagas') || '[]')
-    setVagas(vagasDisponiveis)
+    const carregarVagas = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, 'vagas'))
+        const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        setVagas(lista)
+      } catch (error) {
+        console.error('Erro ao buscar vagas:', error)
+        setVagas([])
+      }
+    }
+
+    carregarVagas()
   }, [navigate])
+
+  const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
 
   return (
     <div className="min-h-screen bg-blue-50 p-6 text-center">
       <h1 className="text-3xl font-bold text-blue-700 mb-6">🎯 Painel do Freelancer</h1>
 
       <button
-        onClick={() => {
-          const user = JSON.parse(localStorage.getItem('usuarioLogado'))
-          if (user?.uid) {
-            navigate(`/perfil/${user.uid}`)
-          }
-        }}
+        onClick={() => navigate(`/perfil/${usuario?.uid}`)}
         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded mb-6"
       >
         Editar Perfil
