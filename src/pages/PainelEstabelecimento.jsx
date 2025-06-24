@@ -66,75 +66,64 @@ export default function PainelEstabelecimento() {
   }
 
   return (
-    <>
-      <div className="w-full max-w-md flex justify-between fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
-        <button onClick={() => navigate(-1)} className="botao-voltar-home" style={{ left: '20px', position: 'fixed' }}>
-          ← Voltar
-        </button>
-        <button onClick={() => navigate('/')} className="botao-voltar-home botao-home-painel" style={{ right: '20px', position: 'fixed' }}>
-          🏠 Home
+    <div className="min-h-screen bg-orange-50 p-6 text-center">
+      <h1 className="text-3xl font-bold text-orange-700 mb-6">📍 Painel do Estabelecimento</h1>
+
+      <div className="max-w-xl mx-auto mb-6 bg-white rounded-lg p-6 shadow">
+        <input
+          type="text"
+          value={enderecoEstab}
+          onChange={(e) => setEnderecoEstab(e.target.value)}
+          placeholder="Digite o endereço do seu estabelecimento"
+          className="input mb-4"
+        />
+        <button onClick={filtrarProximos} className="home-button w-full">
+          Buscar Freelancers Próximos
         </button>
       </div>
 
-      <div className="min-h-screen bg-orange-50 p-6 text-center">
-        <h1 className="text-3xl font-bold text-orange-700 mb-6">📍 Painel do Estabelecimento</h1>
+      <div className="max-w-4xl mx-auto">
+        {resultadoFiltro.length === 0 && (
+          <p className="text-gray-500 mb-8">🔎 Nenhum freelancer filtrado ainda.</p>
+        )}
 
-        <div className="max-w-xl mx-auto mb-6 bg-white rounded-lg p-6 shadow">
-          <input
-            type="text"
-            value={enderecoEstab}
-            onChange={(e) => setEnderecoEstab(e.target.value)}
-            placeholder="Digite o endereço do seu estabelecimento"
-            className="input mb-4"
-          />
-          <button onClick={filtrarProximos} className="home-button w-full">
-            Buscar Freelancers Próximos
-          </button>
-        </div>
-
-        <div className="max-w-4xl mx-auto">
-          {resultadoFiltro.length === 0 && (
-            <p className="text-gray-500 mb-8">🔎 Nenhum freelancer filtrado ainda.</p>
-          )}
-
-          {resultadoFiltro.map((freela, idx) => (
-            <div
-              key={idx}
-              className="bg-white rounded-xl shadow p-4 mb-4 flex flex-col md:flex-row justify-between items-center gap-4"
-            >
-              <div className="flex items-center gap-4 text-left">
-                <img
-                  src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'}
-                  alt="freela"
-                  className="w-16 h-16 rounded-full object-cover border border-orange-300 shadow-sm"
-                />
-                <div>
-                  <p className="font-bold text-lg text-gray-800">{freela.nome}</p>
-                  <p className="text-gray-600">{freela.funcao}</p>
-                  <p className="text-gray-500 text-sm">
-                    {freela.distancia?.toFixed(2)} km de distância
-                  </p>
-                </div>
+        {resultadoFiltro.map((freela, idx) => (
+          <div
+            key={idx}
+            className="bg-white rounded-xl shadow p-4 mb-4 flex flex-col md:flex-row justify-between items-center gap-4"
+          >
+            <div className="flex items-center gap-4 text-left">
+              <img
+                src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'}
+                alt="freela"
+                className="w-16 h-16 rounded-full object-cover border border-orange-300 shadow-sm"
+              />
+              <div>
+                <p className="font-bold text-lg text-gray-800">{freela.nome}</p>
+                <p className="text-gray-600">{freela.funcao}</p>
+                <p className="text-gray-500 text-sm">
+                  {freela.distancia?.toFixed(2)} km de distância
+                </p>
               </div>
-              <button
-                onClick={() => {
-                  const estabelecimento = JSON.parse(localStorage.getItem('usuarioLogado'))
-                  const chamada = {
-                    freela: freela.nome,
-                    estabelecimento: estabelecimento?.nome || 'Estabelecimento desconhecido',
-                    horario: new Date().toISOString()
-                  }
-                  localStorage.setItem('chamadaFreela', JSON.stringify(chamada))
-                  alert(`✅ Você chamou ${freela.nome}!`)
-                }}
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition"
-              >
-                Chamar
-              </button>
             </div>
-          ))}
-        </div>
+            <button
+              onClick={() => {
+                const estabelecimento = JSON.parse(localStorage.getItem('usuarioLogado'))
+                const chamada = {
+                  freela: freela.nome,
+                  estabelecimento: estabelecimento?.nome || 'Estabelecimento desconhecido',
+                  horario: new Date().toISOString()
+                }
+                localStorage.setItem('chamadaFreela', JSON.stringify(chamada))
+                alert(`✅ Você chamou ${freela.nome}!`)
+              }}
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition"
+            >
+              Chamar
+            </button>
+          </div>
+        ))}
       </div>
-    </>
+    </div>
   )
 }
