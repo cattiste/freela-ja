@@ -1,4 +1,3 @@
-/* Fundo e layout centralizado */
 body {
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -6,87 +5,102 @@ body {
   color: #333;
 }
 
-/* Container principal */
-.home-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 2rem;
+.curriculos-container {
+  max-width: 900px;
+  margin: 100px auto 40px;
+  padding: 0 20px;
+  color: #333;
   text-align: center;
 }
 
-/* Título principal */
-.home-title {
-  font-size: 2.5rem;
-  font-weight: bold;
+.curriculos-title {
+  font-size: 2rem;
   color: #ff6b00;
-  margin-bottom: 1rem;
+  margin-bottom: 10px;
 }
 
-/* Descrição */
-.home-description {
+.curriculos-subtitle {
   font-size: 1.2rem;
-  max-width: 600px;
-  margin-bottom: 2rem;
+  color: #666;
+  margin-bottom: 20px;
 }
 
-/* Botões */
-.home-buttons button,
-.home-button {
-  padding: 12px 24px;
+.resultado-chefs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.card-profissional {
+  background: #fff;
+  padding: 15px 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  text-align: left;
+}
+
+.card-profissional h3 {
+  color: #ff6b00;
+  margin-top: 0;
+}
+
+.card-profissional p {
+  margin: 6px 0;
+  font-size: 0.95rem;
+}
+
+.descricao {
+  font-style: italic;
+  color: #555;
+}
+
+.card-botao {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 10px 15px;
   background-color: #ff6b00;
   color: white;
-  border: none;
   border-radius: 8px;
+  text-decoration: none;
   font-weight: bold;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.3s;
+  transition: background-color 0.3s ease;
 }
 
-.home-buttons button:hover,
-.home-button:hover {
+.card-botao:hover {
   background-color: #e85a00;
 }
 
-/* Estilização dos inputs */
-.input {
-  padding: 12px;
-  border: 2px solid #ff6b00;
-  border-radius: 8px;
-  font-size: 1rem;
-  outline: none;
-  transition: border 0.3s;
+/* Botões fixos do topo */
+.nav-buttons {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 900px;
   width: 100%;
-}
-
-.input:focus {
-  border-color: #e85a00;
-  box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.2);
-}
-
-/* Formulário centralizado */
-form {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 500px;
-  margin: 0 auto;
-  padding-top: 2rem;
+  justify-content: space-between;
+  padding: 0 20px;
+  z-index: 1000;
 }
 
-/* Rótulos */
-label {
-  text-align: left;
-  font-size: 0.9rem;
-  color: #444;
-}
-
-/* Campo de upload de imagem */
-input[type="file"] {
+.botao-voltar-home {
+  background-color: #ff6b00;
   border: none;
-  background: transparent;
-  font-size: 0.9rem;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
 }
+
+.botao-voltar-home:hover {
+  background-color: #e85a00;
+}
+
+.botao-home-painel {
+  background-color: #ff6b00;
+}
+
