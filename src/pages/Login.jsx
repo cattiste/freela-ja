@@ -1,3 +1,4 @@
+// src/pages/Login.jsx
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Home.css'
@@ -20,7 +21,7 @@ export default function Login() {
       if (usuario.tipo === 'freela') {
         navigate('/painelfreela')
       } else if (usuario.tipo === 'estabelecimento') {
-        navigate('/painelestabelecimento')
+        navigate('/painel-estabelecimento')
       } else {
         alert('Tipo de usuário desconhecido.')
       }
@@ -35,16 +36,13 @@ export default function Login() {
         <button
           onClick={() => navigate(-1)}
           className="botao-voltar-home"
-          aria-label="Voltar"
           style={{ left: '20px', right: 'auto', position: 'fixed' }}
         >
           ← Voltar
         </button>
-
         <button
           onClick={() => navigate('/')}
           className="botao-voltar-home botao-home-painel"
-          aria-label="Home"
           style={{ right: '20px', left: 'auto', position: 'fixed' }}
         >
           🏠 Home
@@ -81,15 +79,6 @@ export default function Login() {
             Entrar
           </button>
         </form>
-
-        <div className="mt-6 flex justify-between">
-          <button onClick={() => navigate('/cadastrofreela')} className="text-sm text-blue-600 underline">
-            Sou Freelancer
-          </button>
-          <button onClick={() => navigate('/cadastroestabelecimento')} className="text-sm text-blue-600 underline">
-            Sou Estabelecimento
-          </button>
-        </div>
       </div>
     </>
   )

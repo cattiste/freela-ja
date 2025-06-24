@@ -21,19 +21,12 @@ function App() {
         <Route path="/sobre" element={<Sobre />} />
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/painel" element={<PainelFreela />} />
+        <Route path="/painelfreela" element={<PainelFreela />} />
+        <Route path="/painel-estabelecimento" element={<RotaProtegida><PainelEstabelecimento /></RotaProtegida>} />
         <Route path="/contratar" element={<Contratar />} />
         <Route path="/cadastrofreela" element={<CadastroFreela />} />
         <Route path="/cadastro-estabelecimento" element={<CadastroEstabelecimento />} />
         <Route path="/perfil/:id" element={<Perfil />} />
-        <Route
-          path="/painel-estabelecimento"
-          element={
-            <RotaProtegida>
-              <PainelEstabelecimento />
-            </RotaProtegida>
-          }
-        />
       </Routes>
     </Router>
   )

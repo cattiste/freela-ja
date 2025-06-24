@@ -1,3 +1,4 @@
+// src/pages/PainelEstabelecimento.jsx
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Home.css'
@@ -6,7 +7,6 @@ export default function PainelEstabelecimento() {
   const navigate = useNavigate()
   const [freelas, setFreelas] = useState([])
   const [enderecoEstab, setEnderecoEstab] = useState('')
-  const [coordenadasEstab, setCoordenadasEstab] = useState(null)
   const [resultadoFiltro, setResultadoFiltro] = useState([])
 
   useEffect(() => {
@@ -23,15 +23,13 @@ export default function PainelEstabelecimento() {
 
   const geolocalizarEndereco = async (enderecoTexto) => {
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoTexto)}`
-      )
-      const data = await response.json()
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoTexto)}`)
+      const data = await res.json()
       if (data.length > 0) {
         return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) }
       }
     } catch (error) {
-      console.error("Erro ao geolocalizar endereço:", error)
+      console.error('Erro ao geolocalizar:', error)
     }
     return null
   }
@@ -43,14 +41,14 @@ export default function PainelEstabelecimento() {
     const dLat = toRad(coord2.lat - coord1.lat)
     const dLon = toRad(coord2.lon - coord1.lon)
     const a = Math.sin(dLat / 2) ** 2 +
-      Math.cos(toRad(coord1.lat)) * Math.cos(toRad(coord2.lat)) * Math.sin(dLon / 2) ** 2
+              Math.cos(toRad(coord1.lat)) * Math.cos(toRad(coord2.lat)) *
+              Math.sin(dLon / 2) ** 2
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
     return R * c
   }
 
   const filtrarProximos = async () => {
     const coords = await geolocalizarEndereco(enderecoEstab)
-    setCoordenadasEstab(coords)
     if (!coords) return alert('Não foi possível localizar o endereço.')
 
     const filtrados = freelas
@@ -118,9 +116,7 @@ export default function PainelEstabelecimento() {
                 <div>
                   <p className="font-bold text-lg text-gray-800">{freela.nome}</p>
                   <p className="text-gray-600">{freela.funcao}</p>
-                  <p className="text-gray-500 text-sm">
-                    {freela.distancia?.toFixed(2)} km de distância
-                  </p>
+                  <p className="text-gray-500 text-sm">{freela.distancia?.toFixed(2)} km de distância</p>
                 </div>
               </div>
               <button
