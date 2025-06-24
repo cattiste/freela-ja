@@ -3,9 +3,9 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '../firebase'
-import './Contratar.css'
+import './Curriculos.css'
 
-export default function Contratar() {
+export default function Curriculos() {
   const navigate = useNavigate()
   const [vagas, setVagas] = useState([])
   const [loading, setLoading] = useState(true)
@@ -47,9 +47,9 @@ export default function Contratar() {
         </button>
       </div>
 
-      <div className="contratar-container">
-        <h2 className="contratar-title">Painel de Vagas CLT</h2>
-        <p className="contratar-subtitle">Confira vagas fixas publicadas por estabelecimentos</p>
+      <div className="curriculos-container">
+        <h2 className="curriculosr-title">Painel de Vagas CLT</h2>
+        <p className="curriculos-subtitle">Confira vagas fixas publicadas por estabelecimentos</p>
 
         {loading ? (
           <p style={{ textAlign: 'center' }}>Carregando vagas...</p>
