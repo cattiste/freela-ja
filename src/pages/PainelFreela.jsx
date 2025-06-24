@@ -1,4 +1,3 @@
-// src/pages/PainelFreela.jsx
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { collection, query, where, getDocs } from 'firebase/firestore'
@@ -11,18 +10,18 @@ export default function PainelFreela() {
   const navigate = useNavigate()
   const [freela, setFreela] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
-    // Checar usuário logado no localStorage
     const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'))
     if (!usuarioLogado || usuarioLogado.tipo !== 'freela') {
       navigate('/login')
       return
     }
 
-    // Buscar dados atualizados do freela no Firestore pelo email
     const fetchFreela = async () => {
       setLoading(true)
+      setError(null)
       try {
         const q = query(collection(db, 'usuarios'), where('email', '==', usuarioLogado.email))
         const querySnapshot = await getDocs(q)
@@ -30,11 +29,11 @@ export default function PainelFreela() {
           const dados = querySnapshot.docs[0].data()
           setFreela(dados)
         } else {
-          alert('Usuário não encontrado no banco')
+          setError('Usuário não encontrado no banco de dados.')
           navigate('/login')
         }
       } catch (err) {
-        alert('Erro ao buscar dados: ' + err.message)
+        setError('Erro ao buscar dados: ' + err.message)
         navigate('/login')
       } finally {
         setLoading(false)
@@ -44,6 +43,7 @@ export default function PainelFreela() {
   }, [navigate])
 
   if (loading) return <p>Carregando dados...</p>
+  if (error) return <p style={{ color: 'red' }}>{error}</p>
 
   return (
     <div className="home-container">
@@ -54,6 +54,7 @@ export default function PainelFreela() {
             src={freela.foto || avatarFallback}
             alt="Foto do Freela"
             className="perfil-foto"
+            onError={(e) => (e.target.src = avatarFallback)}
           />
           <h2>{freela.nome}</h2>
           <p><strong>Função:</strong> {freela.funcao}</p>

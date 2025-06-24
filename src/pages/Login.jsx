@@ -1,85 +1,63 @@
-// src/pages/Login.jsx
 import React, { useState } from 'react'
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
-import './Home.css'
+import { app } from '../firebase'
 
 export default function Login() {
-  const [email, setEmail] = useState('')
-  const [senha, setSenha] = useState('')
+  const auth = getAuth(app)
   const navigate = useNavigate()
 
-  const handleLogin = (e) => {
+  const [email, setEmail] = useState('')
+  const [senha, setSenha] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const handleLogin = async (e) => {
     e.preventDefault()
+    setLoading(true)
+    setError(null)
 
-    const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]')
-    const usuario = usuarios.find(u => u.email === email && u.senha === senha)
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, senha)
+      const user = userCredential.user
 
-    if (usuario) {
-      localStorage.setItem('usuarioLogado', JSON.stringify(usuario))
-      alert('Login realizado com sucesso!')
+      // Salvar info do usuário no localStorage - aqui só email e uid
+      // Para tipo, buscaremos no Firestore no painel
+      localStorage.setItem('usuarioLogado', JSON.stringify({ uid: user.uid, email: user.email, tipo: 'freela' }))
 
-      if (usuario.tipo === 'freela') {
-        navigate('/painelfreela')
-      } else if (usuario.tipo === 'estabelecimento') {
-        navigate('/painel-estabelecimento')
-      } else {
-        alert('Tipo de usuário desconhecido.')
-      }
-    } else {
-      alert('E-mail ou senha inválidos.')
+      setLoading(false)
+      navigate('/painelfreela')
+    } catch (err) {
+      setError('E-mail ou senha inválidos')
+      setLoading(false)
     }
   }
 
   return (
-    <>
-      <div className="w-full max-w-md flex justify-between fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
-        <button
-          onClick={() => navigate(-1)}
-          className="botao-voltar-home"
-          style={{ left: '20px', right: 'auto', position: 'fixed' }}
-        >
-          ← Voltar
+    <div style={{ maxWidth: 400, margin: 'auto', padding: 20 }}>
+      <h2>Entrar na Plataforma</h2>
+      <form onSubmit={handleLogin}>
+        <input
+          type="email"
+          placeholder="E-mail"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+          style={{ width: '100%', marginBottom: 12, padding: 8 }}
+        />
+        <input
+          type="password"
+          placeholder="Senha"
+          value={senha}
+          onChange={e => setSenha(e.target.value)}
+          required
+          style={{ width: '100%', marginBottom: 12, padding: 8 }}
+        />
+        <button type="submit" disabled={loading} style={{ width: '100%', padding: 10 }}>
+          {loading ? 'Carregando...' : 'Entrar'}
         </button>
-        <button
-          onClick={() => navigate('/')}
-          className="botao-voltar-home botao-home-painel"
-          style={{ right: '20px', left: 'auto', position: 'fixed' }}
-        >
-          🏠 Home
-        </button>
-      </div>
-
-      <div className="home-container">
-        <h1 className="home-title">Entrar na Plataforma</h1>
-
-        <form onSubmit={handleLogin}>
-          <label htmlFor="email">E-mail</label>
-          <input
-            id="email"
-            type="email"
-            placeholder="Digite seu e-mail"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="input"
-            required
-          />
-
-          <label htmlFor="senha">Senha</label>
-          <input
-            id="senha"
-            type="password"
-            placeholder="Digite sua senha"
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-            className="input"
-            required
-          />
-
-          <button type="submit" className="home-button">
-            Entrar
-          </button>
-        </form>
-      </div>
-    </>
+      </form>
+      {error && <p style={{ color: 'red', marginTop: 12 }}>{error}</p>}
+    </div>
   )
 }
