@@ -62,7 +62,7 @@ export default function Curriculos() {
                 <p><strong>Cidade:</strong> {vaga.cidade}</p>
                 <p><strong>Tipo:</strong> {vaga.tipo}</p>
                 <p><strong>Salário:</strong> {vaga.salario}</p>
-                <p className="Descrição">{vaga.descrição}</p>
+                <p className="descricao">{vaga.descricao}</p>
                 <a
                   href={`mailto:${vaga.emailContato}?subject=Candidatura para vaga: ${vaga.titulo}`}
                   className="card-botao"
