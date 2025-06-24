@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
-import { signInWithEmailAndPassword } from 'firebase/auth'
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
-import { auth } from '../firebase'  // Importa auth do firebase.js
-import './Home.css'  // Certifique-se que seu CSS está importado
+import { doc, getDoc } from 'firebase/firestore'
+import { auth, db } from '../firebase'
+import './Home.css'
 
 export default function Login() {
   const navigate = useNavigate()
-
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [loading, setLoading] = useState(false)
@@ -21,13 +21,28 @@ export default function Login() {
       const userCredential = await signInWithEmailAndPassword(auth, email, senha)
       const user = userCredential.user
 
-      // Salva dados do usuário no localStorage
-      localStorage.setItem('usuarioLogado', JSON.stringify({ uid: user.uid, email: user.email, tipo: 'freela' }))
+      // Buscar dados do usuário no Firestore pelo uid
+      const userDoc = await getDoc(doc(db, 'usuarios', user.uid))
 
-      setLoading(false)
-      navigate('/painelfreela')
+      if (userDoc.exists()) {
+        const userData = userDoc.data()
+        localStorage.setItem('usuarioLogado', JSON.stringify({ uid: user.uid, email: user.email, tipo: userData.tipo }))
+
+        setLoading(false)
+        if (userData.tipo === 'freela') {
+          navigate('/painelfreela')
+        } else if (userData.tipo === 'estabelecimento') {
+          navigate('/painel-estabelecimento')
+        } else {
+          alert('Tipo de usuário inválido.')
+          setLoading(false)
+        }
+      } else {
+        alert('Usuário não encontrado no banco de dados.')
+        setLoading(false)
+      }
     } catch (err) {
-      setError('Erro: ' + err.message)
+      setError('E-mail ou senha inválidos')
       setLoading(false)
     }
   }
@@ -56,7 +71,7 @@ export default function Login() {
           {loading ? 'Carregando...' : 'Entrar'}
         </button>
       </form>
-      {error && <p className="error-text" style={{ color: 'red', marginTop: 12 }}>{error}</p>}
+      {error && <p className="error-text">{error}</p>}
     </div>
   )
 }

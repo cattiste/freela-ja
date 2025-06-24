@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { collection, addDoc } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'
+import { setDoc, doc } from 'firebase/firestore'
 import { auth, db } from '../firebase'
 import './Home.css'
 
@@ -12,34 +12,43 @@ export default function CadastroFreela() {
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [celular, setCelular] = useState('')
+  const [endereco, setEndereco] = useState('')
   const [funcao, setFuncao] = useState('')
+  const [foto, setFoto] = useState('')
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
 
-  const handleCadastro = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
+    setError('')
     setLoading(true)
-    setError(null)
+
+    if (!nome || !email || !senha || !celular || !endereco || !funcao) {
+      setError('Preencha todos os campos obrigatórios')
+      setLoading(false)
+      return
+    }
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, senha)
       const user = userCredential.user
 
-      await addDoc(collection(db, 'usuarios'), {
-        uid: user.uid,
+      // Salvar dados no Firestore com UID como ID do documento
+      await setDoc(doc(db, 'usuarios', user.uid), {
         nome,
         email,
         celular,
+        endereco,
         funcao,
-        tipo: 'freela',
-        criadoEm: new Date()
+        foto,
+        tipo: 'freela'
       })
 
       setLoading(false)
       alert('Cadastro realizado com sucesso!')
       navigate('/login')
     } catch (err) {
-      setError('Erro: ' + err.message)
+      setError('Erro ao cadastrar: ' + err.message)
       setLoading(false)
     }
   }
@@ -47,52 +56,69 @@ export default function CadastroFreela() {
   return (
     <div className="home-container">
       <h2 className="home-title">Cadastro Freelancer</h2>
-      <form onSubmit={handleCadastro} className="form-container">
+      <form onSubmit={handleSubmit} className="form-container">
         <input
           type="text"
           placeholder="Nome"
           value={nome}
           onChange={e => setNome(e.target.value)}
-          required
           className="input"
+          required
         />
         <input
           type="email"
           placeholder="E-mail"
           value={email}
           onChange={e => setEmail(e.target.value)}
-          required
           className="input"
+          required
         />
         <input
           type="password"
           placeholder="Senha"
           value={senha}
           onChange={e => setSenha(e.target.value)}
-          required
           className="input"
+          required
         />
         <input
           type="text"
           placeholder="Celular"
           value={celular}
           onChange={e => setCelular(e.target.value)}
-          required
           className="input"
+          required
+        />
+        <input
+          type="text"
+          placeholder="Endereço"
+          value={endereco}
+          onChange={e => setEndereco(e.target.value)}
+          className="input"
+          required
         />
         <input
           type="text"
           placeholder="Função"
           value={funcao}
           onChange={e => setFuncao(e.target.value)}
+          className="input"
           required
+        />
+        <input
+          type="text"
+          placeholder="URL Foto (opcional)"
+          value={foto}
+          onChange={e => setFoto(e.target.value)}
           className="input"
         />
-        <button type="submit" disabled={loading} className="home-button">
+
+        {error && <p className="error-text">{error}</p>}
+
+        <button type="submit" className="home-button" disabled={loading}>
           {loading ? 'Cadastrando...' : 'Cadastrar'}
         </button>
       </form>
-      {error && <p style={{ color: 'red', marginTop: 12 }}>{error}</p>}
     </div>
   )
 }
