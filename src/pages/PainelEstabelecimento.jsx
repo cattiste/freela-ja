@@ -1,4 +1,3 @@
-// src/pages/PainelEstabelecimento.jsx
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Home.css'
@@ -6,21 +5,48 @@ import './Home.css'
 export default function PainelEstabelecimento() {
   const navigate = useNavigate()
   const [freelas, setFreelas] = useState([])
-  const [enderecoEstab, setEnderecoEstab] = useState('')
+  const [estabelecimento, setEstabelecimento] = useState(null)
   const [coordenadasEstab, setCoordenadasEstab] = useState(null)
   const [resultadoFiltro, setResultadoFiltro] = useState([])
+  const [filtroFuncao, setFiltroFuncao] = useState('')
 
   useEffect(() => {
     const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
+    const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]')
+
     if (!usuario || usuario.tipo !== 'estabelecimento') {
       navigate('/login')
       return
     }
 
-    const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]')
+    const dadosEstab = usuarios.find(u => u.uid === usuario.uid)
     const freelancers = usuarios.filter(u => u.tipo === 'freela')
+
+    setEstabelecimento(dadosEstab)
     setFreelas(freelancers)
+
+    if (dadosEstab?.coordenadas) {
+      setCoordenadasEstab(dadosEstab.coordenadas)
+    } else {
+      geolocalizarEndereco(dadosEstab?.endereco).then(coords => {
+        setCoordenadasEstab(coords)
+      })
+    }
   }, [navigate])
+
+  useEffect(() => {
+    if (coordenadasEstab) {
+      const filtrados = freelas
+        .map(f => {
+          const distancia = f.coordenadas ? calcularDistancia(coordenadasEstab, f.coordenadas) : Infinity
+          return { ...f, distancia }
+        })
+        .filter(f => f.distancia <= 7)
+        .sort((a, b) => a.distancia - b.distancia)
+
+      setResultadoFiltro(filtrados)
+    }
+  }, [coordenadasEstab, freelas])
 
   const geolocalizarEndereco = async (enderecoTexto) => {
     try {
@@ -49,45 +75,37 @@ export default function PainelEstabelecimento() {
     return R * c
   }
 
-  const filtrarProximos = async () => {
-    const coords = await geolocalizarEndereco(enderecoEstab)
-    setCoordenadasEstab(coords)
-    if (!coords) return alert('Não foi possível localizar o endereço.')
-
-    const filtrados = freelas
-      .map(f => ({
-        ...f,
-        distancia: f.coordenadas ? calcularDistancia(coords, f.coordenadas) : Infinity
-      }))
-      .filter(f => f.distancia !== Infinity)
-      .sort((a, b) => a.distancia - b.distancia)
-
-    setResultadoFiltro(filtrados)
-  }
+  const freelancersFiltrados = resultadoFiltro.filter(f =>
+    filtroFuncao === '' || f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
+  )
 
   return (
     <div className="min-h-screen bg-orange-50 p-6 text-center">
-      <h1 className="text-3xl font-bold text-orange-700 mb-6">📍 Painel do Estabelecimento</h1>
+      <h1 className="text-3xl font-bold text-orange-700 mb-4">📍 Painel do Estabelecimento</h1>
+
+      <button
+        onClick={() => navigate(`/perfil/${estabelecimento?.uid}`)}
+        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded mb-4"
+      >
+        ✏️ Editar Perfil
+      </button>
 
       <div className="max-w-xl mx-auto mb-6 bg-white rounded-lg p-6 shadow">
         <input
           type="text"
-          value={enderecoEstab}
-          onChange={(e) => setEnderecoEstab(e.target.value)}
-          placeholder="Digite o endereço do seu estabelecimento"
-          className="input mb-4"
+          placeholder="Filtrar por função (ex: Garçom, Chapeiro...)"
+          value={filtroFuncao}
+          onChange={(e) => setFiltroFuncao(e.target.value)}
+          className="input"
         />
-        <button onClick={filtrarProximos} className="home-button w-full">
-          Buscar Freelancers Próximos
-        </button>
       </div>
 
       <div className="max-w-4xl mx-auto">
-        {resultadoFiltro.length === 0 && (
-          <p className="text-gray-500 mb-8">🔎 Nenhum freelancer filtrado ainda.</p>
+        {freelancersFiltrados.length === 0 && (
+          <p className="text-gray-500 mb-8">🔍 Nenhum freelancer próximo encontrado no raio de 7km.</p>
         )}
 
-        {resultadoFiltro.map((freela, idx) => (
+        {freelancersFiltrados.map((freela, idx) => (
           <div
             key={idx}
             className="bg-white rounded-xl shadow p-4 mb-4 flex flex-col md:flex-row justify-between items-center gap-4"
@@ -108,7 +126,6 @@ export default function PainelEstabelecimento() {
             </div>
             <button
               onClick={() => {
-                const estabelecimento = JSON.parse(localStorage.getItem('usuarioLogado'))
                 const chamada = {
                   freela: freela.nome,
                   estabelecimento: estabelecimento?.nome || 'Estabelecimento desconhecido',
