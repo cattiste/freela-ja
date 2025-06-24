@@ -14,6 +14,7 @@ import CadastroFreela from './pages/CadastroFreela'
 import CadastroEstabelecimento from './pages/CadastroEstabelecimento'
 import PainelVagas from './pages/PainelVagas'
 import PublicarVaga from './pages/PublicarVaga'
+import TesteCriarVaga from './pages/TesteCriarVaga'
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
         <Route path="/cadastro-estabelecimento" element={<CadastroEstabelecimento />} />
         <Route path="/perfil/:id" element={<Perfil />} />
         <Route path="/publicarvaga" element={<PublicarVaga />} /> 
+        <Route path="/teste-criar-vaga" element={<TesteCriarVaga />} />
       </Routes>
     </Router>
   )
