@@ -7,6 +7,7 @@ export default function PainelEstabelecimento() {
   const navigate = useNavigate()
   const [freelas, setFreelas] = useState([])
   const [enderecoEstab, setEnderecoEstab] = useState('')
+  const [coordenadasEstab, setCoordenadasEstab] = useState(null)
   const [resultadoFiltro, setResultadoFiltro] = useState([])
 
   useEffect(() => {
@@ -23,13 +24,15 @@ export default function PainelEstabelecimento() {
 
   const geolocalizarEndereco = async (enderecoTexto) => {
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoTexto)}`)
-      const data = await res.json()
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoTexto)}`
+      )
+      const data = await response.json()
       if (data.length > 0) {
         return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) }
       }
     } catch (error) {
-      console.error('Erro ao geolocalizar:', error)
+      console.error("Erro ao geolocalizar endereço:", error)
     }
     return null
   }
@@ -41,14 +44,14 @@ export default function PainelEstabelecimento() {
     const dLat = toRad(coord2.lat - coord1.lat)
     const dLon = toRad(coord2.lon - coord1.lon)
     const a = Math.sin(dLat / 2) ** 2 +
-              Math.cos(toRad(coord1.lat)) * Math.cos(toRad(coord2.lat)) *
-              Math.sin(dLon / 2) ** 2
+      Math.cos(toRad(coord1.lat)) * Math.cos(toRad(coord2.lat)) * Math.sin(dLon / 2) ** 2
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
     return R * c
   }
 
   const filtrarProximos = async () => {
     const coords = await geolocalizarEndereco(enderecoEstab)
+    setCoordenadasEstab(coords)
     if (!coords) return alert('Não foi possível localizar o endereço.')
 
     const filtrados = freelas
@@ -65,18 +68,10 @@ export default function PainelEstabelecimento() {
   return (
     <>
       <div className="w-full max-w-md flex justify-between fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
-        <button
-          onClick={() => navigate(-1)}
-          className="botao-voltar-home"
-          style={{ left: '20px', right: 'auto', position: 'fixed' }}
-        >
+        <button onClick={() => navigate(-1)} className="botao-voltar-home" style={{ left: '20px', position: 'fixed' }}>
           ← Voltar
         </button>
-        <button
-          onClick={() => navigate('/')}
-          className="botao-voltar-home botao-home-painel"
-          style={{ right: '20px', left: 'auto', position: 'fixed' }}
-        >
+        <button onClick={() => navigate('/')} className="botao-voltar-home botao-home-painel" style={{ right: '20px', position: 'fixed' }}>
           🏠 Home
         </button>
       </div>
@@ -116,12 +111,20 @@ export default function PainelEstabelecimento() {
                 <div>
                   <p className="font-bold text-lg text-gray-800">{freela.nome}</p>
                   <p className="text-gray-600">{freela.funcao}</p>
-                  <p className="text-gray-500 text-sm">{freela.distancia?.toFixed(2)} km de distância</p>
+                  <p className="text-gray-500 text-sm">
+                    {freela.distancia?.toFixed(2)} km de distância
+                  </p>
                 </div>
               </div>
               <button
                 onClick={() => {
-                  localStorage.setItem('freelaChamado', freela.nome)
+                  const estabelecimento = JSON.parse(localStorage.getItem('usuarioLogado'))
+                  const chamada = {
+                    freela: freela.nome,
+                    estabelecimento: estabelecimento?.nome || 'Estabelecimento desconhecido',
+                    horario: new Date().toISOString()
+                  }
+                  localStorage.setItem('chamadaFreela', JSON.stringify(chamada))
                   alert(`✅ Você chamou ${freela.nome}!`)
                 }}
                 className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition"
