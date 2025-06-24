@@ -1,5 +1,9 @@
+// src/pages/CadastroFreela.jsx
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { collection, addDoc } from 'firebase/firestore'
+import { storage, db } from '../firebase'
 import './Home.css'
 
 export default function CadastroFreela() {
@@ -10,44 +14,42 @@ export default function CadastroFreela() {
   const [endereco, setEndereco] = useState('')
   const [funcao, setFuncao] = useState('')
   const [foto, setFoto] = useState(null)
-
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
   const navigate = useNavigate()
 
-  const handleFotoChange = async (e) => {
+  // Upload da foto para Firebase Storage
+  const handleUploadFoto = async (e) => {
     const file = e.target.files[0]
     if (!file) return
 
-    if (file.size > 1024 * 1024) {
-      alert('Imagem muito grande. Envie uma com até 1MB.')
-      return
+    setUploading(true)
+    setError('')
+
+    try {
+      const storageRef = ref(storage, `fotos/${Date.now()}_${file.name}`)
+      await uploadBytes(storageRef, file)
+      const url = await getDownloadURL(storageRef)
+      setFoto(url)
+    } catch (err) {
+      setError('Erro ao enviar a foto: ' + err.message)
+    } finally {
+      setUploading(false)
     }
-
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('upload_preset', 'ml_default')
-    formData.append('cloud_name', 'dbemvuau3')
-
-    const res = await fetch('https://api.cloudinary.com/v1_1/dbemvuau3/image/upload', {
-      method: 'POST',
-      body: formData
-    })
-
-    const data = await res.json()
-    setFoto(data.secure_url)
   }
 
+  // Geolocalizar endereço usando API Nominatim OpenStreetMap
   const geolocalizarEndereco = async (enderecoTexto) => {
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoTexto)}`)
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoTexto)}`
+      )
       const data = await res.json()
       if (data.length > 0) {
-        return {
-          lat: parseFloat(data[0].lat),
-          lon: parseFloat(data[0].lon)
-        }
+        return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) }
       }
-    } catch (error) {
-      console.error('Erro ao geolocalizar:', error)
+    } catch (err) {
+      console.error('Erro geolocalizando:', err)
     }
     return null
   }
@@ -55,9 +57,14 @@ export default function CadastroFreela() {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
+    if (!nome || !email || !senha || !celular || !endereco || !funcao) {
+      alert('Preencha todos os campos')
+      return
+    }
+
     const coordenadas = await geolocalizarEndereco(endereco)
     if (!coordenadas) {
-      alert('Não foi possível localizar o endereço. Tente escrever de forma mais completa.')
+      alert('Não foi possível localizar o endereço. Seja mais específico.')
       return
     }
 
@@ -73,116 +80,78 @@ export default function CadastroFreela() {
       tipo: 'freela'
     }
 
-    const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]')
-    usuarios.push(novoFreela)
-    localStorage.setItem('usuarios', JSON.stringify(usuarios))
-    localStorage.setItem('usuarioLogado', JSON.stringify(novoFreela))
-
-    alert('Cadastro realizado com sucesso!')
-    navigate('/painel')
+    try {
+      await addDoc(collection(db, 'usuarios'), novoFreela)
+      alert('Cadastro realizado com sucesso!')
+      navigate('/login')
+    } catch (err) {
+      alert('Erro ao salvar cadastro: ' + err.message)
+    }
   }
 
   return (
-    <>
-      <div className="w-full max-w-md flex justify-between fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
-        <button
-          onClick={() => navigate(-1)}
-          className="botao-voltar-home"
-          aria-label="Voltar"
-          style={{ left: '20px', right: 'auto', position: 'fixed' }}
-        >
-          ← Voltar
+    <div className="home-container">
+      <h1 className="home-title">Cadastro Freelancer</h1>
+      <form onSubmit={handleSubmit} className="form-container">
+        <input
+          type="text"
+          placeholder="Nome"
+          value={nome}
+          onChange={e => setNome(e.target.value)}
+          className="input"
+          required
+        />
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          className="input"
+          required
+        />
+        <input
+          type="password"
+          placeholder="Senha"
+          value={senha}
+          onChange={e => setSenha(e.target.value)}
+          className="input"
+          required
+        />
+        <input
+          type="text"
+          placeholder="Celular"
+          value={celular}
+          onChange={e => setCelular(e.target.value)}
+          className="input"
+          required
+        />
+        <input
+          type="text"
+          placeholder="Endereço"
+          value={endereco}
+          onChange={e => setEndereco(e.target.value)}
+          className="input"
+          required
+        />
+        <input
+          type="text"
+          placeholder="Função"
+          value={funcao}
+          onChange={e => setFuncao(e.target.value)}
+          className="input"
+          required
+        />
+        <div>
+          <label>Foto de Perfil (opcional)</label>
+          <input type="file" accept="image/*" onChange={handleUploadFoto} />
+          {uploading && <p>Enviando foto...</p>}
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+          {foto && <img src={foto} alt="Preview" style={{ width: 80, borderRadius: 40, marginTop: 8 }} />}
+        </div>
+        <button type="submit" className="home-button" disabled={uploading}>
+          Cadastrar
         </button>
-
-        <button
-          onClick={() => navigate('/')}
-          className="botao-voltar-home botao-home-painel"
-          aria-label="Home"
-          style={{ right: '20px', left: 'auto', position: 'fixed' }}
-        >
-          🏠 Home
-        </button>
-      </div>
-
-      <div className="home-container">
-        <h1 className="home-title">Cadastro Freelancer</h1>
-
-        <form onSubmit={handleSubmit}>
-          <label>Nome completo</label>
-          <input
-            type="text"
-            placeholder="Nome completo"
-            value={nome}
-            onChange={e => setNome(e.target.value)}
-            className="input"
-            required
-          />
-          <label>Email</label>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="input"
-            required
-          />
-          <label>Senha</label>
-          <input
-            type="password"
-            placeholder="Senha"
-            value={senha}
-            onChange={e => setSenha(e.target.value)}
-            className="input"
-            required
-          />
-          <label>Celular</label>
-          <input
-            type="text"
-            placeholder="Celular"
-            value={celular}
-            onChange={e => setCelular(e.target.value)}
-            className="input"
-            required
-          />
-          <label>Endereço</label>
-          <input
-            type="text"
-            placeholder="Endereço"
-            value={endereco}
-            onChange={e => setEndereco(e.target.value)}
-            className="input"
-            required
-          />
-          <label>Função (ex: Cozinheiro, Garçom)</label>
-          <input
-            type="text"
-            placeholder="Função"
-            value={funcao}
-            onChange={e => setFuncao(e.target.value)}
-            className="input"
-            required
-          />
-          <label>Foto de Perfil</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFotoChange}
-          />
-          {foto && (
-            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-              <img
-                src={foto}
-                alt="Preview da foto"
-                className="w-24 h-24 rounded-full object-cover border-2 border-orange-500 mx-auto"
-              />
-              <p className="text-sm text-gray-600 mt-1">Pré-visualização da sua foto</p>
-            </div>
-          )}
-          <button type="submit" className="home-button">
-            Cadastrar
-          </button>
-        </form>
-      </div>
-    </>
+      </form>
+    </div>
   )
 }
