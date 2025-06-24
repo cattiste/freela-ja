@@ -15,8 +15,35 @@ export default function CadastroFreela() {
   const [endereco, setEndereco] = useState('')
   const [funcao, setFuncao] = useState('')
   const [foto, setFoto] = useState('')
+  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Função para upload da foto para Cloudinary
+  const handleUploadFoto = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    setUploading(true)
+    setError('')
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('upload_preset', 'ml_default') // seu upload preset do Cloudinary
+      // Substitua 'dbemvuau3' pelo seu cloud name do Cloudinary
+      const res = await fetch('https://api.cloudinary.com/v1_1/dbemvuau3/image/upload', {
+        method: 'POST',
+        body: formData
+      })
+      const data = await res.json()
+      setFoto(data.secure_url)
+    } catch (err) {
+      setError('Erro ao enviar a foto: ' + err.message)
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -33,14 +60,13 @@ export default function CadastroFreela() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, senha)
       const user = userCredential.user
 
-      // Salvar dados no Firestore com UID como ID do documento
       await setDoc(doc(db, 'usuarios', user.uid), {
         nome,
         email,
         celular,
         endereco,
         funcao,
-        foto,
+        foto, // salva a URL da imagem que veio do Cloudinary
         tipo: 'freela'
       })
 
@@ -105,17 +131,19 @@ export default function CadastroFreela() {
           className="input"
           required
         />
+
+        <label>Foto de Perfil (opcional):</label>
         <input
-          type="text"
-          placeholder="URL Foto (opcional)"
-          value={foto}
-          onChange={e => setFoto(e.target.value)}
-          className="input"
+          type="file"
+          accept="image/*"
+          onChange={handleUploadFoto}
+          disabled={uploading}
         />
-
+        {uploading && <p>Enviando foto...</p>}
         {error && <p className="error-text">{error}</p>}
+        {foto && <img src={foto} alt="Preview" style={{ width: 80, borderRadius: 40, marginTop: 8 }} />}
 
-        <button type="submit" className="home-button" disabled={loading}>
+        <button type="submit" className="home-button" disabled={loading || uploading}>
           {loading ? 'Cadastrando...' : 'Cadastrar'}
         </button>
       </form>
