@@ -1,9 +1,10 @@
+// src/pages/CadastroFreela.jsx
 import React, { useState } from 'react'
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'
 import { collection, addDoc } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase'
-import UploadFoto from '../components/UploadFoto' // seu componente de upload de foto
+import UploadImagem from '../components/UploadImagem'
 import './Home.css'
 
 export default function CadastroFreela() {
@@ -20,8 +21,9 @@ export default function CadastroFreela() {
 
   const handleCadastro = async (e) => {
     e.preventDefault()
+
     if (!nome || !email || !senha || !celular || !endereco || !funcao) {
-      alert('Preencha todos os campos')
+      alert('Preencha todos os campos obrigatórios.')
       return
     }
 
@@ -29,11 +31,9 @@ export default function CadastroFreela() {
     setError(null)
 
     try {
-      // Cria usuário no Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, senha)
       const user = userCredential.user
 
-      // Salva dados extras no Firestore, incluindo uid do usuário criado
       await addDoc(collection(db, 'usuarios'), {
         uid: user.uid,
         nome,
@@ -42,12 +42,14 @@ export default function CadastroFreela() {
         endereco,
         funcao,
         foto,
-        tipo: 'freela'
+        tipo: 'freela',
+        criadoEm: new Date()
       })
 
-      alert('Cadastro realizado com sucesso! Faça login para continuar.')
+      alert('Cadastro realizado com sucesso!')
       navigate('/login')
     } catch (err) {
+      console.error('Erro no cadastro:', err)
       setError(err.message)
     } finally {
       setLoading(false)
@@ -58,17 +60,17 @@ export default function CadastroFreela() {
     <div className="home-container">
       <h1 className="home-title">Cadastro Freelancer</h1>
       <form onSubmit={handleCadastro} className="form-container">
-        <input type="text" placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} className="input" required />
-        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input" required />
-        <input type="password" placeholder="Senha" value={senha} onChange={e => setSenha(e.target.value)} className="input" required />
-        <input type="text" placeholder="Celular" value={celular} onChange={e => setCelular(e.target.value)} className="input" required />
-        <input type="text" placeholder="Endereço" value={endereco} onChange={e => setEndereco(e.target.value)} className="input" required />
-        <input type="text" placeholder="Função" value={funcao} onChange={e => setFuncao(e.target.value)} className="input" required />
+        <input type="text" placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} className="input" />
+        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input" />
+        <input type="password" placeholder="Senha" value={senha} onChange={e => setSenha(e.target.value)} className="input" />
+        <input type="text" placeholder="Celular" value={celular} onChange={e => setCelular(e.target.value)} className="input" />
+        <input type="text" placeholder="Endereço" value={endereco} onChange={e => setEndereco(e.target.value)} className="input" />
+        <input type="text" placeholder="Função" value={funcao} onChange={e => setFuncao(e.target.value)} className="input" />
 
-        <label>Foto de Perfil (opcional)</label>
-        <UploadFoto onUploadComplete={url => setFoto(url)} />
+        <UploadImagem onUploadComplete={url => setFoto(url)} />
 
         {error && <p style={{ color: 'red' }}>{error}</p>}
+
         <button type="submit" className="home-button" disabled={loading}>
           {loading ? 'Cadastrando...' : 'Cadastrar'}
         </button>
