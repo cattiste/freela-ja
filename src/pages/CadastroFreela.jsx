@@ -1,6 +1,7 @@
+// src/pages/CadastroFreela.jsx
 import React, { useState } from 'react'
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'
-import { collection, addDoc } from 'firebase/firestore'
+import { doc, setDoc } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase'
 import UploadImagem from '../components/UploadImagem'
@@ -18,21 +19,6 @@ export default function CadastroFreela() {
   const [error, setError] = useState(null)
   const navigate = useNavigate()
 
-  const geolocalizarEndereco = async (enderecoTexto) => {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoTexto)}`
-      )
-      const data = await response.json()
-      if (data.length > 0) {
-        return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) }
-      }
-    } catch (err) {
-      console.error('Erro ao geolocalizar:', err)
-    }
-    return null
-  }
-
   const handleCadastro = async (e) => {
     e.preventDefault()
 
@@ -48,9 +34,8 @@ export default function CadastroFreela() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, senha)
       const user = userCredential.user
 
-      const coordenadas = await geolocalizarEndereco(endereco)
-
-      await addDoc(collection(db, 'usuarios'), {
+      // Aqui usamos setDoc com UID como ID do documento
+      await setDoc(doc(db, 'usuarios', user.uid), {
         uid: user.uid,
         nome,
         email,
@@ -59,7 +44,6 @@ export default function CadastroFreela() {
         funcao,
         foto,
         tipo: 'freela',
-        coordenadas,
         criadoEm: new Date()
       })
 
