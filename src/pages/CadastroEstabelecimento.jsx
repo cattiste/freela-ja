@@ -1,52 +1,54 @@
-// src/pages/CadastroEstabelecimento.jsx
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'
 import { collection, addDoc } from 'firebase/firestore'
-import { db } from '../firebase'
-import UploadFoto from '../components/UploadImagem'
+import { useNavigate } from 'react-router-dom'
+import { auth, db } from '../firebase'
+import UploadFoto from '../components/UploadFoto' // seu componente de upload de foto
 import './Home.css'
 
 export default function CadastroEstabelecimento() {
-  const navigate = useNavigate()
-
   const [nomeFantasia, setNomeFantasia] = useState('')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [telefone, setTelefone] = useState('')
   const [endereco, setEndereco] = useState('')
   const [descricao, setDescricao] = useState('')
-  const [fotoUrl, setFotoUrl] = useState('')
+  const [foto, setFoto] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const navigate = useNavigate()
 
-  const handleFotoUpload = (url) => {
-    setFotoUrl(url)
-  }
-
-  const handleSubmit = async (e) => {
+  const handleCadastro = async (e) => {
     e.preventDefault()
-
     if (!nomeFantasia || !email || !senha || !telefone || !endereco || !descricao) {
-      alert('Preencha todos os campos obrigatórios!')
+      alert('Preencha todos os campos')
       return
     }
 
     setLoading(true)
+    setError(null)
+
     try {
-      // Atenção: em app real, não salve senha direto no Firestore!
+      // Cria usuário no Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, senha)
+      const user = userCredential.user
+
+      // Salva dados extras no Firestore, incluindo uid do usuário criado
       await addDoc(collection(db, 'usuarios'), {
+        uid: user.uid,
         nomeFantasia,
         email,
-        senha,
         telefone,
         endereco,
         descricao,
-        foto: fotoUrl,
+        foto,
         tipo: 'estabelecimento'
       })
-      alert('Cadastro realizado com sucesso!')
+
+      alert('Cadastro realizado com sucesso! Faça login para continuar.')
       navigate('/login')
     } catch (err) {
-      alert('Erro ao cadastrar: ' + err.message)
+      setError(err.message)
     } finally {
       setLoading(false)
     }
@@ -55,63 +57,19 @@ export default function CadastroEstabelecimento() {
   return (
     <div className="home-container">
       <h1 className="home-title">Cadastro Estabelecimento</h1>
-      <form onSubmit={handleSubmit} className="form-container">
-        <input
-          type="text"
-          placeholder="Nome Fantasia"
-          value={nomeFantasia}
-          onChange={e => setNomeFantasia(e.target.value)}
-          className="input"
-          required
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          className="input"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Senha"
-          value={senha}
-          onChange={e => setSenha(e.target.value)}
-          className="input"
-          required
-        />
-        <input
-          type="text"
-          placeholder="Telefone"
-          value={telefone}
-          onChange={e => setTelefone(e.target.value)}
-          className="input"
-          required
-        />
-        <input
-          type="text"
-          placeholder="Endereço"
-          value={endereco}
-          onChange={e => setEndereco(e.target.value)}
-          className="input"
-          required
-        />
-        <textarea
-          placeholder="Descrição do estabelecimento"
-          value={descricao}
-          onChange={e => setDescricao(e.target.value)}
-          className="input"
-          rows={4}
-          required
-          style={{ resize: 'none' }}
-        />
+      <form onSubmit={handleCadastro} className="form-container">
+        <input type="text" placeholder="Nome Fantasia" value={nomeFantasia} onChange={e => setNomeFantasia(e.target.value)} className="input" required />
+        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input" required />
+        <input type="password" placeholder="Senha" value={senha} onChange={e => setSenha(e.target.value)} className="input" required />
+        <input type="text" placeholder="Telefone" value={telefone} onChange={e => setTelefone(e.target.value)} className="input" required />
+        <input type="text" placeholder="Endereço" value={endereco} onChange={e => setEndereco(e.target.value)} className="input" required />
+        <textarea placeholder="Descrição" value={descricao} onChange={e => setDescricao(e.target.value)} className="input" rows={4} required />
+        
+        <label>Foto do Estabelecimento (opcional)</label>
+        <UploadFoto onUploadComplete={url => setFoto(url)} />
 
-        <label style={{ marginTop: 12, fontWeight: 'bold', color: '#444' }}>
-          Foto do Estabelecimento (opcional)
-        </label>
-        <UploadFoto onUploadComplete={handleFotoUpload} />
-
-        <button type="submit" className="home-button" disabled={loading} style={{ marginTop: 20 }}>
+        {error && <p style={{ color: 'red' }}>{error}</p>}
+        <button type="submit" className="home-button" disabled={loading}>
           {loading ? 'Cadastrando...' : 'Cadastrar'}
         </button>
       </form>
