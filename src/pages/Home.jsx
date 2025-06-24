@@ -16,7 +16,7 @@ export default function Home() {
         <button onClick={() => navigate("/cadastrofreela")}>Sou um Freelancer</button>
         <button onClick={() => navigate("/cadastro-estabelecimento")}>Sou um Estabelecimento</button>
         <button onClick={() => navigate('/login')}>Login</button>
-        <button onClick={() => navigate('/contratar')}>Painel de Vagas</button>
+        <button onClick={() => navigate('/curriculos')}>Curriculos</button>
       </div>
     </div>
   )

@@ -7,7 +7,7 @@ import Cadastro from './pages/Cadastro'
 import Login from './pages/Login'
 import PainelFreela from './pages/PainelFreela'
 import PainelEstabelecimento from './pages/PainelEstabelecimento'
-import Contratar from './pages/Contratar'
+import Curriculos from './pages/Curriculos'
 import Perfil from './pages/Perfil'
 import RotaProtegida from './components/RotaProtegida'
 import CadastroFreela from './pages/CadastroFreela'
@@ -23,7 +23,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/painelfreela" element={<PainelFreela />} />
         <Route path="/painel-estabelecimento" element={<RotaProtegida><PainelEstabelecimento /></RotaProtegida>} />
-        <Route path="/contratar" element={<Contratar />} />
+        <Route path="/curriculos" element={<curriculos />} />
         <Route path="/cadastrofreela" element={<CadastroFreela />} />
         <Route path="/cadastro-estabelecimento" element={<CadastroEstabelecimento />} />
         <Route path="/perfil/:id" element={<Perfil />} />
