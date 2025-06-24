@@ -21,8 +21,6 @@ export default function Login() {
       const userCredential = await signInWithEmailAndPassword(auth, email, senha)
       const user = userCredential.user
 
-      // Salvar info do usuário no localStorage - aqui só email e uid
-      // Para tipo, buscaremos no Firestore no painel
       localStorage.setItem('usuarioLogado', JSON.stringify({ uid: user.uid, email: user.email, tipo: 'freela' }))
 
       setLoading(false)
@@ -34,8 +32,17 @@ export default function Login() {
   }
 
   return (
-    <div style={{ maxWidth: 400, margin: 'auto', padding: 20 }}>
-      <h2>Entrar na Plataforma</h2>
+    <div style={{
+      maxWidth: 400,
+      margin: '60px auto',
+      padding: 24,
+      borderRadius: 10,
+      boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+      backgroundColor: '#121212',
+      color: '#eee',
+      fontFamily: 'Arial, sans-serif',
+    }}>
+      <h2 style={{ textAlign: 'center', marginBottom: 24 }}>Entrar na Plataforma</h2>
       <form onSubmit={handleLogin}>
         <input
           type="email"
@@ -43,7 +50,18 @@ export default function Login() {
           value={email}
           onChange={e => setEmail(e.target.value)}
           required
-          style={{ width: '100%', marginBottom: 12, padding: 8 }}
+          style={{
+            width: '100%',
+            padding: 12,
+            marginBottom: 16,
+            borderRadius: 8,
+            border: '1px solid #444',
+            backgroundColor: '#222',
+            color: '#eee',
+            fontSize: 16,
+            outline: 'none',
+            boxSizing: 'border-box',
+          }}
         />
         <input
           type="password"
@@ -51,13 +69,45 @@ export default function Login() {
           value={senha}
           onChange={e => setSenha(e.target.value)}
           required
-          style={{ width: '100%', marginBottom: 12, padding: 8 }}
+          style={{
+            width: '100%',
+            padding: 12,
+            marginBottom: 16,
+            borderRadius: 8,
+            border: '1px solid #444',
+            backgroundColor: '#222',
+            color: '#eee',
+            fontSize: 16,
+            outline: 'none',
+            boxSizing: 'border-box',
+          }}
         />
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: 10 }}>
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            width: '100%',
+            padding: 14,
+            borderRadius: 8,
+            border: 'none',
+            backgroundColor: '#4CAF50',
+            color: '#fff',
+            fontSize: 16,
+            fontWeight: 'bold',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            transition: 'background-color 0.3s ease',
+          }}
+          onMouseEnter={e => {
+            if(!loading) e.currentTarget.style.backgroundColor = '#45a049'
+          }}
+          onMouseLeave={e => {
+            if(!loading) e.currentTarget.style.backgroundColor = '#4CAF50'
+          }}
+        >
           {loading ? 'Carregando...' : 'Entrar'}
         </button>
       </form>
-      {error && <p style={{ color: 'red', marginTop: 12 }}>{error}</p>}
+      {error && <p style={{ color: '#ff4d4d', marginTop: 16, textAlign: 'center' }}>{error}</p>}
     </div>
   )
 }
