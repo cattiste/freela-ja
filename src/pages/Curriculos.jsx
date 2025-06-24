@@ -48,7 +48,7 @@ export default function Curriculos() {
       </div>
 
       <div className="curriculos-container">
-        <h2 className="curriculosr-title">Painel de Vagas CLT</h2>
+        <h2 className="curriculos-title">Painel de Vagas CLT</h2>
         <p className="curriculos-subtitle">Confira vagas fixas publicadas por estabelecimentos</p>
 
         {loading ? (

@@ -12,6 +12,8 @@ import Perfil from './pages/Perfil'
 import RotaProtegida from './components/RotaProtegida'
 import CadastroFreela from './pages/CadastroFreela'
 import CadastroEstabelecimento from './pages/CadastroEstabelecimento'
+import PainelVagas from './pages/PainelVagas'
+import PublicarVaga from './pages/PublicarVaga'
 
 function App() {
   return (
@@ -27,6 +29,8 @@ function App() {
         <Route path="/cadastrofreela" element={<CadastroFreela />} />
         <Route path="/cadastro-estabelecimento" element={<CadastroEstabelecimento />} />
         <Route path="/perfil/:id" element={<Perfil />} />
+        <Route path="/vagas" element={<PainelVagas />} />
+        <Route path="/publicarvaga" element={<PublicarVaga />} /> 
       </Routes>
     </Router>
   )
