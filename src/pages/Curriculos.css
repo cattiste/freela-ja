@@ -70,7 +70,7 @@ body {
   background-color: #e85a00;
 }
 
-/* Botões fixos do topo */
+/* Botões fixos no topo */
 .nav-buttons {
   position: fixed;
   top: 24px;
@@ -103,4 +103,3 @@ body {
 .botao-home-painel {
   background-color: #ff6b00;
 }
-

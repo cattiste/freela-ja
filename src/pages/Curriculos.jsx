@@ -25,22 +25,6 @@ export default function Curriculos() {
     fetchVagas()
   }, [])
 
-  if (loading) {
-    return (
-      <div className="curriculos-container">
-        <p style={{ textAlign: 'center' }}>Carregando vagas...</p>
-      </div>
-    )
-  }
-
-  if (!loading && vagas.length === 0) {
-    return (
-      <div className="curriculos-container">
-        <p style={{ textAlign: 'center' }}>Nenhuma vaga disponível no momento.</p>
-      </div>
-    )
-  }
-
   return (
     <>
       <div className="nav-buttons">
@@ -64,24 +48,30 @@ export default function Curriculos() {
         <h2 className="curriculos-title">Painel de Vagas CLT</h2>
         <p className="curriculos-subtitle">Confira vagas fixas publicadas por estabelecimentos</p>
 
-        <div className="resultado-chefs">
-          {vagas.map(vaga => (
-            <div key={vaga.id} className="card-profissional">
-              <h3>{vaga.titulo}</h3>
-              <p><strong>Empresa:</strong> {vaga.empresa}</p>
-              <p><strong>Cidade:</strong> {vaga.cidade}</p>
-              <p><strong>Tipo:</strong> {vaga.tipo}</p>
-              <p><strong>Salário:</strong> {vaga.salario}</p>
-              <p className="descricao">{vaga.descricao}</p>
-              <a
-                href={`mailto:${vaga.emailContato}?subject=Candidatura para vaga: ${vaga.titulo}`}
-                className="card-botao"
-              >
-                Candidatar-se
-              </a>
-            </div>
-          ))}
-        </div>
+        {loading ? (
+          <p style={{ textAlign: 'center' }}>Carregando vagas...</p>
+        ) : vagas.length > 0 ? (
+          <div className="resultado-chefs">
+            {vagas.map(vaga => (
+              <div key={vaga.id} className="card-profissional">
+                <h3>{vaga.titulo}</h3>
+                <p><strong>Empresa:</strong> {vaga.empresa}</p>
+                <p><strong>Cidade:</strong> {vaga.cidade}</p>
+                <p><strong>Tipo:</strong> {vaga.tipo}</p>
+                <p><strong>Salário:</strong> {vaga.salario}</p>
+                <p className="descricao">{vaga.descricao}</p>
+                <a
+                  href={`mailto:${vaga.emailContato}?subject=Candidatura para vaga: ${vaga.titulo}`}
+                  className="card-botao"
+                >
+                  Candidatar-se
+                </a>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p style={{ textAlign: 'center' }}>Nenhuma vaga disponível no momento.</p>
+        )}
       </div>
     </>
   )
