@@ -25,11 +25,11 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/painelfreela" element={<PainelFreela />} />
         <Route path="/painel-estabelecimento" element={<RotaProtegida><PainelEstabelecimento /></RotaProtegida>} />
-        <Route path="/vagas" element={<Curriculos />} />
+        <Route path="/curriculos" element={<Curriculos />} />
+        <Route path="/vagas" element={<PainelVagas />} />
         <Route path="/cadastrofreela" element={<CadastroFreela />} />
         <Route path="/cadastro-estabelecimento" element={<CadastroEstabelecimento />} />
         <Route path="/perfil/:id" element={<Perfil />} />
-        <Route path="/vagas" element={<PainelVagas />} />
         <Route path="/publicarvaga" element={<PublicarVaga />} /> 
       </Routes>
     </Router>
