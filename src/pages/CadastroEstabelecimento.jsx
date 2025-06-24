@@ -1,7 +1,7 @@
 // src/pages/CadastroEstabelecimento.jsx
 import React, { useState } from 'react'
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'
-import { collection, addDoc } from 'firebase/firestore'
+import { doc, setDoc } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase'
 import UploadImagem from '../components/UploadImagem'
@@ -33,7 +33,8 @@ export default function CadastroEstabelecimento() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, senha)
       const user = userCredential.user
 
-      await addDoc(collection(db, 'usuarios'), {
+      // Salva no Firestore com o UID como ID do documento
+      await setDoc(doc(db, 'usuarios', user.uid), {
         uid: user.uid,
         nome,
         email,
@@ -48,7 +49,7 @@ export default function CadastroEstabelecimento() {
       navigate('/login')
     } catch (err) {
       console.error('Erro no cadastro:', err)
-      setError(err.message)
+      setError('Erro ao cadastrar: ' + err.message)
     } finally {
       setLoading(false)
     }
