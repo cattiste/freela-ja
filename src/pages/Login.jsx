@@ -1,12 +1,14 @@
+// src/pages/Login.jsx
 import React, { useState } from 'react'
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
+import { collection, getDocs, query, where } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase'
 import './Home.css'
 
 export default function Login() {
   const navigate = useNavigate()
+
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [loading, setLoading] = useState(false)
@@ -18,40 +20,45 @@ export default function Login() {
     setError(null)
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, senha)
-      const user = userCredential.user
+      const credenciais = await signInWithEmailAndPassword(auth, email, senha)
+      const user = credenciais.user
 
-      // Buscar o usuário no Firestore pela UID
-      const userRef = doc(db, 'usuarios', user.uid)
-      const userSnap = await getDoc(userRef)
+      // Buscar no Firestore os dados do usuário
+      const q = query(collection(db, 'usuarios'), where('uid', '==', user.uid))
+      const snapshot = await getDocs(q)
 
-      if (userSnap.exists()) {
-        const userData = userSnap.data()
-
-        // Salvar dados no localStorage
-        localStorage.setItem('usuarioLogado', JSON.stringify({
-          uid: user.uid,
-          email: user.email,
-          nome: userData.nome,
-          tipo: userData.tipo
-        }))
-
-        // Redirecionar com base no tipo
-        if (userData.tipo === 'freela') {
-          navigate('/painelfreela')
-        } else if (userData.tipo === 'estabelecimento') {
-          navigate('/painel-estabelecimento')
-        } else {
-          setError('Tipo de usuário inválido.')
-        }
-
-      } else {
-        setError('Usuário não encontrado na base de dados.')
+      if (snapshot.empty) {
+        throw new Error('Usuário autenticado, mas não encontrado na base de dados.')
       }
 
+      const dadosUsuario = snapshot.docs[0].data()
+
+      localStorage.setItem('usuarioLogado', JSON.stringify({
+        uid: user.uid,
+        email: user.email,
+        nome: dadosUsuario.nome,
+        tipo: dadosUsuario.tipo,
+        funcao: dadosUsuario.funcao || '',
+        endereco: dadosUsuario.endereco || '',
+        foto: dadosUsuario.foto || '',
+      }))
+
+      // Salva todos no localStorage (opcional para uso offline/local)
+      const todosUsuarios = []
+      snapshot.forEach(doc => todosUsuarios.push(doc.data()))
+      localStorage.setItem('usuarios', JSON.stringify(todosUsuarios))
+
+      // Redireciona
+      if (dadosUsuario.tipo === 'freela') {
+        navigate('/painelfreela')
+      } else if (dadosUsuario.tipo === 'estabelecimento') {
+        navigate('/painel-estabelecimento')
+      } else {
+        throw new Error('Tipo de usuário não reconhecido.')
+      }
     } catch (err) {
       console.error(err)
-      setError('E-mail ou senha inválidos.')
+      setError('E-mail, senha ou cadastro inválido.')
     } finally {
       setLoading(false)
     }
