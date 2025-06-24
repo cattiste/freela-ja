@@ -1,51 +1,68 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 
-export default function UploadImagem({ onUpload }) {
-  const [preview, setPreview] = useState(null)
-  const [tamanho, setTamanho] = useState(null)
+export default function UploadFoto({ onUploadComplete }) {
+  const [foto, setFoto] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
+  const handleUploadFoto = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-    if (file.size > 1024 * 1024) {
-      alert('Imagem muito grande. Envie uma com até 1MB.')
-      return
+    setUploading(true);
+    setError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', 'ml_default'); // seu upload preset no Cloudinary
+      formData.append('folder', 'perfil/fotos'); // pasta no Cloudinary (asset folder)
+
+      const res = await fetch(
+        'https://api.cloudinary.com/v1_1/dbemvuau3/image/upload',
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.secure_url) {
+        setFoto(data.secure_url);
+        if (onUploadComplete) onUploadComplete(data.secure_url); // retorna URL pro componente pai
+      } else {
+        setError('Erro ao enviar a foto.');
+      }
+    } catch (err) {
+      setError('Erro ao enviar a foto: ' + err.message);
+    } finally {
+      setUploading(false);
     }
-
-    setPreview(URL.createObjectURL(file))
-    setTamanho((file.size / 1024).toFixed(2)) // em KB
-
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('upload_preset', 'ml_default') // use o preset padrão gratuito
-    formData.append('cloud_name', 'dbemvuau3')
-
-    const res = await fetch('https://api.cloudinary.com/v1_1/dbemvuau3/image/upload', {
-      method: 'POST',
-      body: formData
-    })
-
-    const data = await res.json()
-    onUpload(data.secure_url) // retorna a URL final
-  }
+  };
 
   return (
-    <div className="mb-4">
-      <label className="block text-sm font-bold mb-1">Foto de Perfil</label>
+    <div style={{ maxWidth: 400, margin: 'auto', padding: 20 }}>
+      <label htmlFor="upload">Escolha uma foto:</label>
       <input
+        id="upload"
         type="file"
         accept="image/*"
-        onChange={handleImageUpload}
-        className="w-full p-2 border rounded"
+        onChange={handleUploadFoto}
+        disabled={uploading}
+        style={{ display: 'block', marginBottom: 12 }}
       />
 
-      {preview && (
-        <div className="mt-2">
-          <p className="text-sm text-gray-500">Tamanho estimado: {tamanho} KB</p>
-          <img src={preview} alt="preview" className="mt-2 w-32 h-32 object-cover rounded-full border" />
-        </div>
+      {uploading && <p>Enviando foto...</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+
+      {foto && (
+        <img
+          src={foto}
+          alt="Foto enviada"
+          style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 60, marginTop: 10 }}
+        />
       )}
     </div>
-  )
+  );
 }
