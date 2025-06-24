@@ -1,11 +1,10 @@
 import React, { useState } from 'react'
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
+import { signInWithEmailAndPassword } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
-import { app } from '../firebase'
-import './Home.css' // garante que o css seja carregado
+import { auth } from '../firebase'  // Importa auth do firebase.js
+import './Home.css'  // Certifique-se que seu CSS está importado
 
 export default function Login() {
-  const auth = getAuth(app)
   const navigate = useNavigate()
 
   const [email, setEmail] = useState('')
@@ -22,12 +21,13 @@ export default function Login() {
       const userCredential = await signInWithEmailAndPassword(auth, email, senha)
       const user = userCredential.user
 
+      // Salva dados do usuário no localStorage
       localStorage.setItem('usuarioLogado', JSON.stringify({ uid: user.uid, email: user.email, tipo: 'freela' }))
 
       setLoading(false)
       navigate('/painelfreela')
     } catch (err) {
-      setError('E-mail ou senha inválidos')
+      setError('Erro: ' + err.message)
       setLoading(false)
     }
   }
@@ -56,7 +56,7 @@ export default function Login() {
           {loading ? 'Carregando...' : 'Entrar'}
         </button>
       </form>
-      {error && <p className="error-text">{error}</p>}
+      {error && <p className="error-text" style={{ color: 'red', marginTop: 12 }}>{error}</p>}
     </div>
   )
 }
