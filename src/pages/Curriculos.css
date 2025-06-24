@@ -1,105 +1,58 @@
-body {
-  margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(to bottom right, #ffe0b2, #ffcc80);
-  color: #333;
-}
-
 .curriculos-container {
-  max-width: 900px;
-  margin: 100px auto 40px;
-  padding: 0 20px;
-  color: #333;
-  text-align: center;
+  padding: 6rem 1rem 2rem;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .curriculos-title {
   font-size: 2rem;
   color: #ff6b00;
-  margin-bottom: 10px;
+  text-align: center;
+  margin-bottom: 0.5rem;
 }
 
 .curriculos-subtitle {
-  font-size: 1.2rem;
-  color: #666;
-  margin-bottom: 20px;
+  font-size: 1rem;
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #333;
 }
 
 .resultado-chefs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
+  gap: 1rem;
 }
 
 .card-profissional {
-  background: #fff;
-  padding: 15px 20px;
+  background: white;
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   text-align: left;
 }
 
 .card-profissional h3 {
-  color: #ff6b00;
   margin-top: 0;
+  color: #ff6b00;
 }
 
-.card-profissional p {
-  margin: 6px 0;
-  font-size: 0.95rem;
-}
-
-.descricao {
-  font-style: italic;
+.card-profissional .descricao {
+  margin-top: 8px;
+  margin-bottom: 12px;
   color: #555;
 }
 
 .card-botao {
   display: inline-block;
-  margin-top: 10px;
-  padding: 10px 15px;
   background-color: #ff6b00;
   color: white;
-  border-radius: 8px;
-  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 6px;
   font-weight: bold;
-  transition: background-color 0.3s ease;
+  text-decoration: none;
+  transition: background 0.3s;
 }
 
 .card-botao:hover {
   background-color: #e85a00;
-}
-
-/* Botões fixos no topo */
-.nav-buttons {
-  position: fixed;
-  top: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 900px;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  padding: 0 20px;
-  z-index: 1000;
-}
-
-.botao-voltar-home {
-  background-color: #ff6b00;
-  border: none;
-  color: white;
-  padding: 10px 15px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 1rem;
-  transition: background-color 0.3s ease;
-}
-
-.botao-voltar-home:hover {
-  background-color: #e85a00;
-}
-
-.botao-home-painel {
-  background-color: #ff6b00;
 }
