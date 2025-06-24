@@ -1,69 +1,66 @@
+// src/pages/PainelEstabelecimento.jsx
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { collection, getDocs } from 'firebase/firestore'
+import { db } from '../firebase'
 import './Home.css'
 
 export default function PainelEstabelecimento() {
   const navigate = useNavigate()
   const [freelas, setFreelas] = useState([])
-  const [estabelecimento, setEstabelecimento] = useState(null)
-  const [coordenadasEstab, setCoordenadasEstab] = useState(null)
   const [resultadoFiltro, setResultadoFiltro] = useState([])
-  const [filtroFuncao, setFiltroFuncao] = useState('')
+  const [coordenadasEstab, setCoordenadasEstab] = useState(null)
+  const [funcaoFiltro, setFuncaoFiltro] = useState('')
 
   useEffect(() => {
-    const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
-    const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]')
+    const carregarDados = async () => {
+      const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
+      if (!usuario || usuario.tipo !== 'estabelecimento') {
+        navigate('/login')
+        return
+      }
 
-    if (!usuario || usuario.tipo !== 'estabelecimento') {
-      navigate('/login')
-      return
+      const snapshot = await getDocs(collection(db, 'usuarios'))
+      const lista = snapshot.docs.map(doc => doc.data())
+      const freelas = lista.filter(u => u.tipo === 'freela')
+      const estabelecimento = lista.find(u => u.uid === usuario.uid)
+
+      if (estabelecimento?.endereco) {
+        const coords = await geolocalizarEndereco(estabelecimento.endereco)
+        if (coords) {
+          setCoordenadasEstab(coords)
+          const filtrados = freelas
+            .map(f => ({
+              ...f,
+              distancia: f.endereco ? calcularDistancia(coords, f.endereco) : Infinity
+            }))
+            .filter(f => f.distancia <= 7)
+            .sort((a, b) => a.distancia - b.distancia)
+
+          setFreelas(filtrados)
+          setResultadoFiltro(filtrados)
+        }
+      }
     }
 
-    const dadosEstab = usuarios.find(u => u.uid === usuario.uid)
-    const freelancers = usuarios.filter(u => u.tipo === 'freela')
-
-    setEstabelecimento(dadosEstab)
-    setFreelas(freelancers)
-
-    if (dadosEstab?.coordenadas) {
-      setCoordenadasEstab(dadosEstab.coordenadas)
-    } else {
-      geolocalizarEndereco(dadosEstab?.endereco).then(coords => {
-        setCoordenadasEstab(coords)
-      })
-    }
+    carregarDados()
   }, [navigate])
-
-  useEffect(() => {
-    if (coordenadasEstab) {
-      const filtrados = freelas
-        .map(f => {
-          const distancia = f.coordenadas ? calcularDistancia(coordenadasEstab, f.coordenadas) : Infinity
-          return { ...f, distancia }
-        })
-        .filter(f => f.distancia <= 7)
-        .sort((a, b) => a.distancia - b.distancia)
-
-      setResultadoFiltro(filtrados)
-    }
-  }, [coordenadasEstab, freelas])
 
   const geolocalizarEndereco = async (enderecoTexto) => {
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoTexto)}`
-      )
-      const data = await response.json()
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoTexto)}`)
+      const data = await res.json()
       if (data.length > 0) {
         return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) }
       }
-    } catch (error) {
-      console.error("Erro ao geolocalizar endereço:", error)
+    } catch (err) {
+      console.error("Erro ao geolocalizar:", err)
     }
     return null
   }
 
-  const calcularDistancia = (coord1, coord2) => {
+  const calcularDistancia = (coord1, endereco2) => {
+    const coord2 = coord1 && endereco2 ? coord1 : null
     if (!coord1 || !coord2) return Infinity
     const toRad = deg => deg * Math.PI / 180
     const R = 6371
@@ -75,57 +72,51 @@ export default function PainelEstabelecimento() {
     return R * c
   }
 
-  const freelancersFiltrados = resultadoFiltro.filter(f =>
-    filtroFuncao === '' || f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
-  )
+  const aplicarFiltroFuncao = () => {
+    if (!funcaoFiltro) {
+      setResultadoFiltro(freelas)
+    } else {
+      setResultadoFiltro(freelas.filter(f => f.funcao?.toLowerCase().includes(funcaoFiltro.toLowerCase())))
+    }
+  }
 
   return (
     <div className="min-h-screen bg-orange-50 p-6 text-center">
       <h1 className="text-3xl font-bold text-orange-700 mb-4">📍 Painel do Estabelecimento</h1>
 
-      <button
-        onClick={() => navigate(`/perfil/${estabelecimento?.uid}`)}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded mb-4"
-      >
-        ✏️ Editar Perfil
-      </button>
-
-      <div className="max-w-xl mx-auto mb-6 bg-white rounded-lg p-6 shadow">
+      <div className="max-w-xl mx-auto bg-white rounded-lg p-4 shadow mb-6">
         <input
           type="text"
-          placeholder="Filtrar por função (ex: Garçom, Chapeiro...)"
-          value={filtroFuncao}
-          onChange={(e) => setFiltroFuncao(e.target.value)}
-          className="input"
+          value={funcaoFiltro}
+          onChange={(e) => setFuncaoFiltro(e.target.value)}
+          placeholder="Filtrar por função (ex: cozinheiro)"
+          className="input mb-4"
         />
+        <button onClick={aplicarFiltroFuncao} className="home-button w-full">Filtrar</button>
       </div>
 
+      <button onClick={() => navigate('/perfil/estabelecimento')} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded mb-4">
+        Editar Perfil
+      </button>
+
       <div className="max-w-4xl mx-auto">
-        {freelancersFiltrados.length === 0 && (
-          <p className="text-gray-500 mb-8">🔍 Nenhum freelancer próximo encontrado no raio de 7km.</p>
+        {resultadoFiltro.length === 0 && (
+          <p className="text-gray-500">🔎 Nenhum freelancer encontrado na área de 7km.</p>
         )}
 
-        {freelancersFiltrados.map((freela, idx) => (
-          <div
-            key={idx}
-            className="bg-white rounded-xl shadow p-4 mb-4 flex flex-col md:flex-row justify-between items-center gap-4"
-          >
+        {resultadoFiltro.map((freela, idx) => (
+          <div key={idx} className="bg-white rounded-xl shadow p-4 mb-4 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4 text-left">
-              <img
-                src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'}
-                alt="freela"
-                className="w-16 h-16 rounded-full object-cover border border-orange-300 shadow-sm"
-              />
+              <img src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'} alt="freela" className="w-16 h-16 rounded-full object-cover" />
               <div>
-                <p className="font-bold text-lg text-gray-800">{freela.nome}</p>
-                <p className="text-gray-600">{freela.funcao}</p>
-                <p className="text-gray-500 text-sm">
-                  {freela.distancia?.toFixed(2)} km de distância
-                </p>
+                <p className="font-bold text-lg">{freela.nome}</p>
+                <p>{freela.funcao}</p>
+                <p className="text-sm text-gray-500">{freela.distancia?.toFixed(2)} km de distância</p>
               </div>
             </div>
             <button
               onClick={() => {
+                const estabelecimento = JSON.parse(localStorage.getItem('usuarioLogado'))
                 const chamada = {
                   freela: freela.nome,
                   estabelecimento: estabelecimento?.nome || 'Estabelecimento desconhecido',
@@ -134,7 +125,7 @@ export default function PainelEstabelecimento() {
                 localStorage.setItem('chamadaFreela', JSON.stringify(chamada))
                 alert(`✅ Você chamou ${freela.nome}!`)
               }}
-              className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition"
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded"
             >
               Chamar
             </button>

@@ -1,68 +1,62 @@
+// src/pages/PainelFreela.jsx
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { collection, query, where, getDocs } from 'firebase/firestore'
-import { db } from '../firebase'
 import './Home.css'
-
-const avatarFallback = 'https://i.imgur.com/3W8i1sT.png'
 
 export default function PainelFreela() {
   const navigate = useNavigate()
-  const [freela, setFreela] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [vagas, setVagas] = useState([])
 
   useEffect(() => {
-    const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'))
-    if (!usuarioLogado || usuarioLogado.tipo !== 'freela') {
+    const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
+    if (!usuario || usuario.tipo !== 'freela') {
       navigate('/login')
       return
     }
 
-    const fetchFreela = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const q = query(collection(db, 'usuarios'), where('email', '==', usuarioLogado.email))
-        const querySnapshot = await getDocs(q)
-        if (!querySnapshot.empty) {
-          const dados = querySnapshot.docs[0].data()
-          setFreela(dados)
-        } else {
-          setError('Usuário não encontrado no banco de dados.')
-          navigate('/login')
-        }
-      } catch (err) {
-        setError('Erro ao buscar dados: ' + err.message)
-        navigate('/login')
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchFreela()
+    // Simulando busca de vagas do localStorage ou futura API
+    const vagasDisponiveis = JSON.parse(localStorage.getItem('vagas') || '[]')
+    setVagas(vagasDisponiveis)
   }, [navigate])
 
-  if (loading) return <p>Carregando dados...</p>
-  if (error) return <p style={{ color: 'red' }}>{error}</p>
-
   return (
-    <div className="home-container">
-      <h1 className="home-title">Painel Freelancer</h1>
-      {freela && (
-        <div className="perfil-container">
-          <img
-            src={freela.foto || avatarFallback}
-            alt="Foto do Freela"
-            className="perfil-foto"
-            onError={(e) => (e.target.src = avatarFallback)}
-          />
-          <h2>{freela.nome}</h2>
-          <p><strong>Função:</strong> {freela.funcao}</p>
-          <p><strong>Email:</strong> {freela.email}</p>
-          <p><strong>Celular:</strong> {freela.celular}</p>
-          <p><strong>Endereço:</strong> {freela.endereco}</p>
-        </div>
-      )}
+    <div className="min-h-screen bg-blue-50 p-6 text-center">
+      <h1 className="text-3xl font-bold text-blue-700 mb-6">🎯 Painel do Freelancer</h1>
+
+      <button
+        onClick={() => {
+          const user = JSON.parse(localStorage.getItem('usuarioLogado'))
+          if (user?.uid) {
+            navigate(`/perfil/${user.uid}`)
+          }
+        }}
+        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded mb-6"
+      >
+        Editar Perfil
+      </button>
+
+      <div className="max-w-4xl mx-auto">
+        {vagas.length === 0 ? (
+          <p className="text-gray-600">🔎 Nenhuma vaga disponível no momento.</p>
+        ) : (
+          vagas.map((vaga, idx) => (
+            <div key={idx} className="bg-white rounded-xl shadow p-4 mb-4 text-left">
+              <h2 className="text-xl font-bold text-gray-800">{vaga.titulo}</h2>
+              <p><strong>Empresa:</strong> {vaga.empresa}</p>
+              <p><strong>Cidade:</strong> {vaga.cidade}</p>
+              <p><strong>Tipo:</strong> {vaga.tipo}</p>
+              <p><strong>Salário:</strong> {vaga.salario}</p>
+              <p className="text-sm text-gray-600 mt-2">{vaga.descricao}</p>
+              <a
+                href={`mailto:${vaga.emailContato}?subject=Candidatura para vaga: ${vaga.titulo}`}
+                className="mt-3 inline-block bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded"
+              >
+                Candidatar-se
+              </a>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   )
 }
