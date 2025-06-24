@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { collection, addDoc } from 'firebase/firestore'
 import { db } from '../firebase'
-import UploadFoto from '../components/UploadFoto'
+import UploadFoto from '../components/UploadImagem'
 import './Home.css'
 
 export default function CadastroFreela() {
