@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
-import { useNavigate } from 'react-router-dom'
 import { doc, getDoc } from 'firebase/firestore'
+import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase'
 import './Home.css'
 
@@ -21,28 +21,38 @@ export default function Login() {
       const userCredential = await signInWithEmailAndPassword(auth, email, senha)
       const user = userCredential.user
 
-      // Buscar dados do usuário no Firestore pelo uid
-      const userDoc = await getDoc(doc(db, 'usuarios', user.uid))
+      // Buscar o usuário no Firestore pela UID
+      const userRef = doc(db, 'usuarios', user.uid)
+      const userSnap = await getDoc(userRef)
 
-      if (userDoc.exists()) {
-        const userData = userDoc.data()
-        localStorage.setItem('usuarioLogado', JSON.stringify({ uid: user.uid, email: user.email, tipo: userData.tipo }))
+      if (userSnap.exists()) {
+        const userData = userSnap.data()
 
-        setLoading(false)
+        // Salvar dados no localStorage
+        localStorage.setItem('usuarioLogado', JSON.stringify({
+          uid: user.uid,
+          email: user.email,
+          nome: userData.nome,
+          tipo: userData.tipo
+        }))
+
+        // Redirecionar com base no tipo
         if (userData.tipo === 'freela') {
           navigate('/painelfreela')
         } else if (userData.tipo === 'estabelecimento') {
           navigate('/painel-estabelecimento')
         } else {
-          alert('Tipo de usuário inválido.')
-          setLoading(false)
+          setError('Tipo de usuário inválido.')
         }
+
       } else {
-        alert('Usuário não encontrado no banco de dados.')
-        setLoading(false)
+        setError('Usuário não encontrado na base de dados.')
       }
+
     } catch (err) {
-      setError('E-mail ou senha inválidos')
+      console.error(err)
+      setError('E-mail ou senha inválidos.')
+    } finally {
       setLoading(false)
     }
   }
