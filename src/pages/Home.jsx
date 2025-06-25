@@ -17,6 +17,7 @@ export default function Home() {
         <button onClick={() => navigate("/cadastro-estabelecimento")}>Sou um Estabelecimento</button>
         <button onClick={() => navigate('/login')}>Login</button>
         <button onClick={() => navigate('/curriculos')}>Curriculos</button>
+        <button onClick={() => navigate('/sobre')}>Sobre</button>
       </div>
     </div>
   )

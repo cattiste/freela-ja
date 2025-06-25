@@ -90,3 +90,110 @@ input[type="file"] {
   background: transparent;
   font-size: 0.9rem;
 }
+
+/* Estilo geral da Home e PainelFreela */
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(to bottom right, #ebf8ff, #dbeafe);
+  margin: 0;
+  padding: 0;
+}
+
+/* Painel container */
+.painel-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Card principal do freela */
+.card-freela {
+  background-color: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2rem;
+  transition: all 0.3s ease;
+}
+
+.card-freela:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+/* Imagem do freela */
+.card-freela img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 999px;
+  border: 2px solid #3b82f6;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Botão bonito */
+.btn-primario {
+  background-color: #2563eb;
+  color: white;
+  font-weight: 600;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+.btn-primario:hover {
+  background-color: #1e40af;
+}
+
+/* Card de vaga */
+.card-vaga {
+  background-color: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  margin-bottom: 1.5rem;
+  transition: transform 0.2s;
+}
+
+.card-vaga:hover {
+  transform: scale(1.01);
+}
+
+/* Botão de candidatura */
+.btn-verde {
+  background-color: #059669;
+  color: white;
+  font-weight: 600;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+  margin-top: 1rem;
+}
+
+.btn-verde:hover {
+  background-color: #047857;
+}
+
+/* Responsivo */
+@media (max-width: 640px) {
+  .card-freela,
+  .card-vaga {
+    padding: 1rem;
+  }
+
+  .btn-primario,
+  .btn-verde {
+    width: 100%;
+    text-align: center;
+  }
+
+  .card-freela img {
+    width: 64px;
+    height: 64px;
+  }
+}
