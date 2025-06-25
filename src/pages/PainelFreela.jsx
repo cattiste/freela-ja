@@ -98,14 +98,6 @@ export default function PainelFreela() {
           <AgendaFreela uid={freela.uid} />
         </div>
       )}
-
-      {/* Botão Sobre flutuante (opcional) */}
-      <button
-        onClick={() => navigate('/sobre')}
-        className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-full shadow-lg z-50"
-      >
-        ℹ️ Sobre
-      </button>
-    </div>
+      
   )
 }
