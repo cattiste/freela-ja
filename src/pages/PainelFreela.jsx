@@ -2,8 +2,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AgendaFreela from '../components/AgendaFreela'
-// ❌ Remova essa linha:
-// import './Home.css'
 
 export default function PainelFreela() {
   const navigate = useNavigate()
@@ -39,29 +37,40 @@ export default function PainelFreela() {
       </h1>
 
       {freela && (
-        <div className="max-w-3xl mx-auto bg-white rounded-2xl p-6 shadow-md mb-8 transition hover:shadow-lg">
-          <div className="flex items-center gap-4 mb-6">
-            <img
-              src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'}
-              alt="freela"
-              className="w-20 h-20 rounded-full object-cover border-2 border-blue-400 shadow"
-            />
-            <div>
-              <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">{freela.nome}</h2>
-              <p className="text-blue-600">{freela.funcao}</p>
-              <p className="text-gray-500 text-sm">{freela.email}</p>
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+          {/* CARD DO FREELA */}
+          <div className="bg-white rounded-2xl p-6 shadow-md transition hover:shadow-lg">
+            <div className="flex items-center gap-4 mb-6">
+              <img
+                src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'}
+                alt="freela"
+                className="w-20 h-20 rounded-full object-cover border-2 border-blue-400 shadow"
+              />
+              <div>
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">{freela.nome}</h2>
+                <p className="text-blue-600">{freela.funcao}</p>
+                <p className="text-gray-500 text-sm">{freela.email}</p>
+              </div>
             </div>
+
+            {/* BOTÃO CORRIGIDO */}
+            <button
+              onClick={() => navigate(`/editarfreela/${freela.uid}`)} // 🔧 Certifique-se que essa rota existe
+              className="bg-blue-600 hover:bg-blue-700 transition-colors duration-200 text-white font-semibold py-2 px-5 rounded-full shadow-md"
+            >
+              ✏️ Editar Perfil
+            </button>
           </div>
 
-          <button
-            onClick={() => navigate(`/perfil/${freela.uid}`)}
-            className="bg-blue-600 hover:bg-blue-700 transition-colors duration-200 text-white font-semibold py-2 px-5 rounded-full shadow-md"
-          >
-            ✏️ Editar Perfil
-          </button>
+          {/* AGENDA MAIOR */}
+          <div className="bg-white rounded-2xl p-6 shadow-md transition hover:shadow-lg">
+            <h2 className="text-xl font-semibold text-blue-700 mb-4">📅 Agenda de Disponibilidade</h2>
+            <AgendaFreela uid={freela.uid} />
+          </div>
         </div>
       )}
 
+      {/* VAGAS */}
       <div className="max-w-5xl mx-auto">
         <h2 className="text-2xl font-semibold text-blue-700 mb-6 text-center">📌 Vagas Disponíveis</h2>
 
@@ -93,13 +102,7 @@ export default function PainelFreela() {
         )}
       </div>
 
-      {freela?.uid && (
-        <div className="max-w-4xl mx-auto mt-12">
-          <AgendaFreela uid={freela.uid} />
-        </div>
-      )}
-
-      {/* Botão Sobre flutuante (opcional) */}
+      {/* BOTÃO SOBRE FLUTUANTE */}
       <button
         onClick={() => navigate('/sobre')}
         className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-full shadow-lg z-50"
