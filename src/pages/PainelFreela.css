@@ -1,0 +1,15 @@
+.painel-chef {
+  padding: 2rem;
+  background-color: #f7f7f7;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.painel-chef h1 {
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.painel-chef p {
+  color: #555;
+}
