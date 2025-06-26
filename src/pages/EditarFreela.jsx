@@ -1,89 +1,107 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { useNavigate, useParams } from 'react-router-dom'
 import { db } from '../firebase'
 import UploadImagem from '../components/UploadImagem'
 
 export default function EditarFreela() {
-  const { id } = useParams()
+  const { uid } = useParams()
   const navigate = useNavigate()
 
   const [nome, setNome] = useState('')
+  const [email, setEmail] = useState('')
   const [celular, setCelular] = useState('')
   const [endereco, setEndereco] = useState('')
   const [funcao, setFuncao] = useState('')
   const [valorDiaria, setValorDiaria] = useState('')
   const [foto, setFoto] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     async function carregarDados() {
-      const ref = doc(db, 'usuarios', id)
-      const snap = await getDoc(ref)
+      const docRef = doc(db, 'usuarios', uid)
+      const docSnap = await getDoc(docRef)
 
-      if (snap.exists()) {
-        const dados = snap.data()
+      if (docSnap.exists()) {
+        const dados = docSnap.data()
         setNome(dados.nome || '')
+        setEmail(dados.email || '')
         setCelular(dados.celular || '')
         setEndereco(dados.endereco || '')
         setFuncao(dados.funcao || '')
-        setValorDiaria(dados.valorDiaria || '')
+        setValorDiaria(dados.valorDiaria ? dados.valorDiaria.toString() : '')
         setFoto(dados.foto || '')
       } else {
-        alert('Freelancer não encontrado.')
-        navigate('/login')
+        alert('Usuário não encontrado.')
+        navigate('/')
       }
-      setLoading(false)
     }
 
     carregarDados()
-  }, [id, navigate])
+  }, [uid, navigate])
 
   const handleSalvar = async (e) => {
     e.preventDefault()
 
+    if (!nome || !email || !celular || !endereco || !funcao || !valorDiaria) {
+      alert('Preencha todos os campos obrigatórios.')
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+
     try {
-      const ref = doc(db, 'usuarios', id)
-      await updateDoc(ref, {
+      const docRef = doc(db, 'usuarios', uid)
+      await updateDoc(docRef, {
         nome,
+        email,
         celular,
         endereco,
         funcao,
-        valorDiaria,
-        foto,
-        atualizadoEm: new Date()
+        valorDiaria: parseFloat(valorDiaria),
+        foto
       })
 
       alert('Perfil atualizado com sucesso!')
       navigate('/painelfreela')
     } catch (err) {
-      console.error('Erro ao salvar:', err)
-      alert('Erro ao salvar dados.')
+      console.error('Erro ao atualizar perfil:', err)
+      setError('Erro ao atualizar perfil. Tente novamente.')
+    } finally {
+      setLoading(false)
     }
   }
 
-  if (loading) {
-    return <div className="text-center py-10">Carregando...</div>
-  }
-
   return (
-    <div className="max-w-xl mx-auto mt-10 bg-white p-6 rounded-xl shadow-lg">
-      <h1 className="text-2xl font-bold text-blue-700 mb-6 text-center">✏️ Editar Perfil Freelancer</h1>
+    <div className="max-w-md mx-auto mt-12 p-6 bg-white rounded-xl shadow-lg">
+      <h1 className="text-2xl font-bold mb-6 text-center text-orange-600">Editar Perfil Freelancer</h1>
 
       <form onSubmit={handleSalvar} className="flex flex-col gap-4">
         <input
           type="text"
           placeholder="Nome"
           value={nome}
-          onChange={(e) => setNome(e.target.value)}
+          onChange={e => setNome(e.target.value)}
           className="input-field"
           required
+        />
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          className="input-field"
+          required
+          disabled
+          title="Email não pode ser alterado"
         />
         <input
           type="text"
           placeholder="Celular"
           value={celular}
-          onChange={(e) => setCelular(e.target.value)}
+          onChange={e => setCelular(e.target.value)}
           className="input-field"
           required
         />
@@ -91,7 +109,7 @@ export default function EditarFreela() {
           type="text"
           placeholder="Endereço"
           value={endereco}
-          onChange={(e) => setEndereco(e.target.value)}
+          onChange={e => setEndereco(e.target.value)}
           className="input-field"
           required
         />
@@ -99,26 +117,29 @@ export default function EditarFreela() {
           type="text"
           placeholder="Função"
           value={funcao}
-          onChange={(e) => setFuncao(e.target.value)}
+          onChange={e => setFuncao(e.target.value)}
           className="input-field"
           required
         />
         <input
           type="number"
-          placeholder="Valor da Diária (R$)"
+          placeholder="Valor da Diária"
           value={valorDiaria}
-          onChange={(e) => setValorDiaria(e.target.value)}
+          onChange={e => setValorDiaria(e.target.value)}
           className="input-field"
           required
         />
 
-        <UploadImagem onUploadComplete={(url) => setFoto(url)} />
+        <UploadImagem onUploadComplete={url => setFoto(url)} currentImage={foto} />
+
+        {error && <p className="text-red-600 text-center mt-2">{error}</p>}
 
         <button
           type="submit"
-          className="bg-blue-600 hover:bg-blue-700 transition text-white font-semibold py-2 px-5 rounded-full shadow-md mt-4"
+          disabled={loading}
+          className="btn-primary mt-4"
         >
-          💾 Salvar Alterações
+          {loading ? 'Salvando...' : 'Salvar Alterações'}
         </button>
       </form>
     </div>

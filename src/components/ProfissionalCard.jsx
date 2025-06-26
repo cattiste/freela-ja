@@ -30,6 +30,12 @@ export default function ProfissionalCard({ prof, onChamar }) {
         <strong>Avaliação:</strong> ⭐ {typeof prof.avaliacao === 'number' ? prof.avaliacao.toFixed(1) : 'N/A'}
       </p>
 
+      {prof.valorDiaria && (
+        <p className="text-green-600 font-semibold mt-1">
+          <strong>💸 Diária:</strong> R$ {parseFloat(prof.valorDiaria).toFixed(2)}
+        </p>
+      )}
+
       {prof.descricao && (
         <p className="italic mt-2 text-sm text-gray-600">{prof.descricao}</p>
       )}
