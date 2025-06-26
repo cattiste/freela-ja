@@ -55,8 +55,9 @@ export default function PainelFreela() {
 
   function tocarSomChamada() {
     const audio = new Audio('/sons/chamada.mp3')
-    audio.play().catch(() => {
-      console.log('🔇 Som não pode ser reproduzido automaticamente.')
+    audio.volume = 1.0
+    audio.play().catch((err) => {
+      console.warn('⚠️ O navegador bloqueou a reprodução automática do som:', err)
     })
   }
 
