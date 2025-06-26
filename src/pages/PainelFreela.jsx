@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  orderBy,
+  updateDoc,
+  doc
+} from 'firebase/firestore'
 import { db } from '../firebase'
 import AgendaFreela from '../components/AgendaFreela'
 
@@ -31,7 +39,7 @@ export default function PainelFreela() {
     const vagasDisponiveis = JSON.parse(localStorage.getItem('vagas') || '[]')
     setVagas(vagasDisponiveis)
 
-    // 🔔 Escutar chamadas do Firebase em tempo real
+    // Escutar chamadas em tempo real
     const chamadasRef = collection(db, 'chamadas')
     const q = query(
       chamadasRef,
@@ -42,11 +50,14 @@ export default function PainelFreela() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       snapshot.docChanges().forEach(change => {
         if (change.type === 'added') {
-          const chamada = change.doc.data()
+          const chamada = { id: change.doc.id, ...change.doc.data() }
           alert(`📩 Você foi chamado pelo estabelecimento ${chamada.estabelecimentoNome}!`)
           tocarSomChamada()
-
           setChamadas(prev => [chamada, ...prev])
+        }
+        if (change.type === 'modified') {
+          const chamadaModificada = { id: change.doc.id, ...change.doc.data() }
+          setChamadas(prev => prev.map(c => c.id === chamadaModificada.id ? chamadaModificada : c))
         }
       })
     })
@@ -61,9 +72,32 @@ export default function PainelFreela() {
     })
   }
 
+  async function aceitarChamada(id) {
+    try {
+      const chamadaRef = doc(db, 'chamadas', id)
+      await updateDoc(chamadaRef, { status: 'aceita' })
+      alert('✅ Chamada aceita com sucesso!')
+    } catch (error) {
+      alert('Erro ao aceitar chamada.')
+      console.error(error)
+    }
+  }
+
+  async function recusarChamada(id) {
+    try {
+      const chamadaRef = doc(db, 'chamadas', id)
+      await updateDoc(chamadaRef, { status: 'recusada' })
+      alert('❌ Chamada recusada.')
+    } catch (error) {
+      alert('Erro ao recusar chamada.')
+      console.error(error)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Cabeçalho */}
         <div className="text-center mb-10">
           <h1 className="text-3xl sm:text-4xl font-bold text-blue-700">
             🎯 Painel do Freelancer
@@ -78,6 +112,7 @@ export default function PainelFreela() {
         {/* Perfil e Agenda */}
         {freela && (
           <div className="flex flex-col lg:flex-row gap-8 mb-10">
+            {/* Perfil */}
             <div className="w-full lg:w-1/2 bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition">
               <div className="flex flex-col sm:flex-row items-center gap-6 mb-6">
                 <img
@@ -101,6 +136,7 @@ export default function PainelFreela() {
               </div>
             </div>
 
+            {/* Agenda */}
             <div className="w-full lg:w-1/2 bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition">
               <h2 className="text-xl font-semibold text-blue-700 mb-4">
                 📅 Agenda de Disponibilidade
@@ -153,9 +189,36 @@ export default function PainelFreela() {
             <p>Nenhuma chamada recebida ainda.</p>
           ) : (
             chamadas.map((c, i) => (
-              <div key={i} className="mb-3 border-b pb-2">
-                <p>Você foi chamado por: <strong>{c.estabelecimentoNome}</strong></p>
-                <p>Em: {c.criadoEm?.toDate ? c.criadoEm.toDate().toLocaleString() : new Date(c.criadoEm).toLocaleString()}</p>
+              <div key={i} className="mb-5 border-b pb-4">
+                <p>📩 Você foi chamado por: <strong>{c.estabelecimentoNome}</strong></p>
+                <p>🕒 Em: {c.criadoEm?.toDate ? c.criadoEm.toDate().toLocaleString() : new Date(c.criadoEm).toLocaleString()}</p>
+                <p className="mt-1">
+                  🏷️ <strong>Status:</strong>{' '}
+                  <span className={
+                    c.status === 'aceita' ? 'text-green-600 font-semibold' :
+                    c.status === 'recusada' ? 'text-red-600 font-semibold' :
+                    'text-yellow-600 font-semibold'
+                  }>
+                    {c.status ? c.status.toUpperCase() : 'PENDENTE'}
+                  </span>
+                </p>
+
+                {!c.status && (
+                  <div className="flex gap-4 mt-3">
+                    <button
+                      onClick={() => aceitarChamada(c.id)}
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full font-semibold"
+                    >
+                      ✅ Aceitar
+                    </button>
+                    <button
+                      onClick={() => recusarChamada(c.id)}
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full font-semibold"
+                    >
+                      ❌ Recusar
+                    </button>
+                  </div>
+                )}
               </div>
             ))
           )}
