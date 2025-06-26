@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '../firebase'
-import { toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
 
 export default function PainelEstabelecimento() {
   const navigate = useNavigate()
@@ -11,11 +9,9 @@ export default function PainelEstabelecimento() {
   const [resultadoFiltro, setResultadoFiltro] = useState([])
   const [coordenadasEstab, setCoordenadasEstab] = useState(null)
   const [funcaoFiltro, setFuncaoFiltro] = useState('')
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const carregarDados = async () => {
-      setLoading(true)
       const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
       if (!usuario || usuario.tipo !== 'estabelecimento') {
         navigate('/login')
@@ -43,7 +39,6 @@ export default function PainelEstabelecimento() {
           setResultadoFiltro(filtrados)
         }
       }
-      setLoading(false)
     }
 
     carregarDados()
@@ -91,14 +86,15 @@ export default function PainelEstabelecimento() {
       horario: new Date().toISOString()
     }
     localStorage.setItem('chamadaFreela', JSON.stringify(chamada))
-    toast.success(`✅ Você chamou ${freela.nome}!`)
+    alert(`✅ Você chamou ${freela.nome}!`)
   }
 
   return (
     <div className="min-h-screen bg-orange-50 p-6 text-center">
-      <h1 className="text-3xl font-bold text-orange-700 mb-4">📍 Painel do Estabelecimento</h1>
+      <h1 className="text-3xl font-bold text-orange-700 mb-6">📍 Painel do Estabelecimento</h1>
 
-      <div className="flex flex-wrap justify-center gap-4 mb-6">
+      {/* Botões principais */}
+      <div className="flex flex-wrap justify-center gap-4 mb-8">
         <button
           onClick={() => navigate('/novavaga')}
           className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded shadow"
@@ -113,7 +109,8 @@ export default function PainelEstabelecimento() {
         </button>
       </div>
 
-      <div className="max-w-xl mx-auto bg-white rounded-lg p-4 shadow mb-6">
+      {/* Filtro por função */}
+      <div className="max-w-xl mx-auto bg-white rounded-lg p-4 shadow mb-8">
         <input
           type="text"
           value={funcaoFiltro}
@@ -129,32 +126,29 @@ export default function PainelEstabelecimento() {
         </button>
       </div>
 
-      <div className="max-w-4xl mx-auto">
-        {loading ? (
-          <p className="text-gray-500">🔄 Carregando freelancers próximos...</p>
-        ) : resultadoFiltro.length === 0 ? (
-          <p className="text-gray-500">🔎 Nenhum freelancer encontrado na área de 7km.</p>
+      {/* Listagem de freelancers em cards bonitos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+        {resultadoFiltro.length === 0 ? (
+          <p className="text-gray-500 col-span-full">🔎 Nenhum freelancer encontrado na área de 7km.</p>
         ) : (
           resultadoFiltro.map((freela, idx) => (
             <div
               key={idx}
-              className="bg-white rounded-xl shadow p-4 mb-4 flex flex-col md:flex-row justify-between items-center gap-4"
+              className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center text-center transition hover:shadow-lg"
             >
-              <div className="flex items-center gap-4 text-left">
-                <img
-                  src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'}
-                  alt="freela"
-                  className="w-16 h-16 rounded-full object-cover"
-                />
-                <div>
-                  <p className="font-bold text-lg">{freela.nome}</p>
-                  <p>{freela.funcao}</p>
-                  <p className="text-sm text-gray-500">{freela.distancia?.toFixed(2)} km de distância</p>
-                </div>
-              </div>
+              <img
+                src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'}
+                alt="freela"
+                className="w-24 h-24 rounded-full object-cover mb-4 border-4 border-orange-100"
+              />
+              <h3 className="text-xl font-bold text-orange-700">{freela.nome}</h3>
+              <p className="text-gray-600 mb-1">{freela.funcao}</p>
+              <p className="text-sm text-gray-500 mb-4">
+                📍 {freela.distancia?.toFixed(2)} km de distância
+              </p>
               <button
                 onClick={() => chamarFreela(freela)}
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition"
+                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition"
               >
                 Chamar
               </button>
