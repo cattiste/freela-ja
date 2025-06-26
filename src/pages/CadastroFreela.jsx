@@ -17,6 +17,23 @@ export default function CadastroFreela() {
   const [error, setError] = useState(null)
   const navigate = useNavigate()
 
+  // 🔍 Função para obter lat/lon do endereço usando Nominatim (OpenStreetMap)
+  const geolocalizarEndereco = async (enderecoTexto) => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoTexto)}`)
+      const data = await res.json()
+      if (data.length > 0) {
+        return {
+          lat: parseFloat(data[0].lat),
+          lon: parseFloat(data[0].lon)
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao geolocalizar endereço:', err)
+    }
+    return null
+  }
+
   const handleCadastro = async (e) => {
     e.preventDefault()
 
@@ -29,6 +46,14 @@ export default function CadastroFreela() {
     setError(null)
 
     try {
+      const coords = await geolocalizarEndereco(endereco)
+
+      if (!coords) {
+        alert('Endereço inválido. Tente outro ou revise o texto.')
+        setLoading(false)
+        return
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, senha)
       const user = userCredential.user
 
@@ -41,7 +66,9 @@ export default function CadastroFreela() {
         funcao,
         foto,
         tipo: 'freela',
-        criadoEm: new Date()
+        criadoEm: new Date(),
+        lat: coords.lat,
+        lon: coords.lon
       })
 
       alert('Cadastro realizado com sucesso!')
