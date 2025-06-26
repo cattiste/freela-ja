@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, addDoc, getDocs, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import ProfissionalCard from '../components/ProfissionalCard'
 
@@ -12,7 +12,7 @@ export default function PainelEstabelecimento() {
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    async function carregarFreelas() {
+    async function carregarDados() {
       setCarregando(true)
 
       const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
@@ -21,16 +21,22 @@ export default function PainelEstabelecimento() {
         return
       }
 
-      const snapshot = await getDocs(collection(db, 'usuarios'))
-      const lista = snapshot.docs.map((doc) => ({ uid: doc.id, ...doc.data() }))
-      const freelasRaw = lista.filter((u) => u.tipo === 'freela')
+      try {
+        const snapshot = await getDocs(collection(db, 'usuarios'))
+        const lista = snapshot.docs.map((doc) => ({ uid: doc.id, ...doc.data() }))
+        const freelasRaw = lista.filter((u) => u.tipo === 'freela')
 
-      setFreelas(freelasRaw)
-      setResultadoFiltro(freelasRaw)
+        setFreelas(freelasRaw)
+        setResultadoFiltro(freelasRaw)
+      } catch (err) {
+        console.error('Erro ao buscar freelancers:', err)
+        alert('Erro ao carregar freelancers.')
+      }
+
       setCarregando(false)
     }
 
-    carregarFreelas()
+    carregarDados()
   }, [navigate])
 
   function aplicarFiltro() {
@@ -39,8 +45,8 @@ export default function PainelEstabelecimento() {
     if (funcaoFiltro.trim()) {
       filtrados = filtrados.filter(
         (f) =>
-          (f.funcao?.toLowerCase().includes(funcaoFiltro.toLowerCase()) ||
-            f.especialidade?.toLowerCase().includes(funcaoFiltro.toLowerCase()))
+          f.funcao?.toLowerCase().includes(funcaoFiltro.toLowerCase()) ||
+          f.especialidade?.toLowerCase().includes(funcaoFiltro.toLowerCase())
       )
     }
 
@@ -48,7 +54,7 @@ export default function PainelEstabelecimento() {
   }
 
   async function handleChamarProfissional(prof) {
-    const estabelecimento = JSON.parse(addDoc('usuarioLogado'))
+    const estabelecimento = JSON.parse(localStorage.getItem('usuarioLogado'))
     if (!estabelecimento || estabelecimento.tipo !== 'estabelecimento') {
       alert('Você precisa estar logado como estabelecimento para chamar.')
       navigate('/login')
