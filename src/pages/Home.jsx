@@ -38,7 +38,7 @@ export default function Home() {
           onClick={() => navigate('/curriculos')}
           className="px-6 py-3 rounded-lg text-white font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200"
         >
-          Currículos
+          Painel de Vagas
         </button>
         <button
           onClick={() => navigate('/sobre')}
