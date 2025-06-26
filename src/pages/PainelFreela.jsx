@@ -31,7 +31,7 @@ export default function PainelFreela() {
     const vagasDisponiveis = JSON.parse(localStorage.getItem('vagas') || '[]')
     setVagas(vagasDisponiveis)
 
-    // --- Escuta de chamadas em tempo real ---
+    // 🔔 Escutar chamadas do Firebase em tempo real
     const chamadasRef = collection(db, 'chamadas')
     const q = query(
       chamadasRef,
@@ -55,16 +55,15 @@ export default function PainelFreela() {
   }, [navigate])
 
   function tocarSomChamada() {
-    const audio = new Audio('/sons/chamada.mp3') // coloque o arquivo na public/sons
-    audio.play().catch(() => {
-      console.log('Som não pôde ser reproduzido automaticamente.')
+    const audio = new Audio('https://res.cloudinary.com/dbemvuau3/video/upload/v1750961914/qhkd3ojkqhi2imr9lup8.mp3')
+    audio.play().catch((err) => {
+      console.log('🔇 Som não pôde ser reproduzido automaticamente.', err)
     })
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Cabeçalho */}
         <div className="text-center mb-10">
           <h1 className="text-3xl sm:text-4xl font-bold text-blue-700">
             🎯 Painel do Freelancer
@@ -79,7 +78,6 @@ export default function PainelFreela() {
         {/* Perfil e Agenda */}
         {freela && (
           <div className="flex flex-col lg:flex-row gap-8 mb-10">
-            {/* Perfil */}
             <div className="w-full lg:w-1/2 bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition">
               <div className="flex flex-col sm:flex-row items-center gap-6 mb-6">
                 <img
@@ -103,7 +101,6 @@ export default function PainelFreela() {
               </div>
             </div>
 
-            {/* Agenda */}
             <div className="w-full lg:w-1/2 bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition">
               <h2 className="text-xl font-semibold text-blue-700 mb-4">
                 📅 Agenda de Disponibilidade
