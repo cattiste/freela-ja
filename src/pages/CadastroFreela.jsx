@@ -138,7 +138,7 @@ export default function CadastroFreela() {
         <input
           type="text"
           placeholder="Especialidades"
-          value={funcao}
+          value={especialidades}
           onChange={e => setFuncao(e.target.value)}
           className="input-field"
           required
