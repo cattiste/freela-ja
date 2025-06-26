@@ -21,29 +21,29 @@ export default function Home() {
           onClick={() => navigate('/cadastrofreela')}
           className="flex-1 max-w-xs bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg transition"
         >
-          Sou um Freelancer
+          Freelancer
         </button>
         <button
           onClick={() => navigate('/cadastro-estabelecimento')}
           className="flex-1 max-w-xs bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg transition"
         >
-          Sou um Estabelecimento
+          Estabelecimento
         </button>
         <button
           onClick={() => navigate('/login')}
-          className="flex-1 max-w-xs bg-gray-300 hover:bg-gray-400 text-gray-900 font-bold py-3 rounded-lg transition"
+          className="flex-1 max-w-xs bg-gray-300 hover:bg-orange-400 text-white font-bold py-3 rounded-lg transition"
         >
           Login
         </button>
         <button
           onClick={() => navigate('/curriculos')}
-          className="flex-1 max-w-xs bg-gray-300 hover:bg-gray-400 text-gray-900 font-bold py-3 rounded-lg transition"
+          className="flex-1 max-w-xs bg-gray-300 hover:bg-orange-400 text-white font-bold py-3 rounded-lg transition"
         >
           Currículos
         </button>
         <button
           onClick={() => navigate('/sobre')}
-          className="flex-1 max-w-xs bg-gray-300 hover:bg-gray-400 text-gray-900 font-bold py-3 rounded-lg transition"
+          className="flex-1 max-w-xs bg-gray-300 hover:bg-orange-400 text-white font-bold py-3 rounded-lg transition"
         >
           Sobre
         </button>
