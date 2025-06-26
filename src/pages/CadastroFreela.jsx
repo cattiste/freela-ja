@@ -136,6 +136,14 @@ export default function CadastroFreela() {
           required
         />
         <input
+          type="text"
+          placeholder="Especialidades"
+          value={funcao}
+          onChange={e => setFuncao(e.target.value)}
+          className="input-field"
+          required
+        />
+        <input
           type="number"
           placeholder="Valor da Diária (ex: 150)"
           value={valorDiaria}
