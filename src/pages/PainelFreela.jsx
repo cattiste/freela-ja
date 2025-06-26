@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore'
+import { db } from '../firebase'
 import AgendaFreela from '../components/AgendaFreela'
 
 export default function PainelFreela() {
   const navigate = useNavigate()
   const [vagas, setVagas] = useState([])
   const [freela, setFreela] = useState(null)
+  const [chamadas, setChamadas] = useState([])
 
   useEffect(() => {
     const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
@@ -27,7 +30,38 @@ export default function PainelFreela() {
 
     const vagasDisponiveis = JSON.parse(localStorage.getItem('vagas') || '[]')
     setVagas(vagasDisponiveis)
+
+    // --- Ouvir chamadas em tempo real ---
+    const chamadasRef = collection(db, 'chamadas')
+    const q = query(
+      chamadasRef,
+      where('freelaUid', '==', usuario.uid),
+      orderBy('criadoEm', 'desc')
+    )
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      snapshot.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          const chamada = change.doc.data()
+          // Evitar alertar para chamadas antigas? Pode filtrar pelo timestamp aqui
+          alert(`📩 Você foi chamado pelo estabelecimento ${chamada.estabelecimentoNome}!`)
+          tocarSomChamada()
+
+          // Atualizar lista local de chamadas
+          setChamadas(prev => [chamada, ...prev])
+        }
+      })
+    })
+
+    return () => unsubscribe()
   }, [navigate])
+
+  function tocarSomChamada() {
+    const audio = new Audio('/sons/chamada.mp3')
+    audio.play().catch(() => {
+      console.log('Som não pode ser reproduzido automaticamente.')
+    })
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
@@ -114,6 +148,21 @@ export default function PainelFreela() {
                 </div>
               ))}
             </div>
+          )}
+        </div>
+
+        {/* Chamadas recentes */}
+        <div className="max-w-3xl mx-auto mt-12 bg-white p-6 rounded shadow">
+          <h2 className="text-xl font-semibold mb-4">📞 Chamadas Recentes</h2>
+          {chamadas.length === 0 ? (
+            <p>Nenhuma chamada recebida ainda.</p>
+          ) : (
+            chamadas.map((c, i) => (
+              <div key={i} className="mb-3 border-b pb-2">
+                <p>Você foi chamado por: <strong>{c.estabelecimentoNome}</strong></p>
+                <p>Em: {c.criadoEm?.toDate ? c.criadoEm.toDate().toLocaleString() : 'Desconhecido'}</p>
+              </div>
+            ))
           )}
         </div>
       </div>
