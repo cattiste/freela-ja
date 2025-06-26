@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, onSnapshot, orderBy, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import AgendaFreela from '../components/AgendaFreela';
+// import AgendaFreela from '../components/AgendaFreela'; // Comentado temporariamente
 
 export default function PainelFreela() {
   const navigate = useNavigate();
@@ -18,7 +18,6 @@ export default function PainelFreela() {
     try {
       const audio = new Audio('https://res.cloudinary.com/dbemvuau3/video/upload/v1750961914/qhkd3ojkqhi2imr9lup8.mp3');
       setAudioChamada(audio);
-      
       return () => {
         if (audio) {
           audio.pause();
@@ -41,9 +40,9 @@ export default function PainelFreela() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const usuario = JSON.parse(localStorage.getItem('usuarioLogado'));
-      
+
       if (!usuario || usuario.tipo !== 'freela') {
         navigate('/login');
         return;
@@ -60,18 +59,13 @@ export default function PainelFreela() {
 
       const dadosFreela = freelaSnap.data();
       setFreela({ uid: usuario.uid, ...dadosFreela });
+      console.log('🧪 FREELA:', dadosFreela);
 
-      // Carrega vagas do localStorage
-      try {
-        const vagasStorage = localStorage.getItem('vagas');
-        const vagasDisponiveis = vagasStorage ? JSON.parse(vagasStorage) : [];
-        setVagas(vagasDisponiveis);
-      } catch (err) {
-        console.error('Erro ao carregar vagas:', err);
-        setVagas([]);
-      }
+      const vagasStorage = localStorage.getItem('vagas');
+      const vagasDisponiveis = vagasStorage ? JSON.parse(vagasStorage) : [];
+      setVagas(vagasDisponiveis);
+      console.log('🧪 VAGAS:', vagasDisponiveis);
 
-      // Configura listener para chamadas
       const chamadasRef = collection(db, 'chamadas');
       const q = query(
         chamadasRef,
@@ -79,23 +73,19 @@ export default function PainelFreela() {
         orderBy('criadoEm', 'desc')
       );
 
-      const unsubscribe = onSnapshot(
-        q,
-        (snapshot) => {
-          snapshot.docChanges().forEach((change) => {
-            if (change.type === 'added') {
-              const chamada = { id: change.doc.id, ...change.doc.data() };
-              alert(`📩 Você foi chamado pelo estabelecimento ${chamada.estabelecimentoNome}!`);
-              tocarSomChamada();
-              setChamadas((prev) => [chamada, ...prev]);
-            }
-          });
-        },
-        (err) => {
-          console.error('Erro ao escutar chamadas:', err);
-          setError('Erro ao carregar chamadas');
-        }
-      );
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const chamada = { id: change.doc.id, ...change.doc.data() };
+            alert(`📩 Você foi chamado pelo estabelecimento ${chamada.estabelecimentoNome}!`);
+            tocarSomChamada();
+            setChamadas((prev) => [chamada, ...prev]);
+          }
+        });
+      }, (err) => {
+        console.error('Erro ao escutar chamadas:', err);
+        setError('Erro ao carregar chamadas');
+      });
 
       return unsubscribe;
     } catch (err) {
@@ -166,18 +156,8 @@ export default function PainelFreela() {
       <p><strong>Status:</strong> {chamada.status || 'pendente'}</p>
       {(!chamada.status || chamada.status === 'pendente') && (
         <div className="mt-2 flex gap-3 justify-center">
-          <button
-            onClick={() => aceitarChamada(chamada)}
-            className="bg-green-600 text-white py-1 px-4 rounded hover:bg-green-700 transition"
-          >
-            ✔️ Aceitar
-          </button>
-          <button
-            onClick={() => recusarChamada(chamada)}
-            className="bg-red-600 text-white py-1 px-4 rounded hover:bg-red-700 transition"
-          >
-            ❌ Recusar
-          </button>
+          <button onClick={() => aceitarChamada(chamada)} className="bg-green-600 text-white py-1 px-4 rounded hover:bg-green-700 transition">✔️ Aceitar</button>
+          <button onClick={() => recusarChamada(chamada)} className="bg-red-600 text-white py-1 px-4 rounded hover:bg-red-700 transition">❌ Recusar</button>
         </div>
       )}
     </div>
@@ -234,10 +214,10 @@ export default function PainelFreela() {
                 />
                 <div className="text-center sm:text-left">
                   <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">{freela.nome}</h2>
-                  <p className="text-blue-600">{freela.funcao}</p>
-                  <p className="text-gray-600 text-sm">{freela.especialidades}</p>
+                  <p className="text-blue-600">{freela.funcao || 'Função não informada'}</p>
+                  <p className="text-gray-600 text-sm">{freela.especialidades || '—'}</p>
                   <p className="text-gray-500 text-sm">{freela.email}</p>
-                  <p className="text-gray-600 text-sm mt-1">📍 {freela.endereco}</p>
+                  <p className="text-gray-600 text-sm mt-1">📍 {freela.endereco || 'Endereço não informado'}</p>
                   <p className="text-green-700 font-semibold mt-1">💰 Diária: R$ {freela.valorDiaria || 'não informado'}</p>
                   <p className="text-gray-600 text-sm mt-1">📱 {freela.celular}</p>
                 </div>
@@ -254,7 +234,8 @@ export default function PainelFreela() {
 
             <div className="w-full lg:w-1/2 bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition">
               <h2 className="text-xl font-semibold text-blue-700 mb-4">📅 Agenda de Disponibilidade</h2>
-              <AgendaFreela uid={freela.uid} />
+              {/* <AgendaFreela uid={freela.uid} /> */}
+              <p className="text-gray-500">Agenda em breve...</p>
             </div>
           </div>
         )}
