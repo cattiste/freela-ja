@@ -197,25 +197,29 @@ export default function PainelEstabelecimento() {
       </div>
 
       {/* Lista de profissionais */}
-<div className="max-w-6xl mx-auto flex flex-wrap justify-center">
-  {resultadoFiltro.length === 0 ? (
-    <p className="text-gray-500">
-      🔎 Nenhum freelancer encontrado com os filtros aplicados.
-    </p>
-  ) : (
-    resultadoFiltro.map((freela, idx) => (
-      <ProfissionalCard
-        key={freela.uid || idx}
-        prof={{
-          imagem: freela.foto || 'https://i.imgur.com/3W8i1sT.png',
-          nome: freela.nome,
-          especialidade: freela.especialidade || freela.funcao || 'Não informado',
-          endereco: freela.endereco || 'Endereço não informado',
-          avaliacao: freela.avaliacao || 0,
-          descricao: freela.descricao || '',
-        }}
-        onChamar={handleChamarProfissional}
-      />
-    ))
-  )}
-</div>
+      <div className="max-w-6xl mx-auto flex flex-wrap justify-center">
+        {resultadoFiltro.length === 0 ? (
+          <p className="text-gray-500">
+            🔎 Nenhum freelancer encontrado com os filtros aplicados.
+          </p>
+        ) : (
+          resultadoFiltro.map((freela, idx) => (
+            <ProfissionalCard
+              key={freela.uid || idx}
+              prof={{
+                imagem: freela.foto || 'https://i.imgur.com/3W8i1sT.png',
+                nome: freela.nome,
+                especialidade:
+                  freela.especialidade || freela.funcao || 'Não informado',
+                endereco: freela.endereco || 'Endereço não informado',
+                avaliacao: freela.avaliacao || 0,
+                descricao: freela.descricao || '',
+              }}
+              onChamar={handleChamarProfissional}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
