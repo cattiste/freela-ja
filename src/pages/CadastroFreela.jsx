@@ -12,6 +12,7 @@ export default function CadastroFreela() {
   const [celular, setCelular] = useState('')
   const [endereco, setEndereco] = useState('')
   const [funcao, setFuncao] = useState('')
+  const [especialidades, setEspecialidades] = useState('')
   const [valorDiaria, setValorDiaria] = useState('')
   const [foto, setFoto] = useState('')
   const [loading, setLoading] = useState(false)
@@ -37,7 +38,7 @@ export default function CadastroFreela() {
   const handleCadastro = async (e) => {
     e.preventDefault()
 
-    if (!nome || !email || !senha || !celular || !endereco || !funcao || !valorDiaria) {
+    if (!nome || !email || !senha || !celular || !endereco || !funcao || !valorDiaria || !especialidades) {
       alert('Preencha todos os campos obrigatórios.')
       return
     }
@@ -64,6 +65,7 @@ export default function CadastroFreela() {
         celular,
         endereco,
         funcao,
+        especialidades,
         foto,
         tipo: 'freela',
         criadoEm: new Date(),
@@ -139,7 +141,7 @@ export default function CadastroFreela() {
           type="text"
           placeholder="Especialidades"
           value={especialidades}
-          onChange={e => setFuncao(e.target.value)}
+          onChange={e => setEspecialidades(e.target.value)}
           className="input-field"
           required
         />

@@ -1,153 +1,132 @@
 import React, { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
-import { useNavigate, useParams } from 'react-router-dom'
 import { db } from '../firebase'
 import UploadImagem from '../components/UploadImagem'
 
 export default function EditarFreela() {
-  const { uid } = useParams()
+  const { id } = useParams()
   const navigate = useNavigate()
-
-  const [nome, setNome] = useState('')
-  const [email, setEmail] = useState('')
-  const [celular, setCelular] = useState('')
-  const [endereco, setEndereco] = useState('')
-  const [funcao, setFuncao] = useState('')
-  const [valorDiaria, setValorDiaria] = useState('')
-  const [foto, setFoto] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [freela, setFreela] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    async function carregarDados() {
-      const docRef = doc(db, 'usuarios', uid)
-      const docSnap = await getDoc(docRef)
-
-      if (docSnap.exists()) {
-        const dados = docSnap.data()
-        setNome(dados.nome || '')
-        setEmail(dados.email || '')
-        setCelular(dados.celular || '')
-        setEndereco(dados.endereco || '')
-        setFuncao(dados.funcao || '')
-        setValorDiaria(dados.valorDiaria ? dados.valorDiaria.toString() : '')
-        setFoto(dados.foto || '')
-      } else {
-        alert('Usuário não encontrado.')
-        navigate('/')
+    const carregarDados = async () => {
+      try {
+        const docRef = doc(db, 'usuarios', id)
+        const docSnap = await getDoc(docRef)
+        if (docSnap.exists()) {
+          setFreela(docSnap.data())
+        } else {
+          setError('Freelancer não encontrado.')
+        }
+      } catch (err) {
+        setError('Erro ao carregar dados.')
+        console.error(err)
+      } finally {
+        setLoading(false)
       }
     }
 
     carregarDados()
-  }, [uid, navigate])
+  }, [id])
+
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setFreela((prev) => ({ ...prev, [name]: value }))
+  }
 
   const handleSalvar = async (e) => {
     e.preventDefault()
-
-    if (!nome || !email || !celular || !endereco || !funcao || !valorDiaria) {
-      alert('Preencha todos os campos obrigatórios.')
-      return
-    }
-
-    setLoading(true)
-    setError(null)
-
     try {
-      const docRef = doc(db, 'usuarios', uid)
+      const docRef = doc(db, 'usuarios', id)
       await updateDoc(docRef, {
-        nome,
-        email,
-        celular,
-        endereco,
-        funcao,
-        valorDiaria: parseFloat(valorDiaria),
-        foto
+        nome: freela.nome,
+        celular: freela.celular,
+        endereco: freela.endereco,
+        funcao: freela.funcao,
+        especialidades: freela.especialidades,
+        valorDiaria: parseFloat(freela.valorDiaria),
+        foto: freela.foto,
       })
-
-      alert('Perfil atualizado com sucesso!')
+      alert('Dados atualizados com sucesso!')
       navigate('/painelfreela')
     } catch (err) {
-      console.error('Erro ao atualizar perfil:', err)
-      setError('Erro ao atualizar perfil. Tente novamente.')
-    } finally {
-      setLoading(false)
+      console.error('Erro ao salvar:', err)
+      alert('Erro ao salvar as alterações.')
     }
   }
 
-  return (
-    <div className="max-w-md mx-auto mt-12 p-6 bg-white rounded-xl shadow-lg">
-      <h1 className="text-2xl font-bold mb-6 text-center text-orange-600">Editar Perfil Freelancer</h1>
+  if (loading) return <p className="text-center mt-10">Carregando...</p>
+  if (error) return <p className="text-center text-red-600 mt-10">{error}</p>
 
+  return (
+    <div className="max-w-xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-lg">
+      <h1 className="text-2xl font-bold text-center text-blue-700 mb-6">✏️ Editar Perfil Freelancer</h1>
       <form onSubmit={handleSalvar} className="flex flex-col gap-4">
         <input
           type="text"
+          name="nome"
+          value={freela.nome || ''}
+          onChange={handleChange}
           placeholder="Nome"
-          value={nome}
-          onChange={e => setNome(e.target.value)}
           className="input-field"
           required
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          className="input-field"
-          required
-          disabled
-          title="Email não pode ser alterado"
         />
         <input
           type="text"
+          name="celular"
+          value={freela.celular || ''}
+          onChange={handleChange}
           placeholder="Celular"
-          value={celular}
-          onChange={e => setCelular(e.target.value)}
           className="input-field"
           required
         />
         <input
           type="text"
+          name="endereco"
+          value={freela.endereco || ''}
+          onChange={handleChange}
           placeholder="Endereço"
-          value={endereco}
-          onChange={e => setEndereco(e.target.value)}
           className="input-field"
           required
         />
         <input
           type="text"
+          name="funcao"
+          value={freela.funcao || ''}
+          onChange={handleChange}
           placeholder="Função"
-          value={funcao}
-          onChange={e => setFuncao(e.target.value)}
           className="input-field"
           required
         />
         <input
           type="text"
+          name="especialidades"
+          value={freela.especialidades || ''}
+          onChange={handleChange}
           placeholder="Especialidades"
-          value={especialidades}
-          onChange={e => setFuncao(e.target.value)}
           className="input-field"
           required
         />
         <input
           type="number"
+          name="valorDiaria"
+          value={freela.valorDiaria || ''}
+          onChange={handleChange}
           placeholder="Valor da Diária"
-          value={valorDiaria}
-          onChange={e => setValorDiaria(e.target.value)}
           className="input-field"
           required
         />
 
-        <UploadImagem onUploadComplete={url => setFoto(url)} currentImage={foto} />
-
-        {error && <p className="text-red-600 text-center mt-2">{error}</p>}
+        <UploadImagem onUploadComplete={(url) => setFreela((prev) => ({ ...prev, foto: url }))} />
 
         <button
           type="submit"
-          disabled={loading}
           className="btn-primary mt-4"
         >
-          {loading ? 'Salvando...' : 'Salvar Alterações'}
+          Salvar Alterações
         </button>
       </form>
     </div>
