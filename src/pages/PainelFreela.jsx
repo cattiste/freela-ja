@@ -13,12 +13,10 @@ export default function PainelFreela() {
     () => new Audio('https://res.cloudinary.com/dbemvuau3/video/upload/v1750961914/qhkd3ojkqhi2imr9lup8.mp3')
   );
 
-  // Pré-carrega o áudio
   useEffect(() => {
     audioChamada.load().catch(() => console.log('🔇 Erro ao carregar áudio.'));
   }, [audioChamada]);
 
-  // Carrega dados do freelancer e configura listener de chamadas
   const carregarFreela = useCallback(async () => {
     const usuario = JSON.parse(localStorage.getItem('usuarioLogado'));
     if (!usuario || usuario.tipo !== 'freela') {
@@ -39,7 +37,6 @@ export default function PainelFreela() {
       const dadosFreela = freelaSnap.data();
       setFreela({ uid: usuario.uid, ...dadosFreela });
 
-      // Listener para chamadas em tempo real
       const chamadasRef = collection(db, 'chamadas');
       const q = query(
         chamadasRef,
@@ -62,14 +59,13 @@ export default function PainelFreela() {
         (err) => console.error('Erro ao escutar chamadas:', err)
       );
 
-      return unsubscribe; // Cleanup do listener
+      return unsubscribe;
     } catch (err) {
       console.error('Erro ao carregar freelancer:', err);
       navigate('/login');
     }
   }, [navigate, audioChamada]);
 
-  // Carrega dados iniciais
   useEffect(() => {
     const carregarDados = async () => {
       await carregarFreela();
@@ -80,15 +76,13 @@ export default function PainelFreela() {
     carregarDados();
   }, [carregarFreela]);
 
-  // Toca som de chamada
   const tocarSomChamada = useCallback(() => {
     audioChamada.play().catch(() => console.log('🔇 Erro ao reproduzir som.'));
   }, [audioChamada]);
 
-  // Aceita chamada
   const aceitarChamada = async (chamada) => {
     try {
-      await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' };
+      await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' });
       alert('Você aceitou a chamada!');
       setChamadas((prev) =>
         prev.map((c) => (c.id === chamada.id ? { ...c, status: 'aceita' } : c))
@@ -99,10 +93,9 @@ export default function PainelFreela() {
     }
   };
 
-  // Recusa chamada
   const recusarChamada = async (chamada) => {
     try {
-      await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' };
+      await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' });
       alert('Você recusou a chamada.');
       setChamadas((prev) =>
         prev.map((c) => (c.id === chamada.id ? { ...c, status: 'recusada' } : c))
@@ -113,7 +106,6 @@ export default function PainelFreela() {
     }
   };
 
-  // Componente de Card de Vaga
   const CardVaga = ({ vaga }) => (
     <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition">
       <h3 className="text-xl font-bold text-gray-800 mb-2">{vaga.titulo}</h3>
@@ -131,7 +123,6 @@ export default function PainelFreela() {
     </div>
   );
 
-  // Componente de Card de Chamada
   const CardChamada = ({ chamada }) => (
     <div className="mb-4 border-b pb-3">
       <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
@@ -161,7 +152,6 @@ export default function PainelFreela() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Cabeçalho */}
         <div className="text-center mb-10">
           <h1 className="text-3xl sm:text-4xl font-bold text-blue-700">🎯 Painel do Freelancer</h1>
           {freela && (
@@ -171,10 +161,8 @@ export default function PainelFreela() {
           )}
         </div>
 
-        {/* Seção Perfil e Agenda */}
         {freela && (
           <div className="flex flex-col lg:flex-row gap-8 mb-10">
-            {/* Card Perfil */}
             <div className="w-full lg:w-1/2 bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition">
               <div className="flex flex-col sm:flex-row items-center gap-6 mb-6">
                 <img
@@ -202,7 +190,6 @@ export default function PainelFreela() {
               </div>
             </div>
 
-            {/* Card Agenda */}
             <div className="w-full lg:w-1/2 bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition">
               <h2 className="text-xl font-semibold text-blue-700 mb-4">📅 Agenda de Disponibilidade</h2>
               <AgendaFreela uid={freela.uid} />
@@ -210,7 +197,6 @@ export default function PainelFreela() {
           </div>
         )}
 
-        {/* Seção Vagas */}
         <div className="max-w-5xl mx-auto">
           <h2 className="text-2xl font-semibold text-blue-700 mb-6 text-center">📌 Vagas Disponíveis</h2>
           {vagas.length === 0 ? (
@@ -224,7 +210,6 @@ export default function PainelFreela() {
           )}
         </div>
 
-        {/* Seção Chamadas */}
         <div className="max-w-3xl mx-auto mt-12 bg-white p-6 rounded shadow">
           <h2 className="text-xl font-semibold mb-4">📞 Chamadas Recentes</h2>
           {chamadas.length === 0 ? (
