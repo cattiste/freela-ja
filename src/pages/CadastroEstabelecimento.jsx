@@ -1,10 +1,9 @@
 import React, { useState } from 'react'
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'
+import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { collection, addDoc } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase'
 import UploadImagem from '../components/UploadImagem'
-import './Home.css'
 
 export default function CadastroEstabelecimento() {
   const [nome, setNome] = useState('')
@@ -72,20 +71,64 @@ export default function CadastroEstabelecimento() {
   }
 
   return (
-    <div className="home-container">
-      <h1 className="home-title">Cadastro de Estabelecimento</h1>
-      <form onSubmit={handleCadastro} className="form-container">
-        <input type="text" placeholder="Nome do Estabelecimento" value={nome} onChange={e => setNome(e.target.value)} className="input" />
-        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input" />
-        <input type="password" placeholder="Senha" value={senha} onChange={e => setSenha(e.target.value)} className="input" />
-        <input type="text" placeholder="Celular" value={celular} onChange={e => setCelular(e.target.value)} className="input" />
-        <input type="text" placeholder="Endereço" value={endereco} onChange={e => setEndereco(e.target.value)} className="input" />
+    <div className="max-w-md mx-auto mt-12 p-6 bg-white rounded-xl shadow-lg">
+      <h1 className="text-2xl font-bold mb-6 text-center text-orange-600">Cadastro de Estabelecimento</h1>
+
+      <form onSubmit={handleCadastro} className="flex flex-col gap-4">
+        <input
+          type="text"
+          placeholder="Nome do Estabelecimento"
+          value={nome}
+          onChange={e => setNome(e.target.value)}
+          className="input-field"
+          required
+        />
+
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          className="input-field"
+          required
+        />
+
+        <input
+          type="password"
+          placeholder="Senha"
+          value={senha}
+          onChange={e => setSenha(e.target.value)}
+          className="input-field"
+          required
+        />
+
+        <input
+          type="text"
+          placeholder="Celular"
+          value={celular}
+          onChange={e => setCelular(e.target.value)}
+          className="input-field"
+          required
+        />
+
+        <input
+          type="text"
+          placeholder="Endereço"
+          value={endereco}
+          onChange={e => setEndereco(e.target.value)}
+          className="input-field"
+          required
+        />
 
         <UploadImagem onUploadComplete={url => setFoto(url)} />
 
-        {error && <p style={{ color: 'red' }}>{error}</p>}
+        {error && <p className="text-red-600 text-center mt-2">{error}</p>}
 
-        <button type="submit" className="home-button" disabled={loading}>
+        <button
+          type="submit"
+          disabled={loading}
+          className="btn-primary mt-4"
+        >
           {loading ? 'Cadastrando...' : 'Cadastrar'}
         </button>
       </form>

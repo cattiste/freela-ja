@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import './Home.css'
 
 export default function NovaVaga() {
   const navigate = useNavigate()
@@ -49,14 +48,14 @@ export default function NovaVaga() {
           placeholder="Título da vaga"
           value={titulo}
           onChange={(e) => setTitulo(e.target.value)}
-          className="input"
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
           required
         />
         <textarea
           placeholder="Descrição da vaga"
           value={descricao}
           onChange={(e) => setDescricao(e.target.value)}
-          className="input"
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
           rows={3}
           required
         />
@@ -65,27 +64,32 @@ export default function NovaVaga() {
           placeholder="Requisitos (opcional)"
           value={requisitos}
           onChange={(e) => setRequisitos(e.target.value)}
-          className="input"
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
         />
         <input
           type="text"
           placeholder="Local da vaga"
           value={local}
           onChange={(e) => setLocal(e.target.value)}
-          className="input"
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
           required
         />
 
         <button
           onClick={handleCriarVaga}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded w-full"
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded w-full font-semibold transition"
         >
           Criar Vaga
         </button>
       </div>
 
       <div className="mt-6 text-center">
-        <button onClick={() => navigate('/painel')} className="text-gray-600 underline">Voltar ao Painel</button>
+        <button
+          onClick={() => navigate('/painel')}
+          className="text-gray-600 underline hover:text-gray-800"
+        >
+          Voltar ao Painel
+        </button>
       </div>
     </div>
   )

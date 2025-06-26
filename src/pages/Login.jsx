@@ -1,10 +1,8 @@
-// src/pages/Login.jsx
 import React, { useState } from 'react'
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
 import { collection, getDocs, query, where } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase'
-import './Home.css'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -23,7 +21,6 @@ export default function Login() {
       const credenciais = await signInWithEmailAndPassword(auth, email, senha)
       const user = credenciais.user
 
-      // Buscar no Firestore os dados do usuário
       const q = query(collection(db, 'usuarios'), where('uid', '==', user.uid))
       const snapshot = await getDocs(q)
 
@@ -43,12 +40,10 @@ export default function Login() {
         foto: dadosUsuario.foto || '',
       }))
 
-      // Salva todos no localStorage (opcional para uso offline/local)
       const todosUsuarios = []
       snapshot.forEach(doc => todosUsuarios.push(doc.data()))
       localStorage.setItem('usuarios', JSON.stringify(todosUsuarios))
 
-      // Redireciona
       if (dadosUsuario.tipo === 'freela') {
         navigate('/painelfreela')
       } else if (dadosUsuario.tipo === 'estabelecimento') {
@@ -65,16 +60,17 @@ export default function Login() {
   }
 
   return (
-    <div className="home-container">
-      <h2 className="home-title">Entrar na Plataforma</h2>
-      <form onSubmit={handleLogin} className="form-container">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-orange-100 to-orange-200 text-gray-800 p-6">
+      <h2 className="text-3xl font-bold text-orange-600 mb-6">Entrar na Plataforma</h2>
+      
+      <form onSubmit={handleLogin} className="w-full max-w-md space-y-4 bg-white p-6 rounded-xl shadow-md">
         <input
           type="email"
           placeholder="E-mail"
           value={email}
           onChange={e => setEmail(e.target.value)}
           required
-          className="input"
+          className="input-field"
         />
         <input
           type="password"
@@ -82,13 +78,17 @@ export default function Login() {
           value={senha}
           onChange={e => setSenha(e.target.value)}
           required
-          className="input"
+          className="input-field"
         />
-        <button type="submit" disabled={loading} className="home-button">
+        <button
+          type="submit"
+          disabled={loading}
+          className="btn-primary w-full"
+        >
           {loading ? 'Carregando...' : 'Entrar'}
         </button>
+        {error && <p className="text-red-600 text-sm text-center">{error}</p>}
       </form>
-      {error && <p className="error-text">{error}</p>}
     </div>
   )
 }

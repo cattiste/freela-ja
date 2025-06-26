@@ -3,7 +3,6 @@ import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { collection, addDoc } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase'
-import './Home.css'
 
 export default function Cadastro() {
   const navigate = useNavigate()
@@ -20,16 +19,14 @@ export default function Cadastro() {
     setError(null)
 
     try {
-      // Cria o usuário no Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, senha)
       const user = userCredential.user
 
-      // Salva dados públicos no Firestore, numa coleção "usuarios"
       await addDoc(collection(db, 'usuarios'), {
         uid: user.uid,
         nome,
         email,
-        tipo: 'freela', // ou outro tipo, se quiser
+        tipo: 'freela',
         criadoEm: new Date()
       })
 
@@ -43,38 +40,47 @@ export default function Cadastro() {
   }
 
   return (
-    <div className="home-container">
-      <h2 className="home-title">Cadastro</h2>
-      <form onSubmit={handleCadastro} className="form-container">
+    <div className="max-w-md mx-auto mt-12 p-6 bg-white rounded-xl shadow-lg">
+      <h2 className="text-2xl font-bold mb-6 text-center text-orange-600">Cadastro</h2>
+
+      <form onSubmit={handleCadastro} className="flex flex-col gap-4">
         <input
           type="text"
           placeholder="Nome"
           value={nome}
           onChange={e => setNome(e.target.value)}
           required
-          className="input"
+          className="input-field"
         />
+
         <input
           type="email"
           placeholder="E-mail"
           value={email}
           onChange={e => setEmail(e.target.value)}
           required
-          className="input"
+          className="input-field"
         />
+
         <input
           type="password"
           placeholder="Senha"
           value={senha}
           onChange={e => setSenha(e.target.value)}
           required
-          className="input"
+          className="input-field"
         />
-        <button type="submit" disabled={loading} className="home-button">
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="btn-primary"
+        >
           {loading ? 'Cadastrando...' : 'Cadastrar'}
         </button>
       </form>
-      {error && <p style={{ color: 'red', marginTop: 12 }}>{error}</p>}
+
+      {error && <p className="text-red-600 mt-4 text-center">{error}</p>}
     </div>
   )
 }

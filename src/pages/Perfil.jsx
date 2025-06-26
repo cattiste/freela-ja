@@ -1,12 +1,13 @@
 import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { profissionais } from '../data/profissionais' // ✅ Importa o array centralizado
+import { profissionais } from '../data/profissionais' // Array centralizado dos profissionais
 
 export default function Perfil() {
   const { id } = useParams()
   const navigate = useNavigate()
 
-  const profissional = profissionais.find(p => p.id === id)
+  // Converter id para string para garantir correspondência
+  const profissional = profissionais.find(p => p.id.toString() === id)
 
   if (!profissional) {
     return <div className="perfil-container">Profissional não encontrado.</div>

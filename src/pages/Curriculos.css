@@ -1,58 +1,59 @@
-.curriculos-container {
-  padding: 6rem 1rem 2rem;
-  max-width: 600px;
-  margin: 0 auto;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-.curriculos-title {
-  font-size: 2rem;
-  color: #ff6b00;
-  text-align: center;
-  margin-bottom: 0.5rem;
-}
+@layer components {
+  /* Container principal */
+  .curriculos-container {
+    @apply max-w-4xl mx-auto mt-24 mb-8 p-6 bg-white rounded-xl shadow-lg;
+  }
 
-.curriculos-subtitle {
-  font-size: 1rem;
-  text-align: center;
-  margin-bottom: 2rem;
-  color: #333;
-}
+  /* Título e subtítulo */
+  .curriculos-title {
+    @apply text-3xl font-bold text-blue-600 mb-1 text-center;
+  }
+  .curriculos-subtitle {
+    @apply text-base text-gray-600 mb-6 text-center;
+  }
 
-.resultado-chefs {
-  display: grid;
-  gap: 1rem;
-}
+  /* Card profissional */
+  .card-profissional {
+    @apply bg-gray-50 rounded-2xl p-5 mb-5 shadow-md transition-transform duration-200 hover:-translate-y-1;
+  }
 
-.card-profissional {
-  background: white;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  text-align: left;
-}
+  .card-profissional h3 {
+    @apply mb-1 font-semibold text-blue-900;
+  }
 
-.card-profissional h3 {
-  margin-top: 0;
-  color: #ff6b00;
-}
+  .card-profissional p {
+    @apply text-gray-700 text-sm my-1;
+  }
 
-.card-profissional .descricao {
-  margin-top: 8px;
-  margin-bottom: 12px;
-  color: #555;
-}
+  .descricao {
+    @apply italic mt-2 text-gray-600 text-sm;
+  }
 
-.card-botao {
-  display: inline-block;
-  background-color: #ff6b00;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: bold;
-  text-decoration: none;
-  transition: background 0.3s;
-}
+  /* Botão candidatar-se */
+  .card-botao {
+    @apply inline-block mt-3 px-5 py-2 bg-blue-600 text-white font-semibold rounded-full cursor-pointer transition-colors duration-300 no-underline;
+  }
 
-.card-botao:hover {
-  background-color: #e85a00;
+  .card-botao:hover {
+    @apply bg-blue-800;
+  }
+
+  /* Botões fixos Voltar e Home */
+  .botao-voltar-home {
+    @apply fixed top-5 px-4 py-2 rounded-lg border-none bg-orange-600 text-white font-bold cursor-pointer shadow-md z-50 transition-colors duration-300;
+  }
+  .botao-voltar-home:hover {
+    @apply bg-orange-700;
+  }
+
+  .botao-home-painel {
+    @apply bg-indigo-700;
+  }
+  .botao-home-painel:hover {
+    @apply bg-indigo-900;
+  }
 }

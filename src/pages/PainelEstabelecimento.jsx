@@ -1,9 +1,7 @@
-// src/pages/PainelEstabelecimento.jsx
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '../firebase'
-import './Home.css'
 
 export default function PainelEstabelecimento() {
   const navigate = useNavigate()
@@ -84,53 +82,77 @@ export default function PainelEstabelecimento() {
     <div className="min-h-screen bg-orange-50 p-6 text-center">
       <h1 className="text-3xl font-bold text-orange-700 mb-4">📍 Painel do Estabelecimento</h1>
 
+      {/* Botões principais */}
+      <div className="flex flex-wrap justify-center gap-4 mb-6">
+        <button
+          onClick={() => navigate('/novavaga')}
+          className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded shadow"
+        >
+          📢 Nova Vaga
+        </button>
+        <button
+          onClick={() => navigate('/perfil/estabelecimento')}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded shadow"
+        >
+          ✏️ Editar Perfil
+        </button>
+      </div>
+
       <div className="max-w-xl mx-auto bg-white rounded-lg p-4 shadow mb-6">
         <input
           type="text"
           value={funcaoFiltro}
           onChange={(e) => setFuncaoFiltro(e.target.value)}
           placeholder="Filtrar por função (ex: cozinheiro)"
-          className="input mb-4"
+          className="w-full px-4 py-2 border border-gray-300 rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-orange-500"
         />
-        <button onClick={aplicarFiltroFuncao} className="home-button w-full">Filtrar</button>
+        <button
+          onClick={aplicarFiltroFuncao}
+          className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded transition"
+        >
+          Filtrar
+        </button>
       </div>
 
-      <button onClick={() => navigate('/perfil/estabelecimento')} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded mb-4">
-        Editar Perfil
-      </button>
-
       <div className="max-w-4xl mx-auto">
-        {resultadoFiltro.length === 0 && (
+        {resultadoFiltro.length === 0 ? (
           <p className="text-gray-500">🔎 Nenhum freelancer encontrado na área de 7km.</p>
-        )}
-
-        {resultadoFiltro.map((freela, idx) => (
-          <div key={idx} className="bg-white rounded-xl shadow p-4 mb-4 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-4 text-left">
-              <img src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'} alt="freela" className="w-16 h-16 rounded-full object-cover" />
-              <div>
-                <p className="font-bold text-lg">{freela.nome}</p>
-                <p>{freela.funcao}</p>
-                <p className="text-sm text-gray-500">{freela.distancia?.toFixed(2)} km de distância</p>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                const estabelecimento = JSON.parse(localStorage.getItem('usuarioLogado'))
-                const chamada = {
-                  freela: freela.nome,
-                  estabelecimento: estabelecimento?.nome || 'Estabelecimento desconhecido',
-                  horario: new Date().toISOString()
-                }
-                localStorage.setItem('chamadaFreela', JSON.stringify(chamada))
-                alert(`✅ Você chamou ${freela.nome}!`)
-              }}
-              className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded"
+        ) : (
+          resultadoFiltro.map((freela, idx) => (
+            <div
+              key={idx}
+              className="bg-white rounded-xl shadow p-4 mb-4 flex flex-col md:flex-row justify-between items-center gap-4"
             >
-              Chamar
-            </button>
-          </div>
-        ))}
+              <div className="flex items-center gap-4 text-left">
+                <img
+                  src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'}
+                  alt="freela"
+                  className="w-16 h-16 rounded-full object-cover"
+                />
+                <div>
+                  <p className="font-bold text-lg">{freela.nome}</p>
+                  <p>{freela.funcao}</p>
+                  <p className="text-sm text-gray-500">{freela.distancia?.toFixed(2)} km de distância</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  const estabelecimento = JSON.parse(localStorage.getItem('usuarioLogado'))
+                  const chamada = {
+                    freela: freela.nome,
+                    estabelecimento: estabelecimento?.nome || 'Estabelecimento desconhecido',
+                    horario: new Date().toISOString()
+                  }
+                  localStorage.setItem('chamadaFreela', JSON.stringify(chamada))
+                  alert(`✅ Você chamou ${freela.nome}!`)
+                }}
+                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition"
+              >
+                Chamar
+              </button>
+            </div>
+          ))
+        )}
       </div>
     </div>
   )
