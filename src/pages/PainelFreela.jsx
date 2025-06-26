@@ -9,27 +9,51 @@ export default function PainelFreela() {
   const [freela, setFreela] = useState(null);
   const [vagas, setVagas] = useState([]);
   const [chamadas, setChamadas] = useState([]);
-  const [audioChamada] = useState(
-    () => new Audio('https://res.cloudinary.com/dbemvuau3/video/upload/v1750961914/qhkd3ojkqhi2imr9lup8.mp3')
-  );
+  const [audioChamada, setAudioChamada] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Configuração do áudio
   useEffect(() => {
-    audioChamada.load().catch(() => console.log('🔇 Erro ao carregar áudio.'));
+    try {
+      const audio = new Audio('https://res.cloudinary.com/dbemvuau3/video/upload/v1750961914/qhkd3ojkqhi2imr9lup8.mp3');
+      setAudioChamada(audio);
+      
+      return () => {
+        if (audio) {
+          audio.pause();
+          audio.src = '';
+        }
+      };
+    } catch (err) {
+      console.error('Erro ao configurar áudio:', err);
+      setError('Erro ao configurar notificação de chamada');
+    }
+  }, []);
+
+  const tocarSomChamada = useCallback(() => {
+    if (audioChamada) {
+      audioChamada.play().catch((e) => console.log('🔇 Erro ao reproduzir som:', e));
+    }
   }, [audioChamada]);
 
   const carregarFreela = useCallback(async () => {
-    const usuario = JSON.parse(localStorage.getItem('usuarioLogado'));
-    if (!usuario || usuario.tipo !== 'freela') {
-      navigate('/login');
-      return;
-    }
-
     try {
+      setLoading(true);
+      setError(null);
+      
+      const usuario = JSON.parse(localStorage.getItem('usuarioLogado'));
+      
+      if (!usuario || usuario.tipo !== 'freela') {
+        navigate('/login');
+        return;
+      }
+
       const freelaRef = doc(db, 'usuarios', usuario.uid);
       const freelaSnap = await getDoc(freelaRef);
 
       if (!freelaSnap.exists()) {
-        alert('Freelancer não encontrado no banco de dados.');
+        setError('Freelancer não encontrado no banco de dados');
         navigate('/login');
         return;
       }
@@ -37,6 +61,17 @@ export default function PainelFreela() {
       const dadosFreela = freelaSnap.data();
       setFreela({ uid: usuario.uid, ...dadosFreela });
 
+      // Carrega vagas do localStorage
+      try {
+        const vagasStorage = localStorage.getItem('vagas');
+        const vagasDisponiveis = vagasStorage ? JSON.parse(vagasStorage) : [];
+        setVagas(vagasDisponiveis);
+      } catch (err) {
+        console.error('Erro ao carregar vagas:', err);
+        setVagas([]);
+      }
+
+      // Configura listener para chamadas
       const chamadasRef = collection(db, 'chamadas');
       const q = query(
         chamadasRef,
@@ -56,29 +91,28 @@ export default function PainelFreela() {
             }
           });
         },
-        (err) => console.error('Erro ao escutar chamadas:', err)
+        (err) => {
+          console.error('Erro ao escutar chamadas:', err);
+          setError('Erro ao carregar chamadas');
+        }
       );
 
       return unsubscribe;
     } catch (err) {
       console.error('Erro ao carregar freelancer:', err);
+      setError('Erro ao carregar dados do painel');
       navigate('/login');
+    } finally {
+      setLoading(false);
     }
-  }, [navigate, audioChamada]);
+  }, [navigate, tocarSomChamada]);
 
   useEffect(() => {
-    const carregarDados = async () => {
-      await carregarFreela();
-      const vagasDisponiveis = JSON.parse(localStorage.getItem('vagas') || '[]');
-      setVagas(vagasDisponiveis);
+    const unsubscribe = carregarFreela();
+    return () => {
+      if (unsubscribe) unsubscribe();
     };
-
-    carregarDados();
   }, [carregarFreela]);
-
-  const tocarSomChamada = useCallback(() => {
-    audioChamada.play().catch(() => console.log('🔇 Erro ao reproduzir som.'));
-  }, [audioChamada]);
 
   const aceitarChamada = async (chamada) => {
     try {
@@ -90,6 +124,7 @@ export default function PainelFreela() {
     } catch (err) {
       alert('Erro ao aceitar a chamada.');
       console.error(err);
+      setError('Erro ao aceitar chamada');
     }
   };
 
@@ -103,6 +138,7 @@ export default function PainelFreela() {
     } catch (err) {
       alert('Erro ao recusar a chamada.');
       console.error(err);
+      setError('Erro ao recusar chamada');
     }
   };
 
@@ -128,20 +164,52 @@ export default function PainelFreela() {
       <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
       <p><strong>Data:</strong> {chamada.criadoEm?.toDate ? chamada.criadoEm.toDate().toLocaleString() : new Date(chamada.criadoEm).toLocaleString()}</p>
       <p><strong>Status:</strong> {chamada.status || 'pendente'}</p>
-      {chamada.status !== 'aceita' && chamada.status !== 'recusada' && (
+      {(!chamada.status || chamada.status === 'pendente') && (
         <div className="mt-2 flex gap-3 justify-center">
           <button
             onClick={() => aceitarChamada(chamada)}
             className="bg-green-600 text-white py-1 px-4 rounded hover:bg-green-700 transition"
-          >✔️ Aceitar</button>
+          >
+            ✔️ Aceitar
+          </button>
           <button
             onClick={() => recusarChamada(chamada)}
             className="bg-red-600 text-white py-1 px-4 rounded hover:bg-red-700 transition"
-          >❌ Recusar</button>
+          >
+            ❌ Recusar
+          </button>
         </div>
       )}
     </div>
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-blue-700">Carregando seu painel...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+        <div className="bg-white p-6 rounded-lg shadow-md max-w-md text-center">
+          <h2 className="text-xl font-bold text-red-600 mb-4">Erro no Painel</h2>
+          <p className="mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
+          >
+            Tentar Novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
@@ -178,7 +246,9 @@ export default function PainelFreela() {
                 <button
                   onClick={() => navigate(`/editarfreela/${freela.uid}`)}
                   className="bg-blue-600 hover:bg-blue-700 transition text-white font-semibold py-2 px-5 rounded-full shadow-md"
-                >✏️ Editar Perfil</button>
+                >
+                  ✏️ Editar Perfil
+                </button>
               </div>
             </div>
 
@@ -195,8 +265,8 @@ export default function PainelFreela() {
             <p className="text-gray-600 text-center">🔎 Nenhuma vaga disponível no momento.</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {vagas.map((vaga) => (
-                <CardVaga key={vaga.id || vaga.titulo} vaga={vaga} />
+              {vagas.map((vaga, index) => (
+                <CardVaga key={vaga.id || `vaga-${index}`} vaga={vaga} />
               ))}
             </div>
           )}
@@ -205,7 +275,7 @@ export default function PainelFreela() {
         <div className="max-w-3xl mx-auto mt-12 bg-white p-6 rounded shadow">
           <h2 className="text-xl font-semibold mb-4">📞 Chamadas Recentes</h2>
           {chamadas.length === 0 ? (
-            <p>Nenhuma chamada recebida ainda.</p>
+            <p className="text-gray-600 text-center">Nenhuma chamada recebida ainda.</p>
           ) : (
             chamadas.map((chamada) => (
               <CardChamada key={chamada.id} chamada={chamada} />
