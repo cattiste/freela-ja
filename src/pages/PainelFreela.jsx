@@ -43,11 +43,8 @@ export default function PainelFreela() {
       snapshot.docChanges().forEach(change => {
         if (change.type === 'added') {
           const chamada = change.doc.data()
-          // Evitar alertar para chamadas antigas? Pode filtrar pelo timestamp aqui
           alert(`📩 Você foi chamado pelo estabelecimento ${chamada.estabelecimentoNome}!`)
           tocarSomChamada()
-
-          // Atualizar lista local de chamadas
           setChamadas(prev => [chamada, ...prev])
         }
       })
@@ -59,7 +56,7 @@ export default function PainelFreela() {
   function tocarSomChamada() {
     const audio = new Audio('/sons/chamada.mp3')
     audio.play().catch(() => {
-      console.log('Som não pode ser reproduzido automaticamente.')
+      console.log('🔇 Som não pode ser reproduzido automaticamente.')
     })
   }
 
@@ -166,7 +163,6 @@ export default function PainelFreela() {
           )}
         </div>
       </div>
-
-      
+    </div>
   )
 }
