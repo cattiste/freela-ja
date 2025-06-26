@@ -1,6 +1,6 @@
 import React from 'react'
 
-export default function ProfissionalCard({ prof }) {
+export default function ProfissionalCard({ prof, onChamar }) {
   return (
     <div
       className="
@@ -11,22 +11,23 @@ export default function ProfissionalCard({ prof }) {
       "
     >
       <img
-        src={prof.imagem}
+        src={prof.imagem || 'https://i.imgur.com/3W8i1sT.png'}
         alt={prof.nome}
         className="w-24 h-24 rounded-full object-cover mb-3 mx-auto"
       />
       <h3 className="text-lg font-semibold">{prof.nome}</h3>
       <p className="text-gray-700 mt-1">
-        <strong>Especialidade:</strong> {prof.especialidade}
+        <strong>Especialidade:</strong> {prof.especialidade || prof.funcao || 'Não informado'}
       </p>
       <p className="text-gray-700 mt-1">
-        <strong>Cidade:</strong> {prof.cidade}
+        <strong>Cidade:</strong> {prof.cidade || 'Não informado'}
       </p>
       <p className="text-yellow-500 mt-1">
-        <strong>Avaliação:</strong> ⭐ {prof.avaliacao.toFixed(1)}
+        <strong>Avaliação:</strong> ⭐ {typeof prof.avaliacao === 'number' ? prof.avaliacao.toFixed(1) : 'N/A'}
       </p>
-      <p className="italic mt-2 text-sm text-gray-700">{prof.descricao}</p>
+      <p className="italic mt-2 text-sm text-gray-700">{prof.descricao || ''}</p>
       <button
+        onClick={() => onChamar && onChamar(prof)}
         className="
           bg-green-600 text-white py-2 px-4 rounded-xl mt-3
           hover:bg-green-700 cursor-pointer

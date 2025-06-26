@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '../firebase'
+import ProfissionalCard from '../components/ProfissionalCard'
 
 export default function PainelEstabelecimento() {
   const navigate = useNavigate()
@@ -18,32 +19,52 @@ export default function PainelEstabelecimento() {
         return
       }
 
+      // Busca todos usuários no Firestore
       const snapshot = await getDocs(collection(db, 'usuarios'))
-      const lista = snapshot.docs.map(doc => doc.data())
+      const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      
+      // Filtra apenas freelas
       const freelas = lista.filter(u => u.tipo === 'freela')
+      
+      // Encontra o estabelecimento logado para pegar o endereço
       const estabelecimento = lista.find(u => u.uid === usuario.uid)
 
       if (estabelecimento?.endereco) {
         const coords = await geolocalizarEndereco(estabelecimento.endereco)
         if (coords) {
           setCoordenadasEstab(coords)
-          const filtrados = freelas
-            .map(f => ({
-              ...f,
-              distancia: f.endereco ? calcularDistancia(coords, f.endereco) : Infinity
-            }))
+
+          // Para cada freela calcula a distância do estabelecimento (se tiver endereço)
+          const freelasComDistancia = freelas.map(f => {
+            const distancia = f.endereco
+              ? calcularDistancia(coords, f.endereco)
+              : Infinity
+            return { ...f, distancia }
+          })
+
+          // Filtra freelas que estejam até 7km de distância e ordena por distância
+          const filtrados = freelasComDistancia
             .filter(f => f.distancia <= 7)
             .sort((a, b) => a.distancia - b.distancia)
 
           setFreelas(filtrados)
           setResultadoFiltro(filtrados)
+        } else {
+          // Sem coordenadas, mostra todos freelas sem distância
+          setFreelas(freelas)
+          setResultadoFiltro(freelas)
         }
+      } else {
+        // Se estabelecimento não tem endereço, mostra freelas sem distância
+        setFreelas(freelas)
+        setResultadoFiltro(freelas)
       }
     }
 
     carregarDados()
   }, [navigate])
 
+  // Função para geocodificar endereço usando OpenStreetMap
   const geolocalizarEndereco = async (enderecoTexto) => {
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoTexto)}`)
@@ -57,44 +78,37 @@ export default function PainelEstabelecimento() {
     return null
   }
 
+  // Calcula distância em km entre coordenadas (usando fórmula de Haversine)
   const calcularDistancia = (coord1, endereco2) => {
-    const coord2 = coord1 && endereco2 ? coord1 : null
-    if (!coord1 || !coord2) return Infinity
+    // Para calcular a distância precisamos das lat/lon de ambos
+    // Como o freela tem endereço em string, aqui assumo que tem lat/lon em freela.lat e freela.lon
+    // Se não tiver, retorna Infinity (distância muito grande)
+    if (!coord1 || !endereco2?.lat || !endereco2?.lon) return Infinity
+
     const toRad = deg => deg * Math.PI / 180
-    const R = 6371
-    const dLat = toRad(coord2.lat - coord1.lat)
-    const dLon = toRad(coord2.lon - coord1.lon)
+    const R = 6371 // Raio da Terra em km
+    const dLat = toRad(endereco2.lat - coord1.lat)
+    const dLon = toRad(endereco2.lon - coord1.lon)
     const a = Math.sin(dLat / 2) ** 2 +
-      Math.cos(toRad(coord1.lat)) * Math.cos(toRad(coord2.lat)) * Math.sin(dLon / 2) ** 2
+      Math.cos(toRad(coord1.lat)) * Math.cos(toRad(endereco2.lat)) * Math.sin(dLon / 2) ** 2
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
     return R * c
   }
 
+  // Filtra freelas por função/especialidade digitada
   const aplicarFiltroFuncao = () => {
     if (!funcaoFiltro) {
       setResultadoFiltro(freelas)
     } else {
-      setResultadoFiltro(freelas.filter(f => f.funcao?.toLowerCase().includes(funcaoFiltro.toLowerCase())))
+      setResultadoFiltro(freelas.filter(f => (f.funcao || f.especialidade || '').toLowerCase().includes(funcaoFiltro.toLowerCase())))
     }
-  }
-
-  const chamarFreela = (freela) => {
-    const estabelecimento = JSON.parse(localStorage.getItem('usuarioLogado'))
-    const chamada = {
-      freela: freela.nome,
-      estabelecimento: estabelecimento?.nome || 'Estabelecimento desconhecido',
-      horario: new Date().toISOString()
-    }
-    localStorage.setItem('chamadaFreela', JSON.stringify(chamada))
-    alert(`✅ Você chamou ${freela.nome}!`)
   }
 
   return (
     <div className="min-h-screen bg-orange-50 p-6 text-center">
       <h1 className="text-3xl font-bold text-orange-700 mb-6">📍 Painel do Estabelecimento</h1>
 
-      {/* Botões principais */}
-      <div className="flex flex-wrap justify-center gap-4 mb-8">
+      <div className="flex flex-wrap justify-center gap-4 mb-6">
         <button
           onClick={() => navigate('/novavaga')}
           className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded shadow"
@@ -109,8 +123,7 @@ export default function PainelEstabelecimento() {
         </button>
       </div>
 
-      {/* Filtro por função */}
-      <div className="max-w-xl mx-auto bg-white rounded-lg p-4 shadow mb-8">
+      <div className="max-w-xl mx-auto bg-white rounded-lg p-4 shadow mb-6">
         <input
           type="text"
           value={funcaoFiltro}
@@ -126,33 +139,16 @@ export default function PainelEstabelecimento() {
         </button>
       </div>
 
-      {/* Listagem de freelancers em cards bonitos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto flex flex-wrap justify-center">
         {resultadoFiltro.length === 0 ? (
-          <p className="text-gray-500 col-span-full">🔎 Nenhum freelancer encontrado na área de 7km.</p>
+          <p className="text-gray-500">🔎 Nenhum freelancer encontrado na área de 7km.</p>
         ) : (
-          resultadoFiltro.map((freela, idx) => (
-            <div
-              key={idx}
-              className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center text-center transition hover:shadow-lg"
-            >
-              <img
-                src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'}
-                alt="freela"
-                className="w-24 h-24 rounded-full object-cover mb-4 border-4 border-orange-100"
-              />
-              <h3 className="text-xl font-bold text-orange-700">{freela.nome}</h3>
-              <p className="text-gray-600 mb-1">{freela.funcao}</p>
-              <p className="text-sm text-gray-500 mb-4">
-                📍 {freela.distancia?.toFixed(2)} km de distância
-              </p>
-              <button
-                onClick={() => chamarFreela(freela)}
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition"
-              >
-                Chamar
-              </button>
-            </div>
+          resultadoFiltro.map(freela => (
+            <ProfissionalCard
+              key={freela.uid || freela.id}
+              prof={freela}
+              // Você pode adicionar props extras, ex: onClick no botão Chamar, se quiser
+            />
           ))
         )}
       </div>
