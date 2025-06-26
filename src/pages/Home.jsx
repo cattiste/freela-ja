@@ -1,6 +1,5 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import ListaProfissionais from '../components/ListaProfissionais'
 
 export default function Home() {
   const navigate = useNavigate()
@@ -16,42 +15,38 @@ export default function Home() {
         </p>
       </header>
 
-      <div className="flex flex-wrap justify-center gap-4 w-full max-w-lg mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl mb-10">
         <button
           onClick={() => navigate('/cadastrofreela')}
-          className="flex-1 max-w-xs bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg transition"
+          className="px-6 py-3 rounded-lg text-white font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200"
         >
           Freelancer
         </button>
         <button
           onClick={() => navigate('/cadastro-estabelecimento')}
-          className="flex-1 max-w-xs bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg transition"
+          className="px-6 py-3 rounded-lg text-white font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200"
         >
           Estabelecimento
         </button>
         <button
           onClick={() => navigate('/login')}
-          className="flex-1 max-w-xs bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg transition"
+          className="px-6 py-3 rounded-lg text-white font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200"
         >
           Login
         </button>
         <button
           onClick={() => navigate('/curriculos')}
-          className="flex-1 max-w-xs bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg transition"
+          className="px-6 py-3 rounded-lg text-white font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200"
         >
           Currículos
         </button>
         <button
           onClick={() => navigate('/sobre')}
-          className="flex-1 max-w-xs bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg transition"
+          className="px-6 py-3 rounded-lg text-white font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200"
         >
           Sobre
         </button>
       </div>
-
-      <main className="w-full max-w-6xl">
-        <ListaProfissionais />
-      </main>
     </div>
   )
 }

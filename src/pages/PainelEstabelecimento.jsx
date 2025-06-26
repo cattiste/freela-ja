@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '../firebase'
+import { toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 export default function PainelEstabelecimento() {
   const navigate = useNavigate()
@@ -9,9 +11,11 @@ export default function PainelEstabelecimento() {
   const [resultadoFiltro, setResultadoFiltro] = useState([])
   const [coordenadasEstab, setCoordenadasEstab] = useState(null)
   const [funcaoFiltro, setFuncaoFiltro] = useState('')
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const carregarDados = async () => {
+      setLoading(true)
       const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
       if (!usuario || usuario.tipo !== 'estabelecimento') {
         navigate('/login')
@@ -39,6 +43,7 @@ export default function PainelEstabelecimento() {
           setResultadoFiltro(filtrados)
         }
       }
+      setLoading(false)
     }
 
     carregarDados()
@@ -78,11 +83,21 @@ export default function PainelEstabelecimento() {
     }
   }
 
+  const chamarFreela = (freela) => {
+    const estabelecimento = JSON.parse(localStorage.getItem('usuarioLogado'))
+    const chamada = {
+      freela: freela.nome,
+      estabelecimento: estabelecimento?.nome || 'Estabelecimento desconhecido',
+      horario: new Date().toISOString()
+    }
+    localStorage.setItem('chamadaFreela', JSON.stringify(chamada))
+    toast.success(`✅ Você chamou ${freela.nome}!`)
+  }
+
   return (
     <div className="min-h-screen bg-orange-50 p-6 text-center">
       <h1 className="text-3xl font-bold text-orange-700 mb-4">📍 Painel do Estabelecimento</h1>
 
-      {/* Botões principais */}
       <div className="flex flex-wrap justify-center gap-4 mb-6">
         <button
           onClick={() => navigate('/novavaga')}
@@ -115,7 +130,9 @@ export default function PainelEstabelecimento() {
       </div>
 
       <div className="max-w-4xl mx-auto">
-        {resultadoFiltro.length === 0 ? (
+        {loading ? (
+          <p className="text-gray-500">🔄 Carregando freelancers próximos...</p>
+        ) : resultadoFiltro.length === 0 ? (
           <p className="text-gray-500">🔎 Nenhum freelancer encontrado na área de 7km.</p>
         ) : (
           resultadoFiltro.map((freela, idx) => (
@@ -136,16 +153,7 @@ export default function PainelEstabelecimento() {
                 </div>
               </div>
               <button
-                onClick={() => {
-                  const estabelecimento = JSON.parse(localStorage.getItem('usuarioLogado'))
-                  const chamada = {
-                    freela: freela.nome,
-                    estabelecimento: estabelecimento?.nome || 'Estabelecimento desconhecido',
-                    horario: new Date().toISOString()
-                  }
-                  localStorage.setItem('chamadaFreela', JSON.stringify(chamada))
-                  alert(`✅ Você chamou ${freela.nome}!`)
-                }}
+                onClick={() => chamarFreela(freela)}
                 className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition"
               >
                 Chamar
