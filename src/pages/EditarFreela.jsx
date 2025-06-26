@@ -122,6 +122,14 @@ export default function EditarFreela() {
           required
         />
         <input
+          type="text"
+          placeholder="Especialidades"
+          value={especialidades}
+          onChange={e => setFuncao(e.target.value)}
+          className="input-field"
+          required
+        />
+        <input
           type="number"
           placeholder="Valor da Diária"
           value={valorDiaria}
