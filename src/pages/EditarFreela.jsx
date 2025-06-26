@@ -5,34 +5,35 @@ import { db } from '../firebase'
 
 export default function EditarFreela() {
   const navigate = useNavigate()
-  const { id } = useParams() // pega o uid do freela da rota
+  const { id } = useParams()
   const [form, setForm] = useState({
     nome: '',
     email: '',
     funcao: '',
-    foto: '',
+    foto: '', // URL da foto salva
     especialidade: '',
     endereco: '',
     descricao: '',
-    diaria: '', // campo nova diária
+    diaria: '',
   })
+  const [imagemPreview, setImagemPreview] = useState(null) // preview local da imagem antes de salvar
   const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState(null)
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     async function carregarDados() {
-      if (!id) {
-        alert('Usuário inválido.')
-        navigate('/')
-        return
-      }
-
       try {
+        if (!id) {
+          setErro('ID inválido.')
+          return
+        }
+
         const freelaRef = doc(db, 'usuarios', id)
         const freelaSnap = await getDoc(freelaRef)
 
         if (!freelaSnap.exists()) {
-          alert('Usuário não encontrado.')
-          navigate('/')
+          setErro('Freelancer não encontrado.')
           return
         }
 
@@ -47,45 +48,51 @@ export default function EditarFreela() {
           descricao: dados.descricao || '',
           diaria: dados.diaria || '',
         })
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error)
-        alert('Erro ao carregar perfil.')
-        navigate('/')
+        setImagemPreview(dados.foto || null)
+      } catch (e) {
+        console.error('Erro ao carregar dados:', e)
+        setErro('Erro ao carregar perfil.')
       } finally {
         setCarregando(false)
       }
     }
 
     carregarDados()
-  }, [id, navigate])
+  }, [id])
 
   function handleChange(e) {
     const { name, value } = e.target
     setForm(prev => ({ ...prev, [name]: value }))
   }
 
+  // Função para lidar com seleção de arquivo local e mostrar preview
+  function handleFileChange(e) {
+    const file = e.target.files[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagemPreview(reader.result)
+        // Aqui você pode decidir se vai salvar a imagem base64 direto no Firestore (não recomendado),
+        // ou fazer upload em serviço externo e salvar a URL no Firebase.
+        // Por enquanto, vamos guardar a base64 no campo foto só pra demonstrar.
+        setForm(prev => ({ ...prev, foto: reader.result }))
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
-
     try {
       setCarregando(true)
       const freelaRef = doc(db, 'usuarios', id)
 
-      await updateDoc(freelaRef, {
-        nome: form.nome,
-        email: form.email,
-        funcao: form.funcao,
-        foto: form.foto,
-        especialidade: form.especialidade,
-        endereco: form.endereco,
-        descricao: form.descricao,
-        diaria: form.diaria,
-      })
+      await updateDoc(freelaRef, { ...form })
 
       alert('Perfil atualizado com sucesso!')
       navigate('/painelfreela')
-    } catch (error) {
-      console.error('Erro ao atualizar perfil:', error)
+    } catch (e) {
+      console.error('Erro ao atualizar perfil:', e)
       alert('Erro ao salvar perfil. Tente novamente.')
     } finally {
       setCarregando(false)
@@ -94,117 +101,136 @@ export default function EditarFreela() {
 
   if (carregando) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-xl font-semibold">
+      <div className="min-h-screen flex items-center justify-center bg-blue-50 text-blue-700 font-semibold text-xl">
         Carregando...
       </div>
     )
   }
 
+  if (erro) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-red-50 text-red-600 font-bold text-xl">
+        {erro}
+      </div>
+    )
+  }
+
   return (
-    <div className="max-w-xl mx-auto p-6 bg-white rounded shadow mt-10">
-      <h1 className="text-2xl font-bold mb-6 text-center">Editar Perfil</h1>
+    <div className="min-h-screen bg-blue-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl shadow-lg max-w-lg w-full p-8">
+        <h1 className="text-3xl font-bold text-blue-700 mb-8 text-center">Editar Perfil</h1>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Nome, email, função ... */}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <label>
-          Nome completo:
-          <input
-            type="text"
-            name="nome"
-            value={form.nome}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border rounded"
-          />
-        </label>
+          <div>
+            <label className="block font-semibold mb-1" htmlFor="nome">Nome completo</label>
+            <input
+              type="text"
+              name="nome"
+              id="nome"
+              value={form.nome}
+              onChange={handleChange}
+              required
+              className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              placeholder="Seu nome completo"
+            />
+          </div>
 
-        <label>
-          E-mail:
-          <input
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border rounded"
-          />
-        </label>
+          {/* resto dos campos ... */}
 
-        <label>
-          Função / Cargo:
-          <input
-            type="text"
-            name="funcao"
-            value={form.funcao}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded"
-          />
-        </label>
+          <div>
+            <label className="block font-semibold mb-1" htmlFor="foto">Foto de Perfil</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="w-full"
+            />
+            {imagemPreview && (
+              <img
+                src={imagemPreview}
+                alt="Preview"
+                className="mt-3 w-32 h-32 object-cover rounded-full border-2 border-blue-400 shadow"
+              />
+            )}
+          </div>
 
-        <label>
-          URL da Foto:
-          <input
-            type="text"
-            name="foto"
-            value={form.foto}
-            onChange={handleChange}
-            placeholder="Link para foto de perfil"
-            className="w-full px-3 py-2 border rounded"
-          />
-        </label>
+          {/* outros inputs */}
 
-        <label>
-          Especialidade:
-          <input
-            type="text"
-            name="especialidade"
-            value={form.especialidade}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded"
-          />
-        </label>
+          <div>
+            <label className="block font-semibold mb-1" htmlFor="funcao">Função / Cargo</label>
+            <input
+              type="text"
+              name="funcao"
+              id="funcao"
+              value={form.funcao}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              placeholder="Ex: Cozinheiro, Garçom"
+            />
+          </div>
 
-        <label>
-          Endereço:
-          <input
-            type="text"
-            name="endereco"
-            value={form.endereco}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded"
-          />
-        </label>
+          <div>
+            <label className="block font-semibold mb-1" htmlFor="especialidade">Especialidade</label>
+            <input
+              type="text"
+              name="especialidade"
+              id="especialidade"
+              value={form.especialidade}
+              onChange={handleChange}
+              placeholder="Ex: Sushi, Buffet"
+              className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
 
-        <label>
-          Descrição:
-          <textarea
-            name="descricao"
-            value={form.descricao}
-            onChange={handleChange}
-            rows={4}
-            className="w-full px-3 py-2 border rounded"
-          />
-        </label>
+          <div>
+            <label className="block font-semibold mb-1" htmlFor="endereco">Endereço</label>
+            <input
+              type="text"
+              name="endereco"
+              id="endereco"
+              value={form.endereco}
+              onChange={handleChange}
+              placeholder="Cidade, bairro, rua..."
+              className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
 
-        <label>
-          Valor da diária (ex: R$ 150):
-          <input
-            type="text"
-            name="diaria"
-            value={form.diaria}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded"
-            placeholder="Valor cobrado por dia"
-          />
-        </label>
+          <div>
+            <label className="block font-semibold mb-1" htmlFor="descricao">Descrição</label>
+            <textarea
+              name="descricao"
+              id="descricao"
+              value={form.descricao}
+              onChange={handleChange}
+              rows={4}
+              placeholder="Descreva suas habilidades, experiência..."
+              className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+            />
+          </div>
 
-        <button
-          type="submit"
-          disabled={carregando}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded transition"
-        >
-          {carregando ? 'Salvando...' : 'Salvar Alterações'}
-        </button>
-      </form>
+          <div>
+            <label className="block font-semibold mb-1" htmlFor="diaria">Valor da diária (ex: R$ 150)</label>
+            <input
+              type="text"
+              name="diaria"
+              id="diaria"
+              value={form.diaria}
+              onChange={handleChange}
+              placeholder="Quanto você cobra por dia"
+              className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={carregando || uploading}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition"
+          >
+            {carregando ? 'Salvando...' : 'Salvar Alterações'}
+          </button>
+        </form>
+      </div>
     </div>
   )
 }
