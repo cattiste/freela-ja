@@ -14,7 +14,7 @@ import CadastroEstabelecimento from './pages/CadastroEstabelecimento'
 import PainelVagas from './pages/PainelVagas'
 import PublicarVaga from './pages/PublicarVaga'
 import TesteCriarVaga from './pages/TesteCriarVaga'
-
+import EditarFreela from './pages/EditarFreela'
 import RotaProtegidaFreela from './components/RotaProtegidaFreela'
 import RotaProtegidaEstabelecimento from './components/RotaProtegidaEstabelecimento'
 
@@ -33,6 +33,7 @@ function App() {
         <Route path="/cadastrofreela" element={<CadastroFreela />} />
         <Route path="/cadastro-estabelecimento" element={<CadastroEstabelecimento />} />
         <Route path="/perfil/:id" element={<Perfil />} />
+        <Route path="/editarfreela/:id" element={<EditarFreela />} />
 
         {/* Painéis protegidos */}
         <Route path="/painelfreela" element={<RotaProtegidaFreela><PainelFreela /></RotaProtegidaFreela>} />
