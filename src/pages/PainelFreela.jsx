@@ -73,7 +73,7 @@ export default function PainelFreela() {
   useEffect(() => {
     const carregarDados = async () => {
       await carregarFreela();
-      const vagasDisponiveis = JSON.parse(localStorage.getItem('vagas') || '[]';
+      const vagasDisponiveis = JSON.parse(localStorage.getItem('vagas') || '[]');
       setVagas(vagasDisponiveis);
     };
 
@@ -88,7 +88,7 @@ export default function PainelFreela() {
   // Aceita chamada
   const aceitarChamada = async (chamada) => {
     try {
-      await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' });
+      await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' };
       alert('Você aceitou a chamada!');
       setChamadas((prev) =>
         prev.map((c) => (c.id === chamada.id ? { ...c, status: 'aceita' } : c))
@@ -102,7 +102,7 @@ export default function PainelFreela() {
   // Recusa chamada
   const recusarChamada = async (chamada) => {
     try {
-      await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' });
+      await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' };
       alert('Você recusou a chamada.');
       setChamadas((prev) =>
         prev.map((c) => (c.id === chamada.id ? { ...c, status: 'recusada' } : c))
@@ -113,7 +113,7 @@ export default function PainelFreela() {
     }
   };
 
-  // Componente de Card de Vaga (extraído para melhor organização)
+  // Componente de Card de Vaga
   const CardVaga = ({ vaga }) => (
     <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition">
       <h3 className="text-xl font-bold text-gray-800 mb-2">{vaga.titulo}</h3>
@@ -131,7 +131,7 @@ export default function PainelFreela() {
     </div>
   );
 
-  // Componente de Card de Chamada (extraído para melhor organização)
+  // Componente de Card de Chamada
   const CardChamada = ({ chamada }) => (
     <div className="mb-4 border-b pb-3">
       <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
