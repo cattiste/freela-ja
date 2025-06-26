@@ -11,8 +11,6 @@ export default function PainelFreela() {
   const [chamadas, setChamadas] = useState([])
 
   useEffect(() => {
-    let unsubscribeChamadas = null
-
     async function carregarFreela() {
       const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
       if (!usuario || usuario.tipo !== 'freela') {
@@ -31,9 +29,6 @@ export default function PainelFreela() {
       const dadosFreela = freelaSnap.data()
       setFreela({ uid: usuario.uid, ...dadosFreela })
 
-      const vagasDisponiveis = JSON.parse(localStorage.getItem('vagas') || '[]')
-      setVagas(vagasDisponiveis)
-
       const chamadasRef = collection(db, 'chamadas')
       const q = query(
         chamadasRef,
@@ -41,39 +36,32 @@ export default function PainelFreela() {
         orderBy('criadoEm', 'desc')
       )
 
-      unsubscribeChamadas = onSnapshot(q, (snapshot) => {
+      onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach(change => {
-          const chamada = { id: change.doc.id, ...change.doc.data() }
           if (change.type === 'added') {
+            const chamada = { id: change.doc.id, ...change.doc.data() }
             alert(`📩 Você foi chamado pelo estabelecimento ${chamada.estabelecimentoNome}!`)
             tocarSomChamada()
             setChamadas(prev => [chamada, ...prev])
-          }
-          if (change.type === 'modified') {
-            setChamadas(prev => prev.map(c => (c.id === chamada.id ? chamada : c)))
           }
         })
       })
     }
 
-    carregarFreela()
+    const vagasDisponiveis = JSON.parse(localStorage.getItem('vagas') || '[]')
+    setVagas(vagasDisponiveis)
 
-    return () => {
-      if (unsubscribeChamadas) unsubscribeChamadas()
-    }
+    carregarFreela()
   }, [navigate])
 
   function tocarSomChamada() {
     const audio = new Audio('https://res.cloudinary.com/dbemvuau3/video/upload/v1750961914/qhkd3ojkqhi2imr9lup8.mp3')
-    audio.play().catch(() => {
-      console.log('Som não pôde ser reproduzido automaticamente.')
-    })
+    audio.play().catch(() => console.log('🔇 Erro ao reproduzir som.'))
   }
 
   async function aceitarChamada(chamada) {
     try {
-      const chamadaRef = doc(db, 'chamadas', chamada.id)
-      await updateDoc(chamadaRef, { status: 'aceita' })
+      await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })
       alert('Você aceitou a chamada!')
       setChamadas(chamadas.map(c => (c.id === chamada.id ? { ...c, status: 'aceita' } : c)))
     } catch (err) {
@@ -84,8 +72,7 @@ export default function PainelFreela() {
 
   async function recusarChamada(chamada) {
     try {
-      const chamadaRef = doc(db, 'chamadas', chamada.id)
-      await updateDoc(chamadaRef, { status: 'recusada' })
+      await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })
       alert('Você recusou a chamada.')
       setChamadas(chamadas.map(c => (c.id === chamada.id ? { ...c, status: 'recusada' } : c)))
     } catch (err) {
@@ -117,8 +104,11 @@ export default function PainelFreela() {
                 />
                 <div className="text-center sm:text-left">
                   <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">{freela.nome}</h2>
-                  <p className="text-blue-600">{freela.funcao || freela.especialidade}</p>
+                  <p className="text-blue-600">{freela.funcao}</p>
                   <p className="text-gray-500 text-sm">{freela.email}</p>
+                  <p className="text-gray-600 text-sm mt-1">📍 {freela.endereco}</p>
+                  <p className="text-green-700 font-semibold mt-1">💰 Diária: R$ {freela.valorDiaria || 'não informado'}</p>
+                  <p className="text-gray-600 text-sm mt-1">📱 {freela.celular}</p>
                 </div>
               </div>
               <div className="flex justify-center sm:justify-start">
@@ -152,6 +142,7 @@ export default function PainelFreela() {
                   <p><strong>📄 Tipo:</strong> {vaga.tipo}</p>
                   <p><strong>💰 Salário:</strong> {vaga.salario}</p>
                   <p className="text-gray-600 mt-2 text-sm">{vaga.descricao}</p>
+
                   <a
                     href={`mailto:${vaga.emailContato}?subject=Candidatura para vaga: ${vaga.titulo}`}
                     className="mt-4 inline-block bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-5 rounded-full shadow-md transition"
@@ -171,17 +162,19 @@ export default function PainelFreela() {
           ) : (
             chamadas.map((c, i) => (
               <div key={i} className="mb-4 border-b pb-3">
-                <p>Você foi chamado por: <strong>{c.estabelecimentoNome}</strong></p>
-                <p>Em: {c.criadoEm?.toDate ? c.criadoEm.toDate().toLocaleString() : new Date(c.criadoEm).toLocaleString()}</p>
-                <p>Status: {c.status || 'pendente'}</p>
+                <p><strong>Estabelecimento:</strong> {c.estabelecimentoNome}</p>
+                <p><strong>Data:</strong> {c.criadoEm?.toDate ? c.criadoEm.toDate().toLocaleString() : new Date(c.criadoEm).toLocaleString()}</p>
+                <p><strong>Status:</strong> {c.status || 'pendente'}</p>
                 {c.status !== 'aceita' && c.status !== 'recusada' && (
                   <div className="mt-2 flex gap-3 justify-center">
-                    <button onClick={() => aceitarChamada(c)} className="bg-green-600 text-white py-1 px-4 rounded hover:bg-green-700 transition">
-                      ✔️ Aceitar
-                    </button>
-                    <button onClick={() => recusarChamada(c)} className="bg-red-600 text-white py-1 px-4 rounded hover:bg-red-700 transition">
-                      ❌ Recusar
-                    </button>
+                    <button
+                      onClick={() => aceitarChamada(c)}
+                      className="bg-green-600 text-white py-1 px-4 rounded hover:bg-green-700 transition"
+                    >✔️ Aceitar</button>
+                    <button
+                      onClick={() => recusarChamada(c)}
+                      className="bg-red-600 text-white py-1 px-4 rounded hover:bg-red-700 transition"
+                    >❌ Recusar</button>
                   </div>
                 )}
               </div>

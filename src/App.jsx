@@ -17,6 +17,7 @@ import TesteCriarVaga from './pages/TesteCriarVaga'
 import EditarFreela from './pages/EditarFreela'
 import RotaProtegidaFreela from './components/RotaProtegidaFreela'
 import RotaProtegidaEstabelecimento from './components/RotaProtegidaEstabelecimento'
+import EsqueciSenha from './pages/EsqueciSenha'
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
         <Route path="/sobre" element={<Sobre />} />
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/esquecisenha" element={<EsqueciSenha />} />
 
         {/* Cadastro e Perfil */}
         <Route path="/cadastrofreela" element={<CadastroFreela />} />
@@ -38,6 +40,7 @@ function App() {
         {/* Painéis protegidos */}
         <Route path="/painelfreela" element={<RotaProtegidaFreela><PainelFreela /></RotaProtegidaFreela>} />
         <Route path="/painel-estabelecimento" element={<RotaProtegidaEstabelecimento><PainelEstabelecimento /></RotaProtegidaEstabelecimento>} />
+
 
         {/* Vagas */}
         <Route path="/vagas" element={<PainelVagas />} />

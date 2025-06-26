@@ -89,6 +89,12 @@ export default function Login() {
         </button>
         {error && <p className="text-red-600 text-sm text-center">{error}</p>}
       </form>
+
+        <p className="text-center mt-4 text-sm">
+         <a href="/esquecisenha" className="text-blue-600 hover:underline">
+            Esqueci minha senha
+         </a>
+       </p>
     </div>
   )
 }
