@@ -12,13 +12,11 @@ export default function ProfissionalCard({ prof, onChamar }) {
     >
       <img
         src={prof.imagem || 'https://i.imgur.com/3W8i1sT.png'}
-        alt={prof.nome || 'Profissional'}
+        alt={prof.nome}
         className="w-24 h-24 rounded-full object-cover mb-3 mx-auto border-2 border-orange-400 shadow"
       />
 
-      <h3 className="text-lg font-bold text-gray-800">
-        {prof.nome || 'Nome não informado'}
-      </h3>
+      <h3 className="text-lg font-bold text-gray-800">{prof.nome}</h3>
 
       <p className="text-gray-700 mt-1">
         <strong>Função:</strong> {prof.especialidade || 'Não informado'}
@@ -29,8 +27,7 @@ export default function ProfissionalCard({ prof, onChamar }) {
       </p>
 
       <p className="text-yellow-500 mt-1">
-        <strong>Avaliação:</strong>{' '}
-        ⭐ {typeof prof.avaliacao === 'number' ? prof.avaliacao.toFixed(1) : 'N/A'}
+        <strong>Avaliação:</strong> ⭐ {typeof prof.avaliacao === 'number' ? prof.avaliacao.toFixed(1) : 'N/A'}
       </p>
 
       {prof.descricao && (

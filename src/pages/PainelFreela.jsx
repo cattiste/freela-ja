@@ -31,7 +31,7 @@ export default function PainelFreela() {
     const vagasDisponiveis = JSON.parse(localStorage.getItem('vagas') || '[]')
     setVagas(vagasDisponiveis)
 
-    // --- Ouvir chamadas em tempo real ---
+    // --- Escuta de chamadas em tempo real ---
     const chamadasRef = collection(db, 'chamadas')
     const q = query(
       chamadasRef,
@@ -45,6 +45,7 @@ export default function PainelFreela() {
           const chamada = change.doc.data()
           alert(`📩 Você foi chamado pelo estabelecimento ${chamada.estabelecimentoNome}!`)
           tocarSomChamada()
+
           setChamadas(prev => [chamada, ...prev])
         }
       })
@@ -54,10 +55,9 @@ export default function PainelFreela() {
   }, [navigate])
 
   function tocarSomChamada() {
-    const audio = new Audio('/sons/chamada.mp3')
-    audio.volume = 1.0
-    audio.play().catch((err) => {
-      console.warn('⚠️ O navegador bloqueou a reprodução automática do som:', err)
+    const audio = new Audio('/sons/chamada.mp3') // coloque o arquivo na public/sons
+    audio.play().catch(() => {
+      console.log('Som não pôde ser reproduzido automaticamente.')
     })
   }
 
@@ -158,7 +158,7 @@ export default function PainelFreela() {
             chamadas.map((c, i) => (
               <div key={i} className="mb-3 border-b pb-2">
                 <p>Você foi chamado por: <strong>{c.estabelecimentoNome}</strong></p>
-                <p>Em: {c.criadoEm?.toDate ? c.criadoEm.toDate().toLocaleString() : 'Desconhecido'}</p>
+                <p>Em: {c.criadoEm?.toDate ? c.criadoEm.toDate().toLocaleString() : new Date(c.criadoEm).toLocaleString()}</p>
               </div>
             ))
           )}
