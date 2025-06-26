@@ -16,16 +16,23 @@ export default function ProfissionalCard({ prof, onChamar }) {
         className="w-24 h-24 rounded-full object-cover mb-3 mx-auto"
       />
       <h3 className="text-lg font-semibold">{prof.nome}</h3>
+
       <p className="text-gray-700 mt-1">
-        <strong>Especialidade:</strong> {prof.especialidade || prof.funcao || 'Não informado'}
+        <strong>Função:</strong> {prof.especialidade || prof.funcao || 'Não informado'}
       </p>
+
       <p className="text-gray-700 mt-1">
-        <strong>Cidade:</strong> {prof.cidade || 'Não informado'}
+        <strong>Endereço:</strong> {prof.endereco || 'Não informado'}
       </p>
+
       <p className="text-yellow-500 mt-1">
         <strong>Avaliação:</strong> ⭐ {typeof prof.avaliacao === 'number' ? prof.avaliacao.toFixed(1) : 'N/A'}
       </p>
-      <p className="italic mt-2 text-sm text-gray-700">{prof.descricao || ''}</p>
+
+      {prof.descricao && (
+        <p className="italic mt-2 text-sm text-gray-700">{prof.descricao}</p>
+      )}
+
       <button
         onClick={() => onChamar && onChamar(prof)}
         className="
