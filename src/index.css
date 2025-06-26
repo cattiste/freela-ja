@@ -5,6 +5,8 @@
 body {
   font-family: 'Inter', sans-serif;
 }
+
+/* Botão voltar para home - fixo no canto superior esquerdo */
 .botao-voltar-home {
   position: fixed;
   top: 20px;
@@ -25,6 +27,7 @@ body {
   background-color: #e85a00;
 }
 
+/* Botão home painel com cor azul arroxeado */
 .botao-home-painel {
   background-color: #4f46e5; /* azul arroxeado */
 }
