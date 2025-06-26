@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { collection, getDocs, addDoc } from 'firebase/firestore'
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import ProfissionalCard from '../components/ProfissionalCard'
 
@@ -48,7 +48,7 @@ export default function PainelEstabelecimento() {
   }
 
   async function handleChamarProfissional(prof) {
-    const estabelecimento = JSON.parse(localStorage.getItem('usuarioLogado'))
+    const estabelecimento = JSON.parse(addDoc('usuarioLogado'))
     if (!estabelecimento || estabelecimento.tipo !== 'estabelecimento') {
       alert('Você precisa estar logado como estabelecimento para chamar.')
       navigate('/login')
@@ -61,7 +61,7 @@ export default function PainelEstabelecimento() {
         freelaNome: prof.nome,
         estabelecimentoUid: estabelecimento.uid,
         estabelecimentoNome: estabelecimento.nome,
-        criadoEm: new Date()
+        criadoEm: serverTimestamp()
       })
       alert(`✅ Você chamou ${prof.nome}!`)
     } catch (err) {
