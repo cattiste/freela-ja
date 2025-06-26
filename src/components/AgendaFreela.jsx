@@ -46,18 +46,20 @@ export default function AgendaFreela({ uid }) {
       toast.success('Agenda atualizada com sucesso!')
     } catch {
       toast.error('Erro ao salvar agenda.')
-      // Reverte se quiser
-      setDatasOcupadas(datasOcupadas)
+      setDatasOcupadas(datasOcupadas) // Reverte alteração
     } finally {
       setSalvando(false)
     }
   }
 
-  const tileClassName = ({ date }) => {
-    const dataISO = date.toISOString().split('T')[0]
-    return datasOcupadas.includes(dataISO) ? 'bg-red-200' : ''
+  const tileClassName = ({ date, view }) => {
+    if (view === 'month') {
+      const dataISO = date.toISOString().split('T')[0]
+      return datasOcupadas.includes(dataISO) ? 'dia-ocupado' : null
+    }
   }
 
+  if (!uid) return <p className="text-red-600">ID do usuário não disponível.</p>
   if (loading) return <p>Carregando agenda...</p>
 
   return (
