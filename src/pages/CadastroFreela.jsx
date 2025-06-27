@@ -75,7 +75,7 @@ export default function CadastroFreela() {
       })
 
       alert('Cadastro realizado com sucesso!')
-      navigate('/login')
+      navigate('/painelfreela')
     } catch (err) {
       console.error('Erro no cadastro:', err)
       setError(err.message)
