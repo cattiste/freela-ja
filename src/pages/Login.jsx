@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import { signInWithEmailAndPassword } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
+import { doc, getDoc } from 'firebase/firestore'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -21,14 +21,14 @@ export default function Login() {
       const credenciais = await signInWithEmailAndPassword(auth, email, senha)
       const user = credenciais.user
 
-      const q = query(collection(db, 'usuarios'), where('uid', '==', user.uid))
-      const snapshot = await getDocs(q)
+      const docRef = doc(db, 'usuarios', user.uid)
+      const docSnap = await getDoc(docRef)
 
-      if (snapshot.empty) {
+      if (!docSnap.exists()) {
         throw new Error('Usuário autenticado, mas não encontrado na base de dados.')
       }
 
-      const dadosUsuario = snapshot.docs[0].data()
+      const dadosUsuario = docSnap.data()
 
       localStorage.setItem('usuarioLogado', JSON.stringify({
         uid: user.uid,
@@ -40,17 +40,14 @@ export default function Login() {
         foto: dadosUsuario.foto || '',
       }))
 
-      const todosUsuarios = []
-      snapshot.forEach(doc => todosUsuarios.push(doc.data()))
-      localStorage.setItem('usuarios', JSON.stringify(todosUsuarios))
-
       if (dadosUsuario.tipo === 'freela') {
         navigate('/painelfreela')
       } else if (dadosUsuario.tipo === 'estabelecimento') {
-        navigate('/painel-estabelecimento')
+        navigate('/painelestabelecimento')
       } else {
         throw new Error('Tipo de usuário não reconhecido.')
       }
+
     } catch (err) {
       console.error(err)
       setError('E-mail, senha ou cadastro inválido.')
@@ -62,7 +59,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-orange-100 to-orange-200 text-gray-800 p-6">
       <h2 className="text-3xl font-bold text-orange-600 mb-6">Entrar na Plataforma</h2>
-      
+
       <form onSubmit={handleLogin} className="w-full max-w-md space-y-4 bg-white p-6 rounded-xl shadow-md">
         <input
           type="email"
@@ -90,11 +87,11 @@ export default function Login() {
         {error && <p className="text-red-600 text-sm text-center">{error}</p>}
       </form>
 
-        <p className="text-center mt-4 text-sm">
-         <a href="/esquecisenha" className="text-blue-600 hover:underline">
-            Esqueci minha senha
-         </a>
-       </p>
+      <p className="text-center mt-4 text-sm">
+        <a href="/esquecisenha" className="text-blue-600 hover:underline">
+          Esqueci minha senha
+        </a>
+      </p>
     </div>
   )
 }
