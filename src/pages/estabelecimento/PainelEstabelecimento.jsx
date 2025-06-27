@@ -9,12 +9,12 @@ import BuscarFreelas from './BuscarFreelas'
 export default function PainelEstabelecimento() {
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
+  const [telaAtiva, setTelaAtiva] = useState('buscar') // buscar ou avaliar
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          // Buscar documento do estabelecimento na coleção 'usuarios' com uid e tipo = 'estabelecimento'
           const q = query(
             collection(db, 'usuarios'),
             where('uid', '==', user.uid),
@@ -67,9 +67,23 @@ export default function PainelEstabelecimento() {
         Painel do Estabelecimento
       </h1>
 
-      {/* Componentes para avaliação e busca */}
-      <AvaliacaoFreela estabelecimento={estabelecimento} />
-      <BuscarFreelas estabelecimento={estabelecimento} />
+      <div className="flex justify-center gap-4 mb-6">
+        <button
+          className={`btn-primary ${telaAtiva === 'buscar' ? 'opacity-100' : 'opacity-60'}`}
+          onClick={() => setTelaAtiva('buscar')}
+        >
+          Buscar Freelancers
+        </button>
+        <button
+          className={`btn-primary ${telaAtiva === 'avaliar' ? 'opacity-100' : 'opacity-60'}`}
+          onClick={() => setTelaAtiva('avaliar')}
+        >
+          Avaliar Freelancers
+        </button>
+      </div>
+
+      {telaAtiva === 'buscar' && <BuscarFreelas estabelecimento={estabelecimento} />}
+      {telaAtiva === 'avaliar' && <AvaliacaoFreela estabelecimento={estabelecimento} />}
     </div>
   )
 }
