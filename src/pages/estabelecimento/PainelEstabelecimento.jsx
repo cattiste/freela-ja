@@ -4,11 +4,6 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { getDoc, doc } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 
-import BuscarFreelas from './BuscarFreelas'
-import ChamadasEstabelecimento from './ChamadasEstabelecimento'
-import AgendasContratadas from './AgendasContratadas'
-import AvaliacaoFreela from './AvaliacaoFreela'
-
 export default function PainelEstabelecimento() {
   const [aba, setAba] = useState('buscar')
   const [estabelecimento, setEstabelecimento] = useState(null)
@@ -97,19 +92,16 @@ export default function PainelEstabelecimento() {
     )
   }
 
+  // Aqui: renderização simples só para testar troca de abas
   const renderConteudo = () => {
-    switch (aba) {
-      case 'buscar':
-        return <BuscarFreelas estabelecimento={estabelecimento} />
-      case 'chamadas':
-        return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
-      case 'agendas':
-        return <AgendasContratadas estabelecimento={estabelecimento} />
-      case 'avaliacao':
-        return <AvaliacaoFreela estabelecimento={estabelecimento} />
-      default:
-        return <BuscarFreelas estabelecimento={estabelecimento} />
-    }
+    return (
+      <div style={{ padding: 20, color: 'black' }}>
+        Conteúdo renderizado para aba: <strong>{aba}</strong>
+        <hr />
+        <p>Estabelecimento atual: {estabelecimento.nome}</p>
+        <p>Email: {estabelecimento.email}</p>
+      </div>
+    )
   }
 
   return (
@@ -135,25 +127,33 @@ export default function PainelEstabelecimento() {
         <div className="flex gap-4 mb-6 border-b pb-2 overflow-x-auto">
           <button
             onClick={() => setAba('buscar')}
-            className={`px-4 py-2 rounded-md whitespace-nowrap ${aba === 'buscar' ? 'bg-orange-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+            className={`px-4 py-2 rounded-md whitespace-nowrap ${
+              aba === 'buscar' ? 'bg-orange-600 text-white' : 'bg-gray-100 hover:bg-gray-200'
+            }`}
           >
             🔍 Buscar Freelancers
           </button>
           <button
             onClick={() => setAba('chamadas')}
-            className={`px-4 py-2 rounded-md whitespace-nowrap ${aba === 'chamadas' ? 'bg-orange-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+            className={`px-4 py-2 rounded-md whitespace-nowrap ${
+              aba === 'chamadas' ? 'bg-orange-600 text-white' : 'bg-gray-100 hover:bg-gray-200'
+            }`}
           >
             📞 Chamadas
           </button>
           <button
             onClick={() => setAba('agendas')}
-            className={`px-4 py-2 rounded-md whitespace-nowrap ${aba === 'agendas' ? 'bg-orange-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+            className={`px-4 py-2 rounded-md whitespace-nowrap ${
+              aba === 'agendas' ? 'bg-orange-600 text-white' : 'bg-gray-100 hover:bg-gray-200'
+            }`}
           >
             📅 Agendas
           </button>
           <button
             onClick={() => setAba('avaliacao')}
-            className={`px-4 py-2 rounded-md whitespace-nowrap ${aba === 'avaliacao' ? 'bg-orange-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+            className={`px-4 py-2 rounded-md whitespace-nowrap ${
+              aba === 'avaliacao' ? 'bg-orange-600 text-white' : 'bg-gray-100 hover:bg-gray-200'
+            }`}
           >
             ⭐ Avaliar
           </button>
