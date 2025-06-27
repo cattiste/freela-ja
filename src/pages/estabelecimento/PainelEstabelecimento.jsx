@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { auth, db } from '@/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { getDoc, doc } from 'firebase/firestore'
+import { useNavigate } from 'react-router-dom'
 
 import BuscarFreelas from './BuscarFreelas'
 import ChamadasEstabelecimento from './ChamadasEstabelecimento'
@@ -13,6 +14,8 @@ export default function PainelEstabelecimento() {
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
+
+  const navigate = useNavigate()
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -26,8 +29,6 @@ export default function PainelEstabelecimento() {
           return
         }
 
-        console.log('UID do usuário:', user.uid) // Debug
-        
         const docRef = doc(db, 'usuarios', user.uid)
         const docSnap = await getDoc(docRef)
 
@@ -37,21 +38,18 @@ export default function PainelEstabelecimento() {
         }
 
         const data = docSnap.data()
-        console.log('Dados do documento:', data) // Debug
 
         if (data.tipo !== 'estabelecimento') {
           setErro('Acesso restrito a estabelecimentos. Você está cadastrado como: ' + data.tipo)
           return
         }
 
-        setEstabelecimento({ 
-          uid: user.uid, 
+        setEstabelecimento({
+          uid: user.uid,
           ...data,
-          // Garante que campos obrigatórios existam
           nome: data.nome || 'Estabelecimento não nomeado',
           email: user.email
         })
-
       } catch (err) {
         console.error('Erro ao carregar estabelecimento:', err)
         setErro('Ocorreu um erro ao carregar seus dados. Tente novamente mais tarde.')
@@ -95,8 +93,8 @@ export default function PainelEstabelecimento() {
         <div className="max-w-md bg-red-50 p-6 rounded-lg border border-red-100">
           <h2 className="text-xl font-bold text-red-600 mb-2">Acesso não autorizado</h2>
           <p className="text-red-700 mb-4">{erro}</p>
-          <button 
-            onClick={() => auth.signOut()} 
+          <button
+            onClick={() => auth.signOut()}
             className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
           >
             Sair e tentar novamente
@@ -109,36 +107,44 @@ export default function PainelEstabelecimento() {
   return (
     <div className="min-h-screen bg-orange-50 p-4">
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold text-orange-700">
-            📊 Painel do {estabelecimento.nome || 'Estabelecimento'}
-          </h1>
-          <div className="text-sm text-gray-500">
-            Logado como: {estabelecimento.email}
+        <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+          <div>
+            <h1 className="text-3xl font-bold text-orange-700">
+              📊 Painel do {estabelecimento.nome || 'Estabelecimento'}
+            </h1>
+            <div className="text-sm text-gray-500">
+              Logado como: {estabelecimento.email}
+            </div>
           </div>
+          <button
+            onClick={() => navigate('/editarperfilestabelecimento')}
+            className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
+          >
+            ⚙️ Editar Perfil
+          </button>
         </div>
 
         <div className="flex gap-4 mb-6 border-b pb-2 overflow-x-auto">
-          <button 
-            onClick={() => setAba('buscar')} 
+          <button
+            onClick={() => setAba('buscar')}
             className={`px-4 py-2 rounded-md whitespace-nowrap ${aba === 'buscar' ? 'bg-orange-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
           >
             🔍 Buscar Freelancers
           </button>
-          <button 
-            onClick={() => setAba('chamadas')} 
+          <button
+            onClick={() => setAba('chamadas')}
             className={`px-4 py-2 rounded-md whitespace-nowrap ${aba === 'chamadas' ? 'bg-orange-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
           >
             📞 Chamadas
           </button>
-          <button 
-            onClick={() => setAba('agendas')} 
+          <button
+            onClick={() => setAba('agendas')}
             className={`px-4 py-2 rounded-md whitespace-nowrap ${aba === 'agendas' ? 'bg-orange-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
           >
             📅 Agendas
           </button>
-          <button 
-            onClick={() => setAba('avaliacao')} 
+          <button
+            onClick={() => setAba('avaliacao')}
             className={`px-4 py-2 rounded-md whitespace-nowrap ${aba === 'avaliacao' ? 'bg-orange-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
           >
             ⭐ Avaliar
