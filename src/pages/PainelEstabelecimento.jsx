@@ -1,136 +1,37 @@
-import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { collection, addDoc, getDocs, serverTimestamp } from 'firebase/firestore'
-import { db } from '../firebase'
-import ProfissionalCard from '../components/ProfissionalCard'
+import React, { useState } from 'react'
+import BuscarFreelas from './BuscarFreelas'
+import ChamadasEstabelecimento from './ChamadasEstabelecimento'
+import AgendasContratadas from './AgendasContratadas'
+import AvaliacaoFreela from './AvaliacaoFreela'
 
 export default function PainelEstabelecimento() {
-  const navigate = useNavigate()
-  const [freelas, setFreelas] = useState([])
-  const [resultadoFiltro, setResultadoFiltro] = useState([])
-  const [funcaoFiltro, setFuncaoFiltro] = useState('')
-  const [carregando, setCarregando] = useState(true)
+  const [aba, setAba] = useState('buscar')
 
-  useEffect(() => {
-    async function carregarDados() {
-      setCarregando(true)
-
-      const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
-      if (!usuario || usuario.tipo !== 'estabelecimento') {
-        navigate('/login')
-        return
-      }
-
-      try {
-        const snapshot = await getDocs(collection(db, 'usuarios'))
-        const lista = snapshot.docs.map((doc) => ({ uid: doc.id, ...doc.data() }))
-        const freelasRaw = lista.filter((u) => u.tipo === 'freela')
-
-        setFreelas(freelasRaw)
-        setResultadoFiltro(freelasRaw)
-      } catch (err) {
-        console.error('Erro ao buscar freelancers:', err)
-        alert('Erro ao carregar freelancers.')
-      }
-
-      setCarregando(false)
+  const renderConteudo = () => {
+    switch (aba) {
+      case 'buscar': return <BuscarFreelas />
+      case 'chamadas': return <ChamadasEstabelecimento />
+      case 'agendas': return <AgendasContratadas />
+      case 'avaliacao': return <AvaliacaoFreela />
+      default: return <BuscarFreelas />
     }
-
-    carregarDados()
-  }, [navigate])
-
-  function aplicarFiltro() {
-    let filtrados = freelas
-
-    if (funcaoFiltro.trim()) {
-      filtrados = filtrados.filter(
-        (f) =>
-          f.funcao?.toLowerCase().includes(funcaoFiltro.toLowerCase()) ||
-          f.especialidade?.toLowerCase().includes(funcaoFiltro.toLowerCase())
-      )
-    }
-
-    setResultadoFiltro(filtrados)
-  }
-
-  async function handleChamarProfissional(prof) {
-    const estabelecimento = JSON.parse(localStorage.getItem('usuarioLogado'))
-    if (!estabelecimento || estabelecimento.tipo !== 'estabelecimento') {
-      alert('Você precisa estar logado como estabelecimento para chamar.')
-      navigate('/login')
-      return
-    }
-
-    try {
-      await addDoc(collection(db, 'chamadas'), {
-        freelaUid: prof.uid,
-        freelaNome: prof.nome,
-        estabelecimentoUid: estabelecimento.uid,
-        estabelecimentoNome: estabelecimento.nome,
-        criadoEm: serverTimestamp()
-      })
-      alert(`✅ Você chamou ${prof.nome}!`)
-    } catch (err) {
-      console.error('Erro ao chamar profissional:', err)
-      alert('Erro ao chamar profissional. Tente novamente.')
-    }
-  }
-
-  if (carregando) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Carregando freelancers...
-      </div>
-    )
   }
 
   return (
-    <div className="min-h-screen bg-orange-50 p-6 text-center">
-      <h1 className="text-3xl font-bold text-orange-700 mb-4">
-        📍 Painel do Estabelecimento
-      </h1>
+    <div className="min-h-screen bg-orange-50 p-4">
+      <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6">
+        <h1 className="text-3xl font-bold text-orange-700 mb-4">📊 Painel do Estabelecimento</h1>
 
-      <div className="max-w-xl mx-auto bg-white rounded-lg p-4 shadow mb-6 text-left">
-        <label className="block mb-2 font-semibold text-orange-600">
-          Filtrar por função (ex: cozinheiro):
-        </label>
-        <input
-          type="text"
-          value={funcaoFiltro}
-          onChange={(e) => setFuncaoFiltro(e.target.value)}
-          placeholder="Digite a função ou especialidade"
-          className="w-full px-4 py-2 border border-gray-300 rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-orange-500"
-        />
-        <button
-          onClick={aplicarFiltro}
-          className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded transition"
-        >
-          Aplicar Filtro
-        </button>
-      </div>
+        {/* Navegação por abas */}
+        <div className="flex gap-4 mb-6 border-b pb-2">
+          <button onClick={() => setAba('buscar')} className={`btn-secondary ${aba === 'buscar' && 'bg-orange-600 text-white'}`}>🔍 Buscar Freelancers</button>
+          <button onClick={() => setAba('chamadas')} className={`btn-secondary ${aba === 'chamadas' && 'bg-orange-600 text-white'}`}>📞 Chamadas</button>
+          <button onClick={() => setAba('agendas')} className={`btn-secondary ${aba === 'agendas' && 'bg-orange-600 text-white'}`}>📅 Agendas</button>
+          <button onClick={() => setAba('avaliacao')} className={`btn-secondary ${aba === 'avaliacao' && 'bg-orange-600 text-white'}`}>⭐ Avaliar</button>
+        </div>
 
-      <div className="max-w-6xl mx-auto flex flex-wrap justify-center">
-        {resultadoFiltro.length === 0 ? (
-          <p className="text-gray-500">
-            🔎 Nenhum freelancer encontrado com os filtros aplicados.
-          </p>
-        ) : (
-          resultadoFiltro.map((freela, idx) => (
-            <ProfissionalCard
-              key={freela.uid || idx}
-              prof={{
-                uid: freela.uid,
-                imagem: freela.foto || 'https://i.imgur.com/3W8i1sT.png',
-                nome: freela.nome,
-                especialidade: freela.especialidade || freela.funcao || 'Não informado',
-                endereco: freela.endereco || 'Endereço não informado',
-                avaliacao: freela.avaliacao || 0,
-                descricao: freela.descricao || '',
-              }}
-              onChamar={handleChamarProfissional}
-            />
-          ))
-        )}
+        {/* Conteúdo da aba */}
+        {renderConteudo()}
       </div>
     </div>
   )
