@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { collection, addDoc } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
-import { auth, db } from '../../firebase'
+import { auth, db } from @/firebase'
 
 export default function Cadastro() {
   const navigate = useNavigate()
