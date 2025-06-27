@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { collection, addDoc } from 'firebase/firestore'
-import { db } from @/firebase'
+import { db } from '@/firebase'
 
 export default function PublicarVaga() {
   const navigate = useNavigate()

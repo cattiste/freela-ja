@@ -1,7 +1,7 @@
 // src/pages/TesteCriarVaga.jsx
 import React, { useEffect } from 'react'
 import { collection, addDoc } from 'firebase/firestore'
-import { db } from @/firebase'
+import { db } from '@/firebase'
 
 export default function TesteCriarVaga() {
   useEffect(() => {

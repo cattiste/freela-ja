@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc, getDoc, updateDoc } from 'firebase/firestore'
-import { db } from @/firebase'
+import { db } from '@/firebase'
 import AgendaFreela from '../components/AgendaFreela'
 
 export default function PainelFreela() {

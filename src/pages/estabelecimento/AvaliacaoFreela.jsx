@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { collection, addDoc, getDocs, query, where, updateDoc, doc } from 'firebase/firestore'
-import { db } from @/firebase'
+import { db } from '@/firebase'
 
 export default function AvaliacaoFreela({ estabelecimento }) {
   const [freelasParaAvaliar, setFreelasParaAvaliar] = useState([])

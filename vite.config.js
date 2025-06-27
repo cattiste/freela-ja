@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'), // Permite usar '@/firebase', '@/pages', etc.
+      '@': path.resolve(__dirname, 'src'), // Permite usar ''@/firebase', '@/pages', etc.
     },
   },
   build: {
