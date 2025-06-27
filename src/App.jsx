@@ -17,6 +17,7 @@ import EditarFreela from './pages/EditarFreela'
 import RotaProtegidaFreela from './components/RotaProtegidaFreela'
 import RotaProtegidaEstabelecimento from './components/RotaProtegidaEstabelecimento'
 import EsqueciSenha from './pages/EsqueciSenha'
+import PainelEstabelecimento from './pages/PainelEstabelecimento';
 
 export default function App() {
   return (
@@ -36,7 +37,7 @@ export default function App() {
           <Route path="/cadastro-estabelecimento" element={<CadastroEstabelecimento />} />
           <Route path="/perfil/:id" element={<Perfil />} />
           <Route path="/editarfreela/:id" element={<EditarFreela />} />
-          
+          <Route path="/painel-estabelecimento" element={<PainelEstabelecimento />}/>
 
           {/* Painéis protegidos */}
           <Route
