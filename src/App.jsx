@@ -6,7 +6,7 @@ import Sobre from './pages/Sobre'
 import Cadastro from './pages/Cadastro'
 import Login from './pages/Login'
 import PainelFreela from './pages/PainelFreela'
-import PainelEstabelecimento from './pages/estabelecimento/PainelEstabelecimento' // veja pasta estabelecimento
+import PainelEstabelecimento from './pages/PainelEstabelecimento' // veja pasta estabelecimento
 import Curriculos from './pages/Curriculos'
 import Perfil from './pages/Perfil'
 import CadastroFreela from './pages/CadastroFreela'
