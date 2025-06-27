@@ -12,32 +12,54 @@ export default function PainelEstabelecimento() {
   const [aba, setAba] = useState('buscar')
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState(null)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          const docRef = doc(db, 'usuarios', user.uid)
-          const docSnap = await getDoc(docRef)
-          if (docSnap.exists()) {
-            const data = docSnap.data()
-            if (data.tipo === 'estabelecimento') {
-              setEstabelecimento({ uid: user.uid, ...data })
-            } else {
-              alert('Você precisa estar logado como estabelecimento.')
-            }
-          } else {
-            alert('Dados do estabelecimento não encontrados.')
-          }
-        } catch (err) {
-          console.error('Erro ao buscar dados:', err)
-          alert('Erro ao buscar dados do estabelecimento.')
+      try {
+        setCarregando(true)
+        setErro(null)
+
+        if (!user) {
+          setEstabelecimento(null)
+          setErro('Nenhum usuário logado. Faça login para continuar.')
+          return
         }
-      } else {
-        setEstabelecimento(null)
+
+        console.log('UID do usuário:', user.uid) // Debug
+        
+        const docRef = doc(db, 'usuarios', user.uid)
+        const docSnap = await getDoc(docRef)
+
+        if (!docSnap.exists()) {
+          setErro('Perfil de estabelecimento não encontrado. Verifique se você completou seu cadastro.')
+          return
+        }
+
+        const data = docSnap.data()
+        console.log('Dados do documento:', data) // Debug
+
+        if (data.tipo !== 'estabelecimento') {
+          setErro('Acesso restrito a estabelecimentos. Você está cadastrado como: ' + data.tipo)
+          return
+        }
+
+        setEstabelecimento({ 
+          uid: user.uid, 
+          ...data,
+          // Garante que campos obrigatórios existam
+          nome: data.nome || 'Estabelecimento não nomeado',
+          email: user.email
+        })
+
+      } catch (err) {
+        console.error('Erro ao carregar estabelecimento:', err)
+        setErro('Ocorreu um erro ao carregar seus dados. Tente novamente mais tarde.')
+      } finally {
+        setCarregando(false)
       }
-      setCarregando(false)
     })
+
     return () => unsubscribe()
   }, [])
 
@@ -59,15 +81,27 @@ export default function PainelEstabelecimento() {
   if (carregando) {
     return (
       <div className="min-h-screen flex items-center justify-center text-orange-600">
-        Carregando dados do estabelecimento...
+        <div className="text-center">
+          <p className="text-xl font-semibold">Carregando seus dados...</p>
+          <p className="text-sm text-gray-500">Por favor, aguarde.</p>
+        </div>
       </div>
     )
   }
 
-  if (!estabelecimento) {
+  if (erro || !estabelecimento) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-red-600 text-center">
-        <p>Você precisa estar logado como estabelecimento para acessar o painel.</p>
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center">
+        <div className="max-w-md bg-red-50 p-6 rounded-lg border border-red-100">
+          <h2 className="text-xl font-bold text-red-600 mb-2">Acesso não autorizado</h2>
+          <p className="text-red-700 mb-4">{erro}</p>
+          <button 
+            onClick={() => auth.signOut()} 
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Sair e tentar novamente
+          </button>
+        </div>
       </div>
     )
   }
@@ -75,13 +109,40 @@ export default function PainelEstabelecimento() {
   return (
     <div className="min-h-screen bg-orange-50 p-4">
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6">
-        <h1 className="text-3xl font-bold text-orange-700 mb-4">📊 Painel do Estabelecimento</h1>
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold text-orange-700">
+            📊 Painel do {estabelecimento.nome || 'Estabelecimento'}
+          </h1>
+          <div className="text-sm text-gray-500">
+            Logado como: {estabelecimento.email}
+          </div>
+        </div>
 
-        <div className="flex gap-4 mb-6 border-b pb-2">
-          <button onClick={() => setAba('buscar')} className={`btn-secondary ${aba === 'buscar' && 'bg-orange-600 text-white'}`}>🔍 Buscar Freelancers</button>
-          <button onClick={() => setAba('chamadas')} className={`btn-secondary ${aba === 'chamadas' && 'bg-orange-600 text-white'}`}>📞 Chamadas</button>
-          <button onClick={() => setAba('agendas')} className={`btn-secondary ${aba === 'agendas' && 'bg-orange-600 text-white'}`}>📅 Agendas</button>
-          <button onClick={() => setAba('avaliacao')} className={`btn-secondary ${aba === 'avaliacao' && 'bg-orange-600 text-white'}`}>⭐ Avaliar</button>
+        <div className="flex gap-4 mb-6 border-b pb-2 overflow-x-auto">
+          <button 
+            onClick={() => setAba('buscar')} 
+            className={`px-4 py-2 rounded-md whitespace-nowrap ${aba === 'buscar' ? 'bg-orange-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+          >
+            🔍 Buscar Freelancers
+          </button>
+          <button 
+            onClick={() => setAba('chamadas')} 
+            className={`px-4 py-2 rounded-md whitespace-nowrap ${aba === 'chamadas' ? 'bg-orange-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+          >
+            📞 Chamadas
+          </button>
+          <button 
+            onClick={() => setAba('agendas')} 
+            className={`px-4 py-2 rounded-md whitespace-nowrap ${aba === 'agendas' ? 'bg-orange-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+          >
+            📅 Agendas
+          </button>
+          <button 
+            onClick={() => setAba('avaliacao')} 
+            className={`px-4 py-2 rounded-md whitespace-nowrap ${aba === 'avaliacao' ? 'bg-orange-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+          >
+            ⭐ Avaliar
+          </button>
         </div>
 
         {renderConteudo()}
