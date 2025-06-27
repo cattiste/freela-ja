@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { collection, query, where, getDocs } from 'firebase/firestore'
-import { db } from '../firebase'
+import { db } from '../../firebase'
 
 export default function AgendasContratadas({ estabelecimento }) {
   const [contratacoes, setContratacoes] = useState([])
