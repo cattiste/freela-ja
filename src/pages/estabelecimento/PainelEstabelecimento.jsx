@@ -18,7 +18,9 @@ export default function PainelEstabelecimento() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    console.log('useEffect onAuthStateChanged iniciado')
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('Auth state changed:', user)
       try {
         setCarregando(true)
         setErro(null)
@@ -26,6 +28,7 @@ export default function PainelEstabelecimento() {
         if (!user) {
           setEstabelecimento(null)
           setErro('Nenhum usuário logado. Faça login para continuar.')
+          setCarregando(false)
           return
         }
 
@@ -34,6 +37,7 @@ export default function PainelEstabelecimento() {
 
         if (!docSnap.exists()) {
           setErro('Perfil de estabelecimento não encontrado. Verifique se você completou seu cadastro.')
+          setCarregando(false)
           return
         }
 
@@ -41,6 +45,7 @@ export default function PainelEstabelecimento() {
 
         if (data.tipo !== 'estabelecimento') {
           setErro('Acesso restrito a estabelecimentos. Você está cadastrado como: ' + data.tipo)
+          setCarregando(false)
           return
         }
 
@@ -50,6 +55,7 @@ export default function PainelEstabelecimento() {
           nome: data.nome || 'Estabelecimento não nomeado',
           email: user.email
         })
+
       } catch (err) {
         console.error('Erro ao carregar estabelecimento:', err)
         setErro('Ocorreu um erro ao carregar seus dados. Tente novamente mais tarde.')
@@ -61,20 +67,7 @@ export default function PainelEstabelecimento() {
     return () => unsubscribe()
   }, [])
 
-  const renderConteudo = () => {
-    switch (aba) {
-      case 'buscar':
-        return <BuscarFreelas estabelecimento={estabelecimento} />
-      case 'chamadas':
-        return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
-      case 'agendas':
-        return <AgendasContratadas estabelecimento={estabelecimento} />
-      case 'avaliacao':
-        return <AvaliacaoFreela estabelecimento={estabelecimento} />
-      default:
-        return <BuscarFreelas estabelecimento={estabelecimento} />
-    }
-  }
+  console.log('Estados atuais:', { carregando, erro, estabelecimento, aba })
 
   if (carregando) {
     return (
@@ -102,6 +95,21 @@ export default function PainelEstabelecimento() {
         </div>
       </div>
     )
+  }
+
+  const renderConteudo = () => {
+    switch (aba) {
+      case 'buscar':
+        return <BuscarFreelas estabelecimento={estabelecimento} />
+      case 'chamadas':
+        return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
+      case 'agendas':
+        return <AgendasContratadas estabelecimento={estabelecimento} />
+      case 'avaliacao':
+        return <AvaliacaoFreela estabelecimento={estabelecimento} />
+      default:
+        return <BuscarFreelas estabelecimento={estabelecimento} />
+    }
   }
 
   return (
