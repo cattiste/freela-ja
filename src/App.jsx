@@ -18,7 +18,7 @@ import EditarFreela from './pages/EditarFreela'
 import RotaProtegidaFreela from './components/RotaProtegidaFreela'
 import RotaProtegidaEstabelecimento from './components/RotaProtegidaEstabelecimento'
 import EsqueciSenha from './pages/EsqueciSenha'
-import EditarPerfilEstabelecimento from './pages/estabelecimento/EditarPerfilEstabelecimento'
+import EditarPerfilEstabelecimento from './pages/EditarPerfilEstabelecimento'
 
 export default function App() {
   return (
