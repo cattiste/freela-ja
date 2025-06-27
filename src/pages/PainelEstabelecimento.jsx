@@ -8,6 +8,7 @@ export default function PainelEstabelecimento() {
   const [aba, setAba] = useState('buscar')
 
   const renderConteudo = () => {
+  try {
     switch (aba) {
       case 'buscar': return <BuscarFreelas />
       case 'chamadas': return <ChamadasEstabelecimento />
@@ -15,7 +16,11 @@ export default function PainelEstabelecimento() {
       case 'avaliacao': return <AvaliacaoFreela />
       default: return <BuscarFreelas />
     }
+  } catch (err) {
+    console.error('Erro ao renderizar conteúdo:', err)
+    return <div className="text-red-600">Erro ao carregar conteúdo</div>
   }
+}
 
   return (
     <div className="min-h-screen bg-orange-50 p-4">
