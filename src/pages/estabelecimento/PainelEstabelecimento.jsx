@@ -1,77 +1,75 @@
 import React, { useEffect, useState } from 'react'
-import AvaliacaoFreela from './AvaliacaoFreela'
-import { auth, db } from '../../firebase'
 import { onAuthStateChanged } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, query, collection, where, getDocs } from 'firebase/firestore'
+import { auth, db } from '../../firebase'
+
+import AvaliacaoFreela from './AvaliacaoFreela'
+import BuscarFreelas from './BuscarFreelas'
 
 export default function PainelEstabelecimento() {
   const [estabelecimento, setEstabelecimento] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    // Observa mudanças no estado de autenticação
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          // Pega dados do estabelecimento no Firestore pelo uid do usuário logado
-          const docRef = doc(db, 'usuarios', user.uid)
-          const docSnap = await getDoc(docRef)
+          // Buscar documento do estabelecimento na coleção 'usuarios' com uid e tipo = 'estabelecimento'
+          const q = query(
+            collection(db, 'usuarios'),
+            where('uid', '==', user.uid),
+            where('tipo', '==', 'estabelecimento')
+          )
+          const querySnapshot = await getDocs(q)
 
-          if (docSnap.exists()) {
-            const data = docSnap.data()
-            if (data.tipo === 'estabelecimento') {
-              setEstabelecimento({ uid: user.uid, ...data })
-            } else {
-              alert('Você não tem permissão para acessar este painel.')
-              setEstabelecimento(null)
-            }
-          } else {
-            alert('Dados do estabelecimento não encontrados.')
+          if (querySnapshot.empty) {
             setEstabelecimento(null)
+            setCarregando(false)
+            return
           }
+
+          const docEstab = querySnapshot.docs[0].data()
+          setEstabelecimento(docEstab)
+          setCarregando(false)
         } catch (error) {
           console.error('Erro ao buscar dados do estabelecimento:', error)
-          alert('Erro ao carregar dados.')
           setEstabelecimento(null)
+          setCarregando(false)
         }
       } else {
-        // Usuário não está logado
         setEstabelecimento(null)
+        setCarregando(false)
       }
-      setLoading(false)
     })
 
-    // Cleanup
     return () => unsubscribe()
   }, [])
 
-  if (loading) {
+  if (carregando) {
     return (
-      <div className="min-h-[300px] flex items-center justify-center text-orange-600">
-        Carregando painel do estabelecimento...
+      <div className="min-h-[200px] flex items-center justify-center text-orange-600">
+        Carregando dados do estabelecimento...
       </div>
     )
   }
 
   if (!estabelecimento) {
     return (
-      <div className="min-h-[300px] flex flex-col items-center justify-center text-red-600">
-        <p>Você precisa estar logado como estabelecimento para acessar este painel.</p>
-        {/* Aqui você pode colocar link para login ou redirecionar automaticamente */}
-      </div>
+      <p className="text-center text-red-600 font-semibold mt-10">
+        Dados do estabelecimento não encontrados. Por favor, verifique se você está logado com uma conta de estabelecimento.
+      </p>
     )
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-8">
-      <h1 className="text-3xl font-bold text-orange-700 mb-6 text-center">
-        Painel do Estabelecimento: {estabelecimento.nome}
+    <div className="max-w-5xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6 text-orange-700 text-center">
+        Painel do Estabelecimento
       </h1>
 
-      {/* Aqui você pode colocar outros componentes do painel, por exemplo: */}
+      {/* Componentes para avaliação e busca */}
       <AvaliacaoFreela estabelecimento={estabelecimento} />
-
-      {/* Pode adicionar aqui o componente BuscarFreelas, etc. */}
+      <BuscarFreelas estabelecimento={estabelecimento} />
     </div>
   )
 }
