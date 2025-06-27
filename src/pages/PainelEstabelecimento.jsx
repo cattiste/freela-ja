@@ -3,10 +3,10 @@ import { auth, db } from '@/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { getDoc, doc } from 'firebase/firestore'
 
-import BuscarFreelas from './BuscarFreelas'
-import ChamadasEstabelecimento from './ChamadasEstabelecimento'
-import AgendasContratadas from './AgendasContratadas'
-import AvaliacaoFreela from './AvaliacaoFreela'
+import BuscarFreelas from '@/BuscarFreelas'
+import ChamadasEstabelecimento from '@/ChamadasEstabelecimento'
+import AgendasContratadas from '@/AgendasContratadas'
+import AvaliacaoFreela from '@/AvaliacaoFreela'
 
 export default function PainelEstabelecimento() {
   const [aba, setAba] = useState('buscar')
