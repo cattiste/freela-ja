@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { auth, db } from '../../firebase'
-import { onAuthStateChanged, getDoc, doc } from 'firebase/auth'
+import { onAuthStateChanged } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
 
 import BuscarFreelas from './BuscarFreelas'
 import ChamadasEstabelecimento from './ChamadasEstabelecimento'
