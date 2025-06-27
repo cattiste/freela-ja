@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore'
+import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function ChamadasEstabelecimento({ estabelecimento }) {
@@ -41,15 +41,17 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
     }
   }
 
-  // Opcional: Função para atualizar status manualmente (se quiser dar controle ao estabelecimento)
-  // async function atualizarStatus(id, novoStatus) {
-  //   try {
-  //     await updateDoc(doc(db, 'chamadas', id), { status: novoStatus })
-  //     setChamadas((old) => old.map(c => c.id === id ? {...c, status: novoStatus} : c))
-  //   } catch (err) {
-  //     console.error('Erro ao atualizar status:', err)
-  //   }
-  // }
+  const formatDate = (timestamp) => {
+    try {
+      if (!timestamp) return 'Data indisponível'
+      if (timestamp.toDate) return timestamp.toDate().toLocaleString()
+      if (timestamp instanceof Date) return timestamp.toLocaleString()
+      if (typeof timestamp === 'number') return new Date(timestamp).toLocaleString()
+      return String(timestamp)
+    } catch {
+      return 'Data inválida'
+    }
+  }
 
   if (carregando) {
     return (
@@ -88,15 +90,12 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
               <tr key={chamada.id} className="hover:bg-orange-50">
                 <td className="border border-orange-300 px-4 py-2">{chamada.freelaNome}</td>
                 <td className="border border-orange-300 px-4 py-2">
-                  {chamada.criadoEm?.toDate
-                    ? chamada.criadoEm.toDate().toLocaleString()
-                    : 'Data indisponível'}
+                  {formatDate(chamada.criadoEm)}
                 </td>
                 <td className={`border border-orange-300 px-4 py-2 ${statusColor(chamada.status || 'pendente')}`}>
                   {chamada.status ? chamada.status.charAt(0).toUpperCase() + chamada.status.slice(1) : 'Pendente'}
                 </td>
                 <td className="border border-orange-300 px-4 py-2 text-center">
-                  {/* Aqui você pode abrir um modal ou navegar para a agenda do freela */}
                   <button
                     onClick={() => alert(`Agenda do freelancer ${chamada.freelaNome} (a implementar)`)}
                     className="btn-primary text-sm px-3 py-1"
