@@ -1,99 +1,77 @@
-// Exemplo simplificado do PainelEstabelecimento.jsx
-
-import React, { useState, useEffect } from 'react'
-import BuscarFreelas from './BuscarFreelas'
-import ChamadasEstabelecimento from './ChamadasEstabelecimento'
-import AgendasContratadas from './AgendasContratadas'
+import React, { useEffect, useState } from 'react'
 import AvaliacaoFreela from './AvaliacaoFreela'
-import { auth, db } from '../../firebase' // Seu firebase e auth configurados
-import { onAuthStateChanged, doc, getDoc } from 'firebase/auth' // ou firestore
+import { auth, db } from '../../firebase'
+import { onAuthStateChanged } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
 
 export default function PainelEstabelecimento() {
-  const [aba, setAba] = useState('buscar')
   const [estabelecimento, setEstabelecimento] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Observa mudanças no estado de autenticação
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // Buscar dados do estabelecimento no Firestore
-        const docRef = doc(db, 'usuarios', user.uid)
-        const docSnap = await getDoc(docRef)
-        if (docSnap.exists()) {
-          const data = docSnap.data()
-          if (data.tipo === 'estabelecimento') {
-            setEstabelecimento({ uid: user.uid, ...data })
+        try {
+          // Pega dados do estabelecimento no Firestore pelo uid do usuário logado
+          const docRef = doc(db, 'usuarios', user.uid)
+          const docSnap = await getDoc(docRef)
+
+          if (docSnap.exists()) {
+            const data = docSnap.data()
+            if (data.tipo === 'estabelecimento') {
+              setEstabelecimento({ uid: user.uid, ...data })
+            } else {
+              alert('Você não tem permissão para acessar este painel.')
+              setEstabelecimento(null)
+            }
           } else {
-            // Se for outro tipo, desloga ou limpa
+            alert('Dados do estabelecimento não encontrados.')
             setEstabelecimento(null)
           }
-        } else {
+        } catch (error) {
+          console.error('Erro ao buscar dados do estabelecimento:', error)
+          alert('Erro ao carregar dados.')
           setEstabelecimento(null)
         }
       } else {
+        // Usuário não está logado
         setEstabelecimento(null)
       }
+      setLoading(false)
     })
 
+    // Cleanup
     return () => unsubscribe()
   }, [])
 
-  const renderConteudo = () => {
-    switch (aba) {
-      case 'buscar':
-        return <BuscarFreelas estabelecimento={estabelecimento} />
-      case 'chamadas':
-        return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
-      case 'agendas':
-        return <AgendasContratadas estabelecimento={estabelecimento} />
-      case 'avaliacao':
-        return <AvaliacaoFreela estabelecimento={estabelecimento} />
-      default:
-        return <BuscarFreelas estabelecimento={estabelecimento} />
-    }
+  if (loading) {
+    return (
+      <div className="min-h-[300px] flex items-center justify-center text-orange-600">
+        Carregando painel do estabelecimento...
+      </div>
+    )
   }
 
   if (!estabelecimento) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-orange-600">
-        Você precisa estar logado como estabelecimento para acessar este painel.
+      <div className="min-h-[300px] flex flex-col items-center justify-center text-red-600">
+        <p>Você precisa estar logado como estabelecimento para acessar este painel.</p>
+        {/* Aqui você pode colocar link para login ou redirecionar automaticamente */}
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-orange-50 p-4">
-      <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6">
-        <h1 className="text-3xl font-bold text-orange-700 mb-4">📊 Painel do Estabelecimento</h1>
+    <div className="max-w-5xl mx-auto p-6 space-y-8">
+      <h1 className="text-3xl font-bold text-orange-700 mb-6 text-center">
+        Painel do Estabelecimento: {estabelecimento.nome}
+      </h1>
 
-        <div className="flex gap-4 mb-6 border-b pb-2">
-          <button
-            onClick={() => setAba('buscar')}
-            className={`btn-secondary ${aba === 'buscar' && 'bg-orange-600 text-white'}`}
-          >
-            🔍 Buscar Freelancers
-          </button>
-          <button
-            onClick={() => setAba('chamadas')}
-            className={`btn-secondary ${aba === 'chamadas' && 'bg-orange-600 text-white'}`}
-          >
-            📞 Chamadas
-          </button>
-          <button
-            onClick={() => setAba('agendas')}
-            className={`btn-secondary ${aba === 'agendas' && 'bg-orange-600 text-white'}`}
-          >
-            📅 Agendas
-          </button>
-          <button
-            onClick={() => setAba('avaliacao')}
-            className={`btn-secondary ${aba === 'avaliacao' && 'bg-orange-600 text-white'}`}
-          >
-            ⭐ Avaliar
-          </button>
-        </div>
+      {/* Aqui você pode colocar outros componentes do painel, por exemplo: */}
+      <AvaliacaoFreela estabelecimento={estabelecimento} />
 
-        {renderConteudo()}
-      </div>
+      {/* Pode adicionar aqui o componente BuscarFreelas, etc. */}
     </div>
   )
 }
