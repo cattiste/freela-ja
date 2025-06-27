@@ -1,9 +1,10 @@
 import React from 'react'
 
 export default function ProfissionalCard({ prof, onChamar }) {
-  const imagemValida = typeof prof.imagem === 'string' && prof.imagem.trim() !== ''
-    ? prof.imagem
-    : 'https://i.imgur.com/3W8i1sT.png'
+  const imagemValida =
+    typeof prof.imagem === 'string' && prof.imagem.trim() !== ''
+      ? prof.imagem
+      : 'https://i.imgur.com/3W8i1sT.png'
 
   const diariaNumerica = !isNaN(parseFloat(prof.valorDiaria))
 
@@ -15,7 +16,9 @@ export default function ProfissionalCard({ prof, onChamar }) {
         className="w-24 h-24 rounded-full object-cover mb-3 mx-auto border-2 border-orange-400 shadow"
       />
 
-      <h3 className="text-lg font-bold text-gray-800">{prof.nome}</h3>
+      <h3 className="text-lg font-bold text-gray-800">
+        {prof.nome || 'Nome não informado'}
+      </h3>
 
       <p className="text-gray-700 mt-1">
         <strong>Função:</strong> {prof.especialidade || 'Não informado'}
@@ -26,7 +29,10 @@ export default function ProfissionalCard({ prof, onChamar }) {
       </p>
 
       <p className="text-yellow-500 mt-1">
-        <strong>Avaliação:</strong> ⭐ {typeof prof.avaliacao === 'number' ? prof.avaliacao.toFixed(1) : 'N/A'}
+        <strong>Avaliação:</strong>{' '}
+        {typeof prof.avaliacao === 'number'
+          ? `⭐ ${prof.avaliacao.toFixed(1)}`
+          : 'N/A'}
       </p>
 
       {diariaNumerica && (
@@ -36,15 +42,19 @@ export default function ProfissionalCard({ prof, onChamar }) {
       )}
 
       {prof.descricao && (
-        <p className="italic mt-2 text-sm text-gray-600">{prof.descricao}</p>
+        <p className="italic mt-2 text-sm text-gray-600">
+          {prof.descricao}
+        </p>
       )}
 
-      <button
-        onClick={() => onChamar && onChamar(prof)}
-        className="bg-green-600 text-white py-2 px-4 rounded-xl mt-4 hover:bg-green-700 cursor-pointer transition-colors duration-200"
-      >
-        📩 Chamar
-      </button>
+      {onChamar && (
+        <button
+          onClick={() => onChamar(prof)}
+          className="bg-green-600 text-white py-2 px-4 rounded-xl mt-4 hover:bg-green-700 cursor-pointer transition-colors duration-200"
+        >
+          📩 Chamar
+        </button>
+      )}
     </div>
   )
 }

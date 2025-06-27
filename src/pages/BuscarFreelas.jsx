@@ -134,4 +134,13 @@ export default function BuscarFreelas({ estabelecimento }) {
                 ...freela,
                 imagem: freela.foto || '/default-avatar.png',
                 especialidade: freela.especialidade || freela.funcao || 'Não informado',
-                ende
+                endereco: freela.endereco || 'Endereço não informado',
+              }}
+              onChamar={() => handleChamarProfissional(freela)}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
