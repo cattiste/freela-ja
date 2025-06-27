@@ -2,136 +2,249 @@ import React, { useState } from 'react'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 
-export default function PublicarVaga({ estabelecimento }) {
-  const [tipo, setTipo] = useState('freela') // freela ou clt
+export default function FormularioVaga({ estabelecimento }) {
+  const [tipoVaga, setTipoVaga] = useState('clt') // default CLT
+  const [titulo, setTitulo] = useState('')
   const [funcao, setFuncao] = useState('')
   const [descricao, setDescricao] = useState('')
+  const [empresa, setEmpresa] = useState(estabelecimento?.nome || '')
+  const [emailContato, setEmailContato] = useState(estabelecimento?.email || '')
+  const [cidade, setCidade] = useState('')
+  const [salario, setSalario] = useState('')
   const [valorDiaria, setValorDiaria] = useState('')
-  const [data, setData] = useState('')
+  const [datasAgendadas, setDatasAgendadas] = useState([]) // array de strings "yyyy-mm-dd"
   const [urgente, setUrgente] = useState(false)
+  const [status, setStatus] = useState('ativo')
   const [loading, setLoading] = useState(false)
-  const [mensagem, setMensagem] = useState(null)
+  const [error, setError] = useState(null)
+  const [sucesso, setSucesso] = useState(null)
 
-  async function handlePublicar(e) {
+  // Handle seleção de datas simples (exemplo checkbox)
+  function toggleData(data) {
+    if (datasAgendadas.includes(data)) {
+      setDatasAgendadas(datasAgendadas.filter(d => d !== data))
+    } else {
+      setDatasAgendadas([...datasAgendadas, data])
+    }
+  }
+
+  // Exemplo simples de datas fixas para seleção, pode trocar por datepicker mais avançado
+  const opcoesDatas = [
+    '2025-07-01',
+    '2025-07-02',
+    '2025-07-03',
+    '2025-07-04',
+  ]
+
+  async function handleSubmit(e) {
     e.preventDefault()
-    if (!funcao.trim()) {
-      alert('Preencha a função da vaga')
-      return
-    }
-    if (tipo === 'freela' && !valorDiaria) {
-      alert('Preencha o valor da diária para vagas de freelas')
-      return
-    }
-    if (!data) {
-      alert('Escolha a data da vaga')
-      return
-    }
-
     setLoading(true)
-    setMensagem(null)
+    setError(null)
+    setSucesso(null)
 
     try {
+      if (!titulo || !funcao || !descricao || !empresa || !emailContato || !cidade) {
+        throw new Error('Preencha todos os campos obrigatórios.')
+      }
+
+      if (tipoVaga === 'clt' && (!salario || Number(salario) <= 0)) {
+        throw new Error('Informe um salário válido para vaga CLT.')
+      }
+
+      if (tipoVaga === 'freela' && (!valorDiaria || Number(valorDiaria) <= 0)) {
+        throw new Error('Informe um valor de diária válido para vaga Freela.')
+      }
+
+      if (tipoVaga === 'freela' && datasAgendadas.length === 0) {
+        throw new Error('Selecione pelo menos uma data para vaga Freela.')
+      }
+
+      // Converte datas para timestamps do Firestore
+      const datasTimestamp = datasAgendadas.map(d => new Date(d))
+
       await addDoc(collection(db, 'vagas'), {
-        estabelecimentoUid: estabelecimento.uid,
-        tipo,
+        titulo,
         funcao,
         descricao,
-        valorDiaria: tipo === 'freela' ? Number(valorDiaria) : null,
-        data,
+        empresa,
+        emailContato,
+        cidade,
+        tipoVaga,
+        salario: tipoVaga === 'clt' ? Number(salario) : null,
+        valorDiaria: tipoVaga === 'freela' ? Number(valorDiaria) : null,
+        datasAgendadas: tipoVaga === 'freela' ? datasTimestamp : [],
         urgente,
-        status: 'aberta',
-        criadoEm: serverTimestamp(),
+        status,
+        dataPublicacao: serverTimestamp(),
+        estabelecimentoUid: estabelecimento.uid,
+        estabelecimentoNome: estabelecimento.nome,
       })
-      setMensagem('Vaga publicada com sucesso!')
+
+      setSucesso('Vaga publicada com sucesso!')
+      // resetar campos (opcional)
+      setTitulo('')
       setFuncao('')
       setDescricao('')
+      setSalario('')
       setValorDiaria('')
-      setData('')
+      setDatasAgendadas([])
       setUrgente(false)
     } catch (err) {
-      console.error('Erro ao publicar vaga:', err)
-      setMensagem('Erro ao publicar a vaga. Tente novamente.')
+      setError(err.message || 'Erro ao publicar vaga.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (
-    <div className="max-w-lg mx-auto p-6 bg-white rounded-xl shadow-md">
-      <h2 className="text-2xl font-bold text-orange-700 mb-6">📢 Publicar Vaga</h2>
+    <div className="max-w-xl mx-auto bg-white p-6 rounded-xl shadow-md">
+      <h2 className="text-2xl font-bold text-orange-700 mb-6 text-center">Publicar Vaga</h2>
 
-      {mensagem && (
-        <div className="mb-4 p-3 rounded bg-green-100 text-green-700">{mensagem}</div>
+      {error && (
+        <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>
+      )}
+      {sucesso && (
+        <div className="bg-green-100 text-green-700 p-3 rounded mb-4">{sucesso}</div>
       )}
 
-      <form onSubmit={handlePublicar} className="space-y-4">
-        <label className="block">
-          Tipo de vaga:
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <label className="block font-semibold text-orange-700">
+          Tipo de Vaga:
           <select
-            value={tipo}
-            onChange={e => setTipo(e.target.value)}
+            value={tipoVaga}
+            onChange={e => setTipoVaga(e.target.value)}
             className="input-field mt-1"
           >
-            <option value="freela">Freela (Diária)</option>
             <option value="clt">CLT (Fixa)</option>
+            <option value="freela">Freela (Diária)</option>
           </select>
         </label>
 
-        <label className="block">
-          Função / Título:
+        <label className="block font-semibold text-orange-700">
+          Título:
+          <input
+            type="text"
+            value={titulo}
+            onChange={e => setTitulo(e.target.value)}
+            required
+            className="input-field mt-1"
+            placeholder="Ex: Garçom para restaurante"
+          />
+        </label>
+
+        <label className="block font-semibold text-orange-700">
+          Função:
           <input
             type="text"
             value={funcao}
             onChange={e => setFuncao(e.target.value)}
-            className="input-field mt-1"
-            placeholder="Ex: Garçom, Cozinheiro"
             required
+            className="input-field mt-1"
+            placeholder="Ex: Garçom, Cozinheiro..."
           />
         </label>
 
-        <label className="block">
+        <label className="block font-semibold text-orange-700">
           Descrição:
           <textarea
             value={descricao}
             onChange={e => setDescricao(e.target.value)}
+            required
             className="input-field mt-1"
+            placeholder="Detalhes da vaga, requisitos, etc."
             rows={4}
-            placeholder="Detalhes da vaga"
           />
         </label>
 
-        {tipo === 'freela' && (
-          <label className="block">
-            Valor da diária (R$):
+        <label className="block font-semibold text-orange-700">
+          Empresa:
+          <input
+            type="text"
+            value={empresa}
+            onChange={e => setEmpresa(e.target.value)}
+            required
+            className="input-field mt-1"
+          />
+        </label>
+
+        <label className="block font-semibold text-orange-700">
+          E-mail para contato:
+          <input
+            type="email"
+            value={emailContato}
+            onChange={e => setEmailContato(e.target.value)}
+            required
+            className="input-field mt-1"
+            placeholder="email@empresa.com"
+          />
+        </label>
+
+        <label className="block font-semibold text-orange-700">
+          Cidade:
+          <input
+            type="text"
+            value={cidade}
+            onChange={e => setCidade(e.target.value)}
+            required
+            className="input-field mt-1"
+          />
+        </label>
+
+        {tipoVaga === 'clt' && (
+          <label className="block font-semibold text-orange-700">
+            Salário (R$):
             <input
               type="number"
               min="0"
-              step="0.01"
-              value={valorDiaria}
-              onChange={e => setValorDiaria(e.target.value)}
+              value={salario}
+              onChange={e => setSalario(e.target.value)}
+              required={tipoVaga === 'clt'}
               className="input-field mt-1"
-              required={tipo === 'freela'}
+              placeholder="Ex: 2500"
             />
           </label>
         )}
 
-        <label className="block">
-          Data da vaga:
-          <input
-            type="date"
-            value={data}
-            onChange={e => setData(e.target.value)}
-            className="input-field mt-1"
-            required
-          />
-        </label>
+        {tipoVaga === 'freela' && (
+          <>
+            <label className="block font-semibold text-orange-700">
+              Valor da Diária (R$):
+              <input
+                type="number"
+                min="0"
+                value={valorDiaria}
+                onChange={e => setValorDiaria(e.target.value)}
+                required={tipoVaga === 'freela'}
+                className="input-field mt-1"
+                placeholder="Ex: 150"
+              />
+            </label>
 
-        <label className="block flex items-center space-x-2 mt-2">
+            <fieldset className="border border-gray-300 rounded p-3 mt-4">
+              <legend className="font-semibold text-orange-700 mb-2">Datas Agendadas (selecione):</legend>
+              <div className="flex flex-wrap gap-3">
+                {opcoesDatas.map(data => (
+                  <label key={data} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={datasAgendadas.includes(data)}
+                      onChange={() => toggleData(data)}
+                    />
+                    <span>{data}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          </>
+        )}
+
+        <label className="flex items-center space-x-2 mt-4">
           <input
             type="checkbox"
             checked={urgente}
-            onChange={e => setUrgente(e.target.checked)}
+            onChange={() => setUrgente(!urgente)}
           />
-          <span>Urgente</span>
+          <span className="font-semibold text-orange-700">Vaga Urgente</span>
         </label>
 
         <button

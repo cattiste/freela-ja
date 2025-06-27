@@ -1,6 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { collection, query, where, onSnapshot, doc, getDoc, updateDoc } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  doc,
+  getDoc,
+  updateDoc
+} from 'firebase/firestore'
 import { db } from '@/firebase'
 import AgendaFreela from '../components/AgendaFreela'
 
@@ -10,7 +18,9 @@ export default function PainelFreela() {
   const [vagas, setVagas] = useState([])
   const [chamadas, setChamadas] = useState([])
   const [audioChamada] = useState(() =>
-    new Audio('https://res.cloudinary.com/dbemvuau3/video/upload/v1750961914/qhkd3ojkqhi2imr9lup8.mp3')
+    new Audio(
+      'https://res.cloudinary.com/dbemvuau3/video/upload/v1750961914/qhkd3ojkqhi2imr9lup8.mp3'
+    )
   )
 
   // Pré-carrega o som
@@ -22,7 +32,7 @@ export default function PainelFreela() {
     audioChamada.play().catch(() => console.log('🔇 Áudio bloqueado'))
   }, [audioChamada])
 
-  // Carrega freelancer
+  // Carrega freelancer e configura listeners
   const carregarFreela = useCallback(async () => {
     const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
     if (!usuario || usuario.tipo !== 'freela') {
@@ -43,12 +53,9 @@ export default function PainelFreela() {
       const dados = snap.data()
       setFreela({ uid: usuario.uid, ...dados })
 
-      // Listener de chamadas (sem orderBy para evitar erro de índice)
+      // Listener de chamadas para este freela
       const chamadasRef = collection(db, 'chamadas')
-      const q = query(
-        chamadasRef,
-        where('freelaUid', '==', usuario.uid)
-      )
+      const q = query(chamadasRef, where('freelaUid', '==', usuario.uid))
 
       const unsubscribe = onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
@@ -69,14 +76,37 @@ export default function PainelFreela() {
   }, [navigate, tocarSomChamada])
 
   useEffect(() => {
+    let unsubscribeVagas = () => {}
+
     const iniciar = async () => {
-      await carregarFreela()
-      const vagas = JSON.parse(localStorage.getItem('vagas') || '[]')
-      setVagas(vagas)
+      const unsubscribeChamadas = await carregarFreela()
+
+      // Listener para vagas ativas
+      const vagasRef = collection(db, 'vagas')
+      const q = query(vagasRef, where('status', '==', 'ativo'))
+
+      unsubscribeVagas = onSnapshot(q, (snapshot) => {
+        const vagasLista = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        setVagas(vagasLista)
+      })
+
+      return () => {
+        unsubscribeChamadas && unsubscribeChamadas()
+        unsubscribeVagas()
+      }
     }
     iniciar()
+
+    // Cleanup no unmount
+    return () => {
+      unsubscribeVagas()
+    }
   }, [carregarFreela])
 
+  // Aceitar chamada
   const aceitarChamada = async (chamada) => {
     try {
       await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })
@@ -89,6 +119,7 @@ export default function PainelFreela() {
     }
   }
 
+  // Recusar chamada
   const recusarChamada = async (chamada) => {
     try {
       await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })
@@ -102,13 +133,19 @@ export default function PainelFreela() {
   }
 
   if (!freela) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-600">Carregando...</div>
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-600">
+        Carregando...
+      </div>
+    )
   }
 
   return (
     <div className="min-h-screen bg-blue-50 p-6">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-blue-800 mb-4">🎯 Painel do Freelancer</h1>
+        <h1 className="text-3xl font-bold text-blue-800 mb-4">
+          🎯 Painel do Freelancer
+        </h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Perfil */}
@@ -125,7 +162,9 @@ export default function PainelFreela() {
                 <p className="text-gray-600">{freela.email}</p>
                 <p className="text-gray-600">📱 {freela.celular}</p>
                 <p className="text-gray-600">📍 {freela.endereco}</p>
-                <p className="text-green-700 mt-1 font-semibold">💰 Diária: R$ {freela.valorDiaria || '—'}</p>
+                <p className="text-green-700 mt-1 font-semibold">
+                  💰 Diária: R$ {freela.valorDiaria || '—'}
+                </p>
               </div>
             </div>
 
@@ -150,16 +189,34 @@ export default function PainelFreela() {
             <p className="text-gray-600">🔎 Nenhuma vaga disponível no momento.</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {vagas.map((vaga, index) => (
-                <div key={index} className="card">
+              {vagas.map((vaga) => (
+                <div
+                  key={vaga.id}
+                  className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
+                  onClick={() => navigate(`/vaga/${vaga.id}`)} // se quiser linkar para detalhes
+                >
                   <h3 className="text-lg font-bold text-gray-800">{vaga.titulo}</h3>
-                  <p><strong>🏢</strong> {vaga.empresa}</p>
-                  <p><strong>📍</strong> {vaga.cidade}</p>
-                  <p><strong>💰</strong> {vaga.salario}</p>
+                  <p>
+                    <strong>🏢</strong> {vaga.empresa || 'Não informada'}
+                  </p>
+                  <p>
+                    <strong>📍</strong> {vaga.cidade || 'Não informada'}
+                  </p>
+                  <p>
+                    <strong>💰</strong>{' '}
+                    {vaga.valorDiaria
+                      ? `R$ ${vaga.valorDiaria.toFixed(2)}`
+                      : vaga.salario || '—'}
+                  </p>
                   <p className="text-sm text-gray-600 mt-1">{vaga.descricao}</p>
                   <a
-                    href={`mailto:${vaga.emailContato}?subject=Candidatura para vaga: ${vaga.titulo}`}
+                    href={`mailto:${
+                      vaga.emailContato || ''
+                    }?subject=Candidatura para vaga: ${encodeURIComponent(
+                      vaga.titulo
+                    )}`}
                     className="mt-4 inline-block btn-primary text-center"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     ✅ Candidatar-se
                   </a>
@@ -177,16 +234,29 @@ export default function PainelFreela() {
           ) : (
             chamadas.map((chamada) => (
               <div key={chamada.id} className="mb-4 border-b pb-3">
-                <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
-                <p><strong>Data:</strong> {chamada.criadoEm?.toDate?.().toLocaleString() || '—'}</p>
-                <p><strong>Status:</strong> {chamada.status || 'pendente'}</p>
+                <p>
+                  <strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}
+                </p>
+                <p>
+                  <strong>Data:</strong>{' '}
+                  {chamada.criadoEm?.toDate?.().toLocaleString() || '—'}
+                </p>
+                <p>
+                  <strong>Status:</strong> {chamada.status || 'pendente'}
+                </p>
 
                 {chamada.status !== 'aceita' && chamada.status !== 'recusada' && (
                   <div className="flex gap-4 mt-2 justify-center">
-                    <button onClick={() => aceitarChamada(chamada)} className="btn-primary">
+                    <button
+                      onClick={() => aceitarChamada(chamada)}
+                      className="btn-primary"
+                    >
                       ✔️ Aceitar
                     </button>
-                    <button onClick={() => recusarChamada(chamada)} className="btn-secondary">
+                    <button
+                      onClick={() => recusarChamada(chamada)}
+                      className="btn-secondary"
+                    >
                       ❌ Recusar
                     </button>
                   </div>
