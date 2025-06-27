@@ -6,7 +6,7 @@ import Sobre from './pages/Sobre'
 import Cadastro from './pages/Cadastro'
 import Login from './pages/Login'
 import PainelFreela from './pages/PainelFreela'
-import PainelEstabelecimento from './pages/estabelecimento/PainelEstabelecimento'  // ajustado
+import PainelEstabelecimento from './pages/estabelecimento/PainelEstabelecimento' // veja pasta estabelecimento
 import Curriculos from './pages/Curriculos'
 import Perfil from './pages/Perfil'
 import CadastroFreela from './pages/CadastroFreela'
@@ -19,7 +19,7 @@ import RotaProtegidaFreela from './components/RotaProtegidaFreela'
 import RotaProtegidaEstabelecimento from './components/RotaProtegidaEstabelecimento'
 import EsqueciSenha from './pages/EsqueciSenha'
 
-function App() {
+export default function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -69,5 +69,3 @@ function App() {
     </Router>
   )
 }
-
-export default App
