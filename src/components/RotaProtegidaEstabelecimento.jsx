@@ -1,12 +1,46 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import { onAuthStateChanged } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
 import { Navigate } from 'react-router-dom'
+import { auth, db } from '@/firebase'
 
 export default function RotaProtegidaEstabelecimento({ children }) {
-  const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
+  const [carregando, setCarregando] = useState(true)
+  const [permitido, setPermitido] = useState(false)
 
-  if (!usuario || usuario.tipo !== 'estabelecimento') {
-    return <Navigate to="/login" />
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setPermitido(false)
+        setCarregando(false)
+        return
+      }
+
+      const docRef = doc(db, 'usuarios', user.uid)
+      const docSnap = await getDoc(docRef)
+
+      if (docSnap.exists() && docSnap.data().tipo === 'estabelecimento') {
+        setPermitido(true)
+      } else {
+        setPermitido(false)
+      }
+
+      setCarregando(false)
+    })
+
+    return () => unsubscribe()
+  }, [])
+
+  if (carregando) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-orange-600">
+        <div className="text-center">
+          <p className="text-xl font-semibold">Verificando acesso...</p>
+          <p className="text-sm text-gray-500">Por favor, aguarde.</p>
+        </div>
+      </div>
+    )
   }
 
-  return children
+  return permitido ? children : <Navigate to="/login" />
 }
