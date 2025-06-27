@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { collection, addDoc, getDocs, serverTimestamp } from 'firebase/firestore'
-import { db } from '../../firebase'
+import { db } from '../firebase'
 import ProfissionalCard from '../../components/ProfissionalCard'
 
 export default function BuscarFreelas({ estabelecimento }) {
