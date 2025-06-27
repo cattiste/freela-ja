@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
-import { db } from '../firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { db } from '../firebase'
 import { toast } from 'react-toastify'
 
 export default function AgendaFreela({ uid }) {
@@ -11,66 +11,73 @@ export default function AgendaFreela({ uid }) {
   const [salvando, setSalvando] = useState(false)
 
   useEffect(() => {
-    async function carregarAgenda() {
+    const carregarAgenda = async () => {
       setLoading(true)
       try {
         const docRef = doc(db, 'agendas', uid)
-        const docSnap = await getDoc(docRef)
-        if (docSnap.exists()) {
-          setDatasOcupadas(docSnap.data().ocupado || [])
+        const snap = await getDoc(docRef)
+        if (snap.exists()) {
+          setDatasOcupadas(snap.data().ocupado || [])
         } else {
           setDatasOcupadas([])
         }
-      } catch {
+      } catch (err) {
         toast.error('Erro ao carregar agenda.')
+        console.error(err)
       } finally {
         setLoading(false)
       }
     }
-
     if (uid) carregarAgenda()
   }, [uid])
 
   const toggleData = async (date) => {
-    const dataISO = date.toISOString().split('T')[0]
+    const iso = date.toISOString().split('T')[0]
+    const nova = datasOcupadas.includes(iso)
+      ? datasOcupadas.filter(d => d !== iso)
+      : [...datasOcupadas, iso]
 
-    const novaAgenda = datasOcupadas.includes(dataISO)
-      ? datasOcupadas.filter(d => d !== dataISO)
-      : [...datasOcupadas, dataISO]
-
-    setDatasOcupadas(novaAgenda)
+    setDatasOcupadas(nova)
     setSalvando(true)
 
     try {
-      await setDoc(doc(db, 'agendas', uid), { ocupado: novaAgenda })
-      toast.success('Agenda atualizada com sucesso!')
-    } catch {
+      await setDoc(doc(db, 'agendas', uid), { ocupado: nova })
+      toast.success('Agenda salva.')
+    } catch (err) {
       toast.error('Erro ao salvar agenda.')
-      setDatasOcupadas(datasOcupadas) // Reverte alteração
+      console.error(err)
+      // Se quiser, reverte:
+      // setDatasOcupadas(prev => prev)
     } finally {
       setSalvando(false)
     }
   }
 
   const tileClassName = ({ date, view }) => {
-    if (view === 'month') {
-      const dataISO = date.toISOString().split('T')[0]
-      return datasOcupadas.includes(dataISO) ? 'dia-ocupado' : null
+    const iso = date.toISOString().split('T')[0]
+    if (view === 'month' && datasOcupadas.includes(iso)) {
+      return 'bg-red-200'
     }
+    return null
   }
 
-  if (!uid) return <p className="text-red-600">ID do usuário não disponível.</p>
-  if (loading) return <p>Carregando agenda...</p>
+  if (loading) {
+    return <p className="text-gray-600">Carregando agenda...</p>
+  }
 
   return (
-    <div className="mt-8">
-      <h2 className="text-xl font-bold text-blue-700 mb-4">📅 Agenda de Disponibilidade</h2>
-      <p className="text-gray-600 mb-2 text-sm">Clique nos dias para marcar como ocupado ou disponível.</p>
+    <div>
+      <p className="text-gray-600 mb-2 text-sm">
+        📅 Clique nos dias para marcar como ocupado/disponível.
+      </p>
       <Calendar
         onClickDay={toggleData}
         tileClassName={tileClassName}
+        className="border rounded-lg"
       />
-      {salvando && <p className="text-sm text-gray-500 mt-2">Salvando alterações...</p>}
+      {salvando && (
+        <p className="mt-2 text-sm text-blue-600">Salvando...</p>
+      )}
     </div>
   )
 }
