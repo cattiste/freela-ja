@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+// PainelEstabelecimento.jsx
+import React, { useEffect, useState } from 'react'
 import BuscarFreelas from './BuscarFreelas'
 import ChamadasEstabelecimento from './ChamadasEstabelecimento'
 import AgendasContratadas from './AgendasContratadas'
@@ -6,28 +7,30 @@ import AvaliacaoFreela from './AvaliacaoFreela'
 
 export default function PainelEstabelecimento() {
   const [aba, setAba] = useState('buscar')
+  const [estabelecimento, setEstabelecimento] = useState(null)
+
+  useEffect(() => {
+    const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
+    if (!usuario || usuario.tipo !== 'estabelecimento') return
+    setEstabelecimento(usuario)
+  }, [])
 
   const renderConteudo = () => {
-  try {
+    if (!estabelecimento) return <p className="text-center">Carregando dados...</p>
     switch (aba) {
-      case 'buscar': return <BuscarFreelas />
-      case 'chamadas': return <ChamadasEstabelecimento />
-      case 'agendas': return <AgendasContratadas />
-      case 'avaliacao': return <AvaliacaoFreela />
-      default: return <BuscarFreelas />
+      case 'buscar': return <BuscarFreelas estabelecimento={estabelecimento} />
+      case 'chamadas': return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
+      case 'agendas': return <AgendasContratadas estabelecimento={estabelecimento} />
+      case 'avaliacao': return <AvaliacaoFreela estabelecimento={estabelecimento} />
+      default: return <BuscarFreelas estabelecimento={estabelecimento} />
     }
-  } catch (err) {
-    console.error('Erro ao renderizar conteúdo:', err)
-    return <div className="text-red-600">Erro ao carregar conteúdo</div>
   }
-}
 
   return (
     <div className="min-h-screen bg-orange-50 p-4">
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6">
         <h1 className="text-3xl font-bold text-orange-700 mb-4">📊 Painel do Estabelecimento</h1>
 
-        {/* Navegação por abas */}
         <div className="flex gap-4 mb-6 border-b pb-2">
           <button onClick={() => setAba('buscar')} className={`btn-secondary ${aba === 'buscar' && 'bg-orange-600 text-white'}`}>🔍 Buscar Freelancers</button>
           <button onClick={() => setAba('chamadas')} className={`btn-secondary ${aba === 'chamadas' && 'bg-orange-600 text-white'}`}>📞 Chamadas</button>
@@ -35,7 +38,6 @@ export default function PainelEstabelecimento() {
           <button onClick={() => setAba('avaliacao')} className={`btn-secondary ${aba === 'avaliacao' && 'bg-orange-600 text-white'}`}>⭐ Avaliar</button>
         </div>
 
-        {/* Conteúdo da aba */}
         {renderConteudo()}
       </div>
     </div>
