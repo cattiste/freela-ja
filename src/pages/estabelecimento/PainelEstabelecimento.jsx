@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { auth, db } from '../../firebase'
 import { onAuthStateChanged } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
+import { getDoc, doc } from 'firebase/firestore'
 
 import BuscarFreelas from './BuscarFreelas'
 import ChamadasEstabelecimento from './ChamadasEstabelecimento'
@@ -25,7 +25,7 @@ export default function PainelEstabelecimento() {
             setEstabelecimento({ uid: user.uid, ...data })
           } else {
             alert('Você precisa estar logado como estabelecimento.')
-            // Aqui você pode redirecionar ou logout
+            // Redirecionar ou logout
           }
         } else {
           alert('Dados do estabelecimento não encontrados.')
@@ -73,10 +73,18 @@ export default function PainelEstabelecimento() {
 
         {/* Navegação por abas */}
         <div className="flex gap-4 mb-6 border-b pb-2">
-          <button onClick={() => setAba('buscar')} className={`btn-secondary ${aba === 'buscar' && 'bg-orange-600 text-white'}`}>🔍 Buscar Freelancers</button>
-          <button onClick={() => setAba('chamadas')} className={`btn-secondary ${aba === 'chamadas' && 'bg-orange-600 text-white'}`}>📞 Chamadas</button>
-          <button onClick={() => setAba('agendas')} className={`btn-secondary ${aba === 'agendas' && 'bg-orange-600 text-white'}`}>📅 Agendas</button>
-          <button onClick={() => setAba('avaliacao')} className={`btn-secondary ${aba === 'avaliacao' && 'bg-orange-600 text-white'}`}>⭐ Avaliar</button>
+          <button onClick={() => setAba('buscar')} className={`btn-secondary ${aba === 'buscar' && 'bg-orange-600 text-white'}`}>
+            🔍 Buscar Freelancers
+          </button>
+          <button onClick={() => setAba('chamadas')} className={`btn-secondary ${aba === 'chamadas' && 'bg-orange-600 text-white'}`}>
+            📞 Chamadas
+          </button>
+          <button onClick={() => setAba('agendas')} className={`btn-secondary ${aba === 'agendas' && 'bg-orange-600 text-white'}`}>
+            📅 Agendas
+          </button>
+          <button onClick={() => setAba('avaliacao')} className={`btn-secondary ${aba === 'avaliacao' && 'bg-orange-600 text-white'}`}>
+            ⭐ Avaliar
+          </button>
         </div>
 
         {/* Conteúdo da aba */}
