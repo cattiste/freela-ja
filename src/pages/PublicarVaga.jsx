@@ -3,6 +3,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function PublicarVaga({ estabelecimento }) {
+  const [tipoVaga, setTipoVaga] = useState('clt') // valor padrão 'clt'
   const [titulo, setTitulo] = useState('')
   const [descricao, setDescricao] = useState('')
   const [local, setLocal] = useState('')
@@ -25,6 +26,7 @@ export default function PublicarVaga({ estabelecimento }) {
 
     try {
       await addDoc(collection(db, 'vagas'), {
+        tipoVaga,
         titulo,
         descricao,
         local,
@@ -36,6 +38,7 @@ export default function PublicarVaga({ estabelecimento }) {
       })
 
       setSucesso('Vaga publicada com sucesso!')
+      setTipoVaga('clt')
       setTitulo('')
       setDescricao('')
       setLocal('')
@@ -55,6 +58,18 @@ export default function PublicarVaga({ estabelecimento }) {
       {sucesso && <p className="text-green-600 mb-4">{sucesso}</p>}
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        <label className="block">
+          <span className="font-semibold text-orange-700">Tipo de Vaga:</span>
+          <select
+            value={tipoVaga}
+            onChange={e => setTipoVaga(e.target.value)}
+            className="w-full p-2 border rounded mt-1"
+          >
+            <option value="clt">CLT (Fixa)</option>
+            <option value="freela">Freela (Diária)</option>
+          </select>
+        </label>
+
         <input
           type="text"
           placeholder="Título da Vaga"
