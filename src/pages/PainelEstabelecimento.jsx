@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc, updateDoc, getDoc } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 
 import BuscarFreelas from './BuscarFreelas'
@@ -9,7 +9,7 @@ import AvaliacaoFreela from './AvaliacaoFreela'
 import PublicarVaga from './PublicarVaga'
 import MinhasVagas from './MinhasVagas'
 
-// Componente ChamadasEstabelecimento já com checkin/checkout
+// COMPONENTE CHAMADAS ESTABELECIMENTO
 function ChamadasEstabelecimento({ estabelecimento }) {
   const [chamadas, setChamadas] = useState([])
   const [carregando, setCarregando] = useState(true)
@@ -232,3 +232,116 @@ export default function PainelEstabelecimento() {
     setVagaEditando(null)
     setAba('minhas-vagas')
   }
+
+  // Função logout
+  const handleLogout = async () => {
+    try {
+      await signOut(auth)
+      localStorage.removeItem('usuarioLogado')
+      window.location.href = '/login' // ou use navigate se preferir
+    } catch (err) {
+      alert('Erro ao sair.')
+      console.error(err)
+    }
+  }
+
+  const renderConteudo = () => {
+    switch (aba) {
+      case 'buscar':
+        return <BuscarFreelas estabelecimento={estabelecimento} />
+      case 'chamadas':
+        return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
+      case 'agendas':
+        return <AgendasContratadas estabelecimento={estabelecimento} />
+      case 'avaliacao':
+        return <AvaliacaoFreela estabelecimento={estabelecimento} />
+      case 'publicar':
+        return (
+          <PublicarVaga
+            estabelecimento={estabelecimento}
+            vaga={vagaEditando}
+            onSucesso={onSalvarSucesso}
+          />
+        )
+      case 'minhas-vagas':
+      default:
+        return <MinhasVagas estabelecimento={estabelecimento} onEditar={abrirEdicao} />
+    }
+  }
+
+  if (carregando) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-orange-600 text-lg">Carregando painel...</p>
+      </div>
+    )
+  }
+
+  if (!estabelecimento) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-600 text-lg">Acesso não autorizado.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-orange-50 p-4">
+      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-orange-700">📊 Painel do Estabelecimento</h1>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+          >
+            🔒 Logout
+          </button>
+        </div>
+
+        {/* Botões das abas */}
+        <div className="flex flex-wrap gap-4 mb-6 border-b pb-4">
+          <button
+            onClick={() => {
+              setVagaEditando(null)
+              setAba('buscar')
+            }}
+            className={`px-4 py-2 rounded-lg font-semibold transition ${
+              aba === 'buscar'
+                ? 'bg-orange-600 text-white'
+                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+            }`}
+          >
+            🔍 Buscar Freelancers
+          </button>
+
+          <button
+            onClick={() => {
+              setVagaEditando(null)
+              setAba('chamadas')
+            }}
+            className={`px-4 py-2 rounded-lg font-semibold transition ${
+              aba === 'chamadas'
+                ? 'bg-orange-600 text-white'
+                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+            }`}
+          >
+            📞 Chamadas
+          </button>
+
+          <button
+            onClick={() => {
+              setVagaEditando(null)
+              setAba('agendas')
+            }}
+            className={`px-4 py-2 rounded-lg font-semibold transition ${
+              aba === 'agendas'
+                ? 'bg-orange-600 text-white'
+                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+            }`}
+          >
+            📅 Agendas
+          </button>
+
+          <button
+            onClick={() => {
+              setVagaEditando
