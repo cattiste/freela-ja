@@ -67,20 +67,10 @@ export default function EditarPerfilEstabelecimento() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setCarregando(true)
     setErro(null)
     setSucesso(null)
 
-    // Validação simples
-    if (!form.nome.trim()) {
-      setErro('O campo nome é obrigatório.')
-      return
-    }
-    if (form.cnpj && form.cnpj.length < 14) {
-      setErro('CNPJ inválido, deve ter 14 caracteres.')
-      return
-    }
-
-    setCarregando(true)
     try {
       const user = auth.currentUser
       if (!user) throw new Error('Usuário não autenticado.')
@@ -115,81 +105,36 @@ export default function EditarPerfilEstabelecimento() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-orange-50 p-4">
       <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-xl p-8 max-w-md w-full">
-        <h2 className="text-2xl font-bold text-orange-700 mb-6 text-center">Editar Perfil do Estabelecimento</h2>
+        <h2 className="text-2xl font-bold text-orange-700 mb-4">Editar Perfil</h2>
 
-        {erro && <p className="mb-4 text-red-600 text-center font-semibold">{erro}</p>}
-        {sucesso && <p className="mb-4 text-green-600 text-center font-semibold">{sucesso}</p>}
+        {erro && <p className="mb-4 text-red-600">{erro}</p>}
+        {sucesso && <p className="mb-4 text-green-600">{sucesso}</p>}
 
-        <label className="block mb-1 text-sm font-semibold">Nome</label>
-        <input
-          name="nome"
-          type="text"
-          value={form.nome}
-          onChange={handleChange}
-          className="w-full mb-4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-          required
-        />
+        <label className="block mb-1 text-sm">Nome</label>
+        <input name="nome" type="text" value={form.nome} onChange={handleChange} className="w-full mb-3 px-4 py-2 border rounded-lg" />
 
-        <label className="block mb-1 text-sm font-semibold">E-mail (não editável)</label>
-        <input
-          type="email"
-          value={form.email}
-          disabled
-          className="w-full mb-4 px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
-        />
+        <label className="block mb-1 text-sm">E-mail (não editável)</label>
+        <input type="email" value={form.email} disabled className="w-full mb-3 px-4 py-2 border rounded-lg bg-gray-100 text-gray-500" />
 
-        <label className="block mb-1 text-sm font-semibold">Telefone</label>
-        <input
-          name="telefone"
-          type="text"
-          value={form.telefone}
-          onChange={handleChange}
-          className="w-full mb-4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-        />
+        <label className="block mb-1 text-sm">Telefone</label>
+        <input name="telefone" type="text" value={form.telefone} onChange={handleChange} className="w-full mb-3 px-4 py-2 border rounded-lg" />
 
-        <label className="block mb-1 text-sm font-semibold">Endereço</label>
-        <input
-          name="endereco"
-          type="text"
-          value={form.endereco}
-          onChange={handleChange}
-          className="w-full mb-4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-        />
+        <label className="block mb-1 text-sm">Endereço</label>
+        <input name="endereco" type="text" value={form.endereco} onChange={handleChange} className="w-full mb-3 px-4 py-2 border rounded-lg" />
 
-        <label className="block mb-1 text-sm font-semibold">Cidade</label>
-        <input
-          name="cidade"
-          type="text"
-          value={form.cidade}
-          onChange={handleChange}
-          className="w-full mb-4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-        />
+        <label className="block mb-1 text-sm">Cidade</label>
+        <input name="cidade" type="text" value={form.cidade} onChange={handleChange} className="w-full mb-3 px-4 py-2 border rounded-lg" />
 
-        <label className="block mb-1 text-sm font-semibold">CNPJ</label>
-        <input
-          name="cnpj"
-          type="text"
-          value={form.cnpj}
-          onChange={handleChange}
-          placeholder="Somente números, 14 dígitos"
-          className="w-full mb-6 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-        />
+        <label className="block mb-1 text-sm">CNPJ</label>
+        <input name="cnpj" type="text" value={form.cnpj} onChange={handleChange} className="w-full mb-3 px-4 py-2 border rounded-lg" />
 
-        <label className="block mb-1 text-sm font-semibold">Categoria</label>
-        <input
-          name="categoria"
-          type="text"
-          value={form.categoria}
-          onChange={handleChange}
-          className="w-full mb-6 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-        />
+        <label className="block mb-1 text-sm">Categoria</label>
+        <input name="categoria" type="text" value={form.categoria} onChange={handleChange} className="w-full mb-6 px-4 py-2 border rounded-lg" />
 
-        <button
+        <button 
           type="submit"
           disabled={carregando}
-          className={`w-full py-2 rounded text-white font-semibold transition ${
-            carregando ? 'bg-orange-400 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'
-          }`}
+          className="w-full bg-orange-600 text-white font-semibold py-2 rounded hover:bg-orange-700 transition"
         >
           {carregando ? 'Salvando...' : 'Salvar Alterações'}
         </button>

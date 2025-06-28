@@ -52,6 +52,7 @@ export default function Cadastro() {
           required
           className="input-field"
         />
+
         <input
           type="email"
           placeholder="E-mail"
@@ -60,6 +61,7 @@ export default function Cadastro() {
           required
           className="input-field"
         />
+
         <input
           type="password"
           placeholder="Senha"

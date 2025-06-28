@@ -2,11 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { collection, getDocs } from 'firebase/firestore'
-<<<<<<< HEAD
-import { db } from '../firebase'
-=======
 import { db } from '@/firebase'
->>>>>>> dcb7593 (Inicializando repositório com código atualizado)
 import './Curriculos.css'
 
 export default function Curriculos() {

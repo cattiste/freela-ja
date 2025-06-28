@@ -1,14 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  doc,
-  getDoc,
-  updateDoc
-} from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
 import AgendaFreela from '../components/AgendaFreela'
 
@@ -21,6 +13,7 @@ export default function PainelFreela() {
     new Audio('https://res.cloudinary.com/dbemvuau3/video/upload/v1750961914/qhkd3ojkqhi2imr9lup8.mp3')
   )
 
+  // Pré-carrega o som
   useEffect(() => {
     audioChamada.load()
   }, [audioChamada])
@@ -29,6 +22,7 @@ export default function PainelFreela() {
     audioChamada.play().catch(() => console.log('🔇 Áudio bloqueado'))
   }, [audioChamada])
 
+  // Carrega freelancer
   const carregarFreela = useCallback(async () => {
     const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
     if (!usuario || usuario.tipo !== 'freela') {
@@ -49,10 +43,14 @@ export default function PainelFreela() {
       const dados = snap.data()
       setFreela({ uid: usuario.uid, ...dados })
 
+      // Listener de chamadas (sem orderBy para evitar erro de índice)
       const chamadasRef = collection(db, 'chamadas')
-      const q = query(chamadasRef, where('freelaUid', '==', usuario.uid))
+      const q = query(
+        chamadasRef,
+        where('freelaUid', '==', usuario.uid)
+      )
 
-      const unsubscribeChamadas = onSnapshot(q, (snapshot) => {
+      const unsubscribe = onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
           if (change.type === 'added') {
             const chamada = { id: change.doc.id, ...change.doc.data() }
@@ -63,7 +61,7 @@ export default function PainelFreela() {
         })
       })
 
-      return unsubscribeChamadas
+      return unsubscribe
     } catch (err) {
       console.error('Erro ao carregar freela:', err)
       navigate('/login')
@@ -71,32 +69,12 @@ export default function PainelFreela() {
   }, [navigate, tocarSomChamada])
 
   useEffect(() => {
-    let unsubscribeVagas = () => {}
-
     const iniciar = async () => {
-      const unsubscribeChamadas = await carregarFreela()
-
-      const vagasRef = collection(db, 'vagas')
-      const q = query(vagasRef, where('status', '==', 'ativo'))
-
-      unsubscribeVagas = onSnapshot(q, (snapshot) => {
-        const vagasLista = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data()
-        }))
-        setVagas(vagasLista)
-      })
-
-      return () => {
-        unsubscribeChamadas && unsubscribeChamadas()
-        unsubscribeVagas()
-      }
+      await carregarFreela()
+      const vagas = JSON.parse(localStorage.getItem('vagas') || '[]')
+      setVagas(vagas)
     }
     iniciar()
-
-    return () => {
-      unsubscribeVagas()
-    }
   }, [carregarFreela])
 
   const aceitarChamada = async (chamada) => {
@@ -124,11 +102,7 @@ export default function PainelFreela() {
   }
 
   if (!freela) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-600">
-        Carregando...
-      </div>
-    )
+    return <div className="min-h-screen flex items-center justify-center text-gray-600">Carregando...</div>
   }
 
   return (
@@ -151,9 +125,7 @@ export default function PainelFreela() {
                 <p className="text-gray-600">{freela.email}</p>
                 <p className="text-gray-600">📱 {freela.celular}</p>
                 <p className="text-gray-600">📍 {freela.endereco}</p>
-                <p className="text-green-700 mt-1 font-semibold">
-                  💰 Diária: R$ {freela.valorDiaria || '—'}
-                </p>
+                <p className="text-green-700 mt-1 font-semibold">💰 Diária: R$ {freela.valorDiaria || '—'}</p>
               </div>
             </div>
 
@@ -167,7 +139,6 @@ export default function PainelFreela() {
 
           {/* Agenda */}
           <div className="bg-white rounded-2xl shadow p-6">
-            <h2 className="text-xl font-semibold text-blue-700 mb-2">📅 Agenda</h2>
             <AgendaFreela uid={freela.uid} />
           </div>
         </div>
@@ -179,17 +150,19 @@ export default function PainelFreela() {
             <p className="text-gray-600">🔎 Nenhuma vaga disponível no momento.</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {vagas.map((vaga) => (
-                <div
-                  key={vaga.id}
-                  className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
-                  onClick={() => navigate(`/vaga/${vaga.id}`)}
-                >
+              {vagas.map((vaga, index) => (
+                <div key={index} className="card">
                   <h3 className="text-lg font-bold text-gray-800">{vaga.titulo}</h3>
-                  <p><strong>🏢</strong> {vaga.empresa || 'Não informada'}</p>
-                  <p><strong>📍</strong> {vaga.cidade || 'Não informada'}</p>
-                  <p><strong>💰</strong> {vaga.valorDiaria ? `R$ ${vaga.valorDiaria.toFixed(2)}` : vaga.salario || '—'}</p>
+                  <p><strong>🏢</strong> {vaga.empresa}</p>
+                  <p><strong>📍</strong> {vaga.cidade}</p>
+                  <p><strong>💰</strong> {vaga.salario}</p>
                   <p className="text-sm text-gray-600 mt-1">{vaga.descricao}</p>
+                  <a
+                    href={`mailto:${vaga.emailContato}?subject=Candidatura para vaga: ${vaga.titulo}`}
+                    className="mt-4 inline-block btn-primary text-center"
+                  >
+                    ✅ Candidatar-se
+                  </a>
                 </div>
               ))}
             </div>
@@ -210,8 +183,12 @@ export default function PainelFreela() {
 
                 {chamada.status !== 'aceita' && chamada.status !== 'recusada' && (
                   <div className="flex gap-4 mt-2 justify-center">
-                    <button onClick={() => aceitarChamada(chamada)} className="btn-primary">✔️ Aceitar</button>
-                    <button onClick={() => recusarChamada(chamada)} className="btn-secondary">❌ Recusar</button>
+                    <button onClick={() => aceitarChamada(chamada)} className="btn-primary">
+                      ✔️ Aceitar
+                    </button>
+                    <button onClick={() => recusarChamada(chamada)} className="btn-secondary">
+                      ❌ Recusar
+                    </button>
                   </div>
                 )}
               </div>
