@@ -1,3 +1,62 @@
+<<<<<<< HEAD
+.curriculos-container {
+  padding: 6rem 1rem 2rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.curriculos-title {
+  font-size: 2rem;
+  color: #ff6b00;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.curriculos-subtitle {
+  font-size: 1rem;
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #333;
+}
+
+.resultado-chefs {
+  display: grid;
+  gap: 1rem;
+}
+
+.card-profissional {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  text-align: left;
+}
+
+.card-profissional h3 {
+  margin-top: 0;
+  color: #ff6b00;
+}
+
+.card-profissional .descricao {
+  margin-top: 8px;
+  margin-bottom: 12px;
+  color: #555;
+}
+
+.card-botao {
+  display: inline-block;
+  background-color: #ff6b00;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  text-decoration: none;
+  transition: background 0.3s;
+}
+
+.card-botao:hover {
+  background-color: #e85a00;
+=======
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -56,4 +115,5 @@
   .botao-home-painel:hover {
     @apply bg-indigo-900;
   }
+>>>>>>> dcb7593 (Inicializando repositório com código atualizado)
 }

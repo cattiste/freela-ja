@@ -1,0 +1,22 @@
+.filtros-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.filtros-container input,
+.filtros-container select {
+  flex: 1 1 200px;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: border-color 0.3s ease;
+}
+
+.filtros-container input:focus,
+.filtros-container select:focus {
+  border-color: #1e40af;
+  outline: none;
+}

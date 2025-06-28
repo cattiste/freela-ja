@@ -1,7 +1,11 @@
 // src/pages/TesteCriarVaga.jsx
 import React, { useEffect } from 'react'
 import { collection, addDoc } from 'firebase/firestore'
+<<<<<<< HEAD
+import { db } from '../firebase'
+=======
 import { db } from '@/firebase'
+>>>>>>> dcb7593 (Inicializando repositório com código atualizado)
 
 export default function TesteCriarVaga() {
   useEffect(() => {

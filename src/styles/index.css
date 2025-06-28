@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+<<<<<<< HEAD
+body {
+  font-family: 'Inter', sans-serif;
+=======
 @layer components {
   .btn-primary {
     @apply bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-lg
@@ -39,4 +43,5 @@
     @apply fixed top-5 left-5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold
       py-2 px-4 rounded-lg shadow-md z-50 cursor-pointer transition-colors duration-300;
   }
+>>>>>>> dcb7593 (Inicializando repositório com código atualizado)
 }

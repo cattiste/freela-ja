@@ -1,3 +1,16 @@
+<<<<<<< HEAD
+import React from 'react'
+import { Navigate } from 'react-router-dom'
+
+export default function RotaProtegidaFreela({ children }) {
+  const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
+
+  if (!usuario || usuario.tipo !== 'freela') {
+    return <Navigate to="/login" />
+  }
+
+  return children
+=======
 import React, { useEffect, useState } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
@@ -48,4 +61,5 @@ export default function RotaProtegidaFreela({ children }) {
   }
 
   return permitido ? children : <Navigate to="/login" />
+>>>>>>> dcb7593 (Inicializando repositório com código atualizado)
 }

@@ -2,6 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
+<<<<<<< HEAD
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Botão voltar para home - fixo no canto superior esquerdo */
+.botao-voltar-home {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background-color: #ff6b00; /* laranja */
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 9999;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: background-color 0.3s ease;
+}
+
+.botao-voltar-home:hover {
+  background-color: #e85a00;
+}
+
+/* Botão home painel com cor azul arroxeado */
+.botao-home-painel {
+  background-color: #4f46e5; /* azul arroxeado */
+}
+
+.botao-home-painel:hover {
+  background-color: #4338ca;
+=======
 @layer components {
   .btn-primary {
     @apply bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-lg
@@ -39,4 +73,5 @@
     @apply fixed top-5 left-5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold
       py-2 px-4 rounded-lg shadow-md z-50 cursor-pointer transition-colors duration-300;
   }
+>>>>>>> dcb7593 (Inicializando repositório com código atualizado)
 }

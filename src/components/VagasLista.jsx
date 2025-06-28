@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+// src/components/VagasLista.jsx
+=======
+>>>>>>> dcb7593 (Inicializando repositório com código atualizado)
 import React, { useEffect, useState } from 'react'
 
 export default function VagasLista() {
@@ -9,6 +13,19 @@ export default function VagasLista() {
   }, [])
 
   if (vagas.length === 0) {
+<<<<<<< HEAD
+    return <p>Nenhuma vaga disponível no momento.</p>
+  }
+
+  return (
+    <div className="grid gap-4">
+      {vagas.map(vaga => (
+        <div key={vaga.id} className="bg-white p-4 rounded shadow">
+          <h3 className="font-bold text-lg">{vaga.titulo}</h3>
+          <p>{vaga.descricao}</p>
+          <p className="text-sm text-gray-600 mt-1">Local: {vaga.local}</p>
+          {vaga.salario && <p className="text-sm text-green-600">Salário: {vaga.salario}</p>}
+=======
     return (
       <p className="text-center text-gray-500 mt-8">
         Nenhuma vaga disponível no momento.
@@ -31,6 +48,7 @@ export default function VagasLista() {
               Salário: {vaga.salario}
             </p>
           )}
+>>>>>>> dcb7593 (Inicializando repositório com código atualizado)
         </div>
       ))}
     </div>
