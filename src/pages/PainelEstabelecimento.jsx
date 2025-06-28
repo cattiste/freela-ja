@@ -344,4 +344,50 @@ export default function PainelEstabelecimento() {
 
           <button
             onClick={() => {
-              setVagaEditando
+              setVagaEditando(null)
+              setAba('avaliacao')
+            }}
+            className={`px-4 py-2 rounded-lg font-semibold transition ${
+              aba === 'avaliacao'
+                ? 'bg-orange-600 text-white'
+                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+            }`}
+          >
+            ⭐ Avaliar
+          </button>
+
+          <button
+            onClick={() => {
+              setVagaEditando(null)
+              setAba('publicar')
+            }}
+            className={`px-4 py-2 rounded-lg font-semibold transition ${
+              aba === 'publicar'
+                ? 'bg-orange-600 text-white'
+                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+            }`}
+          >
+            📢 Publicar Vaga
+          </button>
+
+          <button
+            onClick={() => {
+              setVagaEditando(null)
+              setAba('minhas-vagas')
+            }}
+            className={`px-4 py-2 rounded-lg font-semibold transition ${
+              aba === 'minhas-vagas'
+                ? 'bg-orange-600 text-white'
+                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+            }`}
+          >
+            📋 Minhas Vagas
+          </button>
+        </div>
+
+        {/* Conteúdo da aba */}
+        <div>{renderConteudo()}</div>
+      </div>
+    </div>
+  )
+}
