@@ -8,7 +8,7 @@ import Login from './pages/Login'
 import PainelFreela from './pages/PainelFreela'
 import PainelEstabelecimento from './pages/PainelEstabelecimento'
 import Curriculos from './pages/Curriculos'
-import Perfil from './pages/PerfilFreela' // ✅ renomeado corretamente
+import Perfil from './pages/PerfilFreela'
 import CadastroFreela from './pages/CadastroFreela'
 import CadastroEstabelecimento from './pages/CadastroEstabelecimento'
 import PainelVagas from './pages/PainelVagas'
@@ -63,13 +63,20 @@ export default function App() {
             path="/painel-estabelecimento"
             element={
               <RotaProtegidaEstabelecimento>
-                <PainelEstabelecimento />
+                <PainelEstabelecimento usuario={usuarioLogado} />
               </RotaProtegidaEstabelecimento>
             }
           />
 
           {/* Vagas */}
-          <Route path="/vagas" element={<PainelVagas />} />
+          <Route
+            path="/vagas"
+            element={
+              <RotaProtegidaEstabelecimento>
+                <PainelVagas />
+              </RotaProtegidaEstabelecimento>
+            }
+          />
           <Route
             path="/vagas-disponiveis"
             element={
@@ -86,6 +93,7 @@ export default function App() {
               </RotaProtegidaEstabelecimento>
             }
           />
+
           <Route path="/teste-criar-vaga" element={<TesteCriarVaga />} />
 
           {/* Currículos */}

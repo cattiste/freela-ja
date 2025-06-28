@@ -16,16 +16,20 @@ export default function RotaProtegidaEstabelecimento({ children }) {
         return
       }
 
-      const docRef = doc(db, 'usuarios', user.uid)
-      const docSnap = await getDoc(docRef)
+      try {
+        const docRef = doc(db, 'usuarios', user.uid)
+        const docSnap = await getDoc(docRef)
 
-      if (docSnap.exists() && docSnap.data().tipo === 'estabelecimento') {
-        setPermitido(true)
-      } else {
+        if (docSnap.exists() && docSnap.data().tipo === 'estabelecimento') {
+          setPermitido(true)
+        } else {
+          setPermitido(false)
+        }
+      } catch (error) {
         setPermitido(false)
+      } finally {
+        setCarregando(false)
       }
-
-      setCarregando(false)
     })
 
     return () => unsubscribe()

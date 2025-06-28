@@ -88,7 +88,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
           <tbody>
             {chamadas.map(chamada => (
               <tr key={chamada.id} className="hover:bg-orange-50">
-                <td className="border border-orange-300 px-4 py-2">{chamada.freelaNome}</td>
+                <td className="border border-orange-300 px-4 py-2">{chamada.freelaNome || '—'}</td>
                 <td className="border border-orange-300 px-4 py-2">
                   {formatDate(chamada.criadoEm)}
                 </td>

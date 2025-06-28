@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { collection, addDoc, getDocs, query, where, updateDoc, doc } from 'firebase/firestore'
+import { collection, getDocs, query, where, updateDoc, doc } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function AvaliacaoFreela({ estabelecimento }) {
@@ -15,7 +15,6 @@ export default function AvaliacaoFreela({ estabelecimento }) {
     async function carregarFreelasParaAvaliar() {
       setCarregando(true)
       try {
-        // Buscar contratações aceitas do estabelecimento para avaliar
         const q = query(
           collection(db, 'chamadas'),
           where('estabelecimentoUid', '==', estabelecimento.uid),
@@ -24,12 +23,11 @@ export default function AvaliacaoFreela({ estabelecimento }) {
         const snapshot = await getDocs(q)
         const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
-        // Filtra só freelas que ainda não foram avaliados (não tem campo avaliacao feita)
         const semAvaliacao = lista.filter(ch => !ch.avaliado)
         setFreelasParaAvaliar(semAvaliacao)
       } catch (err) {
         console.error('Erro ao carregar freelas para avaliar:', err)
-        alert('Erro ao carregar freelas para avaliar.')
+        alert('Erro ao carregar freelancers para avaliar.')
       }
       setCarregando(false)
     }
@@ -45,7 +43,6 @@ export default function AvaliacaoFreela({ estabelecimento }) {
     }
 
     try {
-      // Salvar avaliação no Firestore, dentro do documento da chamada
       const chamadaDoc = doc(db, 'chamadas', selecionado.id)
       await updateDoc(chamadaDoc, {
         avaliado: true,
@@ -58,7 +55,6 @@ export default function AvaliacaoFreela({ estabelecimento }) {
 
       alert('Avaliação enviada com sucesso!')
 
-      // Atualizar lista local removendo o avaliado
       setFreelasParaAvaliar(prev => prev.filter(ch => ch.id !== selecionado.id))
       setSelecionado(null)
       setNota(5)
@@ -106,7 +102,7 @@ export default function AvaliacaoFreela({ estabelecimento }) {
             <option value="" disabled>-- Escolha um freelancer --</option>
             {freelasParaAvaliar.map(f => (
               <option key={f.id} value={f.id}>
-                {f.freelaNome}
+                {f.freelaNome || 'Freelancer sem nome'}
               </option>
             ))}
           </select>
@@ -118,6 +114,7 @@ export default function AvaliacaoFreela({ estabelecimento }) {
             type="number"
             min="1"
             max="5"
+            step="1"
             value={nota}
             onChange={(e) => setNota(Number(e.target.value))}
             className="input-field mt-1"
