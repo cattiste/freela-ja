@@ -35,7 +35,7 @@ export default function App() {
         <Routes>
 
           {/* Páginas públicas */}
-          <Route path="/home" element={<Home />} />
+          <Route path="/" element={<Home />} />
           <Route path="/sobre" element={<Sobre />} />
           <Route path="/cadastro" element={<Cadastro />} />
           <Route path="/login" element={<Login />} />
@@ -47,6 +47,7 @@ export default function App() {
           <Route path="/perfil/:id" element={<Perfil />} />
           <Route path="/editarfreela/:id" element={<EditarFreela />} />
           <Route path="/editarperfilestabelecimento" element={<EditarPerfilEstabelecimento />} />
+          <Route path="/curriculos" element={<Curriculos />} />
 
           {/* Painéis protegidos */}
           <Route
@@ -90,7 +91,7 @@ export default function App() {
                 <PublicarVaga estabelecimento={usuarioLogado} />
               </RotaProtegidaEstabelecimento>
             }
-          />            
+          />
         </Routes>
       </div>
     </Router>
