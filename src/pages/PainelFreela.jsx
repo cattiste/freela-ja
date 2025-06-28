@@ -23,9 +23,7 @@ export default function PainelFreela() {
 
   // Carregar áudio da chamada
   const [audioChamada] = useState(() =>
-    new Audio(
-      'https://res.cloudinary.com/dbemvuau3/video/upload/v1750961914/qhkd3ojkqhi2imr9lup8.mp3'
-    )
+    new Audio('https://res.cloudinary.com/dbemvuau3/video/upload/v1750961914/qhkd3ojkqhi2imr9lup8.mp3')
   )
   useEffect(() => {
     audioChamada.load()
@@ -35,7 +33,18 @@ export default function PainelFreela() {
     audioChamada.play().catch(() => console.log('🔇 Áudio bloqueado'))
   }, [audioChamada])
 
-  // Carregar dados do freela e chamadas em tempo real
+  // Verifica autenticação com Firebase
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      const localUser = JSON.parse(localStorage.getItem('usuarioLogado'))
+      if (!user || !localUser || localUser.tipo !== 'freela') {
+        localStorage.removeItem('usuarioLogado')
+        navigate('/login')
+      }
+    })
+    return () => unsubscribe()
+  }, [navigate])
+
   const carregarFreela = useCallback(async () => {
     const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
     if (!usuario || usuario.tipo !== 'freela') {
@@ -61,20 +70,15 @@ export default function PainelFreela() {
 
       const unsubscribe = onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
+          const chamada = { id: change.doc.id, ...change.doc.data() }
           if (change.type === 'added') {
-            const chamada = { id: change.doc.id, ...change.doc.data() }
             alert(`📩 Você foi chamado por ${chamada.estabelecimentoNome}!`)
             tocarSomChamada()
             setChamadas((prev) => [chamada, ...prev])
-          }
-          if (change.type === 'modified') {
-            const chamadaAtualizada = { id: change.doc.id, ...change.doc.data() }
-            setChamadas((prev) =>
-              prev.map((c) => (c.id === chamadaAtualizada.id ? chamadaAtualizada : c))
-            )
-          }
-          if (change.type === 'removed') {
-            setChamadas((prev) => prev.filter((c) => c.id !== change.doc.id))
+          } else if (change.type === 'modified') {
+            setChamadas((prev) => prev.map((c) => (c.id === chamada.id ? chamada : c)))
+          } else if (change.type === 'removed') {
+            setChamadas((prev) => prev.filter((c) => c.id !== chamada.id))
           }
         })
       })
@@ -96,10 +100,7 @@ export default function PainelFreela() {
       const q = query(vagasRef, where('status', '==', 'ativo'))
 
       unsubscribeVagas = onSnapshot(q, (snapshot) => {
-        const vagasLista = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data()
-        }))
+        const vagasLista = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
         setVagas(vagasLista)
       })
 
@@ -115,17 +116,13 @@ export default function PainelFreela() {
     }
   }, [carregarFreela])
 
-  // Função para registrar check-in do freela na chamada pendente mais recente
   const fazerCheckin = async () => {
     if (!freela) return
-
-    // Busca a chamada pendente para check-in (checkInFreela false)
     const chamadaPendente = chamadas.find((c) => !c.checkInFreela && c.status === 'aceita')
     if (!chamadaPendente) {
       alert('Nenhuma chamada pendente para check-in.')
       return
     }
-
     setLoadingCheckin(true)
     try {
       const chamadaRef = doc(db, 'chamadas', chamadaPendente.id)
@@ -133,7 +130,7 @@ export default function PainelFreela() {
         checkInFreela: true,
         checkInHora: serverTimestamp()
       })
-      alert('Check-in realizado! Agora aguarde a confirmação do estabelecimento.')
+      alert('Check-in realizado!')
     } catch (err) {
       alert('Erro ao fazer check-in.')
       console.error(err)
@@ -141,19 +138,15 @@ export default function PainelFreela() {
     setLoadingCheckin(false)
   }
 
-  // Função para registrar check-out do freela na chamada pendente para checkout
   const fazerCheckout = async () => {
     if (!freela) return
-
-    // Busca a chamada que teve check-in feito e está pendente de checkout (checkOutFreela false)
     const chamadaPendenteCheckout = chamadas.find(
-      (c) => c.checkInFreela === true && !c.checkOutFreela && c.status === 'aceita'
+      (c) => c.checkInFreela && !c.checkOutFreela && c.status === 'aceita'
     )
     if (!chamadaPendenteCheckout) {
       alert('Nenhuma chamada pendente para check-out.')
       return
     }
-
     setLoadingCheckout(true)
     try {
       const chamadaRef = doc(db, 'chamadas', chamadaPendenteCheckout.id)
@@ -161,7 +154,7 @@ export default function PainelFreela() {
         checkOutFreela: true,
         checkOutHora: serverTimestamp()
       })
-      alert('Check-out realizado! Agora aguarde a confirmação do estabelecimento.')
+      alert('Check-out realizado!')
     } catch (err) {
       alert('Erro ao fazer check-out.')
       console.error(err)
@@ -169,7 +162,6 @@ export default function PainelFreela() {
     setLoadingCheckout(false)
   }
 
-  // Logout
   const handleLogout = async () => {
     try {
       await signOut(auth)
@@ -189,7 +181,6 @@ export default function PainelFreela() {
     )
   }
 
-  // Helper para formatar timestamp para string legível
   const formatTimestamp = (timestamp) => {
     try {
       return timestamp?.toDate?.().toLocaleString() || '—'
@@ -212,7 +203,6 @@ export default function PainelFreela() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Perfil e checkin/checkout */}
           <div className="bg-white rounded-2xl shadow p-6">
             <div className="flex items-center gap-6">
               <img
@@ -229,25 +219,15 @@ export default function PainelFreela() {
                 <p className="text-green-700 mt-1 font-semibold">
                   💰 Diária: R$ {freela.valorDiaria || '—'}
                 </p>
-
                 <div className="mt-4">
-                  <p><strong>Último Check-in na chamada:</strong> {formatTimestamp(freela.checkIn)}</p>
-                  <p><strong>Último Check-out na chamada:</strong> {formatTimestamp(freela.checkOut)}</p>
+                  <p><strong>Último Check-in:</strong> {formatTimestamp(freela.checkIn)}</p>
+                  <p><strong>Último Check-out:</strong> {formatTimestamp(freela.checkOut)}</p>
                 </div>
-
                 <div className="flex gap-4 mt-3">
-                  <button
-                    onClick={fazerCheckin}
-                    disabled={loadingCheckin}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                  >
+                  <button onClick={fazerCheckin} disabled={loadingCheckin} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
                     {loadingCheckin ? 'Registrando...' : 'Fazer Check-in'}
                   </button>
-                  <button
-                    onClick={fazerCheckout}
-                    disabled={loadingCheckout}
-                    className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition"
-                  >
+                  <button onClick={fazerCheckout} disabled={loadingCheckout} className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition">
                     {loadingCheckout ? 'Registrando...' : 'Fazer Check-out'}
                   </button>
                 </div>
@@ -255,7 +235,6 @@ export default function PainelFreela() {
             </div>
           </div>
 
-          {/* Lista de chamadas com status */}
           <div className="bg-white rounded-2xl shadow p-6 max-h-[500px] overflow-auto">
             <h2 className="text-xl font-semibold mb-4">Chamadas Ativas</h2>
             {chamadas.length === 0 && <p>Nenhuma chamada ativa no momento.</p>}
@@ -263,26 +242,15 @@ export default function PainelFreela() {
               <div key={chamada.id} className="mb-4 p-3 border rounded">
                 <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
                 <p><strong>Status da Chamada:</strong> {chamada.status}</p>
-                <p>
-                  <strong>Check-in feito por você:</strong> {chamada.checkInFreela ? 'Sim' : 'Não'}
-                </p>
-                <p>
-                  <strong>Check-in confirmado pelo estabelecimento:</strong>{' '}
-                  {chamada.checkInConfirmadoHora ? formatTimestamp(chamada.checkInConfirmadoHora) : 'Não'}
-                </p>
-                <p>
-                  <strong>Check-out feito por você:</strong> {chamada.checkOutFreela ? 'Sim' : 'Não'}
-                </p>
-                <p>
-                  <strong>Check-out confirmado pelo estabelecimento:</strong>{' '}
-                  {chamada.checkOutConfirmado ? 'Sim' : 'Não'}
-                </p>
+                <p><strong>Check-in feito por você:</strong> {chamada.checkInFreela ? 'Sim' : 'Não'}</p>
+                <p><strong>Check-in confirmado:</strong> {chamada.checkInConfirmadoHora ? formatTimestamp(chamada.checkInConfirmadoHora) : 'Não'}</p>
+                <p><strong>Check-out feito:</strong> {chamada.checkOutFreela ? 'Sim' : 'Não'}</p>
+                <p><strong>Check-out confirmado:</strong> {chamada.checkOutConfirmado ? 'Sim' : 'Não'}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Vagas */}
         <div className="mt-10">
           <h2 className="text-2xl font-semibold text-blue-700 mb-4">📌 Vagas Disponíveis</h2>
           {vagas.length === 0 ? (
@@ -290,21 +258,12 @@ export default function PainelFreela() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {vagas.map((vaga) => (
-                <div
-                  key={vaga.id}
-                  className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
-                  onClick={() => navigate(`/vaga/${vaga.id}`)}
-                >
-                  <h3 className="text-lg font-bold text-gray-800">{vaga.titulo}</h3>
-                  <p><strong>🏢</strong> {vaga.empresa || 'Não informada'}</p>
-                  <p><strong>📍</strong> {vaga.cidade || 'Não informada'}</p>
-                  <p>
-                    <strong>💰</strong>{' '}
-                    {vaga.valorDiaria
-                      ? `R$ ${vaga.valorDiaria.toFixed(2)}`
-                      : vaga.salario || '—'}
-                  </p>
-                  <p className="text-sm text-gray-600 mt-1">{vaga.descricao}</p>
+                <div key={vaga.id} className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition cursor-pointer" onClick={() => navigate(`/vaga/${vaga.id}`)}>
+                  <h3 className="text-lg font-bold text-gray-800">{vaga.titulo || 'Título não informado'}</h3>
+                  <p><strong>🏢</strong> {vaga.empresa || 'Empresa não informada'}</p>
+                  <p><strong>📍</strong> {vaga.cidade || 'Cidade não informada'}</p>
+                  <p><strong>💰</strong> {vaga.valorDiaria ? `R$ ${vaga.valorDiaria.toFixed(2)}` : vaga.salario || '—'}</p>
+                  <p className="text-sm text-gray-600 mt-1">{vaga.descricao || 'Sem descrição'}</p>
                 </div>
               ))}
             </div>
