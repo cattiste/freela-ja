@@ -23,7 +23,6 @@ export default function PainelFreela() {
     )
   )
 
-  // Pré-carrega o som
   useEffect(() => {
     audioChamada.load()
   }, [audioChamada])
@@ -32,7 +31,6 @@ export default function PainelFreela() {
     audioChamada.play().catch(() => console.log('🔇 Áudio bloqueado'))
   }, [audioChamada])
 
-  // Carrega freelancer e configura listeners
   const carregarFreela = useCallback(async () => {
     const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
     if (!usuario || usuario.tipo !== 'freela') {
@@ -53,7 +51,6 @@ export default function PainelFreela() {
       const dados = snap.data()
       setFreela({ uid: usuario.uid, ...dados })
 
-      // Listener de chamadas para este freela
       const chamadasRef = collection(db, 'chamadas')
       const q = query(chamadasRef, where('freelaUid', '==', usuario.uid))
 
@@ -81,7 +78,6 @@ export default function PainelFreela() {
     const iniciar = async () => {
       const unsubscribeChamadas = await carregarFreela()
 
-      // Listener para vagas ativas
       const vagasRef = collection(db, 'vagas')
       const q = query(vagasRef, where('status', '==', 'ativo'))
 
@@ -100,13 +96,11 @@ export default function PainelFreela() {
     }
     iniciar()
 
-    // Cleanup no unmount
     return () => {
       unsubscribeVagas()
     }
   }, [carregarFreela])
 
-  // Aceitar chamada
   const aceitarChamada = async (chamada) => {
     try {
       await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })
@@ -119,7 +113,6 @@ export default function PainelFreela() {
     }
   }
 
-  // Recusar chamada
   const recusarChamada = async (chamada) => {
     try {
       await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })
@@ -232,4 +225,13 @@ export default function PainelFreela() {
               <div key={chamada.id} className="mb-4 border-b pb-3">
                 <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
                 <p><strong>Data:</strong> {chamada.criadoEm?.toDate?.().toLocaleString() || '—'}</p>
-                <p><strong>Status:</strong> {chamada.status || 'pendente'
+                <p><strong>Status:</strong> {chamada.status || 'pendente'}</p>
+
+                {chamada.status !== 'aceita' && chamada.status !== 'recusada' && (
+                  <div className="flex gap-4 mt-2 justify-center">
+                    <button
+                      onClick={() => aceitarChamada(chamada)}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                    >
+                      ✔️ Aceitar
+                    </button
