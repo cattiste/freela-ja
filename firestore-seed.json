@@ -1,0 +1,51 @@
+{
+  "usuarios": {
+    "freela123": {
+      "nome": "João Freela",
+      "email": "joao.freela@email.com",
+      "celular": "11999999999",
+      "endereco": "Rua das Flores, 123",
+      "funcao": "Garçom",
+      "tipo": "freela",
+      "valorDiaria": 150,
+      "foto": "https://i.imgur.com/3W8i1sT.png"
+    },
+    "estab456": {
+      "nome": "Bar do Zé",
+      "email": "contato@bardoze.com",
+      "celular": "1133334444",
+      "endereco": "Av. Principal, 456",
+      "tipo": "estabelecimento"
+    }
+  },
+  "vagas": {
+    "vaga001": {
+      "titulo": "Garçom para final de semana",
+      "descricao": "Precisamos de garçom para sexta e sábado à noite.",
+      "cidade": "São Paulo",
+      "empresa": "Bar do Zé",
+      "estabelecimentoUid": "estab456",
+      "status": "ativo",
+      "valorDiaria": 180
+    }
+  },
+  "chamadas": {
+    "chamada001": {
+      "freelaUid": "freela123",
+      "freelaNome": "João Freela",
+      "estabelecimentoUid": "estab456",
+      "estabelecimentoNome": "Bar do Zé",
+      "status": "pendente",
+      "criadoEm": { ".sv": "timestamp" },
+      "checkInFreela": false,
+      "checkOutFreela": false
+    }
+  },
+  "agendas": {
+    "agenda001": {
+      "freelaUid": "freela123",
+      "data": "2025-07-01",
+      "descricao": "Trabalho no Bar do Zé"
+    }
+  }
+}
