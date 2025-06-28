@@ -8,14 +8,16 @@ import ChamadasEstabelecimento from './ChamadasEstabelecimento'
 import AgendasContratadas from './AgendasContratadas'
 import AvaliacaoFreela from './AvaliacaoFreela'
 import PublicarVaga from './PublicarVaga'
+import MinhasVagas from './MinhasVagas'
 
 export default function PainelEstabelecimento() {
-  const [aba, setAba] = useState('buscar')
+  const [aba, setAba] = useState('minhas-vagas')
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
+  const [vagaEditando, setVagaEditando] = useState(null)
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async user => {
       if (user) {
         try {
           const docRef = doc(db, 'usuarios', user.uid)
@@ -38,6 +40,16 @@ export default function PainelEstabelecimento() {
     return () => unsubscribe()
   }, [])
 
+  function abrirEdicao(vaga) {
+    setVagaEditando(vaga)
+    setAba('publicar')
+  }
+
+  function onSalvarSucesso() {
+    setVagaEditando(null)
+    setAba('minhas-vagas')
+  }
+
   const renderConteudo = () => {
     switch (aba) {
       case 'buscar':
@@ -49,7 +61,15 @@ export default function PainelEstabelecimento() {
       case 'avaliacao':
         return <AvaliacaoFreela estabelecimento={estabelecimento} />
       case 'publicar':
-        return <PublicarVaga estabelecimento={estabelecimento} />
+        return (
+          <PublicarVaga
+            estabelecimento={estabelecimento}
+            vaga={vagaEditando}
+            onSucesso={onSalvarSucesso}
+          />
+        )
+      case 'minhas-vagas':
+        return <MinhasVagas estabelecimento={estabelecimento} onEditar={abrirEdicao} />
       default:
         return <BuscarFreelas estabelecimento={estabelecimento} />
     }
@@ -76,10 +96,13 @@ export default function PainelEstabelecimento() {
       <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-6">
         <h1 className="text-3xl font-bold text-orange-700 mb-6">📊 Painel do Estabelecimento</h1>
 
-        {/* Botões de abas */}
+        {/* Botões das abas */}
         <div className="flex flex-wrap gap-4 mb-6 border-b pb-4">
           <button
-            onClick={() => setAba('buscar')}
+            onClick={() => {
+              setVagaEditando(null)
+              setAba('buscar')
+            }}
             className={`px-4 py-2 rounded-lg font-semibold transition ${
               aba === 'buscar'
                 ? 'bg-orange-600 text-white'
@@ -90,7 +113,10 @@ export default function PainelEstabelecimento() {
           </button>
 
           <button
-            onClick={() => setAba('chamadas')}
+            onClick={() => {
+              setVagaEditando(null)
+              setAba('chamadas')
+            }}
             className={`px-4 py-2 rounded-lg font-semibold transition ${
               aba === 'chamadas'
                 ? 'bg-orange-600 text-white'
@@ -101,7 +127,10 @@ export default function PainelEstabelecimento() {
           </button>
 
           <button
-            onClick={() => setAba('agendas')}
+            onClick={() => {
+              setVagaEditando(null)
+              setAba('agendas')
+            }}
             className={`px-4 py-2 rounded-lg font-semibold transition ${
               aba === 'agendas'
                 ? 'bg-orange-600 text-white'
@@ -112,7 +141,10 @@ export default function PainelEstabelecimento() {
           </button>
 
           <button
-            onClick={() => setAba('avaliacao')}
+            onClick={() => {
+              setVagaEditando(null)
+              setAba('avaliacao')
+            }}
             className={`px-4 py-2 rounded-lg font-semibold transition ${
               aba === 'avaliacao'
                 ? 'bg-orange-600 text-white'
@@ -123,7 +155,10 @@ export default function PainelEstabelecimento() {
           </button>
 
           <button
-            onClick={() => setAba('publicar')}
+            onClick={() => {
+              setVagaEditando(null)
+              setAba('publicar')
+            }}
             className={`px-4 py-2 rounded-lg font-semibold transition ${
               aba === 'publicar'
                 ? 'bg-orange-600 text-white'
@@ -132,9 +167,23 @@ export default function PainelEstabelecimento() {
           >
             📢 Publicar Vaga
           </button>
+
+          <button
+            onClick={() => {
+              setVagaEditando(null)
+              setAba('minhas-vagas')
+            }}
+            className={`px-4 py-2 rounded-lg font-semibold transition ${
+              aba === 'minhas-vagas'
+                ? 'bg-orange-600 text-white'
+                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+            }`}
+          >
+            📋 Minhas Vagas
+          </button>
         </div>
 
-        {/* Conteúdo da aba selecionada */}
+        {/* Conteúdo da aba */}
         <div>{renderConteudo()}</div>
       </div>
     </div>
