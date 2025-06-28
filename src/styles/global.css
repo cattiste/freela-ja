@@ -6,7 +6,7 @@
   padding: 8px 16px;
   border-radius: 8px;
   border: none;
-  background-color: #ff6b00; /* cor padrão laranja */
+  background-color: #4ec4fa; /* cor padrão cian */
   color: white;
   font-weight: bold;
   cursor: pointer;
@@ -16,7 +16,7 @@
 }
 
 .botao-voltar-home:hover {
-  background-color: #e85a00;
+  background-color: #f3630a;
 }
 
 /* Para os painéis que você quer o botão azul (ex PainelFreela, PainelEstabelecimento) */
