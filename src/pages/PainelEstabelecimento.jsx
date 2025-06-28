@@ -7,6 +7,7 @@ import BuscarFreelas from './BuscarFreelas'
 import ChamadasEstabelecimento from './ChamadasEstabelecimento'
 import AgendasContratadas from './AgendasContratadas'
 import AvaliacaoFreela from './AvaliacaoFreela'
+import PublicarVaga from './PublicarVaga'
 
 export default function PainelEstabelecimento() {
   const [aba, setAba] = useState('buscar')
@@ -38,22 +39,19 @@ export default function PainelEstabelecimento() {
   }, [])
 
   const renderConteudo = () => {
-    try {
-      switch (aba) {
-        case 'buscar':
-          return <BuscarFreelas estabelecimento={estabelecimento} />
-        case 'chamadas':
-          return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
-        case 'agendas':
-          return <AgendasContratadas estabelecimento={estabelecimento} />
-        case 'avaliacao':
-          return <AvaliacaoFreela estabelecimento={estabelecimento} />
-        default:
-          return <BuscarFreelas estabelecimento={estabelecimento} />
-      }
-    } catch (err) {
-      console.error('Erro ao renderizar a aba:', err)
-      return <p className="text-red-600">Erro ao carregar conteúdo da aba.</p>
+    switch (aba) {
+      case 'buscar':
+        return <BuscarFreelas estabelecimento={estabelecimento} />
+      case 'chamadas':
+        return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
+      case 'agendas':
+        return <AgendasContratadas estabelecimento={estabelecimento} />
+      case 'avaliacao':
+        return <AvaliacaoFreela estabelecimento={estabelecimento} />
+      case 'publicar':
+        return <PublicarVaga estabelecimento={estabelecimento} />
+      default:
+        return <BuscarFreelas estabelecimento={estabelecimento} />
     }
   }
 
@@ -75,17 +73,69 @@ export default function PainelEstabelecimento() {
 
   return (
     <div className="min-h-screen bg-orange-50 p-4">
-      <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6">
-        <h1 className="text-3xl font-bold text-orange-700 mb-4">📊 Painel do Estabelecimento</h1>
+      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+        <h1 className="text-3xl font-bold text-orange-700 mb-6">📊 Painel do Estabelecimento</h1>
 
-        <div className="flex gap-4 mb-6 border-b pb-2">
-          <button onClick={() => setAba('buscar')} className={`btn-secondary ${aba === 'buscar' && 'bg-orange-600 text-white'}`}>🔍 Buscar Freelancers</button>
-          <button onClick={() => setAba('chamadas')} className={`btn-secondary ${aba === 'chamadas' && 'bg-orange-600 text-white'}`}>📞 Chamadas</button>
-          <button onClick={() => setAba('agendas')} className={`btn-secondary ${aba === 'agendas' && 'bg-orange-600 text-white'}`}>📅 Agendas</button>
-          <button onClick={() => setAba('avaliacao')} className={`btn-secondary ${aba === 'avaliacao' && 'bg-orange-600 text-white'}`}>⭐ Avaliar</button>
+        {/* Botões de abas */}
+        <div className="flex flex-wrap gap-4 mb-6 border-b pb-4">
+          <button
+            onClick={() => setAba('buscar')}
+            className={`px-4 py-2 rounded-lg font-semibold transition ${
+              aba === 'buscar'
+                ? 'bg-orange-600 text-white'
+                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+            }`}
+          >
+            🔍 Buscar Freelancers
+          </button>
+
+          <button
+            onClick={() => setAba('chamadas')}
+            className={`px-4 py-2 rounded-lg font-semibold transition ${
+              aba === 'chamadas'
+                ? 'bg-orange-600 text-white'
+                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+            }`}
+          >
+            📞 Chamadas
+          </button>
+
+          <button
+            onClick={() => setAba('agendas')}
+            className={`px-4 py-2 rounded-lg font-semibold transition ${
+              aba === 'agendas'
+                ? 'bg-orange-600 text-white'
+                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+            }`}
+          >
+            📅 Agendas
+          </button>
+
+          <button
+            onClick={() => setAba('avaliacao')}
+            className={`px-4 py-2 rounded-lg font-semibold transition ${
+              aba === 'avaliacao'
+                ? 'bg-orange-600 text-white'
+                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+            }`}
+          >
+            ⭐ Avaliar
+          </button>
+
+          <button
+            onClick={() => setAba('publicar')}
+            className={`px-4 py-2 rounded-lg font-semibold transition ${
+              aba === 'publicar'
+                ? 'bg-orange-600 text-white'
+                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+            }`}
+          >
+            📢 Publicar Vaga
+          </button>
         </div>
 
-        {renderConteudo()}
+        {/* Conteúdo da aba selecionada */}
+        <div>{renderConteudo()}</div>
       </div>
     </div>
   )
