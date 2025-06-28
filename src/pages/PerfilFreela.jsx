@@ -1,36 +1,4 @@
-<<<<<<< HEAD
-import React from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { profissionais } from '../data/profissionais' // ✅ Importa o array centralizado
-
-export default function Perfil() {
-  const { id } = useParams()
-  const navigate = useNavigate()
-
-  const profissional = profissionais.find(p => p.id === id)
-
-  if (!profissional) {
-    return <div className="perfil-container">Profissional não encontrado.</div>
-  }
-
-  return (
-    <div className="perfil-container">
-      <div className="perfil-header">
-        <img src={profissional.imagem} alt={profissional.nome} />
-        <div className="perfil-info">
-          <h2>{profissional.nome}</h2>
-          <p><strong>Especialidade:</strong> {profissional.especialidade}</p>
-          <p><strong>Cidade:</strong> {profissional.cidade}</p>
-          <p className="perfil-avaliacao">⭐ {profissional.avaliacao}</p>
-        </div>
-      </div>
-
-      <p>{profissional.descricao}</p>
-
-      <button className="botao-voltar" onClick={() => navigate(-1)}>
-        Voltar
-      </button>
-=======
+// src/pages/PerfilFreela.jsx
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { doc, getDoc } from 'firebase/firestore'
@@ -51,6 +19,7 @@ export default function PerfilFreela() {
           setCarregando(false)
           return
         }
+
         const freelaRef = doc(db, 'usuarios', uid)
         const freelaSnap = await getDoc(freelaRef)
 
@@ -100,11 +69,13 @@ export default function PerfilFreela() {
         <p className="text-blue-600 text-lg mb-1">{freela.funcao || freela.especialidade}</p>
         <p className="text-gray-600 mb-4">{freela.endereco}</p>
         <p className="text-gray-700 mb-4 italic">{freela.descricao}</p>
-        {freela.diaria && (
+
+        {freela.valorDiaria && (
           <p className="text-green-700 font-semibold">
-            💰 Valor da diária: {freela.diaria}
+            💰 Valor da diária: R$ {freela.valorDiaria}
           </p>
         )}
+
         <button
           onClick={() => navigate(-1)}
           className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition"
@@ -112,7 +83,6 @@ export default function PerfilFreela() {
           ← Voltar
         </button>
       </div>
->>>>>>> dcb7593 (Inicializando repositório com código atualizado)
     </div>
   )
 }

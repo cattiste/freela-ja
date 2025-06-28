@@ -1,32 +1,10 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-<<<<<<< HEAD
-import './Home.css'
-=======
->>>>>>> dcb7593 (Inicializando repositório com código atualizado)
 
 export default function Home() {
   const navigate = useNavigate()
 
   return (
-<<<<<<< HEAD
-    <div className="home-container">
-      <h1 className="home-title">Bem-vindo ao Freela Já</h1>
-      <p className="home-description">
-        Conectando profissionais e estabelecimentos em uma plataforma simples, direta e eficiente.
-      </p>
-
-      <div className="home-buttons flex flex-col md:flex-row gap-4 justify-center mt-6">
-        <button onClick={() => navigate("/cadastrofreela")}>Sou um Freelancer</button>
-        <button onClick={() => navigate("/cadastro-estabelecimento")}>Sou um Estabelecimento</button>
-        <button onClick={() => navigate('/login')}>Login</button>
-        <button onClick={() => navigate('/curriculos')}>Curriculos</button>
-        <button onClick={() => navigate('/sobre')}>Sobre</button>
-      </div>
-    </div>
-  )
-}
-=======
     <div className="min-h-screen flex flex-col items-center bg-gradient-to-br from-orange-100 to-orange-200 text-gray-800 p-8 text-center">
       <header className="max-w-3xl mb-8">
         <h1 className="text-4xl font-extrabold text-orange-600 mb-2">
@@ -72,4 +50,3 @@ export default function Home() {
     </div>
   )
 }
->>>>>>> dcb7593 (Inicializando repositório com código atualizado)

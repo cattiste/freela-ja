@@ -1,46 +1,4 @@
-<<<<<<< HEAD
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { collection, addDoc } from 'firebase/firestore'
-import { db } from '../firebase'
-import './Home.css'
-
-export default function PublicarVaga() {
-  const navigate = useNavigate()
-  const [titulo, setTitulo] = useState('')
-  const [empresa, setEmpresa] = useState('')
-  const [cidade, setCidade] = useState('')
-  const [tipo, setTipo] = useState('CLT')
-  const [salario, setSalario] = useState('')
-  const [descricao, setDescricao] = useState('')
-  const [emailContato, setEmailContato] = useState('')
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-
-    if (!titulo || !empresa || !cidade || !salario || !descricao || !emailContato) {
-      alert('Preencha todos os campos obrigatórios.')
-      return
-    }
-
-    const novaVaga = {
-      titulo,
-      empresa,
-      cidade,
-      tipo,
-      salario,
-      descricao,
-      emailContato,
-      data: new Date().toISOString()
-    }
-
-    try {
-      await addDoc(collection(db, 'vagas'), novaVaga)
-      alert('Vaga publicada com sucesso!')
-      navigate('/painelestabelecimento') // ou para onde quiser voltar
-    } catch (error) {
-      alert('Erro ao publicar vaga: ' + error.message)
-=======
+// src/pages/PublicarVaga.jsx
 import React, { useState, useEffect } from 'react'
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -79,20 +37,6 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
           : []
       )
       setUrgente(vaga.urgente || false)
-    } else {
-      // Se for criação, limpa campos:
-      setTipoVaga('clt')
-      setTitulo('')
-      setFuncao('')
-      setDescricao('')
-      setEmpresa(estabelecimento?.nome || '')
-      setEmailContato(estabelecimento?.email || '')
-      setCidade('')
-      setSalario('')
-      setValorDiaria('')
-      setDatasAgendadas([])
-      setUrgente(false)
-      setError(null)
     }
   }, [vaga, estabelecimento])
 
@@ -128,8 +72,6 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
         throw new Error('Selecione pelo menos uma data para vaga Freela.')
       }
 
-      const datasTimestamp = datasAgendadas.map(d => new Date(d))
-
       const dadosParaSalvar = {
         titulo,
         funcao,
@@ -140,7 +82,7 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
         tipoVaga,
         salario: tipoVaga === 'clt' ? Number(salario) : null,
         valorDiaria: tipoVaga === 'freela' ? Number(valorDiaria) : null,
-        datasAgendadas: tipoVaga === 'freela' ? datasTimestamp : [],
+        datasAgendadas: tipoVaga === 'freela' ? datasAgendadas.map(d => new Date(d)) : [],
         urgente,
         status: 'ativo',
         dataPublicacao: serverTimestamp(),
@@ -148,7 +90,7 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
         estabelecimentoNome: estabelecimento.nome,
       }
 
-      if (vaga && vaga.id) {
+      if (vaga?.id) {
         const vagaRef = doc(db, 'vagas', vaga.id)
         await updateDoc(vagaRef, dadosParaSalvar)
       } else {
@@ -160,45 +102,10 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
       setError(err.message || 'Erro ao salvar vaga.')
     } finally {
       setLoading(false)
->>>>>>> dcb7593 (Inicializando repositório com código atualizado)
     }
   }
 
   return (
-<<<<<<< HEAD
-    <>
-      <div className="w-full max-w-md flex justify-between fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
-        <button
-          onClick={() => navigate(-1)}
-          className="botao-voltar-home"
-          style={{ left: '20px', right: 'auto', position: 'fixed' }}
-        >
-          ← Voltar
-        </button>
-        <button
-          onClick={() => navigate('/')}
-          className="botao-voltar-home botao-home-painel"
-          style={{ right: '20px', left: 'auto', position: 'fixed' }}
-        >
-          🏠 Home
-        </button>
-      </div>
-
-      <div className="home-container">
-        <h1 className="home-title">Publicar Vaga CLT</h1>
-        <form onSubmit={handleSubmit} className="form-container">
-          <input type="text" placeholder="Título da Vaga" value={titulo} onChange={e => setTitulo(e.target.value)} className="input" required />
-          <input type="text" placeholder="Nome da Empresa" value={empresa} onChange={e => setEmpresa(e.target.value)} className="input" required />
-          <input type="text" placeholder="Cidade" value={cidade} onChange={e => setCidade(e.target.value)} className="input" required />
-          <input type="text" placeholder="Salário" value={salario} onChange={e => setSalario(e.target.value)} className="input" required />
-          <textarea placeholder="Descrição da vaga" value={descricao} onChange={e => setDescricao(e.target.value)} className="input" rows={4} required />
-          <input type="email" placeholder="E-mail para contato" value={emailContato} onChange={e => setEmailContato(e.target.value)} className="input" required />
-          
-          <button type="submit" className="home-button">Publicar Vaga</button>
-        </form>
-      </div>
-    </>
-=======
     <div className="max-w-xl mx-auto bg-white p-6 rounded-xl shadow-md">
       <h2 className="text-2xl font-bold text-orange-700 mb-6 text-center">
         {vaga ? '✏️ Editar Vaga' : '📢 Publicar Nova Vaga'}
@@ -209,6 +116,7 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Tipo */}
         <label className="block font-semibold text-orange-700">
           Tipo de Vaga:
           <select
@@ -221,116 +129,30 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
           </select>
         </label>
 
-        <label className="block font-semibold text-orange-700">
-          Título:
-          <input
-            type="text"
-            value={titulo}
-            onChange={e => setTitulo(e.target.value)}
-            required
-            className="input-field mt-1 w-full rounded border px-3 py-2"
-            placeholder="Ex: Garçom para restaurante"
-          />
-        </label>
+        {/* Título, Função, Descrição */}
+        <input required value={titulo} onChange={e => setTitulo(e.target.value)} className="input-field w-full" placeholder="Título da vaga" />
+        <input required value={funcao} onChange={e => setFuncao(e.target.value)} className="input-field w-full" placeholder="Função" />
+        <textarea required value={descricao} onChange={e => setDescricao(e.target.value)} className="input-field w-full" placeholder="Descrição" rows={4} />
 
-        <label className="block font-semibold text-orange-700">
-          Função:
-          <input
-            type="text"
-            value={funcao}
-            onChange={e => setFuncao(e.target.value)}
-            required
-            className="input-field mt-1 w-full rounded border px-3 py-2"
-            placeholder="Ex: Garçom, Cozinheiro..."
-          />
-        </label>
+        {/* Empresa e Contato */}
+        <input required value={empresa} onChange={e => setEmpresa(e.target.value)} className="input-field w-full" placeholder="Empresa" />
+        <input required type="email" value={emailContato} onChange={e => setEmailContato(e.target.value)} className="input-field w-full" placeholder="E-mail de contato" />
 
-        <label className="block font-semibold text-orange-700">
-          Descrição:
-          <textarea
-            value={descricao}
-            onChange={e => setDescricao(e.target.value)}
-            required
-            className="input-field mt-1 w-full rounded border px-3 py-2"
-            placeholder="Detalhes da vaga, requisitos, etc."
-            rows={4}
-          />
-        </label>
+        <input required value={cidade} onChange={e => setCidade(e.target.value)} className="input-field w-full" placeholder="Cidade" />
 
-        <label className="block font-semibold text-orange-700">
-          Empresa:
-          <input
-            type="text"
-            value={empresa}
-            onChange={e => setEmpresa(e.target.value)}
-            required
-            className="input-field mt-1 w-full rounded border px-3 py-2"
-          />
-        </label>
-
-        <label className="block font-semibold text-orange-700">
-          E-mail para contato:
-          <input
-            type="email"
-            value={emailContato}
-            onChange={e => setEmailContato(e.target.value)}
-            required
-            className="input-field mt-1 w-full rounded border px-3 py-2"
-            placeholder="email@empresa.com"
-          />
-        </label>
-
-        <label className="block font-semibold text-orange-700">
-          Cidade:
-          <input
-            type="text"
-            value={cidade}
-            onChange={e => setCidade(e.target.value)}
-            required
-            className="input-field mt-1 w-full rounded border px-3 py-2"
-          />
-        </label>
-
+        {/* Salário ou Diária */}
         {tipoVaga === 'clt' && (
-          <label className="block font-semibold text-orange-700">
-            Salário (R$):
-            <input
-              type="number"
-              min="0"
-              value={salario}
-              onChange={e => setSalario(e.target.value)}
-              required={tipoVaga === 'clt'}
-              className="input-field mt-1 w-full rounded border px-3 py-2"
-              placeholder="Ex: 2500"
-            />
-          </label>
+          <input required value={salario} onChange={e => setSalario(e.target.value)} className="input-field w-full" placeholder="Salário (R$)" type="number" />
         )}
-
         {tipoVaga === 'freela' && (
           <>
-            <label className="block font-semibold text-orange-700">
-              Valor da Diária (R$):
-              <input
-                type="number"
-                min="0"
-                value={valorDiaria}
-                onChange={e => setValorDiaria(e.target.value)}
-                required={tipoVaga === 'freela'}
-                className="input-field mt-1 w-full rounded border px-3 py-2"
-                placeholder="Ex: 150"
-              />
-            </label>
-
+            <input required value={valorDiaria} onChange={e => setValorDiaria(e.target.value)} className="input-field w-full" placeholder="Valor da Diária (R$)" type="number" />
             <fieldset className="border border-gray-300 rounded p-3 mt-4">
-              <legend className="font-semibold text-orange-700 mb-2">Datas Agendadas (selecione):</legend>
+              <legend className="font-semibold text-orange-700 mb-2">Datas Agendadas:</legend>
               <div className="flex flex-wrap gap-3">
                 {opcoesDatas.map(data => (
                   <label key={data} className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={datasAgendadas.includes(data)}
-                      onChange={() => toggleData(data)}
-                    />
+                    <input type="checkbox" checked={datasAgendadas.includes(data)} onChange={() => toggleData(data)} />
                     <span>{data}</span>
                   </label>
                 ))}
@@ -339,15 +161,13 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
           </>
         )}
 
+        {/* Urgente */}
         <label className="flex items-center space-x-2 mt-4">
-          <input
-            type="checkbox"
-            checked={urgente}
-            onChange={() => setUrgente(!urgente)}
-          />
+          <input type="checkbox" checked={urgente} onChange={() => setUrgente(!urgente)} />
           <span className="font-semibold text-orange-700">Vaga Urgente</span>
         </label>
 
+        {/* Submit */}
         <button
           type="submit"
           disabled={loading}
@@ -357,6 +177,5 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
         </button>
       </form>
     </div>
->>>>>>> dcb7593 (Inicializando repositório com código atualizado)
   )
 }
