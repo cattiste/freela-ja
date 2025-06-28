@@ -170,7 +170,7 @@ export default function PainelFreela() {
 
             <button
               onClick={() => navigate(`/editarfreela/${freela.uid}`)}
-              className="mt-4 btn-primary w-full"
+              className="mt-4 w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition"
             >
               ✏️ Editar Perfil
             </button>
@@ -193,15 +193,11 @@ export default function PainelFreela() {
                 <div
                   key={vaga.id}
                   className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
-                  onClick={() => navigate(`/vaga/${vaga.id}`)} // se quiser linkar para detalhes
+                  onClick={() => navigate(`/vaga/${vaga.id}`)}
                 >
                   <h3 className="text-lg font-bold text-gray-800">{vaga.titulo}</h3>
-                  <p>
-                    <strong>🏢</strong> {vaga.empresa || 'Não informada'}
-                  </p>
-                  <p>
-                    <strong>📍</strong> {vaga.cidade || 'Não informada'}
-                  </p>
+                  <p><strong>🏢</strong> {vaga.empresa || 'Não informada'}</p>
+                  <p><strong>📍</strong> {vaga.cidade || 'Não informada'}</p>
                   <p>
                     <strong>💰</strong>{' '}
                     {vaga.valorDiaria
@@ -215,7 +211,7 @@ export default function PainelFreela() {
                     }?subject=Candidatura para vaga: ${encodeURIComponent(
                       vaga.titulo
                     )}`}
-                    className="mt-4 inline-block btn-primary text-center"
+                    className="mt-4 inline-block px-5 py-2 bg-blue-600 text-white font-semibold rounded-full cursor-pointer transition-colors duration-300 no-underline"
                     onClick={(e) => e.stopPropagation()}
                   >
                     ✅ Candidatar-se
@@ -234,38 +230,6 @@ export default function PainelFreela() {
           ) : (
             chamadas.map((chamada) => (
               <div key={chamada.id} className="mb-4 border-b pb-3">
-                <p>
-                  <strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}
-                </p>
-                <p>
-                  <strong>Data:</strong>{' '}
-                  {chamada.criadoEm?.toDate?.().toLocaleString() || '—'}
-                </p>
-                <p>
-                  <strong>Status:</strong> {chamada.status || 'pendente'}
-                </p>
-
-                {chamada.status !== 'aceita' && chamada.status !== 'recusada' && (
-                  <div className="flex gap-4 mt-2 justify-center">
-                    <button
-                      onClick={() => aceitarChamada(chamada)}
-                      className="btn-primary"
-                    >
-                      ✔️ Aceitar
-                    </button>
-                    <button
-                      onClick={() => recusarChamada(chamada)}
-                      className="btn-secondary"
-                    >
-                      ❌ Recusar
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
+                <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
+                <p><strong>Data:</strong> {chamada.criadoEm?.toDate?.().toLocaleString() || '—'}</p>
+                <p><strong>Status:</strong> {chamada.status || 'pendente'

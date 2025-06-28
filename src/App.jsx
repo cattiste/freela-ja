@@ -1,6 +1,8 @@
+// src/App.jsx
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 
+// Páginas
 import Home from './pages/Home'
 import Sobre from './pages/Sobre'
 import Cadastro from './pages/Cadastro'
@@ -15,14 +17,15 @@ import PainelVagas from './pages/PainelVagas'
 import PublicarVaga from './pages/PublicarVaga'
 import TesteCriarVaga from './pages/TesteCriarVaga'
 import EditarFreela from './pages/EditarFreela'
-import RotaProtegidaFreela from './components/RotaProtegidaFreela'
-import RotaProtegidaEstabelecimento from './components/RotaProtegidaEstabelecimento'
-import EsqueciSenha from './pages/EsqueciSenha'
 import EditarPerfilEstabelecimento from './pages/EditarPerfilEstabelecimento'
 import VagasDisponiveis from './pages/VagasDisponiveis'
+import EsqueciSenha from './pages/EsqueciSenha'
+
+// Rotas protegidas
+import RotaProtegidaFreela from './components/RotaProtegidaFreela'
+import RotaProtegidaEstabelecimento from './components/RotaProtegidaEstabelecimento'
 
 export default function App() {
-  // Pega o usuário logado do localStorage
   const usuarioLogado = React.useMemo(() => {
     try {
       return JSON.parse(localStorage.getItem('usuarioLogado'))
@@ -68,7 +71,7 @@ export default function App() {
             }
           />
 
-          {/* Vagas */}
+          {/* Vagas protegidas */}
           <Route
             path="/vagas-disponiveis"
             element={
@@ -86,8 +89,11 @@ export default function App() {
             }
           />
 
-          {/* Currículos */}
+          {/* Currículos (aberta ao público) */}
           <Route path="/curriculos" element={<Curriculos />} />
+
+          {/* Página de testes ou futuras rotas */}
+          <Route path="/teste-criar-vaga" element={<TesteCriarVaga />} />
 
         </Routes>
       </div>
