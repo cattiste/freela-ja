@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useNavigate } from 'react-router-dom'
-import './Home.css'
+import './'@/firebase''
 
 export default function PainelVagas() {
   const navigate = useNavigate()
