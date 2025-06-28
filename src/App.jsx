@@ -94,11 +94,7 @@ export default function App() {
             }
           />
 
-          <Route path="/teste-criar-vaga" element={<TesteCriarVaga />} />
-
-          {/* Currículos */}
-          <Route path="/curriculos" element={<Curriculos />} />
-
+          <Route path="/teste-criar-vaga" element={<TesteCriarVaga />} />        
         </Routes>
       </div>
     </Router>
