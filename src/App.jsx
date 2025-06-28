@@ -92,9 +92,7 @@ export default function App() {
                 <PublicarVaga estabelecimento={usuarioLogado} />
               </RotaProtegidaEstabelecimento>
             }
-          />
-
-          <Route path="/teste-criar-vaga" element={<TesteCriarVaga />} />        
+          />            
         </Routes>
       </div>
     </Router>
