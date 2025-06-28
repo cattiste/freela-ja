@@ -141,7 +141,6 @@ export default function PainelFreela() {
         </h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Perfil */}
           <div className="bg-white rounded-2xl shadow p-6">
             <div className="flex items-center gap-6">
               <img
@@ -163,19 +162,17 @@ export default function PainelFreela() {
 
             <button
               onClick={() => navigate(`/editarfreela/${freela.uid}`)}
-              className="mt-4 w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition"
+              className="mt-4 btn-primary w-full"
             >
               ✏️ Editar Perfil
             </button>
           </div>
 
-          {/* Agenda */}
           <div className="bg-white rounded-2xl shadow p-6">
             <AgendaFreela uid={freela.uid} />
           </div>
         </div>
 
-        {/* Vagas */}
         <div className="mt-10">
           <h2 className="text-2xl font-semibold text-blue-700 mb-4">📌 Vagas Disponíveis</h2>
           {vagas.length === 0 ? (
@@ -189,8 +186,12 @@ export default function PainelFreela() {
                   onClick={() => navigate(`/vaga/${vaga.id}`)}
                 >
                   <h3 className="text-lg font-bold text-gray-800">{vaga.titulo}</h3>
-                  <p><strong>🏢</strong> {vaga.empresa || 'Não informada'}</p>
-                  <p><strong>📍</strong> {vaga.cidade || 'Não informada'}</p>
+                  <p>
+                    <strong>🏢</strong> {vaga.empresa || 'Não informada'}
+                  </p>
+                  <p>
+                    <strong>📍</strong> {vaga.cidade || 'Não informada'}
+                  </p>
                   <p>
                     <strong>💰</strong>{' '}
                     {vaga.valorDiaria
@@ -204,7 +205,7 @@ export default function PainelFreela() {
                     }?subject=Candidatura para vaga: ${encodeURIComponent(
                       vaga.titulo
                     )}`}
-                    className="mt-4 inline-block px-5 py-2 bg-blue-600 text-white font-semibold rounded-full cursor-pointer transition-colors duration-300 no-underline"
+                    className="mt-4 inline-block btn-primary text-center"
                     onClick={(e) => e.stopPropagation()}
                   >
                     ✅ Candidatar-se
@@ -215,7 +216,6 @@ export default function PainelFreela() {
           )}
         </div>
 
-        {/* Chamadas */}
         <div className="mt-10 bg-white rounded-xl p-6 shadow">
           <h2 className="text-xl font-semibold text-blue-800 mb-4">📞 Chamadas Recentes</h2>
           {chamadas.length === 0 ? (
@@ -223,9 +223,16 @@ export default function PainelFreela() {
           ) : (
             chamadas.map((chamada) => (
               <div key={chamada.id} className="mb-4 border-b pb-3">
-                <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
-                <p><strong>Data:</strong> {chamada.criadoEm?.toDate?.().toLocaleString() || '—'}</p>
-                <p><strong>Status:</strong> {chamada.status || 'pendente'}</p>
+                <p>
+                  <strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}
+                </p>
+                <p>
+                  <strong>Data:</strong>{' '}
+                  {chamada.criadoEm?.toDate?.().toLocaleString() || '—'}
+                </p>
+                <p>
+                  <strong>Status:</strong> {chamada.status || 'pendente'}
+                </p>
 
                 {chamada.status !== 'aceita' && chamada.status !== 'recusada' && (
                   <div className="flex gap-4 mt-2 justify-center">
@@ -234,4 +241,20 @@ export default function PainelFreela() {
                       className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
                     >
                       ✔️ Aceitar
-                    </button
+                    </button>
+                    <button
+                      onClick={() => recusarChamada(chamada)}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                    >
+                      ❌ Recusar
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
