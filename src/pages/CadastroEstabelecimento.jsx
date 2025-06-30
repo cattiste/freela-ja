@@ -20,10 +20,8 @@ export default function CadastroEstabelecimento() {
   const [celular, setCelular] = useState('')
   const [cnpj, setCnpj] = useState('')
   const [endereco, setEndereco] = useState('')
-
   const [latitude, setLatitude] = useState(null)
   const [longitude, setLongitude] = useState(null)
-
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [localizacaoErro, setLocalizacaoErro] = useState(null)
@@ -83,10 +81,7 @@ export default function CadastroEstabelecimento() {
         cnpj,
         endereco,
         tipo: 'estabelecimento',
-        localizacao: {
-          latitude,
-          longitude
-        },
+        localizacao: { latitude, longitude },
         criadoEm: serverTimestamp()
       })
 
@@ -119,117 +114,122 @@ export default function CadastroEstabelecimento() {
           🏠 Home
         </button>
       </div>
-      
-    <div className="max-w-md mx-auto mt-12 p-6 bg-white rounded-xl shadow-lg">
-      <h1 className="text-2xl font-bold mb-6 text-center text-orange-600">Cadastro Estabelecimento</h1>
 
-      <form onSubmit={handleCadastro} className="flex flex-col gap-4">
-        <input
-          type="text"
-          placeholder="Nome"
-          value={nome}
-          onChange={e => setNome(e.target.value)}
-          className="input-field"
-          required
-        />
+      <div className="max-w-md mx-auto mt-20 p-6 bg-white rounded-2xl shadow-xl">
+        <h1 className="text-2xl font-bold mb-6 text-center text-orange-600">Cadastro Estabelecimento</h1>
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          className="input-field"
-          required
-        />
-
-        <input
-          type="password"
-          placeholder="Senha"
-          value={senha}
-          onChange={e => setSenha(e.target.value)}
-          className="input-field"
-          required
-        />
-
-        <InputMask
-          mask="(99) 99999-9999"
-          value={celular}
-          onChange={e => setCelular(e.target.value)}
-        >
-          {(inputProps) => (
-            <input
-              {...inputProps}
-              type="tel"
-              placeholder="Celular"
-              className="input-field"
-              required
-            />
-          )}
-        </InputMask>
-
-        <InputMask
-          mask="99.999.999/9999-99"
-          value={cnpj}
-          onChange={e => setCnpj(e.target.value)}
-        >
-          {(inputProps) => (
-            <input
-              {...inputProps}
-              type="text"
-              placeholder="CNPJ"
-              className="input-field"
-              required
-            />
-          )}
-        </InputMask>
-
-        <input
-          type="text"
-          placeholder="Endereço"
-          value={endereco}
-          onChange={e => setEndereco(e.target.value)}
-          className="input-field"
-          required
-        />
-
-        {/* Mostrar latitude e longitude (pode ser editável caso queira permitir ajuste manual) */}
-        <div>
-          <label className="block text-orange-700 font-medium mb-1">Latitude (auto ou manual):</label>
+        <form onSubmit={handleCadastro} className="flex flex-col gap-4">
           <input
-            type="number"
-            step="any"
-            value={latitude || ''}
-            onChange={e => setLatitude(parseFloat(e.target.value))}
-            className="input-field"
+            type="text"
+            placeholder="Nome"
+            value={nome}
+            onChange={e => setNome(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
             required
           />
-        </div>
-        <div>
-          <label className="block text-orange-700 font-medium mb-1">Longitude (auto ou manual):</label>
+
           <input
-            type="number"
-            step="any"
-            value={longitude || ''}
-            onChange={e => setLongitude(parseFloat(e.target.value))}
-            className="input-field"
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
             required
           />
-        </div>
 
-        {localizacaoErro && (
-          <p className="text-yellow-600 text-center text-sm">{localizacaoErro}</p>
-        )}
+          <input
+            type="password"
+            placeholder="Senha"
+            value={senha}
+            onChange={e => setSenha(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
+            required
+          />
 
-        {error && <p className="text-red-600 text-center mt-2">{error}</p>}
+          <InputMask
+            mask="(99) 99999-9999"
+            value={celular}
+            onChange={e => setCelular(e.target.value)}
+          >
+            {(inputProps) => (
+              <input
+                {...inputProps}
+                type="tel"
+                placeholder="Celular"
+                className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
+                required
+              />
+            )}
+          </InputMask>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="btn-primary mt-4"
-        >
-          {loading ? 'Cadastrando...' : 'Cadastrar'}
-        </button>
-      </form>
-    </div>
+          <InputMask
+            mask="99.999.999/9999-99"
+            value={cnpj}
+            onChange={e => setCnpj(e.target.value)}
+          >
+            {(inputProps) => (
+              <input
+                {...inputProps}
+                type="text"
+                placeholder="CNPJ"
+                className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
+                required
+              />
+            )}
+          </InputMask>
+
+          <input
+            type="text"
+            placeholder="Endereço"
+            value={endereco}
+            onChange={e => setEndereco(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
+            required
+          />
+
+          <div>
+            <label className="block text-orange-700 font-medium mb-1">Latitude (auto ou manual):</label>
+            <input
+              type="number"
+              step="any"
+              value={latitude || ''}
+              onChange={e => setLatitude(parseFloat(e.target.value))}
+              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-orange-700 font-medium mb-1">Longitude (auto ou manual):</label>
+            <input
+              type="number"
+              step="any"
+              value={longitude || ''}
+              onChange={e => setLongitude(parseFloat(e.target.value))}
+              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
+              required
+            />
+          </div>
+
+          {localizacaoErro && (
+            <p className="text-yellow-600 text-center text-sm">{localizacaoErro}</p>
+          )}
+
+          {error && (
+            <p className="text-red-600 text-center text-sm">{error}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full text-white font-semibold py-3 rounded-xl transition duration-300 ${
+              loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-orange-500 hover:bg-orange-600'
+            }`}
+          >
+            {loading ? 'Cadastrando...' : 'Cadastrar'}
+          </button>
+        </form>
+      </div>
+    </>
   )
 }

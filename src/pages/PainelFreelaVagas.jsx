@@ -1,10 +1,10 @@
-// src/pages/PainelVagas.jsx
+// src/pages/PainelFreelaVagas.jsx
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { collection, getDocs, query, where } from 'firebase/firestore'
 import { db } from '@/firebase'
 
-export default function PainelVagas() {
+export default function PainelFreelaVagas() {
   const navigate = useNavigate()
   const [vagas, setVagas] = useState([])
   const [loading, setLoading] = useState(true)
@@ -13,12 +13,12 @@ export default function PainelVagas() {
     const fetchVagas = async () => {
       try {
         const vagasRef = collection(db, 'vagas')
-        const q = query(vagasRef, where('tipoVaga', '==', 'CLT'), where('status', '==', 'ativo'))
+        const q = query(vagasRef, where('tipoVaga', '==', 'Freela'), where('status', '==', 'ativo'))
         const snapshot = await getDocs(q)
         const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
         setVagas(lista)
       } catch (error) {
-        console.error('Erro ao buscar vagas:', error)
+        console.error('Erro ao buscar vagas freela:', error)
       } finally {
         setLoading(false)
       }
@@ -45,8 +45,8 @@ export default function PainelVagas() {
       </div>
 
       <div className="min-h-screen bg-gray-50 p-6 pt-24 max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold mb-2 text-gray-800">Painel de Vagas CLT</h2>
-        <p className="mb-6 text-gray-600">Confira vagas fixas publicadas por estabelecimentos</p>
+        <h2 className="text-3xl font-bold mb-2 text-gray-800">Vagas para Freelancers</h2>
+        <p className="mb-6 text-gray-600">Encontre oportunidades rápidas e pontuais</p>
 
         {loading ? (
           <p className="text-center text-gray-500">Carregando vagas...</p>
@@ -61,10 +61,10 @@ export default function PainelVagas() {
                 <p className="text-gray-700 mb-1"><strong>Empresa:</strong> {vaga.empresa}</p>
                 <p className="text-gray-700 mb-1"><strong>Cidade:</strong> {vaga.cidade}</p>
                 <p className="text-gray-700 mb-1"><strong>Tipo:</strong> {vaga.tipoVaga || 'Não informado'}</p>
-                <p className="text-gray-700 mb-3"><strong>Salário:</strong> R$ {parseFloat(vaga.salario || 0).toFixed(2).replace('.', ',')}</p>
+                <p className="text-gray-700 mb-3"><strong>Pagamento:</strong> R$ {parseFloat(vaga.salario || 0).toFixed(2).replace('.', ',')}</p>
                 <p className="text-gray-600 text-sm mb-4 line-clamp-3">{vaga.descricao}</p>
                 <a
-                  href={`mailto:${vaga.emailContato}?subject=Candidatura para vaga: ${vaga.titulo}`}
+                  href={`mailto:${vaga.emailContato}?subject=Interesse na vaga freela: ${vaga.titulo}`}
                   className="mt-auto inline-block bg-green-600 hover:bg-green-700 text-white font-semibold rounded px-4 py-2 text-center transition"
                 >
                   Candidatar-se

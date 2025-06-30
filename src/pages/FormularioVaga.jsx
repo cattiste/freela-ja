@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
+import DatePicker from 'react-multi-date-picker'
 
 export default function FormularioVaga({ estabelecimento }) {
   const [tipoVaga, setTipoVaga] = useState('clt') // default CLT
@@ -19,22 +20,11 @@ export default function FormularioVaga({ estabelecimento }) {
   const [error, setError] = useState(null)
   const [sucesso, setSucesso] = useState(null)
 
-  // Handle seleção de datas simples (exemplo checkbox)
-  function toggleData(data) {
-    if (datasAgendadas.includes(data)) {
-      setDatasAgendadas(datasAgendadas.filter(d => d !== data))
-    } else {
-      setDatasAgendadas([...datasAgendadas, data])
-    }
-  }
-
-  // Exemplo simples de datas fixas para seleção, pode trocar por datepicker mais avançado
-  const opcoesDatas = [
-    '2025-07-01',
-    '2025-07-02',
-    '2025-07-03',
-    '2025-07-04',
-  ]
+  // Transforma os objetos DatePicker para string no formato yyyy-mm-dd
+  const datasFormatadas = datasAgendadas.map(data => {
+    if (typeof data === 'string') return data // caso já seja string
+    return data.format('YYYY-MM-DD')
+  })
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -55,12 +45,12 @@ export default function FormularioVaga({ estabelecimento }) {
         throw new Error('Informe um valor de diária válido para vaga Freela.')
       }
 
-      if (tipoVaga === 'freela' && datasAgendadas.length === 0) {
+      if (tipoVaga === 'freela' && datasFormatadas.length === 0) {
         throw new Error('Selecione pelo menos uma data para vaga Freela.')
       }
 
       // Converte datas para timestamps do Firestore
-      const datasTimestamp = datasAgendadas.map(d => new Date(d))
+      const datasTimestamp = datasFormatadas.map(d => new Date(d))
 
       await addDoc(collection(db, 'vagas'), {
         titulo,
@@ -220,21 +210,17 @@ export default function FormularioVaga({ estabelecimento }) {
               />
             </label>
 
-            <fieldset className="border border-gray-300 rounded p-3 mt-4">
-              <legend className="font-semibold text-orange-700 mb-2">Datas Agendadas (selecione):</legend>
-              <div className="flex flex-wrap gap-3">
-                {opcoesDatas.map(data => (
-                  <label key={data} className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={datasAgendadas.includes(data)}
-                      onChange={() => toggleData(data)}
-                    />
-                    <span>{data}</span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
+            <div className="mt-4">
+              <label className="block font-semibold text-orange-700 mb-2">Datas Agendadas (selecione):</label>
+              <DatePicker
+                multiple
+                value={datasAgendadas}
+                onChange={setDatasAgendadas}
+                format="YYYY-MM-DD"
+                className="w-full"
+                sort
+              />
+            </div>
           </>
         )}
 
