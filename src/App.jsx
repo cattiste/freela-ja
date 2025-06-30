@@ -20,6 +20,7 @@ import EditarFreela from './pages/EditarFreela'
 import EditarPerfilEstabelecimento from './pages/EditarPerfilEstabelecimento'
 import VagasDisponiveis from './pages/VagasDisponiveis'
 import EsqueciSenha from './pages/EsqueciSenha'
+import Oportunidades from './pages/Oportunidades'
 
 // Rotas protegidas
 import RotaProtegidaFreela from './components/RotaProtegidaFreela'
@@ -46,7 +47,6 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/esquecisenha" element={<EsqueciSenha />} />
           <Route path="/oportunidades" element={<Oportunidades />} />
-
 
           {/* Cadastro e Perfil */}
           <Route path="/cadastrofreela" element={<CadastroFreela />} />
