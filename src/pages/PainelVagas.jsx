@@ -1,7 +1,7 @@
 // src/pages/PainelVagas.jsx
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { collection, getDocs } from 'firebase/firestore'
+import { collection, getDocs, query, where } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function PainelVagas() {
@@ -12,7 +12,10 @@ export default function PainelVagas() {
   useEffect(() => {
     const fetchVagas = async () => {
       try {
-        const snapshot = await getDocs(collection(db, 'vagas'))
+        const vagasRef = collection(db, 'vagas')
+        // Query para pegar só vagas CLT ativas
+        const q = query(vagasRef, where('tipo', '==', 'CLT'), where('status', '==', 'ativo'))
+        const snapshot = await getDocs(q)
         const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
         setVagas(lista)
       } catch (error) {
