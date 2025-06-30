@@ -62,9 +62,9 @@ export default function Login() {
 
       if (perfilIncompleto) {
         if (dadosUsuario.tipo === 'freela') {
-          navigate('/editar-perfil-freela')
+          navigate('/editarperfilfreela')
         } else if (dadosUsuario.tipo === 'estabelecimento') {
-          navigate('/editar-perfil-estabelecimento')
+          navigate('/editarperfilestabelecimento')
         } else {
           navigate('/escolher-tipo-usuario') // ou redirecione para uma tela genérica
         }
