@@ -65,7 +65,7 @@ export default function PainelVagas() {
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">{vaga.titulo}</h3>
                 <p className="text-gray-700 mb-1"><strong>Empresa:</strong> {vaga.empresa}</p>
                 <p className="text-gray-700 mb-1"><strong>Cidade:</strong> {vaga.cidade}</p>
-                <p className="text-gray-700 mb-1"><strong>Tipo:</strong> {vaga.tipo}</p>
+                <p className="text-gray-700 mb-1"><strong>Tipo:</strong> {vaga.tipoVaga || 'Não informado'}</p>
                 <p className="text-gray-700 mb-3"><strong>Salário:</strong> {vaga.salario}</p>
                 <p className="text-gray-600 text-sm mb-4 line-clamp-3">{vaga.descricao}</p>
                 <a
