@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
-import { collection, query, where, onSnapshot, doc, updateDoc, getDoc } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 import { useNavigate } from 'react-router-dom'
 
@@ -10,12 +10,12 @@ import AvaliacaoFreela from './AvaliacaoFreela'
 import PublicarVaga from './PublicarVaga'
 import MinhasVagas from './MinhasVagas'
 
-// COMPONENTE CHAMADAS ESTABELECIMENTO
+// Componente para listar chamadas feitas pelo estabelecimento
 function ChamadasEstabelecimento({ estabelecimento }) {
   const [chamadas, setChamadas] = useState([])
   const [carregando, setCarregando] = useState(true)
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!estabelecimento?.uid) return
 
     const chamadasRef = collection(db, 'chamadas')
@@ -38,6 +38,7 @@ function ChamadasEstabelecimento({ estabelecimento }) {
     return () => unsubscribe()
   }, [estabelecimento])
 
+  // Funções para confirmar check-in e check-out
   async function confirmarCheckIn(chamada) {
     if (!chamada.checkInFreela) {
       alert('O freelancer ainda não fez check-in.')
@@ -49,7 +50,7 @@ function ChamadasEstabelecimento({ estabelecimento }) {
     }
     try {
       const chamadaRef = doc(db, 'chamadas', chamada.id)
-      await updateDoc(chamadaRef, {
+      await chamadaRef.update({
         checkInConfirmado: true,
         checkInConfirmadoHora: new Date()
       })
@@ -71,7 +72,7 @@ function ChamadasEstabelecimento({ estabelecimento }) {
     }
     try {
       const chamadaRef = doc(db, 'chamadas', chamada.id)
-      await updateDoc(chamadaRef, {
+      await chamadaRef.update({
         checkOutConfirmado: true,
         checkOutConfirmadoHora: new Date()
       })
@@ -255,20 +256,18 @@ export default function PainelEstabelecimento() {
 
   const renderConteudo = () => {
     switch (aba) {
-      case 'buscar':
+      case 'buscar-freelas':
         return <BuscarFreelas estabelecimento={estabelecimento} />
-      case 'chamadas':
-        return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
-      case 'agendas':
+      case 'agendas-contratadas':
         return <AgendasContratadas estabelecimento={estabelecimento} />
-      case 'avaliacao':
+      case 'avaliacao-freela':
         return <AvaliacaoFreela estabelecimento={estabelecimento} />
       case 'publicar':
         return (
           <PublicarVaga
             estabelecimento={estabelecimento}
-            vaga={vagaEditando}
-            onSucesso={onSalvarSucesso}
+            vagaEditando={vagaEditando}
+            onSalvarSucesso={onSalvarSucesso}
           />
         )
       case 'minhas-vagas':
@@ -278,131 +277,69 @@ export default function PainelEstabelecimento() {
   }
 
   if (carregando) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-orange-600 text-lg">Carregando painel...</p>
-      </div>
-    )
+    return <div className="min-h-screen flex items-center justify-center text-gray-600">Carregando...</div>
   }
 
   if (!estabelecimento) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-600 text-lg">Acesso não autorizado.</p>
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <p className="text-red-600 font-semibold mb-4">Você precisa estar logado como estabelecimento para acessar esta página.</p>
+        <button
+          onClick={() => navigate('/login')}
+          className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded"
+        >
+          Fazer login
+        </button>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-orange-50 p-4">
-      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-orange-700">📊 Painel do Estabelecimento</h1>
+    <div className="min-h-screen bg-orange-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <header className="flex justify-between items-center mb-6">
+          <h1 className="text-4xl font-bold text-orange-700">Painel do Estabelecimento</h1>
           <button
             onClick={handleLogout}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            className="bg-red-600 hover:bg-red-700 text-white font-semibold rounded px-6 py-3"
           >
-            🔒 Logout
+            🔒 Sair
           </button>
-        </div>
+        </header>
 
-        {/* Botões das abas */}
-        <div className="flex flex-wrap gap-4 mb-6 border-b pb-4">
-          <button
-            onClick={() => {
-              setVagaEditando(null)
-              setAba('buscar')
-            }}
-            className={`px-4 py-2 rounded-lg font-semibold transition ${
-              aba === 'buscar'
-                ? 'bg-orange-600 text-white'
-                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-            }`}
-          >
-            🔍 Buscar Freelancers
-          </button>
+        <nav className="mb-8 border-b border-orange-300">
+          <ul className="flex flex-wrap gap-3">
+            {[
+              { key: 'minhas-vagas', label: 'Minhas Vagas' },
+              { key: 'publicar', label: 'Publicar Vaga' },
+              { key: 'buscar-freelas', label: 'Buscar Freelancers' },
+              { key: 'agendas-contratadas', label: 'Agendas Contratadas' },
+              { key: 'avaliacao-freela', label: 'Avaliar Freelancer' },
+              { key: 'minhas-chamadas', label: 'Minhas Chamadas' }
+            ].map(tab => (
+              <li key={tab.key}>
+                <button
+                  onClick={() => setAba(tab.key)}
+                  className={`px-4 py-2 rounded ${
+                    aba === tab.key
+                      ? 'bg-orange-600 text-white font-semibold'
+                      : 'bg-orange-100 text-orange-800 hover:bg-orange-200'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-          <button
-            onClick={() => {
-              setVagaEditando(null)
-              setAba('chamadas')
-            }}
-            className={`px-4 py-2 rounded-lg font-semibold transition ${
-              aba === 'chamadas'
-                ? 'bg-orange-600 text-white'
-                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-            }`}
-          >
-            📞 Chamadas
-          </button>
-
-          <button
-            onClick={() => {
-              setVagaEditando(null)
-              setAba('agendas')
-            }}
-            className={`px-4 py-2 rounded-lg font-semibold transition ${
-              aba === 'agendas'
-                ? 'bg-orange-600 text-white'
-                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-            }`}
-          >
-            📅 Agendas
-          </button>
-
-          <button
-            onClick={() => {
-              setVagaEditando(null)
-              setAba('avaliacao')
-            }}
-            className={`px-4 py-2 rounded-lg font-semibold transition ${
-              aba === 'avaliacao'
-                ? 'bg-orange-600 text-white'
-                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-            }`}
-          >
-            ⭐ Avaliar
-          </button>
-
-          <button
-            onClick={() => {
-              setVagaEditando(null)
-              setAba('publicar')
-            }}
-            className={`px-4 py-2 rounded-lg font-semibold transition ${
-              aba === 'publicar'
-                ? 'bg-orange-600 text-white'
-                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-            }`}
-          >
-            📢 Publicar Vaga
-          </button>
-
-          <button
-            onClick={() => {
-              setVagaEditando(null)
-              setAba('minhas-vagas')
-            }}
-            className={`px-4 py-2 rounded-lg font-semibold transition ${
-              aba === 'minhas-vagas'
-                ? 'bg-orange-600 text-white'
-                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-            }`}
-          >
-            📋 Minhas Vagas
-          </button>
-
-          {/* Botão para editar perfil */}
-          <button
-            onClick={() => navigate('/editarperfilestabelecimento')} // ajuste a rota conforme seu projeto
-            className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
-          >
-            ✏️ Editar Perfil
-          </button>
-        </div>
-
-        {/* Conteúdo da aba */}
-        <div>{renderConteudo()}</div>
+        <main>
+          {aba === 'minhas-chamadas' ? (
+            <ChamadasEstabelecimento estabelecimento={estabelecimento} />
+          ) : (
+            renderConteudo()
+          )}
+        </main>
       </div>
     </div>
   )
