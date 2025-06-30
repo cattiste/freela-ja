@@ -98,9 +98,7 @@ export default function Login() {
         </a>
       </p>
     </div>
-  )
-}
-{/* Botões Fixos no topo */}
+    {/* Botões Fixos no topo */}
       <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 flex justify-between max-w-md w-full px-4">
         <button
           onClick={() => navigate(-1)}
@@ -117,3 +115,5 @@ export default function Login() {
           🏠 Home
         </button>
       </div>
+  )
+}
