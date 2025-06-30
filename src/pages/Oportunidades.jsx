@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useNavigate } from 'react-router-dom'
-import { Input } from '@/components/ui/input'
+import { Input } from '@/components/ui/Input'
 
 export default function Oportunidades() {
   const [vagas, setVagas] = useState([])
