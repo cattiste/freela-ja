@@ -168,16 +168,13 @@ export default function EditarPerfilEstabelecimento() {
           />
         </label>
 
-        <label className="block mb-6">
-          <span className="font-semibold text-gray-700">URL da Foto</span>
-          <input
-            type="url"
-            name="foto"
-            value={estabelecimento.foto}
-            onChange={handleChange}
-            placeholder="https://exemplo.com/foto.jpg"
-            className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
-          />
+        <label className="block text-orange-700 font-medium mb-1">Foto do Estabelecimento (opcional):</label>
+            <input type="file" accept="image/*" onChange={(e) => {
+              const file = e.target.files[0]
+              setFoto(file)
+              setFotoPreview(URL.createObjectURL(file))
+            }} className="w-full" />
+            {fotoPreview && <img src={fotoPreview} alt="Preview" className="mt-2 rounded-lg border shadow w-32 h-32 object-cover" />}
         </label>
 
         <div className="flex justify-between items-center">
