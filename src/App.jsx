@@ -2,7 +2,7 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 
-// Páginas
+// Importar suas páginas (incluindo eventos)
 import Home from './pages/Home'
 import Sobre from './pages/Sobre'
 import Cadastro from './pages/Cadastro'
@@ -21,7 +21,7 @@ import VagasDisponiveis from './pages/VagasDisponiveis'
 import EsqueciSenha from './pages/EsqueciSenha'
 import Oportunidades from './pages/Oportunidades'
 
-// Novas páginas para Eventos
+// Novas páginas eventos
 import PublicarEvento from './pages/PublicarEvento'
 import EventosDisponiveis from './pages/EventosDisponiveis'
 
@@ -93,20 +93,20 @@ export default function App() {
             }
           />
 
-          {/* Eventos protegidos (novos) */}
+          {/* Eventos protegidos */}
+          <Route
+            path="/eventosdisponiveis"
+            element={
+              <RotaProtegidaFreela>
+                <EventosDisponiveis />
+              </RotaProtegidaFreela>
+            }
+          />
           <Route
             path="/publicarevento"
             element={
               <RotaProtegidaFreela>
                 <PublicarEvento />
-              </RotaProtegidaFreela>
-            }
-          />
-          <Route
-            path="/eventos-disponiveis"
-            element={
-              <RotaProtegidaFreela>
-                <EventosDisponiveis />
               </RotaProtegidaFreela>
             }
           />

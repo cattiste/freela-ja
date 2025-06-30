@@ -1,10 +1,10 @@
-// src/pages/EventosParaFreelas.jsx
+// src/pages/EventosDisponiveis.jsx
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { collection, getDocs, query, where } from 'firebase/firestore'
 import { db } from '@/firebase'
 
-export default function EventosParaFreelas() {
+export default function EventosDisponiveis() {
   const navigate = useNavigate()
   const [eventos, setEventos] = useState([])
   const [loading, setLoading] = useState(true)
@@ -28,6 +28,18 @@ export default function EventosParaFreelas() {
 
     fetchEventos()
   }, [])
+
+  function formatDataEvento(dataEvento) {
+    if (!dataEvento) return 'Data inválida'
+
+    if (typeof dataEvento.toDate === 'function') {
+      return dataEvento.toDate().toLocaleDateString()
+    }
+
+    const d = new Date(dataEvento)
+    if (isNaN(d)) return 'Data inválida'
+    return d.toLocaleDateString()
+  }
 
   return (
     <>
@@ -66,7 +78,7 @@ export default function EventosParaFreelas() {
             >
               <h3 className="text-xl font-semibold mb-2">{evento.titulo}</h3>
               <p className="text-gray-700 mb-2">{evento.descricao}</p>
-              <p><strong>Data:</strong> {new Date(evento.dataEvento).toLocaleDateString()}</p>
+              <p><strong>Data:</strong> {formatDataEvento(evento.dataEvento)}</p>
               <p><strong>Cidade:</strong> {evento.cidade}</p>
               <a
                 href={`mailto:${evento.contato}?subject=Interesse no evento: ${encodeURIComponent(evento.titulo)}`}
