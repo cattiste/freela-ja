@@ -1,9 +1,7 @@
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 export default function Home() {
-  const navigate = useNavigate()
-
   return (
     <div className="min-h-screen flex flex-col items-center bg-gradient-to-br from-orange-100 to-orange-200 text-gray-800 p-8 text-center">
       <header className="max-w-3xl mb-8">
@@ -16,36 +14,54 @@ export default function Home() {
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl mb-10">
-        <button
-          onClick={() => navigate('/cadastrofreela')}
+        <Link
+          to="/cadastrofreela"
           className="px-6 py-3 rounded-lg text-white font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200"
         >
           Freelancer
-        </button>
-        <button
-          onClick={() => navigate('/cadastro-estabelecimento')}
+        </Link>
+
+        <Link
+          to="/cadastro-estabelecimento"
           className="px-6 py-3 rounded-lg text-white font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200"
         >
           Estabelecimento
-        </button>
-        <button
-          onClick={() => navigate('/login')}
+        </Link>
+
+        <Link
+          to="/login"
           className="px-6 py-3 rounded-lg text-white font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200"
         >
           Login
-        </button>
-        <button
-          onClick={() => navigate('/painelvagas')}
+        </Link>
+
+        <Link
+          to="/painelvagas"
           className="px-6 py-3 rounded-lg text-white font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200"
         >
           Painel de Vagas
-        </button>
-        <button
-          onClick={() => navigate('/sobre')}
+        </Link>
+
+        <Link
+          to="/sobre"
           className="px-6 py-3 rounded-lg text-white font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200"
         >
           Sobre
-        </button>
+        </Link>
+
+        <Link
+          to="/publicarevento"
+          className="px-6 py-3 rounded-lg text-white font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200"
+        >
+          Publicar Evento
+        </Link>
+
+        <Link
+          to="/eventosdisponiveis"
+          className="px-6 py-3 rounded-lg text-white font-semibold bg-green-600 hover:bg-green-700 transition duration-200"
+        >
+          Ver Eventos Disponíveis
+        </Link>
       </div>
     </div>
   )
