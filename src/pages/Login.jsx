@@ -43,7 +43,7 @@ export default function Login() {
       if (dadosUsuario.tipo === 'freela') {
         navigate('/painelfreela')
       } else if (dadosUsuario.tipo === 'estabelecimento') {
-        navigate('/painel-estabelecimento') // ✅ CORRIGIDO
+        navigate('/painel-estabelecimento')
       } else {
         throw new Error('Tipo de usuário não reconhecido.')
       }
@@ -57,48 +57,8 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-orange-100 to-orange-200 text-gray-800 p-6">
-      <h2 className="text-3xl font-bold text-orange-600 mb-6">Entrar na Plataforma</h2>
-
-      <form
-        onSubmit={handleLogin}
-        className="w-full max-w-md space-y-4 bg-white p-6 rounded-2xl shadow-lg"
-      >
-        <input
-          type="email"
-          placeholder="E-mail"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-          className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
-        />
-        <input
-          type="password"
-          placeholder="Senha"
-          value={senha}
-          onChange={e => setSenha(e.target.value)}
-          required
-          className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition duration-300"
-        >
-          {loading ? 'Carregando...' : 'Entrar'}
-        </button>
-        {error && (
-          <p className="text-red-600 text-sm text-center">{error}</p>
-        )}
-      </form>
-
-      <p className="text-center mt-4 text-sm">
-        <a href="/esquecisenha" className="text-blue-600 hover:underline">
-          Esqueci minha senha
-        </a>
-      </p>
-    </div>
-    {/* Botões Fixos no topo */}
+    <>
+      {/* Botões Fixos no topo */}
       <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 flex justify-between max-w-md w-full px-4">
         <button
           onClick={() => navigate(-1)}
@@ -115,5 +75,48 @@ export default function Login() {
           🏠 Home
         </button>
       </div>
+
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-orange-100 to-orange-200 text-gray-800 p-6">
+        <h2 className="text-3xl font-bold text-orange-600 mb-6">Entrar na Plataforma</h2>
+
+        <form
+          onSubmit={handleLogin}
+          className="w-full max-w-md space-y-4 bg-white p-6 rounded-2xl shadow-lg"
+        >
+          <input
+            type="email"
+            placeholder="E-mail"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+            className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
+          />
+          <input
+            type="password"
+            placeholder="Senha"
+            value={senha}
+            onChange={e => setSenha(e.target.value)}
+            required
+            className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition duration-300"
+          >
+            {loading ? 'Carregando...' : 'Entrar'}
+          </button>
+          {error && (
+            <p className="text-red-600 text-sm text-center">{error}</p>
+          )}
+        </form>
+
+        <p className="text-center mt-4 text-sm">
+          <a href="/esquecisenha" className="text-blue-600 hover:underline">
+            Esqueci minha senha
+          </a>
+        </p>
+      </div>
+    </>
   )
 }
