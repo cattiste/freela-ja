@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import {
   collection,
   query,
@@ -142,17 +142,6 @@ export default function PainelFreela() {
     navigate('/login')
   }
 
-  const formatTimestamp = t => {
-    try {
-      if (!t) return '—'
-      if (typeof t.toDate === 'function') return t.toDate().toLocaleString()
-      if (t instanceof Date) return t.toLocaleString()
-      return '—'
-    } catch {
-      return '—'
-    }
-  }
-
   if (!freela) {
     return <div className="min-h-screen flex items-center justify-center text-gray-600">Carregando...</div>
   }
@@ -275,6 +264,16 @@ export default function PainelFreela() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Botão Eventos Disponíveis só para o freela */}
+        <div className="mt-10 flex justify-center">
+          <Link
+            to="/eventosdisponiveis"
+            className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded px-6 py-3 transition"
+          >
+            🎉 Eventos Disponíveis
+          </Link>
         </div>
       </div>
     </div>

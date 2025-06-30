@@ -54,14 +54,7 @@ export default function Home() {
           className="px-6 py-3 rounded-lg text-white font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200"
         >
           Publicar Evento
-        </Link>
-
-        <Link
-          to="/eventosdisponiveis"
-          className="px-6 py-3 rounded-lg text-white font-semibold bg-green-600 hover:bg-green-700 transition duration-200"
-        >
-          Ver Eventos Disponíveis
-        </Link>
+        </Link>        
       </div>
     </div>
   )
