@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -20,26 +20,58 @@ export default function Login() {
     try {
       const credenciais = await signInWithEmailAndPassword(auth, email, senha)
       const user = credenciais.user
-
       const docRef = doc(db, 'usuarios', user.uid)
       const docSnap = await getDoc(docRef)
 
-      if (!docSnap.exists()) {
-        throw new Error('Usuário autenticado, mas não encontrado na base de dados.')
+      let dadosUsuario = {}
+
+      if (docSnap.exists()) {
+        dadosUsuario = docSnap.data()
+      } else {
+        // Cria um novo perfil básico
+        dadosUsuario = {
+          nome: user.displayName || '',
+          tipo: '',
+          funcao: '',
+          endereco: '',
+          foto: user.photoURL || '',
+          celular: '',
+          valorDiaria: '',
+          email: user.email,
+          criadoEm: new Date()
+        }
+
+        await setDoc(docRef, dadosUsuario)
+        console.warn('⚠️ Perfil criado automaticamente no Firestore.')
       }
 
-      const dadosUsuario = docSnap.data()
-
-      localStorage.setItem('usuarioLogado', JSON.stringify({
+      const usuarioLocal = {
         uid: user.uid,
         email: user.email,
         nome: dadosUsuario.nome,
         tipo: dadosUsuario.tipo,
         funcao: dadosUsuario.funcao || '',
         endereco: dadosUsuario.endereco || '',
-        foto: dadosUsuario.foto || '',
-      }))
+        foto: dadosUsuario.foto || ''
+      }
 
+      localStorage.setItem('usuarioLogado', JSON.stringify(usuarioLocal))
+
+      // Verifica se o perfil está incompleto
+      const perfilIncompleto = !dadosUsuario.tipo || !dadosUsuario.nome || !dadosUsuario.funcao
+
+      if (perfilIncompleto) {
+        if (dadosUsuario.tipo === 'freela') {
+          navigate('/editar-perfil-freela')
+        } else if (dadosUsuario.tipo === 'estabelecimento') {
+          navigate('/editar-perfil-estabelecimento')
+        } else {
+          navigate('/escolher-tipo-usuario') // ou redirecione para uma tela genérica
+        }
+        return
+      }
+
+      // Redireciona com base no tipo
       if (dadosUsuario.tipo === 'freela') {
         navigate('/painelfreela')
       } else if (dadosUsuario.tipo === 'estabelecimento') {
@@ -58,18 +90,15 @@ export default function Login() {
 
   return (
     <>
-      {/* Botões Fixos no topo */}
       <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 flex justify-between max-w-md w-full px-4">
         <button
           onClick={() => navigate(-1)}
-          aria-label="Voltar"
           className="bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded px-4 py-2 shadow"
         >
           ← Voltar
         </button>
         <button
           onClick={() => navigate('/')}
-          aria-label="Home"
           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded px-4 py-2 shadow"
         >
           🏠 Home
