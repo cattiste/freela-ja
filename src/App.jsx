@@ -45,6 +45,8 @@ export default function App() {
           <Route path="/cadastro" element={<Cadastro />} />
           <Route path="/login" element={<Login />} />
           <Route path="/esquecisenha" element={<EsqueciSenha />} />
+          <Route path="/oportunidades" element={<Oportunidades />} />
+
 
           {/* Cadastro e Perfil */}
           <Route path="/cadastrofreela" element={<CadastroFreela />} />
