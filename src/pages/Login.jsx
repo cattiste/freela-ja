@@ -100,3 +100,20 @@ export default function Login() {
     </div>
   )
 }
+{/* Botões Fixos no topo */}
+      <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 flex justify-between max-w-md w-full px-4">
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Voltar"
+          className="bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded px-4 py-2 shadow"
+        >
+          ← Voltar
+        </button>
+        <button
+          onClick={() => navigate('/')}
+          aria-label="Home"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded px-4 py-2 shadow"
+        >
+          🏠 Home
+        </button>
+      </div>
