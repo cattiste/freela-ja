@@ -1,94 +1,126 @@
-// src/pages/PainelVagas.jsx
-import React, { useEffect, useState } from 'react'
+// src/pages/Login.jsx
+import React, { useState } from 'react'
+import { signInWithEmailAndPassword } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
-import { collection, getDocs, query, where } from 'firebase/firestore'
-import { db } from '@/firebase'
+import { auth, db } from '@/firebase'
+import { doc, getDoc } from 'firebase/firestore'
 
-export default function PainelVagas() {
+export default function Login() {
   const navigate = useNavigate()
-  const [vagas, setVagas] = useState([])
-  const [loading, setLoading] = useState(true)
+
+  const [email, setEmail] = useState('')
+  const [senha, setSenha] = useState('')
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
-    async function fetchVagas() {
-      setLoading(true)
-      setError(null)
-      try {
-        const vagasRef = collection(db, 'vagas')
-        // Atenção: 'clt' está em minúsculo, ajustar conforme salvo no banco
-        const q = query(vagasRef, where('tipoVaga', '==', 'clt'), where('status', '==', 'ativo'))
-        const snapshot = await getDocs(q)
-        const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-        setVagas(lista)
-      } catch (err) {
-        console.error('Erro ao buscar vagas:', err)
-        setError('Erro ao carregar vagas. Por favor, tente novamente mais tarde.')
-      } finally {
-        setLoading(false)
-      }
-    }
+  const handleLogin = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
 
-    fetchVagas()
-  }, [])
+    try {
+      const credenciais = await signInWithEmailAndPassword(auth, email, senha)
+      const user = credenciais.user
+
+      // Busca dados do usuário no Firestore
+      const docRef = doc(db, 'usuarios', user.uid)
+      const docSnap = await getDoc(docRef)
+
+      if (!docSnap.exists()) {
+        throw new Error('Usuário autenticado, mas não encontrado na base de dados.')
+      }
+
+      const dadosUsuario = docSnap.data()
+
+      console.log('Usuário logado:', { uid: user.uid, email: user.email, dadosUsuario })
+
+      // Salva dados no localStorage para manter sessão
+      localStorage.setItem('usuarioLogado', JSON.stringify({
+        uid: user.uid,
+        email: user.email,
+        nome: dadosUsuario.nome,
+        tipo: dadosUsuario.tipo,
+        funcao: dadosUsuario.funcao || '',
+        endereco: dadosUsuario.endereco || '',
+        foto: dadosUsuario.foto || '',
+      }))
+
+      // Redireciona conforme tipo de usuário
+      if (dadosUsuario.tipo === 'freela') {
+        navigate('/painelfreela')
+      } else if (dadosUsuario.tipo === 'estabelecimento') {
+        navigate('/painel-estabelecimento')
+      } else {
+        throw new Error('Tipo de usuário não reconhecido.')
+      }
+    } catch (err) {
+      console.error('Erro no login:', err)
+      setError(err.message || 'Erro desconhecido durante o login.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <>
+      {/* Botões fixos no topo */}
       <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 flex justify-between max-w-md w-full px-4">
         <button
           onClick={() => navigate(-1)}
+          aria-label="Voltar"
           className="bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded px-4 py-2 shadow"
         >
           ← Voltar
         </button>
         <button
           onClick={() => navigate('/')}
+          aria-label="Home"
           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded px-4 py-2 shadow"
         >
           🏠 Home
         </button>
       </div>
 
-      <div className="min-h-screen bg-gray-50 p-6 pt-24 max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold mb-2 text-gray-800">Painel de Vagas CLT</h2>
-        <p className="mb-6 text-gray-600">Confira vagas fixas publicadas por estabelecimentos</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-orange-100 to-orange-200 text-gray-800 p-6">
+        <h2 className="text-3xl font-bold text-orange-600 mb-6">Entrar na Plataforma</h2>
 
-        {loading && <p className="text-center text-gray-500">Carregando vagas...</p>}
+        <form
+          onSubmit={handleLogin}
+          className="w-full max-w-md space-y-4 bg-white p-6 rounded-2xl shadow-lg"
+        >
+          <input
+            type="email"
+            placeholder="E-mail"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+            className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
+          />
+          <input
+            type="password"
+            placeholder="Senha"
+            value={senha}
+            onChange={e => setSenha(e.target.value)}
+            required
+            className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition duration-300"
+          >
+            {loading ? 'Carregando...' : 'Entrar'}
+          </button>
+          {error && (
+            <p className="text-red-600 text-sm text-center">{error}</p>
+          )}
+        </form>
 
-        {error && <p className="text-center text-red-600 mb-4">{error}</p>}
-
-        {!loading && vagas.length === 0 && (
-          <p className="text-center text-gray-500">Nenhuma vaga disponível no momento.</p>
-        )}
-
-        {!loading && vagas.length > 0 && (
-          <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {vagas.map(vaga => (
-              <div
-                key={vaga.id}
-                className="bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition cursor-pointer flex flex-col"
-              >
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">{vaga.titulo}</h3>
-                <p className="text-gray-700 mb-1"><strong>Empresa:</strong> {vaga.empresa}</p>
-                <p className="text-gray-700 mb-1"><strong>Cidade:</strong> {vaga.cidade}</p>
-                <p className="text-gray-700 mb-1"><strong>Tipo:</strong> {vaga.tipoVaga || 'Não informado'}</p>
-                <p className="text-gray-700 mb-3">
-                  <strong>Salário:</strong>{' '}
-                  {vaga.salario
-                    ? `R$ ${Number(vaga.salario).toFixed(2).replace('.', ',')}`
-                    : 'Não informado'}
-                </p>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-3">{vaga.descricao}</p>
-                <a
-                  href={`mailto:${vaga.emailContato}?subject=Candidatura para vaga: ${encodeURIComponent(vaga.titulo)}`}
-                  className="mt-auto inline-block bg-green-600 hover:bg-green-700 text-white font-semibold rounded px-4 py-2 text-center transition"
-                >
-                  Candidatar-se
-                </a>
-              </div>
-            ))}
-          </div>
-        )}
+        <p className="text-center mt-4 text-sm">
+          <a href="/esquecisenha" className="text-blue-600 hover:underline">
+            Esqueci minha senha
+          </a>
+        </p>
       </div>
     </>
   )
