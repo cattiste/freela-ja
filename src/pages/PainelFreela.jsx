@@ -244,3 +244,39 @@ export default function PainelFreela() {
                       }
                       className="bg-red-600 text-white px-3 py-1 rounded"
                     >
+                      ❌ Recusar
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-10">
+          <h2 className="text-2xl font-semibold text-blue-700 mb-4">📌 Vagas Disponíveis</h2>
+          {vagas.length === 0 ? (
+            <p className="text-gray-600">🔎 Nenhuma vaga no momento.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {vagas.map(vaga => (
+                <div
+                  key={vaga.id}
+                  onClick={() => navigate(`/vaga/${vaga.id}`)}
+                  className="bg-white p-4 rounded shadow hover:shadow-lg cursor-pointer"
+                >
+                  <h3 className="font-bold text-lg">{vaga.titulo}</h3>
+                  <p>🏢 {vaga.empresa || '—'}</p>
+                  <p>📍 {vaga.cidade || '—'}</p>
+                  <p>💰 {vaga.valorDiaria ? `R$ ${vaga.valorDiaria}` : vaga.salario || '—'}</p>
+                  <p>📅 Tipo: {vaga.tipo || '—'}</p>
+                  <p className="text-sm text-gray-600 mt-1">{vaga.descricao}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
