@@ -394,7 +394,7 @@ export default function PainelEstabelecimento() {
 
           {/* Botão para editar perfil */}
           <button
-            onClick={() => navigate('/editar-perfil-estabelecimento')} // ajuste a rota conforme seu projeto
+            onClick={() => navigate('/editarperfilestabelecimento')} // ajuste a rota conforme seu projeto
             className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
           >
             ✏️ Editar Perfil
