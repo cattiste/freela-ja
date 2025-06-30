@@ -1,30 +1,27 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
-import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { onAuthStateChanged } from 'firebase/auth'
+import { useNavigate } from 'react-router-dom'
 
 export default function EditarPerfilEstabelecimento() {
-  const [form, setForm] = useState({
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(true)
+  const [salvando, setSalvando] = useState(false)
+  const [estabelecimento, setEstabelecimento] = useState({
     nome: '',
     email: '',
-    telefone: '',
+    celular: '',
     endereco: '',
-    cidade: '',
-    cnpj: '',
-    categoria: ''
+    descricao: '',
+    foto: '',
+    // adicione outros campos que desejar aqui
   })
-  const [carregando, setCarregando] = useState(true)
-  const [erro, setErro] = useState(null)
-  const [sucesso, setSucesso] = useState(null)
-
-  const navigate = useNavigate()
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        setErro('Usuário não autenticado.')
-        setCarregando(false)
+        navigate('/login')
         return
       }
 
@@ -32,112 +29,176 @@ export default function EditarPerfilEstabelecimento() {
         const docRef = doc(db, 'usuarios', user.uid)
         const docSnap = await getDoc(docRef)
 
-        if (docSnap.exists()) {
+        if (docSnap.exists() && docSnap.data().tipo === 'estabelecimento') {
           const data = docSnap.data()
-          if (data.tipo !== 'estabelecimento') {
-            setErro('Apenas estabelecimentos podem acessar essa página.')
-          } else {
-            setForm({
-              nome: data.nome || '',
-              email: user.email || '',
-              telefone: data.telefone || '',
-              endereco: data.endereco || '',
-              cidade: data.cidade || '',
-              cnpj: data.cnpj || '',
-              categoria: data.categoria || ''
-            })
-          }
+          setEstabelecimento({
+            nome: data.nome || '',
+            email: data.email || user.email || '',
+            celular: data.celular || '',
+            endereco: data.endereco || '',
+            descricao: data.descricao || '',
+            foto: data.foto || '',
+          })
         } else {
-          setErro('Perfil não encontrado.')
+          alert('Acesso negado: você não é um estabelecimento.')
+          navigate('/login')
         }
-      } catch (err) {
-        console.error(err)
-        setErro('Erro ao carregar dados.')
-      } finally {
-        setCarregando(false)
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error)
+        alert('Erro ao carregar dados do perfil.')
+        navigate('/login')
       }
+
+      setLoading(false)
     })
 
     return () => unsubscribe()
-  }, [])
+  }, [navigate])
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
+  function handleChange(e) {
+    const { name, value } = e.target
+    setEstabelecimento(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = async (e) => {
+  async function handleSalvar(e) {
     e.preventDefault()
-    setCarregando(true)
-    setErro(null)
-    setSucesso(null)
+    setSalvando(true)
 
     try {
       const user = auth.currentUser
-      if (!user) throw new Error('Usuário não autenticado.')
+      if (!user) {
+        alert('Usuário não autenticado.')
+        navigate('/login')
+        return
+      }
 
       const docRef = doc(db, 'usuarios', user.uid)
       await updateDoc(docRef, {
-        nome: form.nome,
-        telefone: form.telefone,
-        endereco: form.endereco,
-        cidade: form.cidade,
-        cnpj: form.cnpj,
-        categoria: form.categoria
+        nome: estabelecimento.nome,
+        celular: estabelecimento.celular,
+        endereco: estabelecimento.endereco,
+        descricao: estabelecimento.descricao,
+        foto: estabelecimento.foto,
+        email: estabelecimento.email,
       })
 
-      setSucesso('Perfil atualizado com sucesso!')
-    } catch (err) {
-      console.error(err)
-      setErro('Erro ao atualizar perfil: ' + err.message)
-    } finally {
-      setCarregando(false)
+      alert('Perfil atualizado com sucesso!')
+      navigate('/painel-estabelecimento')
+    } catch (error) {
+      console.error('Erro ao salvar:', error)
+      alert('Erro ao salvar perfil.')
     }
+
+    setSalvando(false)
   }
 
-  if (carregando) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-orange-600">
-        <p>Carregando...</p>
+      <div className="min-h-screen flex items-center justify-center text-gray-600">
+        Carregando dados do perfil...
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-orange-50 p-4">
-      <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-xl p-8 max-w-md w-full">
-        <h2 className="text-2xl font-bold text-orange-700 mb-4">Editar Perfil</h2>
+    <div className="min-h-screen bg-orange-50 flex items-center justify-center p-6">
+      <form
+        onSubmit={handleSalvar}
+        className="bg-white p-8 rounded-2xl shadow max-w-lg w-full"
+      >
+        <h1 className="text-3xl font-bold mb-6 text-orange-700">
+          ✍️ Editar Perfil do Estabelecimento
+        </h1>
 
-        {erro && <p className="mb-4 text-red-600">{erro}</p>}
-        {sucesso && <p className="mb-4 text-green-600">{sucesso}</p>}
+        <label className="block mb-4">
+          <span className="font-semibold text-gray-700">Nome</span>
+          <input
+            type="text"
+            name="nome"
+            value={estabelecimento.nome}
+            onChange={handleChange}
+            required
+            className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+          />
+        </label>
 
-        <label className="block mb-1 text-sm">Nome</label>
-        <input name="nome" type="text" value={form.nome} onChange={handleChange} className="w-full mb-3 px-4 py-2 border rounded-lg" />
+        <label className="block mb-4">
+          <span className="font-semibold text-gray-700">Email</span>
+          <input
+            type="email"
+            name="email"
+            value={estabelecimento.email}
+            onChange={handleChange}
+            required
+            className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+          />
+        </label>
 
-        <label className="block mb-1 text-sm">E-mail (não editável)</label>
-        <input type="email" value={form.email} disabled className="w-full mb-3 px-4 py-2 border rounded-lg bg-gray-100 text-gray-500" />
+        <label className="block mb-4">
+          <span className="font-semibold text-gray-700">Celular</span>
+          <input
+            type="tel"
+            name="celular"
+            value={estabelecimento.celular}
+            onChange={handleChange}
+            placeholder="(00) 00000-0000"
+            className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+          />
+        </label>
 
-        <label className="block mb-1 text-sm">Telefone</label>
-        <input name="telefone" type="text" value={form.telefone} onChange={handleChange} className="w-full mb-3 px-4 py-2 border rounded-lg" />
+        <label className="block mb-4">
+          <span className="font-semibold text-gray-700">Endereço</span>
+          <input
+            type="text"
+            name="endereco"
+            value={estabelecimento.endereco}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+          />
+        </label>
 
-        <label className="block mb-1 text-sm">Endereço</label>
-        <input name="endereco" type="text" value={form.endereco} onChange={handleChange} className="w-full mb-3 px-4 py-2 border rounded-lg" />
+        <label className="block mb-4">
+          <span className="font-semibold text-gray-700">Descrição</span>
+          <textarea
+            name="descricao"
+            value={estabelecimento.descricao}
+            onChange={handleChange}
+            rows={4}
+            className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+          />
+        </label>
 
-        <label className="block mb-1 text-sm">Cidade</label>
-        <input name="cidade" type="text" value={form.cidade} onChange={handleChange} className="w-full mb-3 px-4 py-2 border rounded-lg" />
+        <label className="block mb-6">
+          <span className="font-semibold text-gray-700">URL da Foto</span>
+          <input
+            type="url"
+            name="foto"
+            value={estabelecimento.foto}
+            onChange={handleChange}
+            placeholder="https://exemplo.com/foto.jpg"
+            className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+          />
+        </label>
 
-        <label className="block mb-1 text-sm">CNPJ</label>
-        <input name="cnpj" type="text" value={form.cnpj} onChange={handleChange} className="w-full mb-3 px-4 py-2 border rounded-lg" />
+        <div className="flex justify-between items-center">
+          <button
+            type="button"
+            onClick={() => navigate('/painel-estabelecimento')}
+            className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 transition"
+          >
+            Cancelar
+          </button>
 
-        <label className="block mb-1 text-sm">Categoria</label>
-        <input name="categoria" type="text" value={form.categoria} onChange={handleChange} className="w-full mb-6 px-4 py-2 border rounded-lg" />
-
-        <button 
-          type="submit"
-          disabled={carregando}
-          className="w-full bg-orange-600 text-white font-semibold py-2 rounded hover:bg-orange-700 transition"
-        >
-          {carregando ? 'Salvando...' : 'Salvar Alterações'}
-        </button>
+          <button
+            type="submit"
+            disabled={salvando}
+            className={`px-4 py-2 rounded text-white ${
+              salvando ? 'bg-orange-300' : 'bg-orange-600 hover:bg-orange-700'
+            } transition`}
+          >
+            {salvando ? 'Salvando...' : 'Salvar'}
+          </button>
+        </div>
       </form>
     </div>
   )

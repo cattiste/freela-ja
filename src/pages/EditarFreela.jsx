@@ -1,132 +1,178 @@
 import React, { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
-import { db } from '@/firebase'
-import UploadImagem from '../components/UploadImagem'
+import { auth, db } from '@/firebase'
+import { useNavigate } from 'react-router-dom'
 
-export default function EditarFreela() {
-  const { id } = useParams()
+export default function EditarPerfilFreela() {
   const navigate = useNavigate()
-  const [freela, setFreela] = useState(null)
+  const [form, setForm] = useState({
+    nome: '',
+    funcao: '',
+    email: '',
+    celular: '',
+    endereco: '',
+    valorDiaria: '',
+    tipoContrato: '',
+    foto: ''
+  })
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [salvando, setSalvando] = useState(false)
 
   useEffect(() => {
-    const carregarDados = async () => {
-      try {
-        const docRef = doc(db, 'usuarios', id)
-        const docSnap = await getDoc(docRef)
-        if (docSnap.exists()) {
-          setFreela(docSnap.data())
-        } else {
-          setError('Freelancer não encontrado.')
-        }
-      } catch (err) {
-        setError('Erro ao carregar dados.')
-        console.error(err)
-      } finally {
-        setLoading(false)
+    const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
+    if (!usuario || usuario.tipo !== 'freela') {
+      navigate('/login')
+      return
+    }
+
+    const fetchDados = async () => {
+      const docRef = doc(db, 'usuarios', usuario.uid)
+      const snap = await getDoc(docRef)
+      if (snap.exists()) {
+        setForm(snap.data())
+      } else {
+        alert('Usuário não encontrado.')
+        navigate('/login')
       }
+      setLoading(false)
     }
+    fetchDados()
+  }, [navigate])
 
-    carregarDados()
-  }, [id])
-
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value } = e.target
-    setFreela((prev) => ({ ...prev, [name]: value }))
+    setForm(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleSalvar = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault()
+    setSalvando(true)
+
     try {
-      const docRef = doc(db, 'usuarios', id)
-      await updateDoc(docRef, {
-        nome: freela.nome,
-        celular: freela.celular,
-        endereco: freela.endereco,
-        funcao: freela.funcao,
-        especialidades: freela.especialidades,
-        valorDiaria: parseFloat(freela.valorDiaria),
-        foto: freela.foto,
-      })
-      alert('Dados atualizados com sucesso!')
-      navigate('/painelfreela')
+      const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
+      if (!usuario) throw new Error('Usuário não logado')
+
+      const docRef = doc(db, 'usuarios', usuario.uid)
+      await updateDoc(docRef, form)
+      alert('Perfil atualizado com sucesso!')
+      navigate('/painel-freela')
     } catch (err) {
-      console.error('Erro ao salvar:', err)
-      alert('Erro ao salvar as alterações.')
+      console.error(err)
+      alert('Erro ao salvar perfil.')
+    } finally {
+      setSalvando(false)
     }
   }
 
-  if (loading) return <p className="text-center mt-10">Carregando...</p>
-  if (error) return <p className="text-center text-red-600 mt-10">{error}</p>
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Carregando...</div>
+  }
 
   return (
-    <div className="max-w-xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-lg">
-      <h1 className="text-2xl font-bold text-center text-blue-700 mb-6">✏️ Editar Perfil Freelancer</h1>
-      <form onSubmit={handleSalvar} className="flex flex-col gap-4">
-        <input
-          type="text"
-          name="nome"
-          value={freela.nome || ''}
-          onChange={handleChange}
-          placeholder="Nome"
-          className="input-field"
-          required
-        />
-        <input
-          type="text"
-          name="celular"
-          value={freela.celular || ''}
-          onChange={handleChange}
-          placeholder="Celular"
-          className="input-field"
-          required
-        />
-        <input
-          type="text"
-          name="endereco"
-          value={freela.endereco || ''}
-          onChange={handleChange}
-          placeholder="Endereço"
-          className="input-field"
-          required
-        />
-        <input
-          type="text"
-          name="funcao"
-          value={freela.funcao || ''}
-          onChange={handleChange}
-          placeholder="Função"
-          className="input-field"
-          required
-        />
-        <input
-          type="text"
-          name="especialidades"
-          value={freela.especialidades || ''}
-          onChange={handleChange}
-          placeholder="Especialidades"
-          className="input-field"
-          required
-        />
-        <input
-          type="number"
-          name="valorDiaria"
-          value={freela.valorDiaria || ''}
-          onChange={handleChange}
-          placeholder="Valor da Diária"
-          className="input-field"
-          required
-        />
+    <div className="min-h-screen bg-blue-50 p-6 flex justify-center items-center">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-6 rounded shadow-md w-full max-w-lg"
+      >
+        <h1 className="text-2xl font-bold mb-6">Editar Perfil Freelancer</h1>
 
-        <UploadImagem onUploadComplete={(url) => setFreela((prev) => ({ ...prev, foto: url }))} />
+        <label className="block mb-3">
+          Nome
+          <input
+            type="text"
+            name="nome"
+            value={form.nome}
+            onChange={handleChange}
+            required
+            className="w-full mt-1 p-2 border rounded"
+          />
+        </label>
+
+        <label className="block mb-3">
+          Função
+          <input
+            type="text"
+            name="funcao"
+            value={form.funcao}
+            onChange={handleChange}
+            className="w-full mt-1 p-2 border rounded"
+          />
+        </label>
+
+        <label className="block mb-3">
+          Email
+          <input
+            type="email"
+            name="email"
+            value={form.email}
+            onChange={handleChange}
+            required
+            className="w-full mt-1 p-2 border rounded"
+          />
+        </label>
+
+        <label className="block mb-3">
+          Celular
+          <input
+            type="text"
+            name="celular"
+            value={form.celular}
+            onChange={handleChange}
+            className="w-full mt-1 p-2 border rounded"
+          />
+        </label>
+
+        <label className="block mb-3">
+          Endereço
+          <input
+            type="text"
+            name="endereco"
+            value={form.endereco}
+            onChange={handleChange}
+            className="w-full mt-1 p-2 border rounded"
+          />
+        </label>
+
+        <label className="block mb-3">
+          Valor Diária
+          <input
+            type="number"
+            name="valorDiaria"
+            value={form.valorDiaria}
+            onChange={handleChange}
+            className="w-full mt-1 p-2 border rounded"
+          />
+        </label>
+
+        <label className="block mb-3">
+          Tipo Contrato
+          <input
+            type="text"
+            name="tipoContrato"
+            value={form.tipoContrato}
+            onChange={handleChange}
+            className="w-full mt-1 p-2 border rounded"
+          />
+        </label>
+
+        <label className="block mb-3">
+          URL da Foto
+          <input
+            type="text"
+            name="foto"
+            value={form.foto}
+            onChange={handleChange}
+            className="w-full mt-1 p-2 border rounded"
+            placeholder="https://..."
+          />
+        </label>
 
         <button
           type="submit"
-          className="btn-primary mt-4"
+          disabled={salvando}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          Salvar Alterações
+          {salvando ? 'Salvando...' : 'Salvar Perfil'}
         </button>
       </form>
     </div>

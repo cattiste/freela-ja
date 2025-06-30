@@ -18,10 +18,10 @@ export default function BuscarFreelas({ estabelecimento }) {
     setCarregando(true)
     const unsubscribe = onSnapshot(collection(db, 'usuarios'), (snapshot) => {
       const lista = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }))
+      // Só os freelas online
       const freelasOnline = lista.filter(u => u.tipo === 'freela' && u.status === 'online')
 
       setFreelas(freelasOnline)
-      setResultadoFiltro(filtrar(freelasOnline, funcaoFiltro, cidadeFiltro, raioFiltro))
       setCarregando(false)
     }, (err) => {
       console.error('Erro ao escutar freelancers:', err)
@@ -40,6 +40,22 @@ export default function BuscarFreelas({ estabelecimento }) {
   }, [funcaoFiltro, cidadeFiltro, raioFiltro, freelas])
 
   function filtrar(lista, funcao, cidade, raioKm) {
+    if (!estabelecimento?.localizacao) {
+      // Se não temos localização do estabelecimento, filtra só por função e cidade
+      return lista.filter(f => {
+        const matchFuncao =
+          !funcao ||
+          f.funcao?.toLowerCase().includes(funcao.toLowerCase()) ||
+          f.especialidade?.toLowerCase().includes(funcao.toLowerCase())
+
+        const matchCidade =
+          !cidade ||
+          f.endereco?.toLowerCase().includes(cidade.toLowerCase())
+
+        return matchFuncao && matchCidade
+      })
+    }
+
     return lista.filter((f) => {
       const matchFuncao =
         !funcao ||
@@ -50,29 +66,27 @@ export default function BuscarFreelas({ estabelecimento }) {
         !cidade ||
         f.endereco?.toLowerCase().includes(cidade.toLowerCase())
 
-      const matchDistancia = (() => {
-        if (
-          !estabelecimento?.localizacao ||
-          !f.localizacao ||
-          !f.localizacao.latitude ||
-          !f.localizacao.longitude
-        ) {
-          return true
+      // Calcula distância só se freela e estabelecimento tem coordenadas
+      if (
+        !f.localizacao?.latitude ||
+        !f.localizacao?.longitude
+      ) {
+        // Sem coordenadas do freela, não inclui na lista (ou mude conforme sua regra)
+        return false
+      }
+
+      const dist = haversine(
+        {
+          lat: estabelecimento.localizacao.latitude,
+          lng: estabelecimento.localizacao.longitude,
+        },
+        {
+          lat: f.localizacao.latitude,
+          lng: f.localizacao.longitude,
         }
+      ) / 1000 // de metros para km
 
-        const dist = haversine(
-          {
-            lat: estabelecimento.localizacao.latitude,
-            lng: estabelecimento.localizacao.longitude
-          },
-          {
-            lat: f.localizacao.latitude,
-            lng: f.localizacao.longitude
-          }
-        ) / 1000
-
-        return dist <= raioKm
-      })()
+      const matchDistancia = dist <= raioKm
 
       return matchFuncao && matchCidade && matchDistancia
     })
@@ -91,7 +105,7 @@ export default function BuscarFreelas({ estabelecimento }) {
         estabelecimentoUid: estabelecimento.uid,
         estabelecimentoNome: estabelecimento.nome,
         criadoEm: serverTimestamp(),
-        status: 'pendente'
+        status: 'pendente',
       })
       setSucesso(`Você chamou ${prof.nome}!`)
       setTimeout(() => setSucesso(null), 5000)

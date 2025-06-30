@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { collection, query, where, onSnapshot, doc, updateDoc, getDoc } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
+import { useNavigate } from 'react-router-dom'
 
 import BuscarFreelas from './BuscarFreelas'
 import AgendasContratadas from './AgendasContratadas'
@@ -21,14 +22,18 @@ function ChamadasEstabelecimento({ estabelecimento }) {
     const q = query(chamadasRef, where('estabelecimentoUid', '==', estabelecimento.uid))
 
     setCarregando(true)
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const listaChamadas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      setChamadas(listaChamadas)
-      setCarregando(false)
-    }, (err) => {
-      console.error('Erro ao carregar chamadas:', err)
-      setCarregando(false)
-    })
+    const unsubscribe = onSnapshot(
+      q,
+      snapshot => {
+        const listaChamadas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        setChamadas(listaChamadas)
+        setCarregando(false)
+      },
+      err => {
+        console.error('Erro ao carregar chamadas:', err)
+        setCarregando(false)
+      }
+    )
 
     return () => unsubscribe()
   }, [estabelecimento])
@@ -89,7 +94,7 @@ function ChamadasEstabelecimento({ estabelecimento }) {
     }
   }
 
-  const formatDate = (timestamp) => {
+  const formatDate = timestamp => {
     try {
       if (!timestamp) return '—'
       if (timestamp.toDate) return timestamp.toDate().toLocaleString()
@@ -194,6 +199,7 @@ function ChamadasEstabelecimento({ estabelecimento }) {
 }
 
 export default function PainelEstabelecimento() {
+  const navigate = useNavigate()
   const [aba, setAba] = useState('minhas-vagas')
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
@@ -210,12 +216,14 @@ export default function PainelEstabelecimento() {
             setEstabelecimento({ uid: user.uid, ...snap.data() })
           } else {
             console.warn('Usuário autenticado não é um estabelecimento.')
+            setEstabelecimento(null)
           }
         } catch (err) {
           console.error('Erro ao buscar dados do estabelecimento:', err)
+          setEstabelecimento(null)
         }
       } else {
-        console.warn('Nenhum usuário autenticado.')
+        setEstabelecimento(null)
       }
       setCarregando(false)
     })
@@ -238,7 +246,7 @@ export default function PainelEstabelecimento() {
     try {
       await signOut(auth)
       localStorage.removeItem('usuarioLogado')
-      window.location.href = '/login' // ou use navigate se preferir
+      navigate('/login')
     } catch (err) {
       alert('Erro ao sair.')
       console.error(err)
@@ -382,6 +390,14 @@ export default function PainelEstabelecimento() {
             }`}
           >
             📋 Minhas Vagas
+          </button>
+
+          {/* Botão para editar perfil */}
+          <button
+            onClick={() => navigate('/editar-perfil-estabelecimento')} // ajuste a rota conforme seu projeto
+            className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
+          >
+            ✏️ Editar Perfil
           </button>
         </div>
 

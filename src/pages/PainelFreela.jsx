@@ -1,4 +1,3 @@
-// PainelFreela.jsx
 import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -84,22 +83,23 @@ export default function PainelFreela() {
   }, [navigate, tocarSomChamada])
 
   useEffect(() => {
+    let unsubscribeChamadas = () => {}
     let unsubscribeVagas = () => {}
+
     const iniciar = async () => {
-      const unsubscribeChamadas = await carregarFreela()
+      unsubscribeChamadas = await carregarFreela()
       const vagasRef = collection(db, 'vagas')
       const q = query(vagasRef, where('status', '==', 'ativo'))
       unsubscribeVagas = onSnapshot(q, snapshot => {
         const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
         setVagas(lista)
       })
-      return () => {
-        unsubscribeChamadas && unsubscribeChamadas()
-        unsubscribeVagas()
-      }
     }
+
     iniciar()
+
     return () => {
+      unsubscribeChamadas()
       unsubscribeVagas()
     }
   }, [carregarFreela])
@@ -144,7 +144,10 @@ export default function PainelFreela() {
 
   const formatTimestamp = t => {
     try {
-      return t?.toDate?.().toLocaleString() || '—'
+      if (!t) return '—'
+      if (typeof t.toDate === 'function') return t.toDate().toLocaleString()
+      if (t instanceof Date) return t.toLocaleString()
+      return '—'
     } catch {
       return '—'
     }
@@ -159,13 +162,27 @@ export default function PainelFreela() {
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between mb-6">
           <h1 className="text-3xl font-bold text-blue-800">🎯 Painel do Freelancer</h1>
-          <button onClick={handleLogout} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">🔒 Logout</button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate('/editar-perfil-freela')}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              ✏️ Editar Perfil
+            </button>
+            <button onClick={handleLogout} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+              🔒 Logout
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-2xl shadow p-6">
             <div className="flex items-center gap-6">
-              <img src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'} className="w-24 h-24 rounded-full object-cover border-2 border-blue-400 shadow" />
+              <img
+                src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'}
+                className="w-24 h-24 rounded-full object-cover border-2 border-blue-400 shadow"
+                alt="Foto do freelancer"
+              />
               <div>
                 <h2 className="text-2xl font-semibold">{freela.nome}</h2>
                 <p className="text-blue-600">{freela.funcao}</p>
@@ -175,8 +192,20 @@ export default function PainelFreela() {
                 <p className="text-green-700 font-semibold">💰 Diária: R$ {freela.valorDiaria || '—'}</p>
                 <p className="text-sm text-gray-500 mt-1">📝 Tipo: {freela.tipoContrato || '—'}</p>
                 <div className="flex gap-3 mt-3">
-                  <button onClick={fazerCheckin} disabled={loadingCheckin} className="bg-green-600 text-white px-4 py-2 rounded">{loadingCheckin ? 'Registrando...' : 'Check-in'}</button>
-                  <button onClick={fazerCheckout} disabled={loadingCheckout} className="bg-yellow-600 text-white px-4 py-2 rounded">{loadingCheckout ? 'Registrando...' : 'Check-out'}</button>
+                  <button
+                    onClick={fazerCheckin}
+                    disabled={loadingCheckin}
+                    className="bg-green-600 text-white px-4 py-2 rounded"
+                  >
+                    {loadingCheckin ? 'Registrando...' : 'Check-in'}
+                  </button>
+                  <button
+                    onClick={fazerCheckout}
+                    disabled={loadingCheckout}
+                    className="bg-yellow-600 text-white px-4 py-2 rounded"
+                  >
+                    {loadingCheckout ? 'Registrando...' : 'Check-out'}
+                  </button>
                 </div>
               </div>
             </div>
@@ -187,41 +216,31 @@ export default function PainelFreela() {
             {chamadas.length === 0 && <p>Nenhuma chamada ativa.</p>}
             {chamadas.map(chamada => (
               <div key={chamada.id} className="border rounded p-3 mb-4">
-                <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
-                <p><strong>Status:</strong> {chamada.status}</p>
-                <p><strong>Check-in feito:</strong> {chamada.checkInFreela ? 'Sim' : 'Não'}</p>
-                <p><strong>Check-out feito:</strong> {chamada.checkOutFreela ? 'Sim' : 'Não'}</p>
+                <p>
+                  <strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}
+                </p>
+                <p>
+                  <strong>Status:</strong> {chamada.status}
+                </p>
+                <p>
+                  <strong>Check-in feito:</strong> {chamada.checkInFreela ? 'Sim' : 'Não'}
+                </p>
+                <p>
+                  <strong>Check-out feito:</strong> {chamada.checkOutFreela ? 'Sim' : 'Não'}
+                </p>
                 {chamada.status === 'pendente' && (
                   <div className="mt-2 flex gap-3">
-                    <button onClick={async () => await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })} className="bg-green-600 text-white px-3 py-1 rounded">✅ Aceitar</button>
-                    <button onClick={async () => await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })} className="bg-red-600 text-white px-3 py-1 rounded">❌ Recusar</button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-10">
-          <h2 className="text-2xl font-semibold text-blue-700 mb-4">📌 Vagas Disponíveis</h2>
-          {vagas.length === 0 ? (
-            <p className="text-gray-600">🔎 Nenhuma vaga no momento.</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {vagas.map(vaga => (
-                <div key={vaga.id} onClick={() => navigate(`/vaga/${vaga.id}`)} className="bg-white p-4 rounded shadow hover:shadow-lg cursor-pointer">
-                  <h3 className="font-bold text-lg">{vaga.titulo}</h3>
-                  <p>🏢 {vaga.empresa || '—'}</p>
-                  <p>📍 {vaga.cidade || '—'}</p>
-                  <p>💰 {vaga.valorDiaria ? `R$ ${vaga.valorDiaria}` : vaga.salario || '—'}</p>
-                  <p>📅 Tipo: {vaga.tipo || '—'}</p>
-                  <p className="text-sm text-gray-600 mt-1">{vaga.descricao}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
+                    <button
+                      onClick={async () =>
+                        await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })
+                      }
+                      className="bg-green-600 text-white px-3 py-1 rounded"
+                    >
+                      ✅ Aceitar
+                    </button>
+                    <button
+                      onClick={async () =>
+                        await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })
+                      }
+                      className="bg-red-600 text-white px-3 py-1 rounded"
+                    >

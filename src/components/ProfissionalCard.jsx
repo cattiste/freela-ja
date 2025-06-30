@@ -1,6 +1,6 @@
 import React from 'react'
 
-export default function ProfissionalCard({ prof, onChamar }) {
+export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
   const imagemValida =
     typeof prof.imagem === 'string' && prof.imagem.trim() !== ''
       ? prof.imagem
@@ -27,6 +27,13 @@ export default function ProfissionalCard({ prof, onChamar }) {
       <p className="text-gray-700 mt-1">
         <strong>Endereço:</strong> {prof.endereco || 'Não informado'}
       </p>
+
+      {/* Distância só aparece se for passada */}
+      {typeof distanciaKm === 'number' && (
+        <p className="text-blue-600 mt-1">
+          <strong>📍 Distância:</strong> {distanciaKm.toFixed(1)} km
+        </p>
+      )}
 
       <p className="text-yellow-500 mt-1">
         <strong>Avaliação:</strong>{' '}
