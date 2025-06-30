@@ -310,13 +310,13 @@ export default function PainelEstabelecimento() {
         <nav className="mb-8 border-b border-orange-300">
           <ul className="flex flex-wrap gap-3">
             {[
-              { key: 'minhas-vagas', label: 'Minhas Vagas' },
-              { key: 'publicar', label: 'Publicar Vaga' },
               { key: 'buscar-freelas', label: 'Buscar Freelancers' },
+              { key: 'minhas-chamadas', label: 'Minhas Chamadas' },
               { key: 'agendas-contratadas', label: 'Agendas Contratadas' },
-              { key: 'avaliacao-freela', label: 'Avaliar Freelancer' },
-              { key: 'minhas-chamadas', label: 'Minhas Chamadas' }
-            ].map(tab => (
+              { key: 'minhas-vagas', label: 'Minhas Vagas' },
+              { key: 'publicar', label: 'Publicar Vaga' },              
+                            { key: 'avaliacao-freela', label: 'Avaliar Freelancer' },
+                          ].map(tab => (
               <li key={tab.key}>
                 <button
                   onClick={() => setAba(tab.key)}
