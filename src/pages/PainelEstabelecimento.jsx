@@ -201,7 +201,7 @@ function ChamadasEstabelecimento({ estabelecimento }) {
 
 export default function PainelEstabelecimento() {
   const navigate = useNavigate()
-  const [aba, setAba] = useState('buscar-freelas')
+  const [aba, setAba] = useState('buscarfreelas')
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [vagaEditando, setVagaEditando] = useState(null)
