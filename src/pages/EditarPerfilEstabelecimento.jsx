@@ -168,6 +168,7 @@ export default function EditarPerfilEstabelecimento() {
           />
         </label>
 
+      <div>
         <label className="block text-orange-700 font-medium mb-1">Foto do Estabelecimento (opcional):</label>
             <input type="file" accept="image/*" onChange={(e) => {
               const file = e.target.files[0]
@@ -175,7 +176,7 @@ export default function EditarPerfilEstabelecimento() {
               setFotoPreview(URL.createObjectURL(file))
             }} className="w-full" />
             {fotoPreview && <img src={fotoPreview} alt="Preview" className="mt-2 rounded-lg border shadow w-32 h-32 object-cover" />}
-        </label>
+       </div>
 
         <div className="flex justify-between items-center">
           <button
