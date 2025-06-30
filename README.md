@@ -2,7 +2,7 @@
 
 **Plataforma de Conexão entre Freelancers e Estabelecimentos**
 
-O **Freela Já** é um marketplace moderno e direto que conecta profissionais autônomos (chefs de cozinha, garçons, seguranças, faxineiros, maitres, etc.) com restaurantes, bares e eventos que precisam curriculos mão de obra com agilidade.
+O **Freela Já** é um marketplace moderno e direto que conecta profissionais autônomos (chefs de cozinha, garçons, seguranças, faxineiros, maitres, etc.) com restaurantes, bares e eventos que precisam painelvagas mão de obra com agilidade.
 
 ## 🔧 Tecnologias Utilizadas
 
@@ -18,7 +18,7 @@ O **Freela Já** é um marketplace moderno e direto que conecta profissionais au
 - `/cadastro` Cadastro de Profissionais ou Estabelecimentos
 - `/login` Acesso à plataforma
 - `/painel` Painel Administrativo
-- `/curriculos` Busca e visualização de freelancers
+- `/painelvagas` Busca e visualização de freelancers
 
 ## 🧑‍🍳 Público-Alvo
 

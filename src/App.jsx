@@ -9,7 +9,7 @@ import Cadastro from './pages/Cadastro'
 import Login from './pages/Login'
 import PainelFreela from './pages/PainelFreela'
 import PainelEstabelecimento from './pages/PainelEstabelecimento'
-import Curriculos from './pages/Curriculos'
+import PainelVagas from './pages/PainelVagas'
 import Perfil from './pages/Perfil'
 import CadastroFreela from './pages/CadastroFreela'
 import CadastroEstabelecimento from './pages/CadastroEstabelecimento'
@@ -92,7 +92,7 @@ export default function App() {
           />
 
           {/* Currículos (aberta ao público) */}
-          <Route path="/curriculos" element={<Curriculos />} />
+          <Route path="/painelvagas" element={<PainelVagas />} />
 
           {/* Página de testes ou futuras rotas */}
           <Route path="/teste-criar-vaga" element={<TesteCriarVaga />} />

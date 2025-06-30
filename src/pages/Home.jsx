@@ -35,7 +35,7 @@ export default function Home() {
           Login
         </button>
         <button
-          onClick={() => navigate('/curriculos')}
+          onClick={() => navigate('/painelvagas')}
           className="px-6 py-3 rounded-lg text-white font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200"
         >
           Painel de Vagas
