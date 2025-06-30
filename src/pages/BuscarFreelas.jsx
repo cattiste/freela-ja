@@ -19,7 +19,7 @@ export default function BuscarFreelas({ estabelecimento }) {
     const unsubscribe = onSnapshot(collection(db, 'usuarios'), (snapshot) => {
       const lista = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }))
       // Só os freelas online
-      const freelasOnline = lista.filter(u => u.tipo === 'freela' && u.status === 'online')
+      const freelasOnline = lista.filter(u => u.tipo === 'freela' && u.status === 'true')
 
       setFreelas(freelasOnline)
       setCarregando(false)
