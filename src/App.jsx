@@ -21,6 +21,10 @@ import VagasDisponiveis from './pages/VagasDisponiveis'
 import EsqueciSenha from './pages/EsqueciSenha'
 import Oportunidades from './pages/Oportunidades'
 
+// Novas páginas para Eventos
+import PublicarEvento from './pages/PublicarEvento'
+import EventosDisponiveis from './pages/EventosDisponiveis'
+
 // Rotas protegidas
 import RotaProtegidaFreela from './components/RotaProtegidaFreela'
 import RotaProtegidaEstabelecimento from './components/RotaProtegidaEstabelecimento'
@@ -38,7 +42,6 @@ export default function App() {
     <Router>
       <div className="min-h-screen bg-gray-50 text-gray-900">
         <Routes>
-
           {/* Páginas públicas */}
           <Route path="/" element={<Home />} />
           <Route path="/sobre" element={<Sobre />} />
@@ -90,12 +93,29 @@ export default function App() {
             }
           />
 
+          {/* Eventos protegidos (novos) */}
+          <Route
+            path="/publicarevento"
+            element={
+              <RotaProtegidaFreela>
+                <PublicarEvento />
+              </RotaProtegidaFreela>
+            }
+          />
+          <Route
+            path="/eventos-disponiveis"
+            element={
+              <RotaProtegidaFreela>
+                <EventosDisponiveis />
+              </RotaProtegidaFreela>
+            }
+          />
+
           {/* Currículos (aberta ao público) */}
           <Route path="/painelvagas" element={<PainelVagas />} />
 
           {/* Página de testes ou futuras rotas */}
           <Route path="/teste-criar-vaga" element={<TesteCriarVaga />} />
-
         </Routes>
       </div>
     </Router>
