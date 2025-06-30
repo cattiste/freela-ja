@@ -1,57 +1,82 @@
 import React, { useEffect, useState } from 'react'
-import { collection, addDoc, getDocs, serverTimestamp } from 'firebase/firestore'
+import { collection, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 import ProfissionalCard from '@/components/ProfissionalCard'
+import haversine from 'haversine-distance'
 
-/**
- * Componente para busca e contratação de freelancers
- * @param {Object} props
- * @param {Object} props.estabelecimento - Dados do estabelecimento logado
- */
 export default function BuscarFreelas({ estabelecimento }) {
   const [freelas, setFreelas] = useState([])
   const [resultadoFiltro, setResultadoFiltro] = useState([])
   const [funcaoFiltro, setFuncaoFiltro] = useState('')
+  const [cidadeFiltro, setCidadeFiltro] = useState('')
+  const [raioFiltro, setRaioFiltro] = useState(10)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
   const [sucesso, setSucesso] = useState(null)
 
-  // Carrega freelancers
   useEffect(() => {
-    async function carregarDados() {
-      setCarregando(true)
-      try {
-        const snapshot = await getDocs(collection(db, 'usuarios'))
-        const lista = snapshot.docs.map((doc) => ({ uid: doc.id, ...doc.data() }))
-        const freelasRaw = lista.filter((u) => u.tipo === 'freela')
-        setFreelas(freelasRaw)
-        setResultadoFiltro(freelasRaw)
-      } catch (err) {
-        console.error('Erro ao buscar freelancers:', err)
-        setErro('Erro ao carregar freelancers.')
-      } finally {
-        setCarregando(false)
-      }
-    }
-    carregarDados()
+    setCarregando(true)
+    const unsubscribe = onSnapshot(collection(db, 'usuarios'), (snapshot) => {
+      const lista = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }))
+      const freelasOnline = lista.filter(u => u.tipo === 'freela' && u.status === 'online')
+
+      setFreelas(freelasOnline)
+      setResultadoFiltro(filtrar(freelasOnline, funcaoFiltro, cidadeFiltro, raioFiltro))
+      setCarregando(false)
+    }, (err) => {
+      console.error('Erro ao escutar freelancers:', err)
+      setErro('Erro ao carregar freelancers.')
+      setCarregando(false)
+    })
+
+    return () => unsubscribe()
   }, [])
 
-  // Aplica filtro automaticamente
   useEffect(() => {
     const timer = setTimeout(() => {
-      let filtrados = freelas
-      if (funcaoFiltro.trim()) {
-        filtrados = freelas.filter(
-          (f) =>
-            f.funcao?.toLowerCase().includes(funcaoFiltro.toLowerCase()) ||
-            f.especialidade?.toLowerCase().includes(funcaoFiltro.toLowerCase())
-        )
-      }
-      setResultadoFiltro(filtrados)
+      setResultadoFiltro(filtrar(freelas, funcaoFiltro, cidadeFiltro, raioFiltro))
     }, 300)
-
     return () => clearTimeout(timer)
-  }, [funcaoFiltro, freelas])
+  }, [funcaoFiltro, cidadeFiltro, raioFiltro, freelas])
+
+  function filtrar(lista, funcao, cidade, raioKm) {
+    return lista.filter((f) => {
+      const matchFuncao =
+        !funcao ||
+        f.funcao?.toLowerCase().includes(funcao.toLowerCase()) ||
+        f.especialidade?.toLowerCase().includes(funcao.toLowerCase())
+
+      const matchCidade =
+        !cidade ||
+        f.endereco?.toLowerCase().includes(cidade.toLowerCase())
+
+      const matchDistancia = (() => {
+        if (
+          !estabelecimento?.localizacao ||
+          !f.localizacao ||
+          !f.localizacao.latitude ||
+          !f.localizacao.longitude
+        ) {
+          return true
+        }
+
+        const dist = haversine(
+          {
+            lat: estabelecimento.localizacao.latitude,
+            lng: estabelecimento.localizacao.longitude
+          },
+          {
+            lat: f.localizacao.latitude,
+            lng: f.localizacao.longitude
+          }
+        ) / 1000
+
+        return dist <= raioKm
+      })()
+
+      return matchFuncao && matchCidade && matchDistancia
+    })
+  }
 
   async function handleChamarProfissional(prof) {
     if (!estabelecimento) {
@@ -76,14 +101,6 @@ export default function BuscarFreelas({ estabelecimento }) {
     }
   }
 
-  if (carregando) {
-    return (
-      <div className="min-h-[200px] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-600"></div>
-      </div>
-    )
-  }
-
   return (
     <div className="container mx-auto px-4 py-8">
       {erro && (
@@ -101,30 +118,50 @@ export default function BuscarFreelas({ estabelecimento }) {
       )}
 
       <h2 className="text-2xl font-bold text-orange-700 mb-6 text-center">
-        🔍 Buscar Freelancers
+        🔍 Buscar Freelancers Online
       </h2>
 
-      <div className="max-w-xl mx-auto bg-white rounded-xl p-5 shadow-lg mb-8">
-        <label className="block text-orange-700 font-medium mb-2">
-          Filtrar por função ou especialidade:
-        </label>
-        <input
-          type="text"
-          value={funcaoFiltro}
-          onChange={(e) => setFuncaoFiltro(e.target.value)}
-          placeholder="Ex: garçom, cozinheiro, churrasqueiro..."
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition"
-        />
+      <div className="max-w-2xl mx-auto bg-white rounded-xl p-5 shadow-lg mb-8 space-y-4">
+        <div>
+          <label className="block text-orange-700 font-medium mb-2">Filtrar por função:</label>
+          <input
+            type="text"
+            value={funcaoFiltro}
+            onChange={(e) => setFuncaoFiltro(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+            placeholder="Garçom, cozinheiro..."
+          />
+        </div>
+
+        <div>
+          <label className="block text-orange-700 font-medium mb-2">Filtrar por cidade:</label>
+          <input
+            type="text"
+            value={cidadeFiltro}
+            onChange={(e) => setCidadeFiltro(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+            placeholder="São Paulo, Zona Sul..."
+          />
+        </div>
+
+        <div>
+          <label className="block text-orange-700 font-medium mb-2">Distância máxima (km):</label>
+          <select
+            value={raioFiltro}
+            onChange={(e) => setRaioFiltro(parseInt(e.target.value))}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          >
+            {[5, 10, 20, 50, 100].map((km) => (
+              <option key={km} value={km}>{km} km</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {resultadoFiltro.length === 0 ? (
-          <div className="col-span-full text-center py-10">
-            <p className="text-gray-600 text-lg">
-              {funcaoFiltro 
-                ? 'Nenhum freelancer encontrado com esse filtro'
-                : 'Nenhum freelancer disponível no momento'}
-            </p>
+          <div className="col-span-full text-center py-10 text-gray-600">
+            Nenhum freelancer encontrado com os filtros aplicados.
           </div>
         ) : (
           resultadoFiltro.map((freela) => (
