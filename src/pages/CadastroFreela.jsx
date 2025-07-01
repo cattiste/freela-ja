@@ -1,32 +1,31 @@
 import React, { useState, useEffect } from 'react'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, setDoc, serverTimestamp, GeoPoint } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import InputMask from 'react-input-mask'
 import { auth, db } from '@/firebase'
 
-const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/seu-cloud-name/image/upload'
+const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dbemvuau3/image/upload'
 const UPLOAD_PRESET = 'preset-publico'
 
-function validateEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+function validateCPF(cpf) {
+  return /^\d{3}\.\d{3}\.\d{3}\-\d{2}$/.test(cpf)
 }
 
-function validateCNPJ(cnpj) {
-  return /^\d{2}\.\d{3}\.\d{3}\/\d{4}\-\d{2}$/.test(cnpj)
-}
-
-export default function CadastroEstabelecimento() {
+export default function CadastroFreela() {
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [celular, setCelular] = useState('')
-  const [cnpj, setCnpj] = useState('')
   const [endereco, setEndereco] = useState('')
-  const [latitude, setLatitude] = useState(null)
-  const [longitude, setLongitude] = useState(null)
+  const [funcao, setFuncao] = useState('')
+  const [especialidades, setEspecialidades] = useState('')
+  const [valorDiaria, setValorDiaria] = useState('')
+  const [cpf, setCpf] = useState('')
   const [foto, setFoto] = useState(null)
   const [fotoPreview, setFotoPreview] = useState(null)
+  const [latitude, setLatitude] = useState(null)
+  const [longitude, setLongitude] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [localizacaoErro, setLocalizacaoErro] = useState(null)
@@ -43,7 +42,7 @@ export default function CadastroEstabelecimento() {
         },
         (err) => {
           console.warn('Permissão para localização negada ou erro:', err)
-          setLocalizacaoErro('Não foi possível obter localização automática.')
+          setLocalizacaoErro('Não foi possível obter localização automática. Por favor, permita acesso à localização.')
         }
       )
     } else {
@@ -51,7 +50,6 @@ export default function CadastroEstabelecimento() {
     }
   }, [])
 
-  // Função para upload da imagem no Cloudinary
   async function uploadImage(file) {
     const formData = new FormData()
     formData.append('file', file)
@@ -70,7 +68,6 @@ export default function CadastroEstabelecimento() {
     return data.secure_url
   }
 
-  // Limpar preview para liberar memória ao trocar a foto
   useEffect(() => {
     return () => {
       if (fotoPreview) URL.revokeObjectURL(fotoPreview)
@@ -81,20 +78,18 @@ export default function CadastroEstabelecimento() {
     e.preventDefault()
     setError(null)
 
-    if (!nome || !email || !senha || !celular || !cnpj || !endereco) {
+    if (!nome || !email || !senha || !celular || !endereco || !funcao || !especialidades || !valorDiaria || !cpf) {
       setError('Preencha todos os campos obrigatórios.')
       return
     }
-    if (!validateEmail(email)) {
-      setError('Email inválido.')
+
+    if (!validateCPF(cpf)) {
+      setError('CPF inválido. Formato esperado: 000.000.000-00')
       return
     }
-    if (!validateCNPJ(cnpj)) {
-      setError('CNPJ inválido. Formato esperado: 00.000.000/0000-00')
-      return
-    }
+
     if (latitude === null || longitude === null) {
-      setError('Permita acesso à localização ou preencha latitude e longitude.')
+      setError('Permita acesso à localização para continuar.')
       return
     }
 
@@ -114,32 +109,32 @@ export default function CadastroEstabelecimento() {
         nome,
         email,
         celular,
-        cnpj,
         endereco,
-        tipo: 'estabelecimento',
-        localizacao: { latitude, longitude },
+        funcao,
+        especialidades,
+        valorDiaria: parseFloat(valorDiaria),
+        cpf,
+        tipo: 'freela',
+        foto: fotoUrl,
         criadoEm: serverTimestamp(),
-      }
-
-      if (fotoUrl) {
-        userData.foto = fotoUrl
+        localizacao: new GeoPoint(latitude, longitude),
       }
 
       await setDoc(doc(db, 'usuarios', user.uid), userData)
 
       alert('Cadastro realizado com sucesso!')
-      navigate('/login')
+      navigate('/painelfreela')
     } catch (err) {
       console.error('Erro no cadastro:', err)
-      setError(err.message || 'Erro desconhecido ao cadastrar')
+      setError(err.message || 'Erro desconhecido')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="max-w-md mx-auto mt-20 p-6 bg-white rounded-2xl shadow-xl">
-      <h1 className="text-2xl font-bold mb-6 text-center text-orange-600">Cadastro Estabelecimento</h1>
+    <div className="max-w-md mx-auto mt-16 p-6 bg-white rounded-2xl shadow-xl">
+      <h1 className="text-2xl font-bold mb-6 text-center text-orange-600">Cadastro Freelancer</h1>
 
       <form onSubmit={handleCadastro} className="flex flex-col gap-4" noValidate>
         <input
@@ -173,9 +168,9 @@ export default function CadastroEstabelecimento() {
           )}
         </InputMask>
 
-        <InputMask mask="99.999.999/9999-99" value={cnpj} onChange={(e) => setCnpj(e.target.value)}>
+        <InputMask mask="999.999.999-99" value={cpf} onChange={(e) => setCpf(e.target.value)}>
           {(inputProps) => (
-            <input {...inputProps} type="text" placeholder="CNPJ" required className="input" />
+            <input {...inputProps} type="text" placeholder="CPF" required className="input" />
           )}
         </InputMask>
 
@@ -189,21 +184,31 @@ export default function CadastroEstabelecimento() {
         />
 
         <input
-          type="number"
-          step="any"
-          value={latitude || ''}
-          onChange={(e) => setLatitude(parseFloat(e.target.value))}
-          placeholder="Latitude"
+          type="text"
+          placeholder="Função"
+          value={funcao}
+          onChange={(e) => setFuncao(e.target.value)}
           required
           className="input"
         />
+
+        <input
+          type="text"
+          placeholder="Especialidades"
+          value={especialidades}
+          onChange={(e) => setEspecialidades(e.target.value)}
+          required
+          className="input"
+        />
+
         <input
           type="number"
-          step="any"
-          value={longitude || ''}
-          onChange={(e) => setLongitude(parseFloat(e.target.value))}
-          placeholder="Longitude"
+          placeholder="Valor da diária"
+          value={valorDiaria}
+          onChange={(e) => setValorDiaria(e.target.value)}
           required
+          min="0"
+          step="0.01"
           className="input"
         />
 
