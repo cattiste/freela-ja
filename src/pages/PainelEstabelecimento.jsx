@@ -4,6 +4,7 @@ import { doc, getDoc } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 
 import { auth, db } from '@/firebase'
+
 import BuscarFreelas from './BuscarFreelas'
 import ChamadasEstabelecimento from './ChamadasEstabelecimento'
 import AgendasContratadas from './AgendasContratadas'
@@ -13,7 +14,7 @@ import MinhasVagas from './MinhasVagas'
 
 export default function PainelEstabelecimento() {
   const navigate = useNavigate()
-  const [aba, setAba] = useState('buscar') // 👉 Começa na aba "Buscar Freelancers"
+  const [aba, setAba] = useState('buscar') // Abre na aba "Buscar Freelancers"
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [vagaEditando, setVagaEditando] = useState(null)
@@ -118,7 +119,7 @@ export default function PainelEstabelecimento() {
           </button>
         </div>
 
-        {/* Botões das abas */}
+        {/* Abas de navegação */}
         <div className="flex flex-wrap gap-4 mb-6 border-b pb-4">
           {[
             { key: 'buscar', label: '🔍 Buscar Freelancers' },
@@ -144,6 +145,7 @@ export default function PainelEstabelecimento() {
             </button>
           ))}
 
+          {/* Botão separado para editar perfil */}
           <button
             onClick={() => navigate('/editarperfilestabelecimento')}
             className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
@@ -152,7 +154,7 @@ export default function PainelEstabelecimento() {
           </button>
         </div>
 
-        {/* Conteúdo da aba atual */}
+        {/* Conteúdo renderizado da aba */}
         <div>{renderConteudo()}</div>
       </div>
     </div>
