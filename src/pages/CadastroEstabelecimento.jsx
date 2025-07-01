@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import InputMask from 'react-input-mask'
 import { auth, db } from '@/firebase'
 
-const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/seu-cloud-name/image/upload'
+const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dbemvuau3/image/upload'
 const UPLOAD_PRESET = 'preset-publico'
 
 function validateEmail(email) {

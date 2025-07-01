@@ -5,11 +5,8 @@ import { useNavigate } from 'react-router-dom'
 import InputMask from 'react-input-mask'
 import { auth, db } from '@/firebase'
 
-// Se usar upload de imagem, implemente aqui ou importe seu componente
-async function uploadImage(file) {
-  // Implemente seu upload (ex: Cloudinary) e retorne URL da imagem
-  return ''
-}
+const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dbemvuau3/image/upload'
+const UPLOAD_PRESET = 'preset-publico' // deve ser um preset válido e unsigned
 
 function validateCPF(cpf) {
   return /^\d{3}\.\d{3}\.\d{3}\-\d{2}$/.test(cpf)
