@@ -62,7 +62,9 @@ export default function CadastroEstabelecimento() {
     })
 
     if (!response.ok) {
-      throw new Error('Falha no upload da imagem.')
+      const errorData = await response.json()
+      console.error('Erro Cloudinary:', errorData)
+      throw new Error(errorData.error?.message || 'Erro ao fazer upload.')
     }
 
     const data = await response.json()
