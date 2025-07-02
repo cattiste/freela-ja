@@ -1,4 +1,3 @@
-// src/App.jsx
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 
@@ -30,11 +29,16 @@ import RotaProtegidaFreela from './components/RotaProtegidaFreela'
 import RotaProtegidaEstabelecimento from './components/RotaProtegidaEstabelecimento'
 
 export default function App() {
-  const usuarioLogado = React.useMemo(() => {
-    try {
-      return JSON.parse(localStorage.getItem('usuarioLogado'))
-    } catch {
-      return null
+  const [usuarioLogado, setUsuarioLogado] = React.useState(null)
+
+  React.useEffect(() => {
+    const dados = localStorage.getItem('usuarioLogado')
+    if (dados) {
+      try {
+        setUsuarioLogado(JSON.parse(dados))
+      } catch {
+        setUsuarioLogado(null)
+      }
     }
   }, [])
 
