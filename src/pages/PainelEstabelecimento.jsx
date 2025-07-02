@@ -1,165 +1,172 @@
-// src/components/CandidaturasEstabelecimento.jsx
 import React, { useEffect, useState } from 'react'
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
-  getDoc,
-  updateDoc,
-  orderBy
-} from 'firebase/firestore'
-import { db } from '@/firebase'
+import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
+import { useNavigate } from 'react-router-dom'
 
-export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
-  const [candidaturas, setCandidaturas] = useState([])
+import { auth, db } from '@/firebase'
+
+import BuscarFreelas from './BuscarFreelas'
+import ChamadasEstabelecimento from './ChamadasEstabelecimento'
+import AgendasContratadas from './AgendasContratadas'
+import AvaliacaoFreela from './AvaliacaoFreela'
+import PublicarVaga from './PublicarVaga'
+import MinhasVagas from './MinhasVagas'
+import CandidaturasEstabelecimento from '@/components/CandidaturasEstabelecimento'
+
+export default function PainelEstabelecimento() {
+  const navigate = useNavigate()
+  const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'))
+  const [aba, setAba] = useState('buscar') // aba inicial
+  const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
+  const [vagaEditando, setVagaEditando] = useState(null)
 
-  const buscarCandidaturas = async () => {
-    if (!estabelecimentoUid) return
-    setCarregando(true)
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async user => {
+      if (user) {
+        try {
+          const docRef = doc(db, 'usuarios', user.uid)
+          const snap = await getDoc(docRef)
 
-    try {
-      const chamadasRef = collection(db, 'chamadas')
-      const q = query(
-        chamadasRef,
-        where('estabelecimentoUid', '==', estabelecimentoUid),
-        orderBy('dataCandidatura', 'desc')
-      )
-      const snapshot = await getDocs(q)
-
-      const lista = await Promise.all(
-        snapshot.docs.map(async docSnap => {
-          const data = docSnap.data()
-
-          const freelaRef = doc(db, 'usuarios', data.freelaUid)
-          const vagaRef = doc(db, 'vagas', data.vagaId)
-
-          const [freelaSnap, vagaSnap] = await Promise.all([
-            getDoc(freelaRef),
-            getDoc(vagaRef)
-          ])
-
-          return {
-            id: docSnap.id,
-            ...data,
-            status: data.status?.toUpperCase() || 'PENDENTE',
-            dataCandidatura: data.dataCandidatura?.toDate?.(),
-            freela: freelaSnap.exists() ? freelaSnap.data() : null,
-            vaga: vagaSnap.exists() ? vagaSnap.data() : null
+          if (snap.exists() && snap.data().tipo === 'estabelecimento') {
+            setEstabelecimento({ uid: user.uid, ...snap.data() })
+          } else {
+            console.warn('Usuário autenticado não é um estabelecimento.')
+            setEstabelecimento(null)
           }
-        })
-      )
-
-      setCandidaturas(lista)
-    } catch (err) {
-      console.error('Erro ao buscar candidaturas:', err)
-    } finally {
+        } catch (err) {
+          console.error('Erro ao buscar dados do estabelecimento:', err)
+          setEstabelecimento(null)
+        }
+      } else {
+        setEstabelecimento(null)
+      }
       setCarregando(false)
+    })
+
+    return () => unsubscribe()
+  }, [])
+
+  function abrirEdicao(vaga) {
+    setVagaEditando(vaga)
+    setAba('publicar')
+  }
+
+  function onSalvarSucesso() {
+    setVagaEditando(null)
+    setAba('minhas-vagas')
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth)
+      localStorage.removeItem('usuarioLogado')
+      navigate('/login')
+    } catch (err) {
+      alert('Erro ao sair.')
+      console.error(err)
     }
   }
 
-  useEffect(() => {
-    buscarCandidaturas()
-  }, [estabelecimentoUid])
-
-  const atualizarStatus = async (id, novoStatus) => {
-    try {
-      await updateDoc(doc(db, 'chamadas', id), { status: novoStatus })
-      setCandidaturas(prev =>
-        prev.map(c => (c.id === id ? { ...c, status: novoStatus.toUpperCase() } : c))
-      )
-    } catch (err) {
-      console.error('Erro ao atualizar status:', err)
+  const renderConteudo = () => {
+    switch (aba) {
+      case 'buscar':
+        return <BuscarFreelas estabelecimento={estabelecimento} />
+      case 'chamadas':
+        return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
+      case 'agendas':
+        return <AgendasContratadas estabelecimento={estabelecimento} />
+      case 'avaliacao':
+        return <AvaliacaoFreela estabelecimento={estabelecimento} />
+      case 'publicar':
+        return (
+          <PublicarVaga
+            estabelecimento={estabelecimento}
+            vaga={vagaEditando}
+            onSucesso={onSalvarSucesso}
+          />
+        )
+      case 'minhas-vagas':
+        return <MinhasVagas estabelecimento={estabelecimento} onEditar={abrirEdicao} />
+      case 'candidaturas':
+        return <CandidaturasEstabelecimento estabelecimentoUid={usuarioLogado.uid} />
+      default:
+        return <MinhasVagas estabelecimento={estabelecimento} onEditar={abrirEdicao} />
     }
   }
 
   if (carregando) {
-    return <p className="text-center text-orange-600">Carregando candidaturas...</p>
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-orange-600 text-lg">Carregando painel...</p>
+      </div>
+    )
+  }
+
+  if (!estabelecimento) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-600 text-lg">Acesso não autorizado.</p>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-orange-700">📋 Candidaturas Recebidas</h2>
-        <button
-          onClick={buscarCandidaturas}
-          className="px-4 py-1.5 bg-orange-600 text-white rounded hover:bg-orange-700"
-        >
-          🔄 Atualizar
-        </button>
-      </div>
-
-      {candidaturas.length === 0 ? (
-        <p className="text-gray-600">Nenhuma candidatura recebida ainda.</p>
-      ) : (
-        candidaturas.map(c => (
-          <div
-            key={c.id}
-            className="border border-gray-300 rounded-xl p-4 flex items-center justify-between bg-white shadow-sm"
-          >
-            <div className="flex items-center gap-4">
-              {c.freela?.foto ? (
-                <img
-                  src={c.freela.foto}
-                  alt="Foto do freela"
-                  className="w-14 h-14 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-14 h-14 rounded-full bg-orange-200 flex items-center justify-center text-xl font-bold text-orange-700">
-                  {c.freela?.nome?.[0] || 'F'}
-                </div>
-              )}
-
-              <div>
-                <p className="text-lg font-semibold text-gray-800">
-                  {c.freela?.nome || 'Freelancer Desconhecido'}
-                </p>
-                <p className="text-sm text-gray-500">{c.freela?.funcao || 'Função não informada'}</p>
-                <p className="text-sm text-gray-700 mt-1">
-                  <span className="font-medium text-orange-700">Vaga:</span>{' '}
-                  {c.vaga?.titulo || 'Vaga desconhecida'}
-                </p>
-                {c.dataCandidatura && (
-                  <p className="text-sm text-gray-400">
-                    Candidatado em: {c.dataCandidatura.toLocaleString()}
-                  </p>
-                )}
-                <p className="text-sm mt-1">
-                  <span className="font-medium">Status:</span>{' '}
-                  <span
-                    className={`px-2 py-0.5 rounded text-sm font-medium ${
-                      c.status === 'APROVADO'
-                        ? 'bg-green-100 text-green-700'
-                        : c.status === 'REJEITADO'
-                        ? 'bg-red-100 text-red-700'
-                        : 'bg-yellow-100 text-yellow-700'
-                    }`}
-                  >
-                    {c.status}
-                  </span>
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => atualizarStatus(c.id, 'APROVADO')}
-                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-              >
-                ✅ Aprovar
-              </button>
-              <button
-                onClick={() => atualizarStatus(c.id, 'REJEITADO')}
-                className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
-              >
-                ❌ Rejeitar
-              </button>
-            </div>
+    <div className="min-h-screen bg-orange-50 p-4">
+      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+        {/* Cabeçalho e Logout */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-orange-700">📊 Painel do Estabelecimento</h1>
+          <div className="flex gap-4">
+            <button
+              onClick={() => navigate('/editarperfilestabelecimento')}
+              className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
+            >
+              ✏️ Editar Perfil
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            >
+              🔒 Logout
+            </button>
           </div>
-        ))
-      )}
+        </div>
+
+        {/* Navegação em abas */}
+        <nav className="border-b border-orange-300 mb-6">
+          <ul className="flex space-x-2 overflow-x-auto">
+            {[
+              { key: 'buscar', label: '🔍 Buscar Freelancers' },
+              { key: 'chamadas', label: '📞 Chamadas' },
+              { key: 'agendas', label: '📅 Agendas' },
+              { key: 'avaliacao', label: '⭐ Avaliar' },
+              { key: 'publicar', label: '📢 Publicar Vaga' },
+              { key: 'minhas-vagas', label: '📋 Minhas Vagas' },
+              { key: 'candidaturas', label: '📋 Candidaturas' }
+            ].map(({ key, label }) => (
+              <li key={key} className="list-none">
+                <button
+                  onClick={() => {
+                    setVagaEditando(null)
+                    setAba(key)
+                  }}
+                  className={`px-4 py-2 -mb-px border-b-2 font-semibold transition whitespace-nowrap ${
+                    aba === key
+                      ? 'border-orange-600 text-orange-600'
+                      : 'border-transparent text-orange-400 hover:text-orange-600 hover:border-orange-400'
+                  }`}
+                >
+                  {label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {/* Conteúdo da aba */}
+        <section>{renderConteudo()}</section>
+      </div>
     </div>
   )
 }
