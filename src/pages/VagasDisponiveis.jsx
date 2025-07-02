@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, query, where, orderBy, getDocs, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function VagasDisponiveis({ freela }) {
@@ -13,10 +13,12 @@ export default function VagasDisponiveis({ freela }) {
       setLoading(true)
       setErro(null)
       try {
-        // Query simplificada sem orderBy para evitar erro de índice composto
+        // Busca vagas abertas ordenando por urgente e dataPublicacao ascendente
         const q = query(
           collection(db, 'vagas'),
-          where('status', '==', 'aberta')
+          where('status', '==', 'aberta'),
+          orderBy('urgente', 'desc'),
+          orderBy('dataPublicacao', 'asc')
         )
         const snapshot = await getDocs(q)
         const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -104,18 +106,19 @@ export default function VagasDisponiveis({ freela }) {
                 vaga.urgente ? 'border-red-400 bg-red-50' : 'border-gray-300'
               }`}
             >
-              <h3 className="text-xl font-semibold text-orange-700">{vaga.funcao}</h3>
-              <p><strong>Tipo:</strong> {vaga.tipo === 'clt' ? 'CLT (Fixa)' : 'Freela (Diária)'}</p>
-              {vaga.tipo === 'freela' && (
+              <h3 className="text-xl font-semibold text-orange-700">{vaga.funcao || vaga.titulo}</h3>
+              <p><strong>Empresa:</strong> {vaga.empresa || vaga.estabelecimentoNome}</p>
+              <p><strong>Cidade:</strong> {vaga.cidade}</p>
+              <p><strong>Tipo:</strong> {vaga.tipoVaga === 'clt' ? 'CLT (Fixa)' : vaga.tipoVaga === 'freela' ? 'Freela (Diária)' : 'Não informado'}</p>
+              {vaga.tipoVaga === 'freela' && vaga.valorDiaria && (
                 <p><strong>Valor da diária:</strong> R$ {vaga.valorDiaria.toFixed(2)}</p>
               )}
-              <p><strong>Data:</strong> {vaga.data}</p>
-              {vaga.descricao && (
-                <p className="mt-2 text-gray-700">{vaga.descricao}</p>
+              {vaga.tipoVaga === 'clt' && vaga.salario && (
+                <p><strong>Salário:</strong> R$ {vaga.salario.toFixed(2)}</p>
               )}
-              {vaga.urgente && (
-                <p className="text-red-600 font-semibold mt-2">URGENTE</p>
-              )}
+              <p><strong>Data:</strong> {vaga.dataPublicacao ? new Date(vaga.dataPublicacao.seconds * 1000).toLocaleDateString('pt-BR') : 'Não informada'}</p>
+              {vaga.descricao && <p className="mt-2 text-gray-700">{vaga.descricao}</p>}
+              {vaga.urgente && <p className="text-red-600 font-semibold mt-2">URGENTE</p>}
 
               <button
                 className="btn-primary mt-4"

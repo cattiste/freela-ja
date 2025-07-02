@@ -3,7 +3,7 @@ import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/fi
 import { db } from '@/firebase'
 
 export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }) {
-  const [tipoVaga, setTipoVaga] = useState('clt')
+  const [tipoVaga, setTipoVaga] = useState('CLT')
   const [titulo, setTitulo] = useState('')
   const [funcao, setFuncao] = useState('')
   const [descricao, setDescricao] = useState('')
@@ -19,7 +19,7 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
 
   useEffect(() => {
     if (vaga) {
-      setTipoVaga(vaga.tipoVaga || 'clt')
+      setTipoVaga(vaga.tipoVaga || 'CLT')
       setTitulo(vaga.titulo || '')
       setFuncao(vaga.funcao || '')
       setDescricao(vaga.descricao || '')
@@ -38,7 +38,7 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
       setUrgente(vaga.urgente || false)
     } else {
       // Se for criação, limpa campos:
-      setTipoVaga('clt')
+      setTipoVaga('CLT')
       setTitulo('')
       setFuncao('')
       setDescricao('')
@@ -73,7 +73,7 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
         throw new Error('Preencha todos os campos obrigatórios.')
       }
 
-      if (tipoVaga === 'clt' && (!salario || Number(salario) <= 0)) {
+      if (tipoVaga === 'CLT' && (!salario || Number(salario) <= 0)) {
         throw new Error('Informe um salário válido para vaga CLT.')
       }
 
@@ -89,7 +89,7 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
 
       const dadosParaSalvar = {
         titulo,
-        funcao,
+        função,
         descricao,
         empresa,
         emailContato,
@@ -138,7 +138,7 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
             onChange={e => setTipoVaga(e.target.value)}
             className="input-field mt-1 w-full rounded border px-3 py-2"
           >
-            <option value="clt">CLT (Fixa)</option>
+            <option value="CLT">CLT (Fixa)</option>
             <option value="freela">Freela (Diária)</option>
           </select>
         </label>
@@ -159,7 +159,7 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
           Função:
           <input
             type="text"
-            value={funcao}
+            value={função}
             onChange={e => setFuncao(e.target.value)}
             required
             className="input-field mt-1 w-full rounded border px-3 py-2"
