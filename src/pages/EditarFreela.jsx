@@ -7,7 +7,7 @@ export default function EditarFreela() {
   const navigate = useNavigate()
   const [form, setForm] = useState({
     nome: '',
-    função: '',
+    funcao: '',
     email: '',
     celular: '',
     endereco: '',
@@ -116,8 +116,8 @@ export default function EditarFreela() {
           Função
           <input
             type="text"
-            name="função"
-            value={form.função}
+            name="funcao"
+            value={form.funcao}
             onChange={handleChange}
             className="w-full mt-1 p-2 border rounded"
           />

@@ -40,7 +40,7 @@ export default function BuscarFreelas() {
               <img src={f.foto || '/avatar.png'} className="w-16 h-16 rounded-full object-cover" alt="" />
               <div>
                 <h3 className="text-lg font-bold">{f.nome}</h3>
-                <p className="text-sm text-gray-600">{f.função}</p>
+                <p className="text-sm text-gray-600">{f.funcao}</p>
                 <p className="text-xs text-gray-400">{f.endereco}</p>
               </div>
             </div>

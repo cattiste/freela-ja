@@ -175,7 +175,7 @@ export default function PainelFreela() {
               />
               <div>
                 <h2 className="text-2xl font-semibold">{freela.nome}</h2>
-                <p className="text-blue-600">{freela.função}</p>
+                <p className="text-blue-600">{freela.funcao}</p>
                 <p className="text-gray-600">{freela.email}</p>
                 <p className="text-gray-600">📱 {freela.celular}</p>
                 <p className="text-gray-600">📍 {freela.endereco}</p>

@@ -50,7 +50,7 @@ export default function VagasDisponiveis({ freela }) {
         status: 'pendente'
       })
 
-      setSucesso(`Candidatura enviada para vaga: ${vaga.função}`)
+      setSucesso(`Candidatura enviada para vaga: ${vaga.funcao}`)
     } catch (err) {
       console.error('Erro ao candidatar:', err)
       setErro('Erro ao enviar candidatura. Tente novamente.')
@@ -106,7 +106,7 @@ export default function VagasDisponiveis({ freela }) {
                 vaga.urgente ? 'border-red-400 bg-red-50' : 'border-gray-300'
               }`}
             >
-              <h3 className="text-xl font-semibold text-orange-700">{vaga.função || vaga.titulo}</h3>
+              <h3 className="text-xl font-semibold text-orange-700">{vaga.funcao || vaga.titulo}</h3>
               <p><strong>Empresa:</strong> {vaga.empresa || vaga.estabelecimentoNome}</p>
               <p><strong>Cidade:</strong> {vaga.cidade}</p>
               <p><strong>Tipo:</strong> {vaga.tipoVaga === 'clt' ? 'CLT (Fixa)' : vaga.tipoVaga === 'freela' ? 'Freela (Diária)' : 'Não informado'}</p>

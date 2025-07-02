@@ -33,7 +33,7 @@ export default function CadastroFreela() {
   const [senha, setSenha] = useState('')
   const [celular, setCelular] = useState('')
   const [endereco, setEndereco] = useState('')
-  const [função, setFuncao] = useState('')
+  const [funcao, setFuncao] = useState('')
   const [especialidades, setEspecialidades] = useState('')
   const [valorDiaria, setValorDiaria] = useState('')
   const [cpf, setCpf] = useState('')
@@ -47,7 +47,7 @@ export default function CadastroFreela() {
     e.preventDefault()
     setError(null)
 
-    if (!nome || !email || !senha || !celular || !endereco || !função || !especialidades || !valorDiaria || !cpf) {
+    if (!nome || !email || !senha || !celular || !endereco || !funcao || !especialidades || !valorDiaria || !cpf) {
       setError('Preencha todos os campos obrigatórios.')
       return
     }
@@ -77,7 +77,7 @@ export default function CadastroFreela() {
         email,
         celular,
         endereco,
-        função,
+        funcao,
         especialidades,
         valorDiaria: parseFloat(valorDiaria),
         cpf,
@@ -113,7 +113,7 @@ export default function CadastroFreela() {
           {(inputProps) => <input {...inputProps} type="text" placeholder="CPF" className="input" required />}
         </InputMask>
         <input type="text" placeholder="Endereço" value={endereco} onChange={e => setEndereco(e.target.value)} className="input" required />
-        <input type="text" placeholder="Função" value={função} onChange={e => setFuncao(e.target.value)} className="input" required />
+        <input type="text" placeholder="Função" value={funcao} onChange={e => setFuncao(e.target.value)} className="input" required />
         <input type="text" placeholder="Especialidades" value={especialidades} onChange={e => setEspecialidades(e.target.value)} className="input" required />
         <input type="number" placeholder="Valor da diária" value={valorDiaria} onChange={e => setValorDiaria(e.target.value)} className="input" required />
 

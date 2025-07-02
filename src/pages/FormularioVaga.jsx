@@ -6,7 +6,7 @@ import DatePicker from 'react-multi-date-picker'
 export default function FormularioVaga({ estabelecimento }) {
   const [tipoVaga, setTipoVaga] = useState('clt') // default CLT
   const [titulo, setTitulo] = useState('')
-  const [função, setFuncao] = useState('')
+  const [funcao, setFuncao] = useState('')
   const [descricao, setDescricao] = useState('')
   const [empresa, setEmpresa] = useState(estabelecimento?.nome || '')
   const [emailContato, setEmailContato] = useState(estabelecimento?.email || '')
@@ -33,7 +33,7 @@ export default function FormularioVaga({ estabelecimento }) {
     setSucesso(null)
 
     try {
-      if (!titulo || !função || !descricao || !empresa || !emailContato || !cidade) {
+      if (!titulo || !funcao || !descricao || !empresa || !emailContato || !cidade) {
         throw new Error('Preencha todos os campos obrigatórios.')
       }
 
@@ -54,7 +54,7 @@ export default function FormularioVaga({ estabelecimento }) {
 
       await addDoc(collection(db, 'vagas'), {
         titulo,
-        função,
+        funcao,
         descricao,
         empresa,
         emailContato,
@@ -126,7 +126,7 @@ export default function FormularioVaga({ estabelecimento }) {
           Função:
           <input
             type="text"
-            value={função}
+            value={funcao}
             onChange={e => setFuncao(e.target.value)}
             required
             className="input-field mt-1"

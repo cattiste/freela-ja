@@ -64,7 +64,7 @@ export default function PerfilFreela() {
           className="mx-auto w-32 h-32 rounded-full object-cover border-2 border-blue-400 shadow mb-6"
         />
         <h1 className="text-3xl font-bold text-blue-700 mb-2">{freela.nome}</h1>
-        <p className="text-blue-600 text-lg mb-1">{freela.função || freela.especialidade}</p>
+        <p className="text-blue-600 text-lg mb-1">{freela.funcao || freela.especialidade}</p>
         <p className="text-gray-600 mb-4">{freela.endereco}</p>
         <p className="text-gray-700 mb-4 italic">{freela.descricao}</p>
         {freela.diaria && (
