@@ -3,7 +3,7 @@ import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/fi
 import { db } from '@/firebase'
 
 export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }) {
-  const [tipoVaga, setTipoVaga] = useState('CLT')
+  const [tipoVaga, setTipoVaga] = useState('clt') // tudo minúsculo para padronizar
   const [titulo, setTitulo] = useState('')
   const [funcao, setFuncao] = useState('')
   const [descricao, setDescricao] = useState('')
@@ -19,9 +19,9 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
 
   useEffect(() => {
     if (vaga) {
-      setTipoVaga(vaga.tipoVaga || 'CLT')
+      setTipoVaga((vaga.tipoVaga || 'clt').toLowerCase())
       setTitulo(vaga.titulo || '')
-      setFuncao(vaga.funcao || '')
+      setFuncao(vaga.funcao || '') // corrigido aqui também
       setDescricao(vaga.descricao || '')
       setEmpresa(vaga.empresa || estabelecimento?.nome || '')
       setEmailContato(vaga.emailContato || estabelecimento?.email || '')
@@ -37,8 +37,7 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
       )
       setUrgente(vaga.urgente || false)
     } else {
-      // Se for criação, limpa campos:
-      setTipoVaga('CLT')
+      setTipoVaga('clt')
       setTitulo('')
       setFuncao('')
       setDescricao('')
@@ -73,7 +72,7 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
         throw new Error('Preencha todos os campos obrigatórios.')
       }
 
-      if (tipoVaga === 'CLT' && (!salario || Number(salario) <= 0)) {
+      if (tipoVaga === 'clt' && (!salario || Number(salario) <= 0)) {
         throw new Error('Informe um salário válido para vaga CLT.')
       }
 
@@ -135,10 +134,10 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
           Tipo de Vaga:
           <select
             value={tipoVaga}
-            onChange={e => setTipoVaga(e.target.value)}
+            onChange={e => setTipoVaga(e.target.value.toLowerCase())}
             className="input-field mt-1 w-full rounded border px-3 py-2"
           >
-            <option value="CLT">CLT (Fixa)</option>
+            <option value="clt">CLT (Fixa)</option>
             <option value="freela">Freela (Diária)</option>
           </select>
         </label>
