@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, orderBy, getDocs, addDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function VagasDisponiveis({ freela }) {
@@ -13,12 +13,10 @@ export default function VagasDisponiveis({ freela }) {
       setLoading(true)
       setErro(null)
       try {
-        // Pega vagas abertas, ordena urgente primeiro e depois pela data ascendente
+        // Query simplificada sem orderBy para evitar erro de índice composto
         const q = query(
           collection(db, 'vagas'),
-          where('status', '==', 'aberta'),
-          orderBy('urgente', 'desc'),
-          orderBy('data', 'asc')
+          where('status', '==', 'aberta')
         )
         const snapshot = await getDocs(q)
         const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -42,8 +40,6 @@ export default function VagasDisponiveis({ freela }) {
     setSucesso(null)
 
     try {
-      // Criar um documento em uma coleção "candidaturas" ou subcoleção dentro da vaga
-      // Aqui usaremos coleção separada para facilitar busca
       await addDoc(collection(db, 'candidaturas'), {
         vagaId: vaga.id,
         estabelecimentoUid: vaga.estabelecimentoUid,
