@@ -1,112 +1,133 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore'
+import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
   const [candidaturas, setCandidaturas] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [erro, setErro] = useState(null)
+  const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    async function carregarCandidaturas() {
-      setLoading(true)
-      setErro(null)
+    const buscarCandidaturas = async () => {
       try {
-        // Buscar candidaturas do estabelecimento (status pendente, aprovado ou rejeitado)
-        const q = query(
-          collection(db, 'candidaturas'),
-          where('estabelecimentoUid', '==', estabelecimentoUid)
-        )
+        const chamadasRef = collection(db, 'chamadas')
+        const q = query(chamadasRef, where('estabelecimentoUid', '==', estabelecimentoUid))
         const snapshot = await getDocs(q)
-        const lista = []
 
-        for (const docSnap of snapshot.docs) {
-          const data = docSnap.data()
-          // Buscar dados da vaga vinculada (para mostrar título, função etc)
-          const vagaRef = doc(db, 'vagas', data.vagaId)
-          const vagaSnap = await getDocs(query(collection(db, 'vagas'), where('__name__', '==', data.vagaId)))
-          const vagaData = vagaSnap.docs.length > 0 ? vagaSnap.docs[0].data() : null
+        const lista = await Promise.all(
+          snapshot.docs.map(async docSnap => {
+            const data = docSnap.data()
 
-          lista.push({
-            id: docSnap.id,
-            ...data,
-            vaga: vagaData
+            // Buscar dados do freela
+            const freelaRef = doc(db, 'usuarios', data.freelaUid)
+            const freelaSnap = await getDoc(freelaRef)
+
+            // Buscar dados da vaga
+            const vagaRef = doc(db, 'vagas', data.vagaId)
+            const vagaSnap = await getDoc(vagaRef)
+
+            return {
+              id: docSnap.id,
+              ...data,
+              freela: freelaSnap.exists() ? freelaSnap.data() : null,
+              vaga: vagaSnap.exists() ? vagaSnap.data() : null
+            }
           })
-        }
+        )
 
         setCandidaturas(lista)
       } catch (err) {
-        console.error('Erro ao carregar candidaturas:', err)
-        setErro('Erro ao carregar candidaturas. Tente novamente.')
+        console.error('Erro ao buscar candidaturas:', err)
+      } finally {
+        setCarregando(false)
       }
-      setLoading(false)
     }
 
-    if (estabelecimentoUid) {
-      carregarCandidaturas()
-    }
+    buscarCandidaturas()
   }, [estabelecimentoUid])
 
-  async function alterarStatus(id, novoStatus) {
+  const atualizarStatus = async (id, novoStatus) => {
     try {
-      const candRef = doc(db, 'candidaturas', id)
-      await updateDoc(candRef, { status: novoStatus })
-      setCandidaturas(candidaturas.map(c =>
-        c.id === id ? { ...c, status: novoStatus } : c
-      ))
+      await updateDoc(doc(db, 'chamadas', id), { status: novoStatus })
+      setCandidaturas(prev =>
+        prev.map(c => (c.id === id ? { ...c, status: novoStatus } : c))
+      )
     } catch (err) {
-      console.error('Erro ao alterar status:', err)
-      setErro('Erro ao atualizar candidatura.')
+      console.error('Erro ao atualizar status:', err)
     }
   }
 
-  if (loading) return <p>Carregando candidaturas...</p>
-  if (erro) return <p className="text-red-600">{erro}</p>
-
-  if (candidaturas.length === 0)
-    return <p>Nenhuma candidatura recebida ainda.</p>
+  if (carregando) {
+    return <p className="text-center text-orange-600">Carregando candidaturas...</p>
+  }
 
   return (
-    <div className="max-w-5xl mx-auto p-6 bg-white rounded-xl shadow-md">
-      <h2 className="text-2xl font-bold text-orange-700 mb-6 text-center">📋 Candidaturas Recebidas</h2>
+    <div className="space-y-4">
+      <h2 className="text-2xl font-bold text-orange-700 mb-4">📋 Candidaturas Recebidas</h2>
 
-      <div className="space-y-6">
-        {candidaturas.map(cand => (
+      {candidaturas.length === 0 ? (
+        <p className="text-gray-600">Nenhuma candidatura recebida ainda.</p>
+      ) : (
+        candidaturas.map(c => (
           <div
-            key={cand.id}
-            className="p-4 border rounded-xl shadow border-gray-300"
+            key={c.id}
+            className="border border-gray-300 rounded-xl p-4 flex items-center justify-between bg-white shadow-sm"
           >
-            <h3 className="text-xl font-semibold text-orange-700">
-              {cand.vaga?.funcao || 'Função desconhecida'}
-            </h3>
-            <p><strong>Vaga:</strong> {cand.vaga?.titulo || 'Título não informado'}</p>
-            <p><strong>Candidato:</strong> {cand.freelaUid}</p>
-            <p><strong>Status:</strong> <span className={
-              cand.status === 'pendente' ? 'text-yellow-600' :
-              cand.status === 'aprovado' ? 'text-green-600' : 'text-red-600'
-            }>{cand.status.toUpperCase()}</span></p>
+            <div className="flex items-center gap-4">
+              {c.freela?.foto ? (
+                <img
+                  src={c.freela.foto}
+                  alt="Foto do freela"
+                  className="w-14 h-14 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-14 h-14 rounded-full bg-orange-200 flex items-center justify-center text-xl font-bold text-orange-700">
+                  {c.freela?.nome?.[0] || 'F'}
+                </div>
+              )}
 
-            <div className="mt-4 flex gap-3">
-              {cand.status !== 'aprovado' && (
-                <button
-                  className="btn-primary bg-green-600 hover:bg-green-700"
-                  onClick={() => alterarStatus(cand.id, 'aprovado')}
-                >
-                  Aprovar
-                </button>
-              )}
-              {cand.status !== 'rejeitado' && (
-                <button
-                  className="btn-primary bg-red-600 hover:bg-red-700"
-                  onClick={() => alterarStatus(cand.id, 'rejeitado')}
-                >
-                  Rejeitar
-                </button>
-              )}
+              <div>
+                <p className="text-lg font-semibold text-gray-800">
+                  {c.freela?.nome || 'Freelancer Desconhecido'}
+                </p>
+                <p className="text-sm text-gray-500">{c.freela?.funcao || 'Função não informada'}</p>
+                <p className="text-sm text-gray-700 mt-1">
+                  <span className="font-medium text-orange-700">Vaga:</span>{' '}
+                  {c.vaga?.titulo || 'Vaga desconhecida'}
+                </p>
+                <p className="text-sm mt-1">
+                  <span className="font-medium">Status:</span>{' '}
+                  <span
+                    className={`px-2 py-0.5 rounded ${
+                      c.status === 'APROVADO'
+                        ? 'bg-green-100 text-green-700'
+                        : c.status === 'REJEITADO'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-yellow-100 text-yellow-700'
+                    }`}
+                  >
+                    {c.status || 'PENDENTE'}
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => atualizarStatus(c.id, 'APROVADO')}
+                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+              >
+                ✅ Aprovar
+              </button>
+              <button
+                onClick={() => atualizarStatus(c.id, 'REJEITADO')}
+                className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                ❌ Rejeitar
+              </button>
             </div>
           </div>
-        ))}
-      </div>
+        ))
+      )}
     </div>
   )
 }
