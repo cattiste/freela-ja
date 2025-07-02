@@ -3,7 +3,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 import { useNavigate } from 'react-router-dom'
 
-export default function EditarPerfilFreela() {
+export default function EditarFreela() {
   const navigate = useNavigate()
   const [form, setForm] = useState({
     nome: '',
