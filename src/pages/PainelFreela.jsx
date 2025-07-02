@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 import { signOut } from 'firebase/auth'
+import AgendaFreela from './AgendaFreela' // importe o componente agenda
 
 export default function PainelFreela() {
   const navigate = useNavigate()
@@ -198,6 +199,9 @@ export default function PainelFreela() {
                 </div>
               </div>
             </div>
+
+            {/* Agenda do Freela */}
+            <AgendaFreela freela={freela} />
           </div>
 
           <div className="bg-white rounded-2xl shadow p-6 max-h-[500px] overflow-auto">
@@ -205,18 +209,10 @@ export default function PainelFreela() {
             {chamadas.length === 0 && <p>Nenhuma chamada ativa.</p>}
             {chamadas.map(chamada => (
               <div key={chamada.id} className="border rounded p-3 mb-4">
-                <p>
-                  <strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}
-                </p>
-                <p>
-                  <strong>Status:</strong> {chamada.status}
-                </p>
-                <p>
-                  <strong>Check-in feito:</strong> {chamada.checkInFreela ? 'Sim' : 'Não'}
-                </p>
-                <p>
-                  <strong>Check-out feito:</strong> {chamada.checkOutFreela ? 'Sim' : 'Não'}
-                </p>
+                <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
+                <p><strong>Status:</strong> {chamada.status}</p>
+                <p><strong>Check-in feito:</strong> {chamada.checkInFreela ? 'Sim' : 'Não'}</p>
+                <p><strong>Check-out feito:</strong> {chamada.checkOutFreela ? 'Sim' : 'Não'}</p>
                 {chamada.status === 'pendente' && (
                   <div className="mt-2 flex gap-3">
                     <button
@@ -242,37 +238,12 @@ export default function PainelFreela() {
           </div>
         </div>
 
-        <div className="mt-10">
-          <h2 className="text-2xl font-semibold text-blue-700 mb-4">📌 Vagas Disponíveis</h2>
-          {vagas.length === 0 ? (
-            <p className="text-gray-600">🔎 Nenhuma vaga no momento.</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {vagas.map(vaga => (
-                <div
-                  key={vaga.id}
-                  onClick={() => navigate(`/vaga/${vaga.id}`)}
-                  className="bg-white p-4 rounded shadow hover:shadow-lg cursor-pointer"
-                >
-                  <h3 className="font-bold text-lg">{vaga.titulo}</h3>
-                  <p>🏢 {vaga.empresa || '—'}</p>
-                  <p>📍 {vaga.cidade || '—'}</p>
-                  <p>💰 {vaga.valorDiaria ? `R$ ${vaga.valorDiaria}` : vaga.salario || '—'}</p>
-                  <p>📅 Tipo: {vaga.tipo || '—'}</p>
-                  <p className="text-sm text-gray-600 mt-1">{vaga.descricao}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Botão Eventos Disponíveis só para o freela */}
         <div className="mt-10 flex justify-center">
           <Link
-            to="/eventosdisponiveis"
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded px-6 py-3 transition"
+            to="/vagasdisponiveis"
+            className="bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded px-6 py-3 transition"
           >
-            🎉 Eventos Disponíveis
+            🎯 Ver vagas disponíveis
           </Link>
         </div>
       </div>
