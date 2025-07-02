@@ -98,7 +98,7 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
         valorDiaria: tipoVaga === 'freela' ? Number(valorDiaria) : null,
         datasAgendadas: tipoVaga === 'freela' ? datasTimestamp : [],
         urgente,
-        status: 'ativo',
+        status: 'aberta',
         dataPublicacao: serverTimestamp(),
         estabelecimentoUid: estabelecimento.uid,
         estabelecimentoNome: estabelecimento.nome,
