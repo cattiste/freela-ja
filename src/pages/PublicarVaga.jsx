@@ -5,7 +5,7 @@ import { db } from '@/firebase'
 export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }) {
   const [tipoVaga, setTipoVaga] = useState('CLT')
   const [titulo, setTitulo] = useState('')
-  const [funcao, setFuncao] = useState('')
+  const [função, setFuncao] = useState('')
   const [descricao, setDescricao] = useState('')
   const [empresa, setEmpresa] = useState(estabelecimento?.nome || '')
   const [emailContato, setEmailContato] = useState(estabelecimento?.email || '')
@@ -21,7 +21,7 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
     if (vaga) {
       setTipoVaga(vaga.tipoVaga || 'CLT')
       setTitulo(vaga.titulo || '')
-      setFuncao(vaga.funcao || '')
+      setFuncao(vaga.função || '')
       setDescricao(vaga.descricao || '')
       setEmpresa(vaga.empresa || estabelecimento?.nome || '')
       setEmailContato(vaga.emailContato || estabelecimento?.email || '')
@@ -69,7 +69,7 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
     setError(null)
 
     try {
-      if (!titulo || !funcao || !descricao || !empresa || !emailContato || !cidade) {
+      if (!titulo || !função || !descricao || !empresa || !emailContato || !cidade) {
         throw new Error('Preencha todos os campos obrigatórios.')
       }
 

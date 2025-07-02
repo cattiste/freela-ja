@@ -32,7 +32,7 @@ export default function Login() {
         dadosUsuario = {
           nome: user.displayName || '',
           tipo: '',
-          funcao: '',
+          função: '',
           endereco: '',
           foto: user.photoURL || '',
           celular: '',
@@ -50,7 +50,7 @@ export default function Login() {
         email: user.email,
         nome: dadosUsuario.nome,
         tipo: dadosUsuario.tipo,
-        funcao: dadosUsuario.funcao || '',
+        função: dadosUsuario.função || '',
         endereco: dadosUsuario.endereco || '',
         foto: dadosUsuario.foto || ''
       }
@@ -58,7 +58,7 @@ export default function Login() {
       localStorage.setItem('usuarioLogado', JSON.stringify(usuarioLocal))
 
       // Verifica se o perfil está incompleto
-      const perfilIncompleto = !dadosUsuario.tipo || !dadosUsuario.nome || !dadosUsuario.funcao
+      const perfilIncompleto = !dadosUsuario.tipo || !dadosUsuario.nome || !dadosUsuario.função
 
       if (perfilIncompleto) {
         if (dadosUsuario.tipo === 'freela') {

@@ -57,7 +57,7 @@ export default function MinhasVagas({ estabelecimento, onEditar }) {
         {vagas.map(vaga => (
           <div key={vaga.id} className="border p-4 rounded shadow space-y-2 bg-white">
             <h3 className="font-semibold text-xl">{vaga.titulo}</h3>
-            <p><strong>Função:</strong> {vaga.funcao}</p>
+            <p><strong>Função:</strong> {vaga.função}</p>
             <p><strong>Tipo:</strong> {vaga.tipoVaga.toUpperCase()}</p>
             <p><strong>Descrição:</strong> {vaga.descricao}</p>
             <p><strong>Cidade:</strong> {vaga.cidade}</p>

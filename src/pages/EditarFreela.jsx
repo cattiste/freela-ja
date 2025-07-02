@@ -116,8 +116,8 @@ export default function EditarFreela() {
           Função
           <input
             type="text"
-            name="funcao"
-            value={form.funcao}
+            name="função"
+            value={form.função}
             onChange={handleChange}
             className="w-full mt-1 p-2 border rounded"
           />
