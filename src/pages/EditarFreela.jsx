@@ -79,7 +79,7 @@ export default function EditarFreela() {
       const docRef = doc(db, 'usuarios', usuario.uid)
       await updateDoc(docRef, form)
       alert('Perfil atualizado com sucesso!')
-      navigate('/painel-freela')
+      navigate('/painelfreela')
     } catch (err) {
       console.error(err)
       alert('Erro ao salvar perfil.')
