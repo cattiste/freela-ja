@@ -78,7 +78,7 @@ export default function App() {
 
           {/* Vagas protegidas */}
           <Route
-            path="/vagas-disponiveis"
+            path="/vagasdisponiveis"
             element={
               <RotaProtegidaFreela>
                 <VagasDisponiveis />
