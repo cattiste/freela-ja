@@ -154,7 +154,7 @@ export default function PainelFreela() {
           <h1 className="text-3xl font-bold text-blue-800">🎯 Painel do Freelancer</h1>
           <div className="flex gap-2">
             <button
-              onClick={() => navigate('/editar-perfil-freela')}
+              onClick={() => navigate('/editarfreela')}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
             >
               ✏️ Editar Perfil
