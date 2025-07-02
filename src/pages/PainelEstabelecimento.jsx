@@ -11,10 +11,12 @@ import AgendasContratadas from './AgendasContratadas'
 import AvaliacaoFreela from './AvaliacaoFreela'
 import PublicarVaga from './PublicarVaga'
 import MinhasVagas from './MinhasVagas'
+import CandidaturasEstabelecimento from '@/components/CandidaturasEstabelecimento'
 
 export default function PainelEstabelecimento() {
   const navigate = useNavigate()
-  const [aba, setAba] = useState('buscar') // Abre na aba "Buscar Freelancers"
+  const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'))
+  const [aba, setAba] = useState('buscar') // aba inicial
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [vagaEditando, setVagaEditando] = useState(null)
@@ -85,6 +87,9 @@ export default function PainelEstabelecimento() {
           />
         )
       case 'minhas-vagas':
+        return <MinhasVagas estabelecimento={estabelecimento} onEditar={abrirEdicao} />
+      case 'candidaturas':
+        return <CandidaturasEstabelecimento estabelecimentoUid={usuarioLogado.uid} />
       default:
         return <MinhasVagas estabelecimento={estabelecimento} onEditar={abrirEdicao} />
     }
@@ -109,53 +114,58 @@ export default function PainelEstabelecimento() {
   return (
     <div className="min-h-screen bg-orange-50 p-4">
       <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+        {/* Cabeçalho e Logout */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-orange-700">📊 Painel do Estabelecimento</h1>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-          >
-            🔒 Logout
-          </button>
-        </div>
-
-        {/* Abas de navegação */}
-        <div className="flex flex-wrap gap-4 mb-6 border-b pb-4">
-          {[
-            { key: 'buscar', label: '🔍 Buscar Freelancers' },
-            { key: 'chamadas', label: '📞 Chamadas' },
-            { key: 'agendas', label: '📅 Agendas' },
-            { key: 'avaliacao', label: '⭐ Avaliar' },
-            { key: 'publicar', label: '📢 Publicar Vaga' },
-            { key: 'minhas-vagas', label: '📋 Minhas Vagas' }
-          ].map(item => (
+          <div className="flex gap-4">
             <button
-              key={item.key}
-              onClick={() => {
-                setVagaEditando(null)
-                setAba(item.key)
-              }}
-              className={`px-4 py-2 rounded-lg font-semibold transition ${
-                aba === item.key
-                  ? 'bg-orange-600 text-white'
-                  : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-              }`}
+              onClick={() => navigate('/editarperfilestabelecimento')}
+              className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
             >
-              {item.label}
+              ✏️ Editar Perfil
             </button>
-          ))}
-
-          {/* Botão separado para editar perfil */}
-          <button
-            onClick={() => navigate('/editarperfilestabelecimento')}
-            className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
-          >
-            ✏️ Editar Perfil
-          </button>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            >
+              🔒 Logout
+            </button>
+          </div>
         </div>
 
-        {/* Conteúdo renderizado da aba */}
-        <div>{renderConteudo()}</div>
+        {/* Navegação em abas */}
+        <nav className="border-b border-orange-300 mb-6">
+          <ul className="flex space-x-2">
+            {[
+              { key: 'buscar', label: '🔍 Buscar Freelancers' },
+              { key: 'chamadas', label: '📞 Chamadas' },
+              { key: 'agendas', label: '📅 Agendas' },
+              { key: 'avaliacao', label: '⭐ Avaliar' },
+              { key: 'publicar', label: '📢 Publicar Vaga' },
+              { key: 'minhas-vagas', label: '📋 Minhas Vagas' },
+              { key: 'candidaturas', label: '📋 Candidaturas' }
+            ].map(({ key, label }) => (
+              <li key={key} className="list-none">
+                <button
+                  onClick={() => {
+                    setVagaEditando(null)
+                    setAba(key)
+                  }}
+                  className={`px-4 py-2 -mb-px border-b-2 font-semibold transition ${
+                    aba === key
+                      ? 'border-orange-600 text-orange-600'
+                      : 'border-transparent text-orange-400 hover:text-orange-600 hover:border-orange-400'
+                  }`}
+                >
+                  {label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {/* Conteúdo da aba */}
+        <section>{renderConteudo()}</section>
       </div>
     </div>
   )

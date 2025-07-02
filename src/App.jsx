@@ -28,6 +28,7 @@ import EventosDisponiveis from './pages/EventosDisponiveis'
 import RotaProtegidaFreela from './components/RotaProtegidaFreela'
 import RotaProtegidaEstabelecimento from './components/RotaProtegidaEstabelecimento'
 
+
 export default function App() {
   const [usuarioLogado, setUsuarioLogado] = React.useState(null)
 
