@@ -167,18 +167,7 @@ export default function EditarFreela() {
             className="w-full mt-1 p-2 border rounded"
           />
         </label>
-
-        <label className="block mb-3">
-          Tipo Contrato
-          <input
-            type="text"
-            name="tipoContrato"
-            value={form.tipoContrato}
-            onChange={handleChange}
-            className="w-full mt-1 p-2 border rounded"
-          />
-        </label>
-
+        
         <label className="block mb-3">
           Foto de Perfil
           <input
