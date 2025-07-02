@@ -1,13 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
-  getDoc,
-  updateDoc
-} from 'firebase/firestore'
+import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
@@ -19,23 +11,19 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
 
     const buscarCandidaturas = async () => {
       try {
-        const chamadasRef = collection(db, 'chamadas')
-        const q = query(chamadasRef, where('estabelecimentoUid', '==', estabelecimentoUid))
+        const candidaturasRef = collection(db, 'candidaturas')
+        const q = query(candidaturasRef, where('estabelecimentoUid', '==', estabelecimentoUid))
         const snapshot = await getDocs(q)
-
-        if (snapshot.empty) {
-          console.log('Nenhuma candidatura encontrada para este estabelecimento.')
-          setCandidaturas([])
-          return
-        }
 
         const lista = await Promise.all(
           snapshot.docs.map(async docSnap => {
             const data = docSnap.data()
 
+            // Buscar dados do freela
             const freelaRef = doc(db, 'usuarios', data.freelaUid)
             const freelaSnap = await getDoc(freelaRef)
 
+            // Buscar dados da vaga
             const vagaRef = doc(db, 'vagas', data.vagaId)
             const vagaSnap = await getDoc(vagaRef)
 
@@ -61,7 +49,7 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
 
   const atualizarStatus = async (id, novoStatus) => {
     try {
-      await updateDoc(doc(db, 'chamadas', id), { status: novoStatus })
+      await updateDoc(doc(db, 'candidaturas', id), { status: novoStatus })
       setCandidaturas(prev =>
         prev.map(c => (c.id === id ? { ...c, status: novoStatus } : c))
       )
@@ -112,14 +100,14 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
                   <span className="font-medium">Status:</span>{' '}
                   <span
                     className={`px-2 py-0.5 rounded ${
-                      c.status === 'APROVADO'
+                      c.status?.toLowerCase() === 'aprovado'
                         ? 'bg-green-100 text-green-700'
-                        : c.status === 'REJEITADO'
+                        : c.status?.toLowerCase() === 'rejeitado'
                         ? 'bg-red-100 text-red-700'
                         : 'bg-yellow-100 text-yellow-700'
                     }`}
                   >
-                    {c.status || 'PENDENTE'}
+                    {c.status?.toUpperCase() || 'PENDENTE'}
                   </span>
                 </p>
               </div>
@@ -127,13 +115,13 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
 
             <div className="flex flex-col gap-2">
               <button
-                onClick={() => atualizarStatus(c.id, 'APROVADO')}
+                onClick={() => atualizarStatus(c.id, 'aprovado')}
                 className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
               >
                 ✅ Aprovar
               </button>
               <button
-                onClick={() => atualizarStatus(c.id, 'REJEITADO')}
+                onClick={() => atualizarStatus(c.id, 'rejeitado')}
                 className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
               >
                 ❌ Rejeitar
