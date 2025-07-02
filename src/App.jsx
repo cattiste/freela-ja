@@ -81,7 +81,7 @@ export default function App() {
             path="/vagasdisponiveis"
             element={
               <RotaProtegidaFreela>
-                <VagasDisponiveis />
+                <VagasDisponiveis freela={usuarioLogado} />
               </RotaProtegidaFreela>
             }
           />
