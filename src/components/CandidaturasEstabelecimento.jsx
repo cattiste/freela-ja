@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore'
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, orderBy } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
@@ -8,26 +8,35 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
 
   useEffect(() => {
     const buscarCandidaturas = async () => {
+      if (!estabelecimentoUid) return
+
+      setCarregando(true)
+
       try {
         const chamadasRef = collection(db, 'chamadas')
-        const q = query(chamadasRef, where('estabelecimentoUid', '==', estabelecimentoUid))
+        const q = query(
+          chamadasRef,
+          where('estabelecimentoUid', '==', estabelecimentoUid),
+          orderBy('dataCandidatura', 'desc') // Opcional: ordenação por data
+        )
         const snapshot = await getDocs(q)
 
         const lista = await Promise.all(
           snapshot.docs.map(async docSnap => {
             const data = docSnap.data()
 
-            // Buscar dados do freela
             const freelaRef = doc(db, 'usuarios', data.freelaUid)
-            const freelaSnap = await getDoc(freelaRef)
-
-            // Buscar dados da vaga
             const vagaRef = doc(db, 'vagas', data.vagaId)
-            const vagaSnap = await getDoc(vagaRef)
+
+            const [freelaSnap, vagaSnap] = await Promise.all([
+              getDoc(freelaRef),
+              getDoc(vagaRef)
+            ])
 
             return {
               id: docSnap.id,
               ...data,
+              status: data.status?.toUpperCase() || 'PENDENTE',
               freela: freelaSnap.exists() ? freelaSnap.data() : null,
               vaga: vagaSnap.exists() ? vagaSnap.data() : null
             }
@@ -49,7 +58,7 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
     try {
       await updateDoc(doc(db, 'chamadas', id), { status: novoStatus })
       setCandidaturas(prev =>
-        prev.map(c => (c.id === id ? { ...c, status: novoStatus } : c))
+        prev.map(c => (c.id === id ? { ...c, status: novoStatus.toUpperCase() } : c))
       )
     } catch (err) {
       console.error('Erro ao atualizar status:', err)
@@ -105,7 +114,7 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
                         : 'bg-yellow-100 text-yellow-700'
                     }`}
                   >
-                    {c.status || 'PENDENTE'}
+                    {c.status}
                   </span>
                 </p>
               </div>
