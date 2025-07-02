@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
-import { auth, db } from '@/firebase'
-import { useNavigate } from 'react-router-dom'
+import { db } from '@/firebase'
 
 export default function EditarFreela() {
   const navigate = useNavigate()
+  const { id } = useParams()
   const [form, setForm] = useState({
     nome: '',
     funcao: '',
@@ -19,25 +20,33 @@ export default function EditarFreela() {
   const [salvando, setSalvando] = useState(false)
 
   useEffect(() => {
-    const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
-    if (!usuario || usuario.tipo !== 'freela') {
+    if (!id) {
+      alert('ID do freelancer não encontrado.')
       navigate('/login')
       return
     }
 
     const fetchDados = async () => {
-      const docRef = doc(db, 'usuarios', usuario.uid)
-      const snap = await getDoc(docRef)
-      if (snap.exists()) {
-        setForm(snap.data())
-      } else {
-        alert('Usuário não encontrado.')
+      try {
+        const docRef = doc(db, 'usuarios', id)
+        const snap = await getDoc(docRef)
+        if (snap.exists()) {
+          setForm(snap.data())
+        } else {
+          alert('Freelancer não encontrado.')
+          navigate('/login')
+        }
+      } catch (err) {
+        console.error(err)
+        alert('Erro ao buscar dados.')
         navigate('/login')
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
+
     fetchDados()
-  }, [navigate])
+  }, [id, navigate])
 
   const handleChange = e => {
     const { name, value } = e.target
@@ -47,15 +56,11 @@ export default function EditarFreela() {
   const handleSubmit = async e => {
     e.preventDefault()
     setSalvando(true)
-
     try {
-      const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
-      if (!usuario) throw new Error('Usuário não logado')
-
-      const docRef = doc(db, 'usuarios', usuario.uid)
+      const docRef = doc(db, 'usuarios', id)
       await updateDoc(docRef, form)
       alert('Perfil atualizado com sucesso!')
-      navigate('/painel-freela')
+      navigate('/painelfreela')
     } catch (err) {
       console.error(err)
       alert('Erro ao salvar perfil.')
@@ -64,109 +69,24 @@ export default function EditarFreela() {
     }
   }
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Carregando...</div>
-  }
+  if (loading) return <div className="p-6 text-center">Carregando...</div>
 
   return (
     <div className="min-h-screen bg-blue-50 p-6 flex justify-center items-center">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-6 rounded shadow-md w-full max-w-lg"
-      >
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md w-full max-w-lg">
         <h1 className="text-2xl font-bold mb-6">Editar Perfil Freelancer</h1>
-
-        <label className="block mb-3">
-          Nome
-          <input
-            type="text"
-            name="nome"
-            value={form.nome}
-            onChange={handleChange}
-            required
-            className="w-full mt-1 p-2 border rounded"
-          />
-        </label>
-
-        <label className="block mb-3">
-          Função
-          <input
-            type="text"
-            name="funcao"
-            value={form.funcao}
-            onChange={handleChange}
-            className="w-full mt-1 p-2 border rounded"
-          />
-        </label>
-
-        <label className="block mb-3">
-          Email
-          <input
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            required
-            className="w-full mt-1 p-2 border rounded"
-          />
-        </label>
-
-        <label className="block mb-3">
-          Celular
-          <input
-            type="text"
-            name="celular"
-            value={form.celular}
-            onChange={handleChange}
-            className="w-full mt-1 p-2 border rounded"
-          />
-        </label>
-
-        <label className="block mb-3">
-          Endereço
-          <input
-            type="text"
-            name="endereco"
-            value={form.endereco}
-            onChange={handleChange}
-            className="w-full mt-1 p-2 border rounded"
-          />
-        </label>
-
-        <label className="block mb-3">
-          Valor Diária
-          <input
-            type="number"
-            name="valorDiaria"
-            value={form.valorDiaria}
-            onChange={handleChange}
-            className="w-full mt-1 p-2 border rounded"
-          />
-        </label>
-
-        <label className="block mb-3">
-          Tipo Contrato
-          <input
-            type="text"
-            name="tipoContrato"
-            value={form.tipoContrato}
-            onChange={handleChange}
-            className="w-full mt-1 p-2 border rounded"
-          />
-        </label>
-
-        <label className="block mb-3">
-          URL da Foto
-          <input
-            type="text"
-            name="foto"
-            value={form.foto}
-            onChange={handleChange}
-            className="w-full mt-1 p-2 border rounded"
-            placeholder="https://..."
-          />
-        </label>
-
+        {['nome', 'funcao', 'email', 'celular', 'endereco', 'valorDiaria', 'tipoContrato', 'foto'].map(campo => (
+          <label key={campo} className="block mb-3">
+            {campo.charAt(0).toUpperCase() + campo.slice(1)}
+            <input
+              type={campo === 'email' ? 'email' : campo === 'valorDiaria' ? 'number' : 'text'}
+              name={campo}
+              value={form[campo]}
+              onChange={handleChange}
+              className="w-full mt-1 p-2 border rounded"
+            />
+          </label>
+        ))}
         <button
           type="submit"
           disabled={salvando}
