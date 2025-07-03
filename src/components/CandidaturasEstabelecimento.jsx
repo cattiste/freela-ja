@@ -5,8 +5,9 @@ import { db } from '@/firebase'
 export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
   const [candidaturas, setCandidaturas] = useState([])
   const [carregando, setCarregando] = useState(true)
-  const [mensagemRejeicao, setMensagemRejeicao] = useState('')
   const [editandoId, setEditandoId] = useState(null)
+  const [mensagemEdit, setMensagemEdit] = useState('')
+  const [contatoEdit, setContatoEdit] = useState('')
 
   useEffect(() => {
     if (!estabelecimentoUid) return
@@ -33,7 +34,7 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
               id: docSnap.id,
               ...data,
               freela: freelaSnap.exists() ? freelaSnap.data() : null,
-              vaga: vagaSnap.exists() ? vagaSnap.data() : null
+              vaga: vagaSnap.exists() ? vagaSnap.data() : null,
             }
           })
         )
@@ -49,45 +50,45 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
     buscarCandidaturas()
   }, [estabelecimentoUid])
 
-  const atualizarStatus = async (id, novoStatus, mensagem = '') => {
+  const iniciarEdicao = (candidatura) => {
+    setEditandoId(candidatura.id)
+    setMensagemEdit(candidatura.mensagem || '')
+    setContatoEdit(candidatura.contato || '')
+  }
+
+  const cancelarEdicao = () => {
+    setEditandoId(null)
+    setMensagemEdit('')
+    setContatoEdit('')
+  }
+
+  const salvarStatus = async (id, novoStatus) => {
     try {
-      let dadosAtualizacao = { status: novoStatus }
+      // Atualiza doc no Firestore com status, mensagem e contato
+      await updateDoc(doc(db, 'candidaturas', id), {
+        status: novoStatus,
+        mensagem: mensagemEdit,
+        contato: novoStatus === 'aprovado' ? contatoEdit : '',
+      })
 
-      if (novoStatus.toLowerCase() === 'rejeitado') {
-        dadosAtualizacao.mensagemRejeicao = mensagem
-      } else {
-        dadosAtualizacao.mensagemRejeicao = ''
-      }
-
-      if (novoStatus.toLowerCase() === 'aprovado') {
-        // Buscar dados do estabelecimento para contato
-        const candidaturaRef = doc(db, 'candidaturas', id)
-        const candidaturaSnap = await getDoc(candidaturaRef)
-
-        if (candidaturaSnap.exists()) {
-          const candidaturaData = candidaturaSnap.data()
-          const estabelecimentoRef = doc(db, 'usuarios', candidaturaData.estabelecimentoUid)
-          const estabelecimentoSnap = await getDoc(estabelecimentoRef)
-
-          if (estabelecimentoSnap.exists()) {
-            const estabelecimentoData = estabelecimentoSnap.data()
-            dadosAtualizacao.estabelecimentoContato =
-              estabelecimentoData.email || estabelecimentoData.telefone || ''
-          }
-        }
-      }
-
-      await updateDoc(doc(db, 'candidaturas', id), dadosAtualizacao)
-
+      // Atualiza localmente o estado para re-renderizar
       setCandidaturas(prev =>
         prev.map(c =>
-          c.id === id ? { ...c, ...dadosAtualizacao } : c
+          c.id === id
+            ? {
+                ...c,
+                status: novoStatus,
+                mensagem: mensagemEdit,
+                contato: novoStatus === 'aprovado' ? contatoEdit : '',
+              }
+            : c
         )
       )
-      setMensagemRejeicao('')
-      setEditandoId(null)
+
+      cancelarEdicao()
     } catch (err) {
       console.error('Erro ao atualizar status:', err)
+      alert('Erro ao salvar, tente novamente.')
     }
   }
 
@@ -96,7 +97,7 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 max-w-4xl mx-auto">
       <h2 className="text-2xl font-bold text-orange-700 mb-4">📋 Candidaturas Recebidas</h2>
 
       {candidaturas.length === 0 ? (
@@ -105,17 +106,17 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
         candidaturas.map(c => (
           <div
             key={c.id}
-            className="border border-gray-300 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between bg-white shadow-sm"
+            className="border border-gray-300 rounded-xl p-6 flex flex-col bg-white shadow-sm"
           >
-            <div className="flex items-center gap-4 mb-4 md:mb-0">
+            <div className="flex items-center gap-4 mb-4">
               {c.freela?.foto ? (
                 <img
                   src={c.freela.foto}
                   alt="Foto do freela"
-                  className="w-14 h-14 rounded-full object-cover"
+                  className="w-16 h-16 rounded-full object-cover"
                 />
               ) : (
-                <div className="w-14 h-14 rounded-full bg-orange-200 flex items-center justify-center text-xl font-bold text-orange-700">
+                <div className="w-16 h-16 rounded-full bg-orange-200 flex items-center justify-center text-xl font-bold text-orange-700">
                   {c.freela?.nome?.[0] || 'F'}
                 </div>
               )}
@@ -126,8 +127,7 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
                 </p>
                 <p className="text-sm text-gray-500">{c.freela?.funcao || 'Função não informada'}</p>
                 <p className="text-sm text-gray-700 mt-1">
-                  <span className="font-medium text-orange-700">Vaga:</span>{' '}
-                  {c.vaga?.titulo || 'Vaga desconhecida'}
+                  <span className="font-medium text-orange-700">Vaga:</span> {c.vaga?.titulo || 'Vaga desconhecida'}
                 </p>
                 <p className="text-sm mt-1">
                   <span className="font-medium">Status:</span>{' '}
@@ -143,67 +143,66 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
                     {c.status?.toUpperCase() || 'PENDENTE'}
                   </span>
                 </p>
-
-                {c.status?.toLowerCase() === 'rejeitado' && c.mensagemRejeicao && (
-                  <p className="mt-2 text-sm text-red-600 italic">{c.mensagemRejeicao}</p>
-                )}
-
-                {c.status?.toLowerCase() === 'aprovado' && c.estabelecimentoContato && (
-                  <p className="mt-2 text-sm text-green-700">
-                    Contato do estabelecimento: <br />
-                    <a href={`mailto:${c.estabelecimentoContato}`} className="underline">
-                      {c.estabelecimentoContato}
-                    </a>
-                  </p>
-                )}
               </div>
             </div>
 
-            <div className="flex flex-col gap-2 w-full md:w-auto">
-              {c.status?.toLowerCase() === 'pendente' && (
-                <>
+            {/* Se está editando esta candidatura */}
+            {editandoId === c.id ? (
+              <>
+                <label className="block mb-2 font-semibold text-gray-700">
+                  Mensagem para o freela (aparecerá se rejeitado):
+                </label>
+                <textarea
+                  className="w-full border rounded p-2 mb-4"
+                  rows={3}
+                  value={mensagemEdit}
+                  onChange={e => setMensagemEdit(e.target.value)}
+                  placeholder="Exemplo: Obrigado pelo interesse, mas não foi desta vez."
+                />
+
+                { /* Se aprovando, mostrar campo contato */}
+                <label className="block mb-2 font-semibold text-gray-700">
+                  {`Contato do estabelecimento (aparecerá se aprovado):`}
+                </label>
+                <input
+                  type="text"
+                  className="w-full border rounded p-2 mb-4"
+                  value={contatoEdit}
+                  onChange={e => setContatoEdit(e.target.value)}
+                  placeholder="Email, telefone ou outro contato"
+                />
+
+                <div className="flex gap-4">
                   <button
-                    onClick={() => atualizarStatus(c.id, 'aprovado')}
-                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                    onClick={() => salvarStatus(c.id, 'aprovado')}
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                   >
                     ✅ Aprovar
                   </button>
-
-                  {editandoId === c.id ? (
-                    <>
-                      <textarea
-                        className="border rounded p-2 mt-2"
-                        placeholder="Mensagem para o freela (rejeição)"
-                        value={mensagemRejeicao}
-                        onChange={e => setMensagemRejeicao(e.target.value)}
-                      />
-                      <button
-                        onClick={() => atualizarStatus(c.id, 'rejeitado', mensagemRejeicao)}
-                        className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 mt-1"
-                      >
-                        ❌ Enviar Rejeição
-                      </button>
-                      <button
-                        onClick={() => {
-                          setMensagemRejeicao('')
-                          setEditandoId(null)
-                        }}
-                        className="px-3 py-1 bg-gray-400 text-white rounded hover:bg-gray-500 mt-1"
-                      >
-                        Cancelar
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => setEditandoId(c.id)}
-                      className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
-                    >
-                      ❌ Rejeitar
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
+                  <button
+                    onClick={() => salvarStatus(c.id, 'rejeitado')}
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                  >
+                    ❌ Rejeitar
+                  </button>
+                  <button
+                    onClick={cancelarEdicao}
+                    className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+                  >
+                    ✖ Cancelar
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="flex gap-3">
+                <button
+                  onClick={() => iniciarEdicao(c)}
+                  className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  ✏️ Editar Resposta
+                </button>
+              </div>
+            )}
           </div>
         ))
       )}

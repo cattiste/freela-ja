@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  addDoc,
-  serverTimestamp,
-} from 'firebase/firestore'
+import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 function formatarData(timestamp) {
@@ -27,39 +20,44 @@ export default function VagasDisponiveis({ freela }) {
   const [loading, setLoading] = useState(true)
   const [erro, setErro] = useState(null)
   const [sucesso, setSucesso] = useState(null)
-
-  // Estado que guarda os IDs das vagas que o freela já se candidatou
-  const [candidaturasFeitas, setCandidaturasFeitas] = useState([])
+  const [candidaturas, setCandidaturas] = useState([]) // candidaturas do freela
 
   useEffect(() => {
-    async function carregarDados() {
+    async function carregarVagas() {
       setLoading(true)
       setErro(null)
       try {
         // Buscar vagas abertas
-        const qVagas = query(collection(db, 'vagas'), where('status', '==', 'aberta'))
-        const snapshotVagas = await getDocs(qVagas)
-        const listaVagas = snapshotVagas.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-        setVagas(listaVagas)
+        const q = query(collection(db, 'vagas'), where('status', '==', 'aberta'))
+        const snapshot = await getDocs(q)
+        const listaVagas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
-        // Se usuário logado, buscar candidaturas feitas
+        // Buscar candidaturas do freela
         if (freela?.uid) {
-          const qCandidaturas = query(
+          const qCand = query(
             collection(db, 'candidaturas'),
             where('freelaUid', '==', freela.uid)
           )
-          const snapshotCand = await getDocs(qCandidaturas)
-          const vagasCandidatadas = snapshotCand.docs.map(doc => doc.data().vagaId)
-          setCandidaturasFeitas(vagasCandidatadas)
+          const snapshotCand = await getDocs(qCand)
+          const listaCandidaturas = snapshotCand.docs.map(doc => ({
+            id: doc.id,
+            vagaId: doc.data().vagaId,
+            status: doc.data().status || 'pendente',
+            mensagem: doc.data().mensagem || '',
+            contato: doc.data().contato || '',
+          }))
+          setCandidaturas(listaCandidaturas)
         }
+
+        setVagas(listaVagas)
       } catch (err) {
-        console.error('Erro ao carregar dados:', err)
-        setErro('Erro ao carregar vagas ou candidaturas. Tente novamente.')
+        console.error('Erro ao carregar vagas:', err)
+        setErro('Erro ao carregar vagas. Tente novamente.')
       }
       setLoading(false)
     }
-    carregarDados()
-  }, [freela])
+    carregarVagas()
+  }, [freela?.uid])
 
   async function handleCandidatar(vaga) {
     if (!freela?.uid) {
@@ -77,15 +75,31 @@ export default function VagasDisponiveis({ freela }) {
         freelaUid: freela.uid,
         dataCandidatura: serverTimestamp(),
         status: 'pendente',
+        mensagem: '',
+        contato: '',
       })
 
-      // Atualiza o estado para refletir a candidatura feita e desabilitar o botão
-      setCandidaturasFeitas(prev => [...prev, vaga.id])
       setSucesso(`Candidatura enviada para vaga: ${vaga.titulo || vaga.funcao || ''}`)
+
+      // Atualizar candidaturas localmente para refletir a nova candidatura
+      setCandidaturas(prev => [
+        ...prev,
+        {
+          vagaId: vaga.id,
+          status: 'pendente',
+          mensagem: '',
+          contato: '',
+        },
+      ])
     } catch (err) {
       console.error('Erro ao candidatar:', err)
       setErro('Erro ao enviar candidatura. Tente novamente.')
     }
+  }
+
+  // Função para encontrar candidatura relacionada à vaga
+  function getCandidaturaDaVaga(vagaId) {
+    return candidaturas.find(c => c.vagaId === vagaId)
   }
 
   if (loading) {
@@ -131,7 +145,7 @@ export default function VagasDisponiveis({ freela }) {
       ) : (
         <div className="space-y-6">
           {vagas.map(vaga => {
-            const jaCandidatou = candidaturasFeitas.includes(vaga.id)
+            const candidatura = getCandidaturaDaVaga(vaga.id)
 
             return (
               <div
@@ -176,17 +190,44 @@ export default function VagasDisponiveis({ freela }) {
                   <p className="text-red-600 font-semibold mt-3 uppercase tracking-wide">URGENTE</p>
                 )}
 
-                <button
-                  onClick={() => handleCandidatar(vaga)}
-                  disabled={jaCandidatou}
-                  className={`mt-4 text-white font-semibold px-4 py-2 rounded transition ${
-                    jaCandidatou
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-green-600 hover:bg-green-700'
-                  }`}
-                >
-                  {jaCandidatou ? 'Já Candidatado' : 'Candidatar-se'}
-                </button>
+                {/* Status e botões */}
+                {candidatura ? (
+                  <>
+                    <p className="mt-4 font-semibold">
+                      Status da candidatura:{' '}
+                      <span
+                        className={`px-2 py-1 rounded ${
+                          candidatura.status.toLowerCase() === 'aprovado'
+                            ? 'bg-green-100 text-green-700'
+                            : candidatura.status.toLowerCase() === 'rejeitado'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-yellow-100 text-yellow-700'
+                        }`}
+                      >
+                        {candidatura.status.toUpperCase()}
+                      </span>
+                    </p>
+
+                    {candidatura.status.toLowerCase() === 'rejeitado' && candidatura.mensagem && (
+                      <p className="mt-2 text-red-700 italic">
+                        Mensagem do estabelecimento: {candidatura.mensagem}
+                      </p>
+                    )}
+
+                    {candidatura.status.toLowerCase() === 'aprovado' && candidatura.contato && (
+                      <p className="mt-2">
+                        📞 <strong>Contato do estabelecimento:</strong> {candidatura.contato}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    onClick={() => handleCandidatar(vaga)}
+                    className="mt-4 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded transition"
+                  >
+                    Candidatar-se
+                  </button>
+                )}
               </div>
             )
           })}
