@@ -17,7 +17,7 @@ import {
 import AgendaFreela from './freelas/AgendaFreela'
 import HistoricoTrabalhosFreela from './freelas/HistoricoTrabalhosFreela'
 import AvaliacoesRecebidasFreela from './freelas/AvaliacoesRecebidasFreela'
-import ConfiguracoesFreela from './ConfiguracoesFreela'
+import ConfiguracoesFreela from './freelas/ConfiguracoesFreela'
 import PerfilFreela from './PerfilFreela'
 
 // Placeholder para chat enquanto não estiver pronto
