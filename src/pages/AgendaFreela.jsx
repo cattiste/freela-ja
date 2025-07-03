@@ -1,79 +1,140 @@
 import React, { useEffect, useState } from 'react'
 import Calendar from 'react-calendar'
-import 'react-calendar/dist/Calendar.css'
+import 'react-calendar/styles/Calendar.css'
 import { db } from '@/firebase'
 import {
   doc,
   setDoc,
   collection,
   deleteDoc,
-  onSnapshot
+  onSnapshot,
+  getDoc
 } from 'firebase/firestore'
 
 export default function AgendaFreela({ freela }) {
-  const [datasOcupadas, setDatasOcupadas] = useState([])
+  const [datasOcupadas, setDatasOcupadas] = useState({}) // { '2025-07-10': { ocupado: true, descricao: '...' }, ... }
+  const [dataSelecionada, setDataSelecionada] = useState(null) // data clicada para editar
+  const [descricao, setDescricao] = useState('')
+  const [editavel, setEditavel] = useState(true) // se data bloqueada ou não
 
   useEffect(() => {
     if (!freela?.uid) return
 
-    // Referência para a subcoleção 'agenda' do usuário
     const ref = collection(db, 'usuarios', freela.uid, 'agenda')
 
-    // Escutar em tempo real as datas ocupadas
     const unsubscribe = onSnapshot(ref, snapshot => {
-      const datas = snapshot.docs.map(doc => doc.id)
+      const datas = {}
+      snapshot.docs.forEach(doc => {
+        datas[doc.id] = doc.data()
+      })
       setDatasOcupadas(datas)
     })
 
     return () => unsubscribe()
   }, [freela])
 
-  // Função para marcar a data como ocupada (criar doc na subcoleção)
-  const marcarData = async (date) => {
-    const dia = date.toISOString().split('T')[0] // yyyy-mm-dd
-    const ref = doc(db, 'usuarios', freela.uid, 'agenda', dia)
-    await setDoc(ref, { ocupado: true })
+  // abrir modal para editar a data clicada
+  const abrirEdicao = (date) => {
+    const dia = date.toISOString().split('T')[0]
+    setDataSelecionada(dia)
+
+    // carrega descrição atual
+    if (datasOcupadas[dia]) {
+      setDescricao(datasOcupadas[dia].descricao || '')
+      // Bloqueia edição se a data estiver "travada" (exemplo: se houver evento futuro, adaptar depois)
+      // Por ora, vamos liberar edição, pode ajustar conforme evento real
+      setEditavel(!datasOcupadas[dia].travada) 
+    } else {
+      setDescricao('')
+      setEditavel(true)
+    }
   }
 
-  // Função para desmarcar a data (remover doc da subcoleção)
-  const desmarcarData = async (date) => {
-    const dia = date.toISOString().split('T')[0]
-    const ref = doc(db, 'usuarios', freela.uid, 'agenda', dia)
-    await deleteDoc(ref)
+  // salvar a descrição e marcar ocupado
+  const salvarDescricao = async () => {
+    if (!dataSelecionada) return
+    const ref = doc(db, 'usuarios', freela.uid, 'agenda', dataSelecionada)
+    if (descricao.trim() === '') {
+      // Se descrição vazia, remove o registro
+      await deleteDoc(ref)
+    } else {
+      await setDoc(ref, { ocupado: true, descricao: descricao.trim() })
+    }
+    setDataSelecionada(null)
+    setDescricao('')
   }
 
-  // Desabilitar datas já ocupadas para evitar múltiplos cliques confusos
-  const tileDisabled = ({ date }) => {
+  // cancelar edição
+  const cancelarEdicao = () => {
+    setDataSelecionada(null)
+    setDescricao('')
+  }
+
+  const tileClassName = ({ date }) => {
     const dia = date.toISOString().split('T')[0]
-    return false // permite clicar em todas as datas, mas vamos controlar via confirmação
+    if (datasOcupadas[dia]) {
+      return 'bg-red-200 text-red-800 font-bold cursor-pointer'
+    }
+    return ''
   }
 
   return (
     <div className="bg-white p-6 rounded-xl shadow mt-8">
       <h2 className="text-xl font-semibold mb-4 text-blue-700">📆 Minha Agenda</h2>
       <Calendar
-        onClickDay={async (date) => {
-          const dia = date.toISOString().split('T')[0]
-
-          if (datasOcupadas.includes(dia)) {
-            const confirmDesmarcar = window.confirm('Deseja liberar essa data da agenda?')
-            if (confirmDesmarcar) {
-              await desmarcarData(date)
-            }
-          } else {
-            await marcarData(date)
-          }
-        }}
-        tileDisabled={tileDisabled}
-        // Mostra visual diferente para datas ocupadas
-        tileClassName={({ date }) => {
-          const dia = date.toISOString().split('T')[0]
-          return datasOcupadas.includes(dia) ? 'bg-red-200 text-red-800 font-bold' : null
-        }}
+        onClickDay={abrirEdicao}
+        tileClassName={tileClassName}
       />
+
       <p className="text-sm text-gray-500 mt-4">
-        Clique em uma data para marcar como ocupada. Para liberar, clique novamente e confirme.
+        Clique em uma data para adicionar ou editar a descrição. Deixe em branco para liberar a data.
       </p>
+
+      {/* Modal simples */}
+      {dataSelecionada && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white rounded-lg p-6 w-80 shadow-lg">
+            <h3 className="text-lg font-semibold mb-4">Editar {dataSelecionada}</h3>
+            {editavel ? (
+              <>
+                <textarea
+                  rows={4}
+                  value={descricao}
+                  onChange={e => setDescricao(e.target.value)}
+                  placeholder="Digite uma descrição para esta data (ex: Evento, Férias, Indisponível)"
+                  className="w-full border border-gray-300 rounded p-2 mb-4"
+                />
+                <div className="flex justify-end gap-4">
+                  <button
+                    onClick={cancelarEdicao}
+                    className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={salvarDescricao}
+                    className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    Salvar
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="mb-4 text-red-600 font-semibold">
+                  Esta data está bloqueada devido a um evento já aceito.
+                </p>
+                <button
+                  onClick={cancelarEdicao}
+                  className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+                >
+                  Fechar
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
