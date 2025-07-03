@@ -10,7 +10,7 @@ import ChamadasEstabelecimento from './ChamadasEstabelecimento'
 import AgendasContratadas from './AgendasContratadas'
 import AvaliacaoFreela from './AvaliacaoFreela'
 import PublicarVaga from './PublicarVaga'
-import MinhasVagas from './components/MinhasVagas'
+import MinhasVagas from '@/components/MinhasVagas'
 import CandidaturasEstabelecimento from '@/components/CandidaturasEstabelecimento'
 
 export default function PainelEstabelecimento() {
