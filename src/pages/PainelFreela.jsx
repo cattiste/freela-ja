@@ -16,7 +16,6 @@ import {
 } from 'firebase/firestore'
 
 // Componentes
-import AgendaFreela from './freelas/AgendaFreela'
 import HistoricoTrabalhosFreela from './freelas/HistoricoTrabalhosFreela'
 import AvaliacoesRecebidasFreela from './freelas/AvaliacoesRecebidasFreela'
 import ConfiguracoesFreela from './freelas/ConfiguracoesFreela'
@@ -242,8 +241,6 @@ export default function PainelFreela() {
         return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
       case 'agenda':
         return <AgendaCompleta freela={usuario} />
-      case 'agenda':
-        return <AgendaFreela freela={usuario} />
       case 'historico':
         return <HistoricoTrabalhosFreela freelaUid={usuario.uid} />
       case 'avaliacoes':
