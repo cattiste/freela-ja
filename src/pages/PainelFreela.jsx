@@ -4,25 +4,24 @@ import { auth, db } from '@/firebase'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore'
 
-// Importa componentes já existentes
-import PerfilFreela from '@/PerfilFreela'  // PerfilFreela está na raiz src
+// Componentes
 import AgendaFreela from './freelas/AgendaFreela'
 import HistoricoTrabalhosFreela from './freelas/HistoricoTrabalhosFreela'
 import AvaliacoesRecebidasFreela from './freelas/AvaliacoesRecebidasFreela'
+import PerfilFreela from './PerfilFreela'
 
 // Placeholders para chat e configurações
 function ChatFreela() {
-  return <div>🗨️ Chat ainda em desenvolvimento...</div>
+  return <div className="text-gray-500 text-center">🗨️ Chat ainda em desenvolvimento...</div>
 }
-
 function ConfiguracoesFreela() {
-  return <div>⚙️ Configurações do Freelancer ainda em desenvolvimento...</div>
+  return <div className="text-gray-500 text-center">⚙️ Configurações ainda em desenvolvimento...</div>
 }
 
 export default function PainelFreela() {
   const navigate = useNavigate()
   const [usuario, setUsuario] = useState(null)
-  const [aba, setAba] = useState('perfil') // Perfil é a aba inicial agora
+  const [aba, setAba] = useState('perfil')
   const [carregando, setCarregando] = useState(true)
   const [chamadas, setChamadas] = useState([])
   const [loadingCheckin, setLoadingCheckin] = useState(false)
@@ -36,14 +35,12 @@ export default function PainelFreela() {
         if (snap.exists() && snap.data().tipo === 'freela') {
           setUsuario({ uid: user.uid, ...snap.data() })
 
-          // Inscreve nas chamadas em tempo real para esse freela
           const chamadasRef = collection(db, 'chamadas')
           const q = query(chamadasRef, where('freelaUid', '==', user.uid))
           const unsubscribeChamadas = onSnapshot(q, snapshot => {
             setChamadas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
           })
 
-          // Limpa inscrição quando desloga ou muda usuário
           return () => unsubscribeChamadas()
         } else {
           setUsuario(null)
@@ -58,7 +55,7 @@ export default function PainelFreela() {
   }, [])
 
   const fazerCheckin = async () => {
-    const chamada = chamadas.find(c => !c.checkInFreela && c.status === 'aceito')
+    const chamada = chamadas.find(c => !c.checkInFreela && c.status === 'aceita')
     if (!chamada) return alert('Nenhuma chamada pendente para check-in.')
     setLoadingCheckin(true)
     try {
@@ -74,7 +71,7 @@ export default function PainelFreela() {
   }
 
   const fazerCheckout = async () => {
-    const chamada = chamadas.find(c => c.checkInFreela && !c.checkOutFreela && c.status === 'aceito')
+    const chamada = chamadas.find(c => c.checkInFreela && !c.checkOutFreela && c.status === 'aceita')
     if (!chamada) return alert('Nenhuma chamada pendente para check-out.')
     setLoadingCheckout(true)
     try {
@@ -97,16 +94,16 @@ export default function PainelFreela() {
 
   if (carregando) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-orange-600 text-lg">Carregando painel...</p>
+      <div className="min-h-screen flex items-center justify-center text-orange-600 text-lg">
+        Carregando painel...
       </div>
     )
   }
 
   if (!usuario) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-600 text-lg">Acesso não autorizado.</p>
+      <div className="min-h-screen flex items-center justify-center text-red-600 text-lg">
+        Acesso não autorizado.
       </div>
     )
   }
@@ -114,7 +111,7 @@ export default function PainelFreela() {
   const renderConteudo = () => {
     switch (aba) {
       case 'perfil':
-        return <PerfilFreela freelaUid={usuario.uid} />
+        return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
       case 'agenda':
         return <AgendaFreela freela={usuario} />
       case 'historico':
@@ -135,7 +132,7 @@ export default function PainelFreela() {
                 {chamada.status === 'pendente' && (
                   <div className="mt-2 flex gap-3">
                     <button
-                      onClick={async () => await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceito' })}
+                      onClick={async () => await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })}
                       className="bg-green-600 text-white px-3 py-1 rounded"
                     >
                       ✅ Aceitar
@@ -151,7 +148,6 @@ export default function PainelFreela() {
               </div>
             ))}
 
-            {/* Botões de checkin e checkout */}
             <div className="mt-6 flex gap-4">
               <button
                 onClick={fazerCheckin}
@@ -175,7 +171,7 @@ export default function PainelFreela() {
       case 'configuracoes':
         return <ConfiguracoesFreela />
       default:
-        return <PerfilFreela freelaUid={usuario.uid} />
+        return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
     }
   }
 
@@ -208,7 +204,7 @@ export default function PainelFreela() {
         <nav className="border-b border-orange-300 mb-6">
           <ul className="flex space-x-2 overflow-x-auto">
             {[
-              { key: 'perfil', label: '👤 Perfil' },
+              { key: 'perfil', label: '🧑 Perfil' },
               { key: 'agenda', label: '📆 Minha Agenda' },
               { key: 'chamadas', label: '📞 Chamadas' },
               { key: 'chat', label: '💬 Chat' },
@@ -232,7 +228,7 @@ export default function PainelFreela() {
           </ul>
         </nav>
 
-        {/* Conteúdo da aba selecionada */}
+        {/* Conteúdo */}
         <section>{renderConteudo()}</section>
       </div>
     </div>
