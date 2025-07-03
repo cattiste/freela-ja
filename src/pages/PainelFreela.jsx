@@ -12,7 +12,9 @@ import {
 } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 import { signOut } from 'firebase/auth'
-import AgendaFreela from './AgendaFreela'
+import AgendaFreela from './freelas/AgendaFreela'
+import HistoricoTrabalhosFreela from './freelas/HistoricoTrabalhosFreela'
+import AvaliacoesRecebidasFreela from './freelas/AvaliacoesRecebidasFreela'
 
 export default function PainelFreela() {
   const navigate = useNavigate()
