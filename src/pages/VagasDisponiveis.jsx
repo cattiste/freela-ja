@@ -1,13 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  addDoc,
-  deleteDoc,
-  serverTimestamp
-} from 'firebase/firestore'
+import { collection, query, where, getDocs, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 function formatarData(timestamp) {
@@ -28,17 +20,19 @@ export default function VagasDisponiveis({ freela }) {
   const [loading, setLoading] = useState(true)
   const [erro, setErro] = useState(null)
   const [sucesso, setSucesso] = useState(null)
-  const [candidaturas, setCandidaturas] = useState([])
+  const [candidaturas, setCandidaturas] = useState([]) // candidaturas do freela
 
   useEffect(() => {
     async function carregarVagas() {
       setLoading(true)
       setErro(null)
       try {
+        // Buscar vagas abertas
         const q = query(collection(db, 'vagas'), where('status', '==', 'aberta'))
         const snapshot = await getDocs(q)
         const listaVagas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
+        // Buscar candidaturas do freela
         if (freela?.uid) {
           const qCand = query(
             collection(db, 'candidaturas'),
@@ -46,11 +40,8 @@ export default function VagasDisponiveis({ freela }) {
           )
           const snapshotCand = await getDocs(qCand)
           const listaCandidaturas = snapshotCand.docs.map(doc => ({
-            id: doc.id,
-            vagaId: doc.data().vagaId,
-            status: doc.data().status || 'pendente',
-            mensagem: doc.data().mensagem || '',
-            contato: doc.data().contato || '',
+            id: doc.id,  // **Importante para exclusão**
+            ...doc.data()
           }))
           setCandidaturas(listaCandidaturas)
         }
@@ -75,7 +66,7 @@ export default function VagasDisponiveis({ freela }) {
     setSucesso(null)
 
     try {
-      const docRef = await addDoc(collection(db, 'candidaturas'), {
+      await addDoc(collection(db, 'candidaturas'), {
         vagaId: vaga.id,
         estabelecimentoUid: vaga.estabelecimentoUid || null,
         freelaUid: freela.uid,
@@ -87,10 +78,10 @@ export default function VagasDisponiveis({ freela }) {
 
       setSucesso(`Candidatura enviada para vaga: ${vaga.titulo || vaga.funcao || ''}`)
 
+      // Atualizar candidaturas localmente para refletir a nova candidatura
       setCandidaturas(prev => [
         ...prev,
         {
-          id: docRef.id, // ✅ Agora inclui o ID da candidatura
           vagaId: vaga.id,
           status: 'pendente',
           mensagem: '',
@@ -103,19 +94,30 @@ export default function VagasDisponiveis({ freela }) {
     }
   }
 
+  // Função para encontrar candidatura relacionada à vaga
+  function getCandidaturaDaVaga(vagaId) {
+    return candidaturas.find(c => c.vagaId === vagaId)
+  }
+
+  // Função para excluir candidatura (botão para vagas rejeitadas)
   async function handleExcluirCandidatura(candidaturaId) {
+    if (!candidaturaId) {
+      alert('ID da candidatura não encontrado.')
+      return
+    }
+
+    const confirm = window.confirm('Tem certeza que deseja excluir essa candidatura rejeitada?')
+    if (!confirm) return
+
     try {
       await deleteDoc(doc(db, 'candidaturas', candidaturaId))
+
       setCandidaturas(prev => prev.filter(c => c.id !== candidaturaId))
       setSucesso('Candidatura excluída com sucesso.')
     } catch (err) {
       console.error('Erro ao excluir candidatura:', err)
-      setErro('Erro ao excluir candidatura.')
+      alert('Erro ao excluir candidatura.')
     }
-  }
-
-  function getCandidaturaDaVaga(vagaId) {
-    return candidaturas.find(c => c.vagaId === vagaId)
   }
 
   if (loading) {
@@ -225,24 +227,23 @@ export default function VagasDisponiveis({ freela }) {
                     </p>
 
                     {candidatura.status.toLowerCase() === 'rejeitado' && candidatura.mensagem && (
-                      <p className="mt-2 text-red-700 italic">
-                        Mensagem do estabelecimento: {candidatura.mensagem}
-                      </p>
+                      <>
+                        <p className="mt-2 text-red-700 italic">
+                          Mensagem do estabelecimento: {candidatura.mensagem}
+                        </p>
+                        <button
+                          onClick={() => handleExcluirCandidatura(candidatura.id)}
+                          className="mt-2 px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition"
+                        >
+                          Excluir candidatura rejeitada
+                        </button>
+                      </>
                     )}
 
                     {candidatura.status.toLowerCase() === 'aprovado' && candidatura.contato && (
                       <p className="mt-2">
                         📞 <strong>Contato do estabelecimento:</strong> {candidatura.contato}
                       </p>
-                    )}
-
-                    {candidatura.status.toLowerCase() === 'rejeitado' && (
-                      <button
-                        onClick={() => handleExcluirCandidatura(candidatura.id)}
-                        className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-                      >
-                        🗑️ Excluir candidatura
-                      </button>
                     )}
                   </>
                 ) : (
