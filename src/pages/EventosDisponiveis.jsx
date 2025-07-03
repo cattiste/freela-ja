@@ -8,27 +8,38 @@ export default function EventosDisponiveis({ freela }) {
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    const buscarEventos = async () => {
+    const buscarDados = async () => {
       try {
+        // Buscar eventos ativos
         const eventosRef = collection(db, 'eventos')
-        const q = query(eventosRef, where('ativo', '==', true))
-        const snapshot = await getDocs(q)
-
-        const lista = snapshot.docs.map(doc => ({
+        const qEventos = query(eventosRef, where('ativo', '==', true))
+        const snapshotEventos = await getDocs(qEventos)
+        const listaEventos = snapshotEventos.docs.map(doc => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         }))
+        setEventos(listaEventos)
 
-        setEventos(lista)
+        // Buscar candidaturas já feitas pelo freela
+        if (freela?.uid) {
+          const candidaturasRef = collection(db, 'candidaturasEventos')
+          const qCandidaturas = query(
+            candidaturasRef,
+            where('freelaUid', '==', freela.uid)
+          )
+          const snapshotCandidaturas = await getDocs(qCandidaturas)
+          const eventosCandidatados = snapshotCandidaturas.docs.map(doc => doc.data().eventoId)
+          setCandidaturas(eventosCandidatados)
+        }
       } catch (err) {
-        console.error('Erro ao buscar eventos:', err)
+        console.error('Erro ao buscar dados:', err)
       } finally {
         setCarregando(false)
       }
     }
 
-    buscarEventos()
-  }, [])
+    buscarDados()
+  }, [freela])
 
   const candidatar = async (evento) => {
     try {
@@ -37,7 +48,7 @@ export default function EventosDisponiveis({ freela }) {
         eventoId: evento.id,
         freelaUid: freela.uid,
         dataCandidatura: Timestamp.now(),
-        status: 'pendente'
+        status: 'pendente',
       })
       alert('Candidatura enviada com sucesso!')
       setCandidaturas(prev => [...prev, evento.id])
@@ -54,32 +65,35 @@ export default function EventosDisponiveis({ freela }) {
       {eventos.length === 0 ? (
         <p className="text-center">Nenhum evento disponível no momento.</p>
       ) : (
-        eventos.map(evento => (
-          <div
-            key={evento.id}
-            className="border border-gray-300 p-4 rounded-xl bg-white mb-4 shadow-sm"
-          >
-            <h3 className="text-xl font-semibold text-gray-800">{evento.nome}</h3>
-            <p className="text-gray-600 text-sm mt-1">{evento.descricao}</p>
-            <p className="text-sm mt-2 text-gray-500">
-              📍 <strong>Local:</strong> {evento.local}
-              <br />
-              📅 <strong>Data:</strong>{' '}
-              {evento.data?.toDate ? evento.data.toDate().toLocaleDateString() : 'Data não definida'}
-            </p>
-            <button
-              onClick={() => candidatar(evento)}
-              disabled={candidaturas.includes(evento.id)}
-              className={`mt-3 px-4 py-1.5 rounded ${
-                candidaturas.includes(evento.id)
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'
-              } text-white`}
+        eventos.map(evento => {
+          const jaCandidatado = candidaturas.includes(evento.id)
+          return (
+            <div
+              key={evento.id}
+              className="border border-gray-300 p-4 rounded-xl bg-white mb-4 shadow-sm"
             >
-              {candidaturas.includes(evento.id) ? 'Já Candidatado' : '📩 Candidatar-se'}
-            </button>
-          </div>
-        ))
+              <h3 className="text-xl font-semibold text-gray-800">{evento.nome}</h3>
+              <p className="text-gray-600 text-sm mt-1">{evento.descricao}</p>
+              <p className="text-sm mt-2 text-gray-500">
+                📍 <strong>Local:</strong> {evento.local}
+                <br />
+                📅 <strong>Data:</strong>{' '}
+                {evento.data?.toDate ? evento.data.toDate().toLocaleDateString() : 'Data não definida'}
+              </p>
+              <button
+                onClick={() => candidatar(evento)}
+                disabled={jaCandidatado}
+                className={`mt-3 px-4 py-1.5 rounded ${
+                  jaCandidatado
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                } text-white`}
+              >
+                {jaCandidatado ? 'Já Candidatado' : '📩 Candidatar-se'}
+              </button>
+            </div>
+          )
+        })
       )}
     </div>
   )

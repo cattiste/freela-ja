@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  serverTimestamp,
+} from 'firebase/firestore'
 import { db } from '@/firebase'
 
 function formatarData(timestamp) {
@@ -21,23 +28,38 @@ export default function VagasDisponiveis({ freela }) {
   const [erro, setErro] = useState(null)
   const [sucesso, setSucesso] = useState(null)
 
+  // Estado que guarda os IDs das vagas que o freela já se candidatou
+  const [candidaturasFeitas, setCandidaturasFeitas] = useState([])
+
   useEffect(() => {
-    async function carregarVagas() {
+    async function carregarDados() {
       setLoading(true)
       setErro(null)
       try {
-        const q = query(collection(db, 'vagas'), where('status', '==', 'aberta'))
-        const snapshot = await getDocs(q)
-        const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-        setVagas(lista)
+        // Buscar vagas abertas
+        const qVagas = query(collection(db, 'vagas'), where('status', '==', 'aberta'))
+        const snapshotVagas = await getDocs(qVagas)
+        const listaVagas = snapshotVagas.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        setVagas(listaVagas)
+
+        // Se usuário logado, buscar candidaturas feitas
+        if (freela?.uid) {
+          const qCandidaturas = query(
+            collection(db, 'candidaturas'),
+            where('freelaUid', '==', freela.uid)
+          )
+          const snapshotCand = await getDocs(qCandidaturas)
+          const vagasCandidatadas = snapshotCand.docs.map(doc => doc.data().vagaId)
+          setCandidaturasFeitas(vagasCandidatadas)
+        }
       } catch (err) {
-        console.error('Erro ao carregar vagas:', err)
-        setErro('Erro ao carregar vagas. Tente novamente.')
+        console.error('Erro ao carregar dados:', err)
+        setErro('Erro ao carregar vagas ou candidaturas. Tente novamente.')
       }
       setLoading(false)
     }
-    carregarVagas()
-  }, [])
+    carregarDados()
+  }, [freela])
 
   async function handleCandidatar(vaga) {
     if (!freela?.uid) {
@@ -57,6 +79,8 @@ export default function VagasDisponiveis({ freela }) {
         status: 'pendente',
       })
 
+      // Atualiza o estado para refletir a candidatura feita e desabilitar o botão
+      setCandidaturasFeitas(prev => [...prev, vaga.id])
       setSucesso(`Candidatura enviada para vaga: ${vaga.titulo || vaga.funcao || ''}`)
     } catch (err) {
       console.error('Erro ao candidatar:', err)
@@ -106,56 +130,66 @@ export default function VagasDisponiveis({ freela }) {
         <p className="text-center text-gray-600">Nenhuma vaga disponível no momento.</p>
       ) : (
         <div className="space-y-6">
-          {vagas.map(vaga => (
-            <div
-              key={vaga.id}
-              className={`p-5 border rounded-xl shadow ${
-                vaga.urgente ? 'border-red-400 bg-red-50' : 'border-gray-300'
-              }`}
-            >
-              <h3 className="text-xl font-semibold text-orange-700 mb-2">
-                {vaga.titulo || vaga.funcao || 'Sem título'}
-              </h3>
+          {vagas.map(vaga => {
+            const jaCandidatou = candidaturasFeitas.includes(vaga.id)
 
-              <p>
-                <strong>Tipo:</strong>{' '}
-                {vaga.tipoVaga?.toLowerCase() === 'clt' ? 'CLT (Fixa)' : 'Freela (Diária)'}
-              </p>
-
-              {vaga.tipoVaga?.toLowerCase() === 'freela' && vaga.valorDiaria != null && (
-                <p>
-                  <strong>Valor da diária:</strong> R$ {Number(vaga.valorDiaria).toFixed(2).replace('.', ',')}
-                </p>
-              )}
-
-              {vaga.tipoVaga?.toLowerCase() === 'clt' && vaga.salario != null && (
-                <p>
-                  <strong>Salário:</strong> R$ {Number(vaga.salario).toFixed(2).replace('.', ',')}
-                </p>
-              )}
-
-              <p>
-                <strong>Data da publicação:</strong> {formatarData(vaga.dataPublicacao)}
-              </p>
-
-              {vaga.descricao && (
-                <p className="mt-2 text-gray-700">
-                  <strong>Descrição:</strong> {vaga.descricao}
-                </p>
-              )}
-
-              {vaga.urgente && (
-                <p className="text-red-600 font-semibold mt-3 uppercase tracking-wide">URGENTE</p>
-              )}
-
-              <button
-                onClick={() => handleCandidatar(vaga)}
-                className="mt-4 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded transition"
+            return (
+              <div
+                key={vaga.id}
+                className={`p-5 border rounded-xl shadow ${
+                  vaga.urgente ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                }`}
               >
-                Candidatar-se
-              </button>
-            </div>
-          ))}
+                <h3 className="text-xl font-semibold text-orange-700 mb-2">
+                  {vaga.titulo || vaga.funcao || 'Sem título'}
+                </h3>
+
+                <p>
+                  <strong>Tipo:</strong>{' '}
+                  {vaga.tipoVaga?.toLowerCase() === 'clt' ? 'CLT (Fixa)' : 'Freela (Diária)'}
+                </p>
+
+                {vaga.tipoVaga?.toLowerCase() === 'freela' && vaga.valorDiaria != null && (
+                  <p>
+                    <strong>Valor da diária:</strong> R${' '}
+                    {Number(vaga.valorDiaria).toFixed(2).replace('.', ',')}
+                  </p>
+                )}
+
+                {vaga.tipoVaga?.toLowerCase() === 'clt' && vaga.salario != null && (
+                  <p>
+                    <strong>Salário:</strong> R$ {Number(vaga.salario).toFixed(2).replace('.', ',')}
+                  </p>
+                )}
+
+                <p>
+                  <strong>Data da publicação:</strong> {formatarData(vaga.dataPublicacao)}
+                </p>
+
+                {vaga.descricao && (
+                  <p className="mt-2 text-gray-700">
+                    <strong>Descrição:</strong> {vaga.descricao}
+                  </p>
+                )}
+
+                {vaga.urgente && (
+                  <p className="text-red-600 font-semibold mt-3 uppercase tracking-wide">URGENTE</p>
+                )}
+
+                <button
+                  onClick={() => handleCandidatar(vaga)}
+                  disabled={jaCandidatou}
+                  className={`mt-4 text-white font-semibold px-4 py-2 rounded transition ${
+                    jaCandidatou
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-green-600 hover:bg-green-700'
+                  }`}
+                >
+                  {jaCandidatou ? 'Já Candidatado' : 'Candidatar-se'}
+                </button>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
