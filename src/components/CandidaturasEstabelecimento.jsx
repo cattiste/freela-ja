@@ -5,6 +5,7 @@ import { db } from '@/firebase'
 export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
   const [candidaturas, setCandidaturas] = useState([])
   const [carregando, setCarregando] = useState(true)
+  const [atualizandoId, setAtualizandoId] = useState(null)
 
   useEffect(() => {
     if (!estabelecimentoUid) return
@@ -19,13 +20,8 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
           snapshot.docs.map(async docSnap => {
             const data = docSnap.data()
 
-            // Buscar dados do freela
-            const freelaRef = doc(db, 'usuarios', data.freelaUid)
-            const freelaSnap = await getDoc(freelaRef)
-
-            // Buscar dados da vaga
-            const vagaRef = doc(db, 'vagas', data.vagaId)
-            const vagaSnap = await getDoc(vagaRef)
+            const freelaSnap = await getDoc(doc(db, 'usuarios', data.freelaUid))
+            const vagaSnap = await getDoc(doc(db, 'vagas', data.vagaId))
 
             return {
               id: docSnap.id,
@@ -49,12 +45,17 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
 
   const atualizarStatus = async (id, novoStatus) => {
     try {
-      await updateDoc(doc(db, 'candidaturas', id), { status: novoStatus })
+      setAtualizandoId(id)
+      const ref = doc(db, 'candidaturas', id)
+      await updateDoc(ref, { status: novoStatus })
       setCandidaturas(prev =>
         prev.map(c => (c.id === id ? { ...c, status: novoStatus } : c))
       )
     } catch (err) {
       console.error('Erro ao atualizar status:', err)
+      alert('Erro ao atualizar status. Verifique as permissões do Firestore.')
+    } finally {
+      setAtualizandoId(null)
     }
   }
 
@@ -99,7 +100,7 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
                 <p className="text-sm mt-1">
                   <span className="font-medium">Status:</span>{' '}
                   <span
-                    className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                    className={`px-2 py-0.5 rounded ${
                       c.status?.toLowerCase() === 'aprovado'
                         ? 'bg-green-100 text-green-700'
                         : c.status?.toLowerCase() === 'rejeitado'
@@ -116,13 +117,15 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
             <div className="flex flex-col gap-2">
               <button
                 onClick={() => atualizarStatus(c.id, 'aprovado')}
-                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                disabled={atualizandoId === c.id}
+                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
               >
                 ✅ Aprovar
               </button>
               <button
                 onClick={() => atualizarStatus(c.id, 'rejeitado')}
-                className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                disabled={atualizandoId === c.id}
+                className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
               >
                 ❌ Rejeitar
               </button>
