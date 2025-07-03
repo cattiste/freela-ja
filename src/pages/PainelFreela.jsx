@@ -172,7 +172,11 @@ export default function PainelFreela() {
           </div>
         )
       case 'chat':
-        return <ChatFreela />
+        // Passar o ID da chamada ativa (exemplo: a primeira chamada aceita)
+        const chamadaAtiva = chamadas.find(c => c.status === 'aceita')
+        return chamadaAtiva ? <Chat chamadaId={chamadaAtiva.id} /> : (
+          <div className="text-center text-gray-500 mt-4">Nenhuma chamada ativa para chat.</div>
+        )
       case 'configuracoes':
         return <ConfiguracoesFreela />
       default:
