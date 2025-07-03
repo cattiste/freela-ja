@@ -22,6 +22,7 @@ import AvaliacoesRecebidasFreela from './freelas/AvaliacoesRecebidasFreela'
 import ConfiguracoesFreela from './freelas/ConfiguracoesFreela'
 import PerfilFreela from './PerfilFreela'
 import RecebimentosFreela from './freelas/RecebimentosFreela'
+import AgendaCompleta from './freelas/AgendaCompleta'
 
 // Componente Chat completo integrado
 function Chat({ chamadaId }) {
@@ -239,6 +240,8 @@ export default function PainelFreela() {
     switch (aba) {
       case 'perfil':
         return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
+      case 'agenda':
+        return <AgendaCompleta freela={usuario} />
       case 'agenda':
         return <AgendaFreela freela={usuario} />
       case 'historico':

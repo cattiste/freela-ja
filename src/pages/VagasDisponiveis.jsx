@@ -1,17 +1,9 @@
 import React, { useEffect, useState } from 'react'
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  addDoc,
-  serverTimestamp,
-} from 'firebase/firestore'
+import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 function formatarData(timestamp) {
   if (!timestamp) return 'Não informado'
-  // Firestore Timestamp tem .seconds
   if (timestamp.seconds) {
     const data = new Date(timestamp.seconds * 1000)
     return data.toLocaleDateString('pt-BR', {
@@ -20,7 +12,6 @@ function formatarData(timestamp) {
       year: 'numeric',
     })
   }
-  // Caso já seja Date ou string
   return new Date(timestamp).toLocaleDateString('pt-BR')
 }
 
@@ -35,7 +26,6 @@ export default function VagasDisponiveis({ freela }) {
       setLoading(true)
       setErro(null)
       try {
-        // Pega vagas com status 'aberta'
         const q = query(collection(db, 'vagas'), where('status', '==', 'aberta'))
         const snapshot = await getDocs(q)
         const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -83,7 +73,7 @@ export default function VagasDisponiveis({ freela }) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-md">
+    <div className="max-w-full p-4 bg-white rounded-xl shadow">
       <h2 className="text-2xl font-bold text-orange-700 mb-6 text-center">🎯 Vagas Disponíveis</h2>
 
       {erro && (

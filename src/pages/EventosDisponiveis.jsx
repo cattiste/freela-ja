@@ -49,10 +49,10 @@ export default function EventosDisponiveis({ freela }) {
   if (carregando) return <p>🔄 Carregando eventos...</p>
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold text-blue-700 mb-4">🎉 Eventos Disponíveis</h2>
+    <div className="max-w-full p-4 bg-white rounded-xl shadow">
+      <h2 className="text-2xl font-bold text-blue-700 mb-4 text-center">🎉 Eventos Disponíveis</h2>
       {eventos.length === 0 ? (
-        <p>Nenhum evento disponível no momento.</p>
+        <p className="text-center">Nenhum evento disponível no momento.</p>
       ) : (
         eventos.map(evento => (
           <div
