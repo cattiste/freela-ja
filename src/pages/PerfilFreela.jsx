@@ -73,6 +73,12 @@ export default function PerfilFreela({ freelaUidProp, mostrarBotaoVoltar = true 
     )
   }
 
+  // Formata o valor da diária para moeda brasileira
+  const formatarValor = valor => {
+    if (!valor) return null
+    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  }
+
   return (
     <div className="min-h-screen bg-blue-50 flex items-center justify-center p-6">
       <div className="bg-white rounded-3xl shadow-lg max-w-md w-full p-8 text-center">
@@ -82,8 +88,11 @@ export default function PerfilFreela({ freelaUidProp, mostrarBotaoVoltar = true 
           className="mx-auto w-32 h-32 rounded-full object-cover border-2 border-blue-400 shadow mb-6"
         />
         <h1 className="text-3xl font-bold text-blue-700 mb-2">{freela.nome}</h1>
-        <p className="text-blue-600 text-lg mb-1">{freela.funcao || freela.especialidade}</p>
+        <p className="text-blue-600 text-lg mb-1">{freela.funcao || freela.especialidades}</p>
         <p className="text-gray-600 mb-2">{freela.endereco}</p>
+        {freela.celular && (
+          <p className="text-gray-600 mb-2">📱 {freela.celular}</p>
+        )}
 
         {/* Estrelas de avaliação se houver */}
         {freela.mediaAvaliacao && (
@@ -101,9 +110,9 @@ export default function PerfilFreela({ freelaUidProp, mostrarBotaoVoltar = true 
         )}
 
         {/* Valor da diária */}
-        {freela.diaria && (
+        {freela.valorDiaria && (
           <p className="text-green-700 font-semibold">
-            💰 Valor da diária: {freela.diaria}
+            💰 Valor da diária: {formatarValor(freela.valorDiaria)}
           </p>
         )}
 

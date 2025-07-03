@@ -210,8 +210,8 @@ export default function PainelFreela() {
           <ul className="flex space-x-2 overflow-x-auto">
             {[
               { key: 'perfil', label: '🧑 Perfil' },
-              { key: 'agenda', label: '📆 Minha Agenda' },
               { key: 'chamadas', label: '📞 Chamadas' },
+              { key: 'agenda', label: '📆 Minha Agenda' },              
               { key: 'chat', label: '💬 Chat' },
               { key: 'avaliacoes', label: '⭐ Avaliações' },
               { key: 'historico', label: '📜 Histórico' },
