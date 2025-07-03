@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  deleteDoc,
+  serverTimestamp
+} from 'firebase/firestore'
 import { db } from '@/firebase'
 
 function formatarData(timestamp) {
@@ -20,19 +28,17 @@ export default function VagasDisponiveis({ freela }) {
   const [loading, setLoading] = useState(true)
   const [erro, setErro] = useState(null)
   const [sucesso, setSucesso] = useState(null)
-  const [candidaturas, setCandidaturas] = useState([]) // candidaturas do freela
+  const [candidaturas, setCandidaturas] = useState([])
 
   useEffect(() => {
     async function carregarVagas() {
       setLoading(true)
       setErro(null)
       try {
-        // Buscar vagas abertas
         const q = query(collection(db, 'vagas'), where('status', '==', 'aberta'))
         const snapshot = await getDocs(q)
         const listaVagas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
-        // Buscar candidaturas do freela
         if (freela?.uid) {
           const qCand = query(
             collection(db, 'candidaturas'),
@@ -81,7 +87,6 @@ export default function VagasDisponiveis({ freela }) {
 
       setSucesso(`Candidatura enviada para vaga: ${vaga.titulo || vaga.funcao || ''}`)
 
-      // Atualizar candidaturas localmente para refletir a nova candidatura
       setCandidaturas(prev => [
         ...prev,
         {
@@ -97,7 +102,16 @@ export default function VagasDisponiveis({ freela }) {
     }
   }
 
-  // Função para encontrar candidatura relacionada à vaga
+  async function handleExcluirCandidatura(candidaturaId) {
+    try {
+      await deleteDoc(doc(db, 'candidaturas', candidaturaId))
+      setCandidaturas(prev => prev.filter(c => c.id !== candidaturaId))
+    } catch (err) {
+      console.error('Erro ao excluir candidatura:', err)
+      alert('Erro ao excluir candidatura.')
+    }
+  }
+
   function getCandidaturaDaVaga(vagaId) {
     return candidaturas.find(c => c.vagaId === vagaId)
   }
@@ -218,6 +232,15 @@ export default function VagasDisponiveis({ freela }) {
                       <p className="mt-2">
                         📞 <strong>Contato do estabelecimento:</strong> {candidatura.contato}
                       </p>
+                    )}
+
+                    {candidatura.status.toLowerCase() === 'rejeitado' && (
+                      <button
+                        onClick={() => handleExcluirCandidatura(candidatura.id)}
+                        className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+                      >
+                        🗑️ Excluir candidatura
+                      </button>
                     )}
                   </>
                 ) : (
