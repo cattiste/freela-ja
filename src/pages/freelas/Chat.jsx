@@ -3,266 +3,120 @@ import { auth, db } from '@/firebase'
 import {
   collection,
   query,
-  orderBy,
+  where,
   onSnapshot,
   addDoc,
   serverTimestamp,
-  doc,
-  getDoc,
-  limit,
-  startAfter
+  orderBy
 } from 'firebase/firestore'
 
-const MENSAGENS_POR_PAGINA = 20
-
-// Pequena função para tocar som (você pode colocar seu arquivo .mp3 na public/)
-const playNotificationSound = () => {
-  const audio = new Audio('/notification.mp3') // coloque o arquivo na pasta public do projeto
-  audio.play().catch(() => {}) // evita erro no autoplay
-}
-
 export default function Chat({ chamadaId }) {
-  const user = auth.currentUser
-  const [chamada, setChamada] = useState(null)
+  const [usuario, setUsuario] = useState(null)
+  const [mensagem, setMensagem] = useState('')
   const [mensagens, setMensagens] = useState([])
-  const [novaMensagem, setNovaMensagem] = useState('')
-  const [enviando, setEnviando] = useState(false)
-  const [carregando, setCarregando] = useState(true)
-  const [loadingMais, setLoadingMais] = useState(false)
-  const [temMaisMensagens, setTemMaisMensagens] = useState(true)
-  const [usuariosCache, setUsuariosCache] = useState({})
-  const [digitando, setDigitando] = useState(false)
+  const divFimRef = useRef(null)
 
-  const messagesEndRef = useRef(null)
-  const scrollRef = useRef(null)
-  const ultimaMensagemRef = useRef(null)
+  // Pega usuário atual
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) setUsuario(user)
+      else setUsuario(null)
+    })
+    return unsubscribe
+  }, [])
 
-  const [paginaAtual, setPaginaAtual] = useState(1)
-  const ultimaMensagemCarregada = useRef(null)
-
-  // Para debounce do "digitando"
-  const digitandoTimeout = useRef(null)
-
-  // Escuta dados da chamada e inicializa mensagens
+  // Escuta mensagens da chamada
   useEffect(() => {
     if (!chamadaId) return
 
-    setCarregando(true)
-
-    const chamadaRef = doc(db, 'chamadas', chamadaId)
-    getDoc(chamadaRef).then(docSnap => {
-      if (docSnap.exists()) {
-        setChamada({ id: docSnap.id, ...docSnap.data() })
-      }
-    })
-
-    // Carrega primeira página (últimas mensagens)
     const mensagensRef = collection(db, 'chamadas', chamadaId, 'mensagens')
-    const q = query(mensagensRef, orderBy('createdAt', 'desc'), limit(MENSAGENS_POR_PAGINA))
+    const q = query(mensagensRef, orderBy('createdAt', 'asc'))
 
-    const unsubscribe = onSnapshot(q, snapshot => {
-      if (snapshot.empty) {
-        setMensagens([])
-        setTemMaisMensagens(false)
-        setCarregando(false)
-        return
-      }
-      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      setMensagens(msgs.reverse()) // ordem cronológica
-      ultimaMensagemCarregada.current = snapshot.docs[snapshot.docs.length - 1]
-      setTemMaisMensagens(snapshot.docs.length === MENSAGENS_POR_PAGINA)
-      setCarregando(false)
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const msgs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      setMensagens(msgs)
+
+      // Scroll automático para o final
+      setTimeout(() => {
+        if (divFimRef.current) divFimRef.current.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
     })
 
     return () => unsubscribe()
   }, [chamadaId])
 
-  // Função para carregar mais mensagens ao rolar para cima
-  const carregarMaisMensagens = async () => {
-    if (!temMaisMensagens || loadingMais || !ultimaMensagemCarregada.current) return
-    setLoadingMais(true)
+  // Envia mensagem para Firestore
+  const enviarMensagem = async (e) => {
+    e.preventDefault()
+    if (!mensagem.trim()) return
+    if (!usuario) return alert('Usuário não autenticado')
+
+    const mensagensRef = collection(db, 'chamadas', chamadaId, 'mensagens')
     try {
-      const mensagensRef = collection(db, 'chamadas', chamadaId, 'mensagens')
-      const q = query(
-        mensagensRef,
-        orderBy('createdAt', 'desc'),
-        startAfter(ultimaMensagemCarregada.current),
-        limit(MENSAGENS_POR_PAGINA)
-      )
-      const snapshot = await getDocs(q)
-      if (!snapshot.empty) {
-        const maisMsgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).reverse()
-        setMensagens(prev => [...maisMsgs, ...prev])
-        ultimaMensagemCarregada.current = snapshot.docs[snapshot.docs.length - 1]
-        setTemMaisMensagens(snapshot.docs.length === MENSAGENS_POR_PAGINA)
-      } else {
-        setTemMaisMensagens(false)
-      }
-    } catch (err) {
-      console.error('Erro ao carregar mais mensagens:', err)
-    }
-    setLoadingMais(false)
-  }
-
-  // Scroll handler para detectar topo e carregar mais mensagens
-  const handleScroll = e => {
-    if (e.target.scrollTop === 0) {
-      carregarMaisMensagens()
-    }
-  }
-
-  // Carregar dados dos usuários que enviaram mensagens (cache simples)
-  useEffect(() => {
-    async function fetchUsuarios() {
-      const uids = [...new Set(mensagens.map(m => m.remetenteUid))]
-      const uidsNaoCarregados = uids.filter(uid => !usuariosCache[uid])
-      if (uidsNaoCarregados.length === 0) return
-
-      const promises = uidsNaoCarregados.map(async uid => {
-        const docRef = doc(db, 'usuarios', uid)
-        const snap = await getDoc(docRef)
-        if (snap.exists()) {
-          return { uid, data: snap.data() }
-        }
-        return null
-      })
-      const resultados = await Promise.all(promises)
-      const novosUsuarios = {}
-      resultados.forEach(r => {
-        if (r) novosUsuarios[r.uid] = r.data
-      })
-      setUsuariosCache(prev => ({ ...prev, ...novosUsuarios }))
-    }
-    fetchUsuarios()
-  }, [mensagens])
-
-  // Scroll automático para última mensagem
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [mensagens])
-
-  // Para controlar "digitando" (simples, local)
-  const handleTyping = () => {
-    setDigitando(true)
-    clearTimeout(digitandoTimeout.current)
-    digitandoTimeout.current = setTimeout(() => {
-      setDigitando(false)
-    }, 2000)
-  }
-
-  const enviarMensagem = async () => {
-    if (!novaMensagem.trim() || enviando) return
-
-    setEnviando(true)
-    try {
-      const mensagensRef = collection(db, 'chamadas', chamadaId, 'mensagens')
       await addDoc(mensagensRef, {
-        texto: novaMensagem.trim(),
-        remetenteUid: user.uid,
+        texto: mensagem.trim(),
+        remetenteUid: usuario.uid,
+        remetenteNome: usuario.displayName || usuario.email || 'Usuário',
         createdAt: serverTimestamp()
       })
-      setNovaMensagem('')
-      playNotificationSound()
+      setMensagem('')
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error)
-      alert('Erro ao enviar mensagem. Tente novamente.')
+      alert('Erro ao enviar mensagem')
     }
-    setEnviando(false)
   }
 
-  if (!user)
-    return <p className="text-center text-red-600 mt-6">Usuário não autenticado.</p>
-  if (carregando) return <p className="text-center text-gray-500 mt-6">Carregando chat...</p>
-  if (!chamada)
-    return <p className="text-center text-red-600 mt-6">Chamada não encontrada.</p>
-  if (chamada.status !== 'aceita')
-    return (
-      <p className="text-center text-red-600 mt-6">
-        Chat disponível apenas para chamadas aceitas.
-      </p>
-    )
-
   return (
-    <div className="max-w-3xl mx-auto flex flex-col h-[600px] border rounded-lg shadow p-4 bg-white">
-      <header className="border-b pb-2 mb-4 flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-orange-700">💬 Chat da Chamada</h2>
-        {digitando && <span className="text-sm text-gray-500 italic">Está digitando...</span>}
-      </header>
-
-      <div
-        className="flex-1 overflow-y-auto mb-4 px-2 flex flex-col"
-        onScroll={handleScroll}
-        ref={scrollRef}
-        style={{ gap: '4px' }}
-      >
-        {loadingMais && (
-          <p className="text-center text-gray-500">Carregando mensagens anteriores...</p>
+    <div className="flex flex-col h-[500px] max-w-2xl mx-auto border rounded shadow p-4 bg-white">
+      <div className="flex-grow overflow-auto mb-4 space-y-2">
+        {mensagens.length === 0 && (
+          <p className="text-gray-500 text-center mt-10">Nenhuma mensagem ainda.</p>
         )}
-        {mensagens.length === 0 ? (
-          <p className="text-center text-gray-400 mt-10">Nenhuma mensagem ainda.</p>
-        ) : (
-          mensagens.map(msg => {
-            const isRemetente = msg.remetenteUid === user.uid
-            const remetente = usuariosCache[msg.remetenteUid]
-            const hora = msg.createdAt?.toDate
-              ? msg.createdAt.toDate().toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })
-              : ''
-            return (
+        {mensagens.map((msg) => {
+          const isRemetente = msg.remetenteUid === usuario?.uid
+          return (
+            <div
+              key={msg.id}
+              className={`flex ${isRemetente ? 'justify-end' : 'justify-start'}`}
+            >
               <div
-                key={msg.id}
-                className={`max-w-[70%] p-2 rounded flex items-end gap-2 ${
-                  isRemetente ? 'bg-orange-100 self-end text-right' : 'bg-gray-200 self-start text-left'
+                className={`max-w-[70%] px-3 py-2 rounded-lg ${
+                  isRemetente ? 'bg-orange-400 text-white' : 'bg-gray-200 text-gray-800'
                 }`}
-                style={{ alignSelf: isRemetente ? 'flex-end' : 'flex-start' }}
               >
-                {!isRemetente && remetente && remetente.foto && (
-                  <img
-                    src={remetente.foto}
-                    alt={remetente.nome}
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
-                )}
-                <div>
-                  {!isRemetente && remetente && (
-                    <p className="text-sm font-semibold">{remetente.nome}</p>
-                  )}
-                  <p>{msg.texto}</p>
-                  {hora && <small className="text-xs text-gray-500">{hora}</small>}
-                </div>
+                <p className="text-xs font-semibold">{msg.remetenteNome}</p>
+                <p>{msg.texto}</p>
+                <p className="text-xs text-gray-600 mt-1">
+                  {msg.createdAt?.toDate
+                    ? msg.createdAt.toDate().toLocaleString()
+                    : 'Enviando...'}
+                </p>
               </div>
-            )
-          })
-        )}
-        <div ref={messagesEndRef} />
+            </div>
+          )
+        })}
+        <div ref={divFimRef} />
       </div>
 
-      <div className="flex gap-2">
+      <form onSubmit={enviarMensagem} className="flex gap-2">
         <input
           type="text"
-          value={novaMensagem}
-          onChange={e => {
-            setNovaMensagem(e.target.value)
-            handleTyping()
-          }}
+          value={mensagem}
+          onChange={(e) => setMensagem(e.target.value)}
           placeholder="Digite sua mensagem..."
-          className="flex-1 border rounded px-3 py-2"
-          onKeyDown={e => {
-            if (e.key === 'Enter') enviarMensagem()
-          }}
-          disabled={enviando}
-          autoComplete="off"
+          className="flex-grow border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
         />
         <button
-          onClick={enviarMensagem}
-          disabled={enviando}
-          className="bg-orange-600 hover:bg-orange-700 text-white px-4 rounded disabled:opacity-50"
+          type="submit"
+          className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 transition"
+          disabled={!mensagem.trim()}
         >
-          {enviando ? 'Enviando...' : 'Enviar'}
+          Enviar
         </button>
-      </div>
+      </form>
     </div>
   )
 }
