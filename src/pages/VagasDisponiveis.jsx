@@ -75,7 +75,7 @@ export default function VagasDisponiveis({ freela }) {
     setSucesso(null)
 
     try {
-      await addDoc(collection(db, 'candidaturas'), {
+      const docRef = await addDoc(collection(db, 'candidaturas'), {
         vagaId: vaga.id,
         estabelecimentoUid: vaga.estabelecimentoUid || null,
         freelaUid: freela.uid,
@@ -90,6 +90,7 @@ export default function VagasDisponiveis({ freela }) {
       setCandidaturas(prev => [
         ...prev,
         {
+          id: docRef.id, // ✅ Agora inclui o ID da candidatura
           vagaId: vaga.id,
           status: 'pendente',
           mensagem: '',
@@ -106,9 +107,10 @@ export default function VagasDisponiveis({ freela }) {
     try {
       await deleteDoc(doc(db, 'candidaturas', candidaturaId))
       setCandidaturas(prev => prev.filter(c => c.id !== candidaturaId))
+      setSucesso('Candidatura excluída com sucesso.')
     } catch (err) {
       console.error('Erro ao excluir candidatura:', err)
-      alert('Erro ao excluir candidatura.')
+      setErro('Erro ao excluir candidatura.')
     }
   }
 
