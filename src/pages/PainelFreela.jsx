@@ -1,103 +1,61 @@
-import React, { useEffect, useState, useCallback } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  doc,
-  getDoc,
-  updateDoc,
-  serverTimestamp
-} from 'firebase/firestore'
+import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
-import { signOut } from 'firebase/auth'
+import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore'
+
+// Importa seus componentes já existentes
 import AgendaFreela from './freelas/AgendaFreela'
 import HistoricoTrabalhosFreela from './freelas/HistoricoTrabalhosFreela'
 import AvaliacoesRecebidasFreela from './freelas/AvaliacoesRecebidasFreela'
 
+// Componentes placeholder para chat e configurações
+function ChatFreela() {
+  return <div>🗨️ Chat ainda em desenvolvimento...</div>
+}
+
+function ConfiguracoesFreela() {
+  return <div>⚙️ Configurações do Freelancer ainda em desenvolvimento...</div>
+}
+
 export default function PainelFreela() {
   const navigate = useNavigate()
-  const [freela, setFreela] = useState(null)
+  const [usuario, setUsuario] = useState(null)
+  const [aba, setAba] = useState('agenda')
+  const [carregando, setCarregando] = useState(true)
   const [chamadas, setChamadas] = useState([])
   const [loadingCheckin, setLoadingCheckin] = useState(false)
   const [loadingCheckout, setLoadingCheckout] = useState(false)
 
-  const [audioChamada] = useState(() =>
-    new Audio('https://res.cloudinary.com/dbemvuau3/video/upload/v1750961914/qhkd3ojkqhi2imr9lup8.mp3')
-  )
-
   useEffect(() => {
-    audioChamada.load()
-  }, [audioChamada])
+    const unsubscribeAuth = onAuthStateChanged(auth, async user => {
+      if (user) {
+        const docRef = doc(db, 'usuarios', user.uid)
+        const snap = await getDoc(docRef)
+        if (snap.exists() && snap.data().tipo === 'freela') {
+          setUsuario({ uid: user.uid, ...snap.data() })
 
-  const tocarSomChamada = useCallback(() => {
-    audioChamada.play().catch(() => console.log('🔇 Áudio bloqueado'))
-  }, [audioChamada])
+          // Inscreve nas chamadas em tempo real para esse freela
+          const chamadasRef = collection(db, 'chamadas')
+          const q = query(chamadasRef, where('freelaUid', '==', user.uid))
+          const unsubscribeChamadas = onSnapshot(q, snapshot => {
+            setChamadas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+          })
 
-  // Carregar dados do freela e ouvir chamadas
-  const carregarFreela = useCallback(async () => {
-    const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
-    if (!usuario || usuario.tipo !== 'freela') {
-      navigate('/login')
-      return
-    }
-
-    try {
-      const ref = doc(db, 'usuarios', usuario.uid)
-      const snap = await getDoc(ref)
-
-      if (!snap.exists()) {
-        alert('Freelancer não encontrado.')
-        navigate('/login')
-        return
+          // Limpa inscrição quando desloga ou muda usuário
+          return () => unsubscribeChamadas()
+        } else {
+          setUsuario(null)
+        }
+      } else {
+        setUsuario(null)
       }
+      setCarregando(false)
+    })
 
-      const dados = snap.data()
-      setFreela({ uid: usuario.uid, ...dados })
+    return () => unsubscribeAuth()
+  }, [])
 
-      const chamadasRef = collection(db, 'chamadas')
-      const q = query(chamadasRef, where('freelaUid', '==', usuario.uid))
-
-      const unsubscribe = onSnapshot(q, snapshot => {
-        snapshot.docChanges().forEach(change => {
-          const chamada = { id: change.doc.id, ...change.doc.data() }
-          if (change.type === 'added') {
-            alert(`📩 Você foi chamado por ${chamada.estabelecimentoNome}!`)
-            tocarSomChamada()
-            setChamadas(prev => [chamada, ...prev])
-          }
-          if (change.type === 'modified') {
-            setChamadas(prev => prev.map(c => (c.id === chamada.id ? chamada : c)))
-          }
-          if (change.type === 'removed') {
-            setChamadas(prev => prev.filter(c => c.id !== chamada.id))
-          }
-        })
-      })
-
-      return unsubscribe
-    } catch (err) {
-      console.error('Erro ao carregar freela:', err)
-      navigate('/login')
-    }
-  }, [navigate, tocarSomChamada])
-
-  useEffect(() => {
-    let unsubscribeChamadas = () => {}
-
-    const iniciar = async () => {
-      unsubscribeChamadas = await carregarFreela()
-    }
-
-    iniciar()
-
-    return () => {
-      unsubscribeChamadas()
-    }
-  }, [carregarFreela])
-
-  // Check-in
   const fazerCheckin = async () => {
     const chamada = chamadas.find(c => !c.checkInFreela && c.status === 'aceita')
     if (!chamada) return alert('Nenhuma chamada pendente para check-in.')
@@ -108,13 +66,12 @@ export default function PainelFreela() {
         checkInHora: serverTimestamp()
       })
       alert('Check-in realizado!')
-    } catch (err) {
+    } catch {
       alert('Erro ao fazer check-in.')
     }
     setLoadingCheckin(false)
   }
 
-  // Check-out
   const fazerCheckout = async () => {
     const chamada = chamadas.find(c => c.checkInFreela && !c.checkOutFreela && c.status === 'aceita')
     if (!chamada) return alert('Nenhuma chamada pendente para check-out.')
@@ -125,99 +82,46 @@ export default function PainelFreela() {
         checkOutHora: serverTimestamp()
       })
       alert('Check-out realizado!')
-    } catch (err) {
+    } catch {
       alert('Erro ao fazer check-out.')
     }
     setLoadingCheckout(false)
   }
 
-  // Logout
   const handleLogout = async () => {
     await signOut(auth)
     localStorage.removeItem('usuarioLogado')
     navigate('/login')
   }
 
-  if (!freela) {
+  if (carregando) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-600">
-        Carregando...
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-orange-600 text-lg">Carregando painel...</p>
       </div>
     )
   }
 
-  return (
-    <div className="min-h-screen bg-blue-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between mb-6">
-          <h1 className="text-3xl font-bold text-blue-800">🎯 Painel do Freelancer</h1>
-          <div className="flex gap-2">
-            <button
-              onClick={() => navigate(`/editarfreela/${freela.uid}`)}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              ✏️ Editar Perfil
-            </button>
-            <button
-              onClick={handleLogout}
-              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-            >
-              🔒 Logout
-            </button>
-          </div>
-        </div>
+  if (!usuario) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-600 text-lg">Acesso não autorizado.</p>
+      </div>
+    )
+  }
 
-        {/* Conteúdo principal */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Perfil + Check-in/out + Agenda */}
-          <div className="bg-white rounded-2xl shadow p-6">
-            <div className="flex items-center gap-6">
-              <img
-                src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'}
-                alt="Foto do freelancer"
-                className="w-24 h-24 rounded-full object-cover border-2 border-blue-400 shadow"
-              />
-              <div>
-                <h2 className="text-2xl font-semibold">{freela.nome}</h2>
-                <p className="text-blue-600">{freela.funcao}</p>
-                <p className="text-gray-600">{freela.email}</p>
-                <p className="text-gray-600">📱 {freela.celular}</p>
-                <p className="text-gray-600">📍 {freela.endereco}</p>
-                <p className="text-green-700 font-semibold">
-                  💰 Diária: R$ {freela.valorDiaria || '—'}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  📝 Tipo: {freela.tipoContrato || '—'}
-                </p>
-                <div className="flex gap-3 mt-3">
-                  <button
-                    onClick={fazerCheckin}
-                    disabled={loadingCheckin}
-                    className="bg-green-600 text-white px-4 py-2 rounded"
-                  >
-                    {loadingCheckin ? 'Registrando...' : 'Check-in'}
-                  </button>
-                  <button
-                    onClick={fazerCheckout}
-                    disabled={loadingCheckout}
-                    className="bg-yellow-600 text-white px-4 py-2 rounded"
-                  >
-                    {loadingCheckout ? 'Registrando...' : 'Check-out'}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Agenda do Freela */}
-            <div className="mt-6">
-              <AgendaFreela freela={freela} />
-            </div>
-          </div>
-
-          {/* Chamadas Ativas */}
-          <div className="bg-white rounded-2xl shadow p-6 max-h-[500px] overflow-auto">
-            <h2 className="text-xl font-semibold mb-4">Chamadas Ativas</h2>
+  const renderConteudo = () => {
+    switch (aba) {
+      case 'agenda':
+        return <AgendaFreela freela={usuario} />
+      case 'historico':
+        return <HistoricoTrabalhosFreela freelaUid={usuario.uid} />
+      case 'avaliacoes':
+        return <AvaliacoesRecebidasFreela freelaUid={usuario.uid} />
+      case 'chamadas':
+        return (
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">Chamadas Ativas</h2>
             {chamadas.length === 0 && <p>Nenhuma chamada ativa.</p>}
             {chamadas.map(chamada => (
               <div key={chamada.id} className="border rounded p-3 mb-4">
@@ -228,17 +132,13 @@ export default function PainelFreela() {
                 {chamada.status === 'pendente' && (
                   <div className="mt-2 flex gap-3">
                     <button
-                      onClick={async () =>
-                        await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })
-                      }
+                      onClick={async () => await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })}
                       className="bg-green-600 text-white px-3 py-1 rounded"
                     >
                       ✅ Aceitar
                     </button>
                     <button
-                      onClick={async () =>
-                        await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })
-                      }
+                      onClick={async () => await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })}
                       className="bg-red-600 text-white px-3 py-1 rounded"
                     >
                       ❌ Recusar
@@ -247,17 +147,89 @@ export default function PainelFreela() {
                 )}
               </div>
             ))}
+
+            {/* Botões de checkin e checkout */}
+            <div className="mt-6 flex gap-4">
+              <button
+                onClick={fazerCheckin}
+                disabled={loadingCheckin}
+                className="bg-green-600 text-white px-6 py-2 rounded"
+              >
+                {loadingCheckin ? 'Registrando...' : 'Check-in'}
+              </button>
+              <button
+                onClick={fazerCheckout}
+                disabled={loadingCheckout}
+                className="bg-yellow-600 text-white px-6 py-2 rounded"
+              >
+                {loadingCheckout ? 'Registrando...' : 'Check-out'}
+              </button>
+            </div>
+          </div>
+        )
+      case 'chat':
+        return <ChatFreela />
+      case 'configuracoes':
+        return <ConfiguracoesFreela />
+      default:
+        return <AgendaFreela freela={usuario} />
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-orange-50 p-4">
+      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+        {/* Cabeçalho */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-orange-700">🧑‍🍳 Painel do Freelancer</h1>
+            <p className="text-gray-600 mt-1">{usuario.nome} — {usuario.funcao}</p>
+          </div>
+          <div className="flex gap-4">
+            <button
+              onClick={() => navigate(`/editarfreela/${usuario.uid}`)}
+              className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
+            >
+              ✏️ Editar Perfil
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            >
+              🔒 Logout
+            </button>
           </div>
         </div>
 
-        <div className="mt-10 flex justify-center">
-          <Link
-            to="/vagasdisponiveis"
-            className="bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded px-6 py-3 transition"
-          >
-            🎯 Ver vagas disponíveis
-          </Link>
-        </div>
+        {/* Navegação por abas */}
+        <nav className="border-b border-orange-300 mb-6">
+          <ul className="flex space-x-2 overflow-x-auto">
+            {[
+              { key: 'agenda', label: '📆 Minha Agenda' },
+              { key: 'chamadas', label: '📞 Chamadas' },
+              { key: 'chat', label: '💬 Chat' },
+              { key: 'avaliacoes', label: '⭐ Avaliações' },
+              { key: 'historico', label: '📜 Histórico' },
+              { key: 'configuracoes', label: '⚙️ Configurações' }
+            ].map(({ key, label }) => (
+              <li key={key} className="list-none">
+                <button
+                  onClick={() => setAba(key)}
+                  className={`px-4 py-2 -mb-px border-b-2 font-semibold transition whitespace-nowrap ${
+                    aba === key
+                      ? 'border-orange-600 text-orange-600'
+                      : 'border-transparent text-orange-400 hover:text-orange-600 hover:border-orange-400'
+                  }`}
+                >
+                  {label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {/* Conteúdo da aba selecionada */}
+        <section>{renderConteudo()}</section>
       </div>
     </div>
   )
