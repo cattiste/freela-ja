@@ -323,7 +323,7 @@ export default function PainelFreela() {
 
   return (
     <div className="min-h-screen bg-orange-50 p-4">
-      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+      <div className="max-w-7x1 mx-auto bg-white rounded-2xl shadow-lg p-6">
         {/* Cabeçalho */}
         <div className="flex justify-between items-center mb-6">
           <div>

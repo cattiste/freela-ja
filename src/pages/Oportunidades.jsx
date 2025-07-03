@@ -39,7 +39,7 @@ export default function Oportunidades() {
       </Helmet>
 
       <div className="min-h-screen bg-blue-50 p-6">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7x1 mx-auto">
           <h1 className="text-3xl font-bold mb-6 text-blue-800">🚀 Oportunidades em Alta</h1>
 
           <div className="grid md:grid-cols-4 gap-4 mb-6">
