@@ -16,6 +16,7 @@ export default function Chat({ chamadaId }) {
   const [mensagens, setMensagens] = useState([])
   const [novaMensagem, setNovaMensagem] = useState('')
   const [chamada, setChamada] = useState(null)
+  const [enviando, setEnviando] = useState(false)
   const messagesEndRef = useRef(null)
 
   useEffect(() => {
@@ -38,13 +39,25 @@ export default function Chat({ chamadaId }) {
   }, [chamadaId])
 
   useEffect(() => {
-    // Scroll para a última mensagem
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [mensagens])
 
-  const enviarMensagem = async () => {
-    if (!novaMensagem.trim()) return
+  if (!user) return <p className="text-center text-red-600">Usuário não autenticado.</p>
 
+  if (!chamada) return <p className="text-center text-gray-500">Carregando chat...</p>
+
+  if (chamada.status !== 'aceita') {
+    return (
+      <p className="text-center text-red-600">
+        Chat disponível apenas para chamadas aceitas.
+      </p>
+    )
+  }
+
+  const enviarMensagem = async () => {
+    if (!novaMensagem.trim() || enviando) return
+
+    setEnviando(true)
     try {
       const mensagensRef = collection(db, 'chamadas', chamadaId, 'mensagens')
       await addDoc(mensagensRef, {
@@ -56,16 +69,7 @@ export default function Chat({ chamadaId }) {
     } catch (err) {
       console.error('Erro ao enviar mensagem:', err)
     }
-  }
-
-  if (!chamada) return <p className="text-center text-gray-500">Carregando chat...</p>
-
-  if (chamada.status !== 'aceito') {
-    return (
-      <p className="text-center text-red-600">
-        Chat disponível apenas para chamadas aceitas.
-      </p>
-    )
+    setEnviando(false)
   }
 
   return (
@@ -84,16 +88,13 @@ export default function Chat({ chamadaId }) {
               <div
                 key={msg.id}
                 className={`mb-2 max-w-[70%] p-2 rounded ${
-                  isRemetente
-                    ? 'bg-orange-100 self-end text-right'
-                    : 'bg-gray-200 self-start text-left'
+                  isRemetente ? 'bg-orange-100 self-end text-right' : 'bg-gray-200 self-start text-left'
                 }`}
               >
                 <p>{msg.texto}</p>
-                {/* Opcional: mostrar hora */}
-                {/* <small className="text-xs text-gray-500">
-                  {msg.createdAt?.toDate().toLocaleTimeString()}
-                </small> */}
+                <small className="text-xs text-gray-500">
+                  {msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString() : ''}
+                </small>
               </div>
             )
           })
@@ -111,12 +112,14 @@ export default function Chat({ chamadaId }) {
           onKeyDown={e => {
             if (e.key === 'Enter') enviarMensagem()
           }}
+          disabled={enviando}
         />
         <button
           onClick={enviarMensagem}
-          className="bg-orange-600 hover:bg-orange-700 text-white px-4 rounded"
+          disabled={enviando}
+          className="bg-orange-600 hover:bg-orange-700 text-white px-4 rounded disabled:opacity-50"
         >
-          Enviar
+          {enviando ? 'Enviando...' : 'Enviar'}
         </button>
       </div>
     </div>
