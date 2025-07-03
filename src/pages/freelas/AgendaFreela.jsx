@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import Calendar from 'react-calendar'
-import 'react-calendar/dist/Calendar.css' // Certifique-se de ter o CSS instalado
+import 'react-calendar/styles/Calendar.css' // Certifique-se de ter o CSS instalado
 import { db } from '@/firebase'
 import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore'
 
