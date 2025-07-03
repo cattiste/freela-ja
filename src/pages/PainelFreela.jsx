@@ -15,9 +15,6 @@ import PerfilFreela from './PerfilFreela'
 function ChatFreela() {
   return <div className="text-gray-500 text-center">🗨️ Chat ainda em desenvolvimento...</div>
 }
-function ConfiguracoesFreela() {
-  return <div className="text-gray-500 text-center">⚙️ Configurações ainda em desenvolvimento...</div>
-}
 
 export default function PainelFreela() {
   const navigate = useNavigate()
