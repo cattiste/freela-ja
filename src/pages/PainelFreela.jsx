@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
-import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
 
 import AgendaFreela from './freelas/AgendaFreela'
@@ -11,8 +11,8 @@ import AvaliacoesRecebidasFreela from './freelas/AvaliacoesRecebidasFreela'
 export default function PainelFreela() {
   const navigate = useNavigate()
   const [usuario, setUsuario] = useState(null)
-  const [aba, setAba] = useState('agenda')
   const [carregando, setCarregando] = useState(true)
+  const [aba, setAba] = useState('agenda') // aba inicial
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async user => {
@@ -34,9 +34,13 @@ export default function PainelFreela() {
   }, [])
 
   const handleLogout = async () => {
-    await signOut(auth)
-    localStorage.removeItem('usuarioLogado')
-    navigate('/login')
+    try {
+      await signOut(auth)
+      localStorage.removeItem('usuarioLogado')
+      navigate('/login')
+    } catch (err) {
+      alert('Erro ao sair.')
+    }
   }
 
   const renderConteudo = () => {
@@ -44,9 +48,9 @@ export default function PainelFreela() {
       case 'agenda':
         return <AgendaFreela freela={usuario} />
       case 'historico':
-        return <HistoricoTrabalhosFreela freelaUid={usuario?.uid} />
+        return <HistoricoTrabalhosFreela freela={usuario} />
       case 'avaliacoes':
-        return <AvaliacoesRecebidasFreela freelaUid={usuario?.uid} />
+        return <AvaliacoesRecebidasFreela freela={usuario} />
       default:
         return <AgendaFreela freela={usuario} />
     }
@@ -70,10 +74,10 @@ export default function PainelFreela() {
 
   return (
     <div className="min-h-screen bg-orange-50 p-4">
-      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+      <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-6">
         {/* Cabeçalho */}
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-orange-700">🧑‍🍳 Painel do Freelancer</h1>
+          <h1 className="text-3xl font-bold text-orange-700">👤 Painel do Freelancer</h1>
           <div className="flex gap-4">
             <button
               onClick={() => navigate(`/editarfreela/${usuario.uid}`)}
@@ -90,12 +94,12 @@ export default function PainelFreela() {
           </div>
         </div>
 
-        {/* Abas de navegação */}
+        {/* Navegação por abas */}
         <nav className="border-b border-orange-300 mb-6">
           <ul className="flex space-x-2">
             {[
-              { key: 'agenda', label: '📆 Minha Agenda' },
-              { key: 'historico', label: '📜 Histórico de Trabalhos' },
+              { key: 'agenda', label: '🗓️ Agenda' },
+              { key: 'historico', label: '🧾 Histórico de Trabalhos' },
               { key: 'avaliacoes', label: '⭐ Avaliações Recebidas' }
             ].map(({ key, label }) => (
               <li key={key} className="list-none">
