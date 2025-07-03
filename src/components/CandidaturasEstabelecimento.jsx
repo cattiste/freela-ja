@@ -99,7 +99,7 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
                 <p className="text-sm mt-1">
                   <span className="font-medium">Status:</span>{' '}
                   <span
-                    className={`px-2 py-0.5 rounded ${
+                    className={`px-2 py-0.5 rounded text-xs font-semibold ${
                       c.status?.toLowerCase() === 'aprovado'
                         ? 'bg-green-100 text-green-700'
                         : c.status?.toLowerCase() === 'rejeitado'
