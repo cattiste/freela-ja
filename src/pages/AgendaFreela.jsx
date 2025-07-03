@@ -40,7 +40,15 @@ export default function AgendaFreela({ freela }) {
 
   const tileDisabled = ({ date }) => {
     const dia = date.toISOString().split('T')[0]
-    return datasOcupadas.includes(dia)
+    return false // nenhuma data desabilitada para interação
+  }
+
+  const tileContent = ({ date, view }) => {
+    const dia = date.toISOString().split('T')[0]
+    if (view === 'month' && datasOcupadas.includes(dia)) {
+      return <div className="dot-indicator" />
+    }
+    return null
   }
 
   return (
@@ -59,6 +67,7 @@ export default function AgendaFreela({ freela }) {
           }
         }}
         tileDisabled={tileDisabled}
+        tileContent={tileContent}
       />
       <p className="text-sm text-gray-500 mt-4">
         Clique em uma data para marcar como ocupada. Para liberar, clique novamente e confirme.
