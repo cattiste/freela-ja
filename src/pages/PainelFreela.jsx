@@ -19,6 +19,7 @@ import HistoricoTrabalhosFreela from './freelas/HistoricoTrabalhosFreela'
 import AvaliacoesRecebidasFreela from './freelas/AvaliacoesRecebidasFreela'
 import ConfiguracoesFreela from './freelas/ConfiguracoesFreela'
 import PerfilFreela from './PerfilFreela'
+import RecebimentosFreela from './freelas/RecebimentosFreela'
 
 // Placeholder para chat enquanto não estiver pronto
 function ChatFreela() {
@@ -139,6 +140,8 @@ export default function PainelFreela() {
         return <HistoricoTrabalhosFreela freelaUid={usuario.uid} />
       case 'avaliacoes':
         return <AvaliacoesRecebidasFreela freelaUid={usuario.uid} />
+      case 'recebimentos':
+        return <RecebimentosFreela />  
       case 'chamadas':
         return (
           <div>
@@ -247,6 +250,7 @@ export default function PainelFreela() {
               { key: 'avaliacoes', label: '⭐ Avaliações' },
               { key: 'historico', label: '📜 Histórico' },
               { key: 'configuracoes', label: '⚙️ Configurações' }
+              { key: 'recebimentos', label: '⚙️ Recebimentos' }
             ].map(({ key, label }) => (
               <li key={key} className="list-none">
                 <button
