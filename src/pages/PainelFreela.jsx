@@ -32,6 +32,7 @@ export default function PainelFreela() {
       if (user) {
         const docRef = doc(db, 'usuarios', user.uid)
         const snap = await getDoc(docRef)
+
         if (snap.exists() && snap.data().tipo === 'freela') {
           setUsuario({ uid: user.uid, ...snap.data() })
 
@@ -41,6 +42,7 @@ export default function PainelFreela() {
             setChamadas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
           })
 
+          // Desinscreve chamadas quando desmontar o efeito
           return () => unsubscribeChamadas()
         } else {
           setUsuario(null)
@@ -48,6 +50,7 @@ export default function PainelFreela() {
       } else {
         setUsuario(null)
       }
+
       setCarregando(false)
     })
 
