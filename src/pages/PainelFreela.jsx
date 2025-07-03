@@ -2,24 +2,15 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  updateDoc,
-  doc,
-  serverTimestamp,
-  getDoc
-} from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore'
 
-// Importa os componentes das abas
-import PerfilFreela from './freelas/PerfilFreela'
+// Importa componentes já existentes
+import PerfilFreela from '@/PerfilFreela'  // PerfilFreela está na raiz src
 import AgendaFreela from './freelas/AgendaFreela'
 import HistoricoTrabalhosFreela from './freelas/HistoricoTrabalhosFreela'
 import AvaliacoesRecebidasFreela from './freelas/AvaliacoesRecebidasFreela'
 
-// Componentes placeholder para chat e configurações
+// Placeholders para chat e configurações
 function ChatFreela() {
   return <div>🗨️ Chat ainda em desenvolvimento...</div>
 }
@@ -31,7 +22,7 @@ function ConfiguracoesFreela() {
 export default function PainelFreela() {
   const navigate = useNavigate()
   const [usuario, setUsuario] = useState(null)
-  const [aba, setAba] = useState('perfil') // Aba padrão: perfil
+  const [aba, setAba] = useState('perfil') // Perfil é a aba inicial agora
   const [carregando, setCarregando] = useState(true)
   const [chamadas, setChamadas] = useState([])
   const [loadingCheckin, setLoadingCheckin] = useState(false)
@@ -246,13 +237,4 @@ export default function PainelFreela() {
       </div>
     </div>
   )
-}
-
-// Placeholders para chat e configurações
-function ChatFreela() {
-  return <div>🗨️ Chat ainda em desenvolvimento...</div>
-}
-
-function ConfiguracoesFreela() {
-  return <div>⚙️ Configurações do Freelancer ainda em desenvolvimento...</div>
 }
