@@ -1,8 +1,19 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
-import { onAuthStateChanged, signOut } from 'firebase/auth'
-import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore'
+import {
+  onAuthStateChanged,
+  signOut
+} from 'firebase/auth'
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  updateDoc,
+  doc,
+  serverTimestamp,
+  getDoc
+} from 'firebase/firestore'
 
 // Importa seus componentes já existentes
 import AgendaFreela from './freelas/AgendaFreela'
@@ -19,7 +30,6 @@ function ConfiguracoesFreela() {
 }
 
 export default function PainelFreela() {
-  const navigate = useNavigate()
   const [usuario, setUsuario] = useState(null)
   const [aba, setAba] = useState('agenda')
   const [carregando, setCarregando] = useState(true)
@@ -57,7 +67,7 @@ export default function PainelFreela() {
   }, [])
 
   const fazerCheckin = async () => {
-    const chamada = chamadas.find(c => !c.checkInFreela && c.status === 'aceita')
+    const chamada = chamadas.find(c => !c.checkInFreela && c.status === 'aceito')
     if (!chamada) return alert('Nenhuma chamada pendente para check-in.')
     setLoadingCheckin(true)
     try {
@@ -73,7 +83,7 @@ export default function PainelFreela() {
   }
 
   const fazerCheckout = async () => {
-    const chamada = chamadas.find(c => c.checkInFreela && !c.checkOutFreela && c.status === 'aceita')
+    const chamada = chamadas.find(c => c.checkInFreela && !c.checkOutFreela && c.status === 'aceito')
     if (!chamada) return alert('Nenhuma chamada pendente para check-out.')
     setLoadingCheckout(true)
     try {
@@ -91,7 +101,7 @@ export default function PainelFreela() {
   const handleLogout = async () => {
     await signOut(auth)
     localStorage.removeItem('usuarioLogado')
-    navigate('/login')
+    setUsuario(null)
   }
 
   if (carregando) {
@@ -132,13 +142,13 @@ export default function PainelFreela() {
                 {chamada.status === 'pendente' && (
                   <div className="mt-2 flex gap-3">
                     <button
-                      onClick={async () => await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })}
+                      onClick={async () => await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceito' })}
                       className="bg-green-600 text-white px-3 py-1 rounded"
                     >
                       ✅ Aceitar
                     </button>
                     <button
-                      onClick={async () => await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })}
+                      onClick={async () => await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusado' })}
                       className="bg-red-600 text-white px-3 py-1 rounded"
                     >
                       ❌ Recusar
@@ -168,9 +178,9 @@ export default function PainelFreela() {
           </div>
         )
       case 'chat':
-        return <ChatFreela />
+        return <div>🗨️ Chat ainda em desenvolvimento...</div>
       case 'configuracoes':
-        return <ConfiguracoesFreela />
+        return <div>⚙️ Configurações do Freelancer ainda em desenvolvimento...</div>
       default:
         return <AgendaFreela freela={usuario} />
     }
@@ -187,7 +197,7 @@ export default function PainelFreela() {
           </div>
           <div className="flex gap-4">
             <button
-              onClick={() => navigate(`/editarfreela/${usuario.uid}`)}
+              onClick={() => window.location.href = `/editarfreela/${usuario.uid}`}
               className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
             >
               ✏️ Editar Perfil

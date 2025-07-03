@@ -9,18 +9,23 @@ import {
   doc
 } from 'firebase/firestore'
 
-import Chat from './Chat' // Importa o componente Chat
+import Chat from './Chat' // Seu componente Chat, caso já tenha
 
 export default function Chamadas() {
   const [chamadas, setChamadas] = useState([])
   const [loading, setLoading] = useState(true)
   const [chatAbertoId, setChatAbertoId] = useState(null)
-  const user = auth.currentUser
+  const [loadingId, setLoadingId] = useState(null)
+  const [user, setUser] = useState(null)
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(u => setUser(u))
+    return unsubscribe
+  }, [])
 
   useEffect(() => {
     if (!user) return
 
-    // Busca chamadas do freela com status pendente ou aceito
     const q = query(
       collection(db, 'chamadas'),
       where('freelaUid', '==', user.uid),
@@ -38,22 +43,30 @@ export default function Chamadas() {
 
   // Aceitar chamada e abrir chat automaticamente
   async function aceitar(id) {
+    setLoadingId(id)
     try {
       await updateDoc(doc(db, 'chamadas', id), { status: 'aceito' })
       setChatAbertoId(id)
     } catch (err) {
       console.error('Erro ao aceitar chamada:', err)
     }
+    setLoadingId(null)
   }
 
   // Rejeitar chamada e fechar chat se estiver aberto
   async function rejeitar(id) {
+    setLoadingId(id)
     try {
       await updateDoc(doc(db, 'chamadas', id), { status: 'rejeitado' })
       if (chatAbertoId === id) setChatAbertoId(null)
     } catch (err) {
       console.error('Erro ao rejeitar chamada:', err)
     }
+    setLoadingId(null)
+  }
+
+  if (!user) {
+    return <p className="text-center text-red-600 mt-6">Você precisa estar logado para ver as chamadas.</p>
   }
 
   if (loading) {
@@ -95,15 +108,17 @@ export default function Chamadas() {
                 <>
                   <button
                     onClick={() => aceitar(chamada.id)}
-                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                    disabled={loadingId === chamada.id}
+                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    ✅ Aceitar
+                    {loadingId === chamada.id ? 'Aguarde...' : '✅ Aceitar'}
                   </button>
                   <button
                     onClick={() => rejeitar(chamada.id)}
-                    className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                    disabled={loadingId === chamada.id}
+                    className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    ❌ Rejeitar
+                    {loadingId === chamada.id ? 'Aguarde...' : '❌ Rejeitar'}
                   </button>
                 </>
               )}
@@ -111,7 +126,7 @@ export default function Chamadas() {
               {chamada.status === 'aceito' && (
                 <button
                   onClick={() =>
-                    setChatAbertoId(chatAbertoId === chamada.id ? null : chamada.id)
+                    setChatAbertoId(prev => (prev === chamada.id ? null : chamada.id))
                   }
                   className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
                 >
