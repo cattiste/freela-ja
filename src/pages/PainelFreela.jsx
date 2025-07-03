@@ -1,16 +1,14 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
-import {
-  onAuthStateChanged,
-  signOut
-} from 'firebase/auth'
+import { onAuthStateChanged, signOut } from 'firebase/auth'
 import {
   collection,
   query,
   where,
   onSnapshot,
-  updateDoc,
   doc,
+  updateDoc,
   serverTimestamp,
   getDoc
 } from 'firebase/firestore'
@@ -30,6 +28,7 @@ function ConfiguracoesFreela() {
 }
 
 export default function PainelFreela() {
+  const navigate = useNavigate()
   const [usuario, setUsuario] = useState(null)
   const [aba, setAba] = useState('agenda')
   const [carregando, setCarregando] = useState(true)
@@ -38,32 +37,37 @@ export default function PainelFreela() {
   const [loadingCheckout, setLoadingCheckout] = useState(false)
 
   useEffect(() => {
+    let unsubscribeChamadas = null
+
     const unsubscribeAuth = onAuthStateChanged(auth, async user => {
       if (user) {
         const docRef = doc(db, 'usuarios', user.uid)
         const snap = await getDoc(docRef)
+
         if (snap.exists() && snap.data().tipo === 'freela') {
           setUsuario({ uid: user.uid, ...snap.data() })
 
           // Inscreve nas chamadas em tempo real para esse freela
           const chamadasRef = collection(db, 'chamadas')
           const q = query(chamadasRef, where('freelaUid', '==', user.uid))
-          const unsubscribeChamadas = onSnapshot(q, snapshot => {
+          unsubscribeChamadas = onSnapshot(q, snapshot => {
             setChamadas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+            setCarregando(false) // Para o loading após carregar as chamadas
           })
-
-          // Limpa inscrição quando desloga ou muda usuário
-          return () => unsubscribeChamadas()
         } else {
           setUsuario(null)
+          setCarregando(false)
         }
       } else {
         setUsuario(null)
+        setCarregando(false)
       }
-      setCarregando(false)
     })
 
-    return () => unsubscribeAuth()
+    return () => {
+      unsubscribeAuth()
+      if (unsubscribeChamadas) unsubscribeChamadas()
+    }
   }, [])
 
   const fazerCheckin = async () => {
@@ -101,7 +105,7 @@ export default function PainelFreela() {
   const handleLogout = async () => {
     await signOut(auth)
     localStorage.removeItem('usuarioLogado')
-    setUsuario(null)
+    navigate('/login')
   }
 
   if (carregando) {
@@ -148,7 +152,7 @@ export default function PainelFreela() {
                       ✅ Aceitar
                     </button>
                     <button
-                      onClick={async () => await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusado' })}
+                      onClick={async () => await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })}
                       className="bg-red-600 text-white px-3 py-1 rounded"
                     >
                       ❌ Recusar
@@ -178,9 +182,9 @@ export default function PainelFreela() {
           </div>
         )
       case 'chat':
-        return <div>🗨️ Chat ainda em desenvolvimento...</div>
+        return <ChatFreela />
       case 'configuracoes':
-        return <div>⚙️ Configurações do Freelancer ainda em desenvolvimento...</div>
+        return <ConfiguracoesFreela />
       default:
         return <AgendaFreela freela={usuario} />
     }
@@ -197,7 +201,7 @@ export default function PainelFreela() {
           </div>
           <div className="flex gap-4">
             <button
-              onClick={() => window.location.href = `/editarfreela/${usuario.uid}`}
+              onClick={() => navigate(`/editarfreela/${usuario.uid}`)}
               className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
             >
               ✏️ Editar Perfil
