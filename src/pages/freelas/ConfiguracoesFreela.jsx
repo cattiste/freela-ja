@@ -9,14 +9,28 @@ export default function ConfiguracoesFreela() {
   })
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
-  const user = auth.currentUser
+  const [usuario, setUsuario] = useState(null)
+  const [feedback, setFeedback] = useState(null) // sucesso ou erro
 
   useEffect(() => {
-    if (!user) return
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      if (user) {
+        setUsuario(user)
+      } else {
+        setUsuario(null)
+        setCarregando(false)
+      }
+    })
+    return unsubscribe
+  }, [])
+
+  useEffect(() => {
+    if (!usuario) return
+
     const fetchConfig = async () => {
       setCarregando(true)
       try {
-        const ref = doc(db, 'usuarios', user.uid)
+        const ref = doc(db, 'usuarios', usuario.uid)
         const snap = await getDoc(ref)
         if (snap.exists()) {
           const data = snap.data()
@@ -27,12 +41,13 @@ export default function ConfiguracoesFreela() {
         }
       } catch (error) {
         console.error('Erro ao carregar configurações:', error)
+        setFeedback({ tipo: 'erro', msg: 'Erro ao carregar configurações.' })
       } finally {
         setCarregando(false)
       }
     }
     fetchConfig()
-  }, [user])
+  }, [usuario])
 
   const handleChange = e => {
     const { name, checked } = e.target
@@ -40,17 +55,18 @@ export default function ConfiguracoesFreela() {
   }
 
   const salvarConfiguracoes = async () => {
-    if (!user) return
+    if (!usuario) return
     setSalvando(true)
     try {
-      const ref = doc(db, 'usuarios', user.uid)
+      const ref = doc(db, 'usuarios', usuario.uid)
       await updateDoc(ref, config)
-      alert('Configurações salvas com sucesso!')
+      setFeedback({ tipo: 'sucesso', msg: 'Configurações salvas com sucesso!' })
     } catch (error) {
       console.error('Erro ao salvar configurações:', error)
-      alert('Erro ao salvar configurações.')
+      setFeedback({ tipo: 'erro', msg: 'Erro ao salvar configurações.' })
     } finally {
       setSalvando(false)
+      setTimeout(() => setFeedback(null), 4000)
     }
   }
 
@@ -59,6 +75,16 @@ export default function ConfiguracoesFreela() {
   return (
     <div className="max-w-lg mx-auto bg-white p-6 rounded-lg shadow space-y-6">
       <h2 className="text-2xl font-bold text-orange-700">⚙️ Configurações</h2>
+
+      {feedback && (
+        <div
+          className={`p-3 rounded ${
+            feedback.tipo === 'sucesso' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}
+        >
+          {feedback.msg}
+        </div>
+      )}
 
       <label className="flex items-center gap-3">
         <input

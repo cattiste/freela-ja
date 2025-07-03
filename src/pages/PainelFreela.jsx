@@ -8,6 +8,7 @@ import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, 
 import AgendaFreela from './freelas/AgendaFreela'
 import HistoricoTrabalhosFreela from './freelas/HistoricoTrabalhosFreela'
 import AvaliacoesRecebidasFreela from './freelas/AvaliacoesRecebidasFreela'
+import ConfiguracoesFreela from './ConfiguracoesFreela'
 import PerfilFreela from './PerfilFreela'
 
 // Placeholders para chat e configurações
