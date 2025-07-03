@@ -1,105 +1,132 @@
 import React, { useEffect, useState } from 'react'
 import Calendar from 'react-calendar'
-import '../styles/calendar.css'
+import '../styles/Calendar.css'
 import { db } from '@/firebase'
-import {
-  collection,
-  doc,
-  setDoc,
-  deleteDoc,
-  onSnapshot
-} from 'firebase/firestore'
+import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore'
 
 export default function AgendaFreela({ freela }) {
-  const [datasOcupadas, setDatasOcupadas] = useState([]) // lista de strings no formato 'YYYY-MM-DD'
-  const [carregando, setCarregando] = useState(true)
+  const [datasOcupadas, setDatasOcupadas] = useState({}) // { '2025-07-03': { ocupado: true, nota: 'bla' } }
+  const [dataSelecionada, setDataSelecionada] = useState(null)
+  const [nota, setNota] = useState('')
+  const [modoEdicao, setModoEdicao] = useState(false)
 
   useEffect(() => {
     if (!freela?.uid) return
 
-    const agendaRef = collection(db, 'usuarios', freela.uid, 'agenda')
-
-    // Ouve as mudanças na subcoleção 'agenda' do freela
-    const unsubscribe = onSnapshot(
-      agendaRef,
-      snapshot => {
-        const datas = snapshot.docs.map(doc => doc.id) // as datas são os IDs dos docs
-        setDatasOcupadas(datas)
-        setCarregando(false)
-      },
-      error => {
-        console.error('Erro ao ouvir agenda:', error)
-        setCarregando(false)
-      }
-    )
+    const ref = collection(db, 'usuarios', freela.uid, 'agenda')
+    const unsubscribe = onSnapshot(ref, snapshot => {
+      const datas = {}
+      snapshot.docs.forEach(doc => {
+        datas[doc.id] = doc.data()
+      })
+      setDatasOcupadas(datas)
+    })
 
     return () => unsubscribe()
-  }, [freela?.uid])
+  }, [freela])
 
-  // Marca uma data como ocupada (cria doc na subcoleção)
-  const marcarData = async (date) => {
-    if (!freela?.uid) return
+  const handleClickDia = (date) => {
     const dia = date.toISOString().split('T')[0]
-    const docRef = doc(db, 'usuarios', freela.uid, 'agenda', dia)
-    try {
-      await setDoc(docRef, { ocupado: true })
-      // Atualiza localmente no estado
-      setDatasOcupadas(prev => [...prev, dia])
-    } catch (error) {
-      console.error('Erro ao marcar data:', error)
+
+    if (datasOcupadas[dia]) {
+      // Data ocupada - perguntar para liberar
+      const confirm = window.confirm(
+        `A data ${dia} está marcada como ocupada. Deseja liberar essa data?`
+      )
+      if (confirm) {
+        liberarData(dia)
+      }
+    } else {
+      // Data livre - abrir campo para inserir nota e marcar ocupada
+      setDataSelecionada(dia)
+      setNota('')
+      setModoEdicao(true)
     }
   }
 
-  // Desmarca uma data (remove o doc na subcoleção)
-  const desmarcarData = async (date) => {
-    if (!freela?.uid) return
-    const dia = date.toISOString().split('T')[0]
-    const docRef = doc(db, 'usuarios', freela.uid, 'agenda', dia)
+  const marcarData = async () => {
+    if (!dataSelecionada) return
     try {
-      await deleteDoc(docRef)
-      // Atualiza localmente no estado
-      setDatasOcupadas(prev => prev.filter(d => d !== dia))
-    } catch (error) {
-      console.error('Erro ao desmarcar data:', error)
+      const ref = doc(db, 'usuarios', freela.uid, 'agenda', dataSelecionada)
+      await setDoc(ref, { ocupado: true, nota: nota.trim() || null })
+      setModoEdicao(false)
+      setDataSelecionada(null)
+      setNota('')
+    } catch (err) {
+      alert('Erro ao marcar data. Veja o console.')
+      console.error(err)
     }
   }
 
-  // Desabilita o dia clicável no calendário se estiver ocupado (já marcado)
-  const tileDisabled = ({ date, view }) => {
-    if (view !== 'month') return false
-    const dia = date.toISOString().split('T')[0]
-    return datasOcupadas.includes(dia)
+  const liberarData = async (dia) => {
+    try {
+      const ref = doc(db, 'usuarios', freela.uid, 'agenda', dia)
+      await deleteDoc(ref)
+    } catch (err) {
+      alert('Erro ao liberar data. Veja o console.')
+      console.error(err)
+    }
   }
 
-  if (carregando) {
-    return (
-      <div className="p-6 bg-white rounded-xl shadow mt-8">
-        <p className="text-center text-orange-600">Carregando agenda...</p>
-      </div>
-    )
+  const tileDisabled = ({ date }) => {
+    const dia = date.toISOString().split('T')[0]
+    return !!datasOcupadas[dia] // desabilita clique? Aqui não, pois queremos permitir clicar em ocupadas para liberar
   }
 
   return (
     <div className="bg-white p-6 rounded-xl shadow mt-8 max-w-md mx-auto">
       <h2 className="text-xl font-semibold mb-4 text-blue-700">📆 Minha Agenda</h2>
       <Calendar
-        onClickDay={async (date) => {
+        onClickDay={handleClickDia}
+        tileContent={({ date }) => {
           const dia = date.toISOString().split('T')[0]
-          if (datasOcupadas.includes(dia)) {
-            // Confirma se quer liberar a data marcada
-            const confirmar = window.confirm('Deseja liberar essa data da agenda?')
-            if (confirmar) {
-              await desmarcarData(date)
-            }
-          } else {
-            // Marca a data como ocupada
-            await marcarData(date)
+          if (datasOcupadas[dia]) {
+            return (
+              <div className="text-xs text-red-600 font-bold mt-1">
+                📌 {datasOcupadas[dia].nota || 'Ocupado'}
+              </div>
+            )
           }
+          return null
         }}
-        tileDisabled={tileDisabled}
       />
-      <p className="text-sm text-gray-500 mt-4 text-center">
-        Clique em uma data para marcar como ocupada. Para liberar, clique novamente e confirme.
+
+      {/* Painel para marcar data com nota */}
+      {modoEdicao && (
+        <div className="mt-4 p-4 border rounded bg-yellow-50">
+          <p>
+            Marcando data: <strong>{dataSelecionada}</strong>
+          </p>
+          <textarea
+            placeholder="Adicione uma nota (opcional)"
+            value={nota}
+            onChange={e => setNota(e.target.value)}
+            className="w-full p-2 border rounded mt-2"
+            rows={3}
+          />
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={marcarData}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              Salvar
+            </button>
+            <button
+              onClick={() => {
+                setModoEdicao(false)
+                setDataSelecionada(null)
+                setNota('')
+              }}
+              className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      <p className="text-sm text-gray-500 mt-4">
+        Clique em uma data para marcar como ocupada. Para liberar uma data ocupada, clique nela e confirme.
       </p>
     </div>
   )
