@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 import { signOut } from 'firebase/auth'
-import AgendaFreela from './AgendaFreela' // componente agenda
+import AgendaFreela from './AgendaFreela' // importe o componente agenda
 
 export default function PainelFreela() {
   const navigate = useNavigate()
@@ -166,7 +166,6 @@ export default function PainelFreela() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Dados do Freela */}
           <div className="bg-white rounded-2xl shadow p-6">
             <div className="flex items-center gap-6">
               <img
@@ -205,7 +204,6 @@ export default function PainelFreela() {
             <AgendaFreela freela={freela} />
           </div>
 
-          {/* Chamadas Ativas */}
           <div className="bg-white rounded-2xl shadow p-6 max-h-[500px] overflow-auto">
             <h2 className="text-xl font-semibold mb-4">Chamadas Ativas</h2>
             {chamadas.length === 0 && <p>Nenhuma chamada ativa.</p>}
@@ -240,15 +238,13 @@ export default function PainelFreela() {
           </div>
         </div>
 
-        <div className="mt-10 flex justify-center gap-6">
-          {/* Link para páginas extras que você vai criar */}
+        <div className="mt-10 flex justify-center">
           <Link
-            to={`/editarfreela/${freela.uid}`}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded px-6 py-3 transition"
+            to="/vagasdisponiveis"
+            className="bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded px-6 py-3 transition"
           >
-            ✏️ Editar Perfil
+            🎯 Ver vagas disponíveis
           </Link>
-          {/* Outras páginas extras aqui, ex: Vagas, Contratos, etc. */}
         </div>
       </div>
     </div>
