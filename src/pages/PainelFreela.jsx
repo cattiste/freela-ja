@@ -2,7 +2,16 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
-import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  doc,
+  updateDoc,
+  serverTimestamp,
+  getDoc
+} from 'firebase/firestore'
 
 // Componentes
 import AgendaFreela from './freelas/AgendaFreela'
@@ -11,7 +20,7 @@ import AvaliacoesRecebidasFreela from './freelas/AvaliacoesRecebidasFreela'
 import ConfiguracoesFreela from './ConfiguracoesFreela'
 import PerfilFreela from './PerfilFreela'
 
-// Placeholders para chat e configurações
+// Placeholder para chat enquanto não estiver pronto
 function ChatFreela() {
   return <div className="text-gray-500 text-center">🗨️ Chat ainda em desenvolvimento...</div>
 }
@@ -26,39 +35,46 @@ export default function PainelFreela() {
   const [loadingCheckout, setLoadingCheckout] = useState(false)
 
   useEffect(() => {
-  let unsubscribeChamadas = () => {}
-  const unsubscribeAuth = onAuthStateChanged(auth, async user => {
-    if (user) {
-      const docRef = doc(db, 'usuarios', user.uid)
-      const snap = await getDoc(docRef)
-      if (snap.exists() && snap.data().tipo === 'freela') {
-        setUsuario({ uid: user.uid, ...snap.data() })
+    let unsubscribeChamadas = null
 
-        const chamadasRef = collection(db, 'chamadas')
-        const q = query(chamadasRef, where('freelaUid', '==', user.uid))
-        unsubscribeChamadas = onSnapshot(q, snapshot => {
-          setChamadas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
-        })
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const docRef = doc(db, 'usuarios', user.uid)
+        try {
+          const snap = await getDoc(docRef)
+          if (snap.exists() && snap.data().tipo === 'freela') {
+            setUsuario({ uid: user.uid, ...snap.data() })
 
-        setCarregando(false)  // <- importante chamar aqui
+            const chamadasRef = collection(db, 'chamadas')
+            const q = query(chamadasRef, where('freelaUid', '==', user.uid))
+            unsubscribeChamadas = onSnapshot(q, (snapshot) => {
+              setChamadas(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })))
+            })
+
+            setCarregando(false)
+          } else {
+            setUsuario(null)
+            setCarregando(false)
+          }
+        } catch (error) {
+          console.error('Erro ao buscar usuário:', error)
+          setUsuario(null)
+          setCarregando(false)
+        }
       } else {
         setUsuario(null)
         setCarregando(false)
       }
-    } else {
-      setUsuario(null)
-      setCarregando(false)
-    }
-  })
+    })
 
-  return () => {
-    unsubscribeAuth()
-    unsubscribeChamadas()
-  }
-}, [])
+    return () => {
+      unsubscribeAuth()
+      if (unsubscribeChamadas) unsubscribeChamadas()
+    }
+  }, [])
 
   const fazerCheckin = async () => {
-    const chamada = chamadas.find(c => !c.checkInFreela && c.status === 'aceita')
+    const chamada = chamadas.find((c) => !c.checkInFreela && c.status === 'aceita')
     if (!chamada) return alert('Nenhuma chamada pendente para check-in.')
     setLoadingCheckin(true)
     try {
@@ -67,14 +83,15 @@ export default function PainelFreela() {
         checkInHora: serverTimestamp()
       })
       alert('Check-in realizado!')
-    } catch {
+    } catch (error) {
+      console.error('Erro ao fazer check-in:', error)
       alert('Erro ao fazer check-in.')
     }
     setLoadingCheckin(false)
   }
 
   const fazerCheckout = async () => {
-    const chamada = chamadas.find(c => c.checkInFreela && !c.checkOutFreela && c.status === 'aceita')
+    const chamada = chamadas.find((c) => c.checkInFreela && !c.checkOutFreela && c.status === 'aceita')
     if (!chamada) return alert('Nenhuma chamada pendente para check-out.')
     setLoadingCheckout(true)
     try {
@@ -83,7 +100,8 @@ export default function PainelFreela() {
         checkOutHora: serverTimestamp()
       })
       alert('Check-out realizado!')
-    } catch {
+    } catch (error) {
+      console.error('Erro ao fazer check-out:', error)
       alert('Erro ao fazer check-out.')
     }
     setLoadingCheckout(false)
@@ -126,22 +144,34 @@ export default function PainelFreela() {
           <div>
             <h2 className="text-2xl font-semibold mb-4">Chamadas Ativas</h2>
             {chamadas.length === 0 && <p>Nenhuma chamada ativa.</p>}
-            {chamadas.map(chamada => (
+            {chamadas.map((chamada) => (
               <div key={chamada.id} className="border rounded p-3 mb-4">
-                <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
-                <p><strong>Status:</strong> {chamada.status}</p>
-                <p><strong>Check-in feito:</strong> {chamada.checkInFreela ? 'Sim' : 'Não'}</p>
-                <p><strong>Check-out feito:</strong> {chamada.checkOutFreela ? 'Sim' : 'Não'}</p>
+                <p>
+                  <strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}
+                </p>
+                <p>
+                  <strong>Status:</strong> {chamada.status}
+                </p>
+                <p>
+                  <strong>Check-in feito:</strong> {chamada.checkInFreela ? 'Sim' : 'Não'}
+                </p>
+                <p>
+                  <strong>Check-out feito:</strong> {chamada.checkOutFreela ? 'Sim' : 'Não'}
+                </p>
                 {chamada.status === 'pendente' && (
                   <div className="mt-2 flex gap-3">
                     <button
-                      onClick={async () => await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })}
+                      onClick={async () =>
+                        await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })
+                      }
                       className="bg-green-600 text-white px-3 py-1 rounded"
                     >
                       ✅ Aceitar
                     </button>
                     <button
-                      onClick={async () => await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })}
+                      onClick={async () =>
+                        await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })
+                      }
                       className="bg-red-600 text-white px-3 py-1 rounded"
                     >
                       ❌ Recusar
@@ -170,11 +200,8 @@ export default function PainelFreela() {
           </div>
         )
       case 'chat':
-        // Passar o ID da chamada ativa (exemplo: a primeira chamada aceita)
-        const chamadaAtiva = chamadas.find(c => c.status === 'aceita')
-        return chamadaAtiva ? <Chat chamadaId={chamadaAtiva.id} /> : (
-          <div className="text-center text-gray-500 mt-4">Nenhuma chamada ativa para chat.</div>
-        )
+        // Placeholder enquanto chat real não estiver implementado
+        return <ChatFreela />
       case 'configuracoes':
         return <ConfiguracoesFreela />
       default:
@@ -189,7 +216,9 @@ export default function PainelFreela() {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-orange-700">🧑‍🍳 Painel do Freelancer</h1>
-            <p className="text-gray-600 mt-1">{usuario.nome} — {usuario.funcao}</p>
+            <p className="text-gray-600 mt-1">
+              {usuario.nome} — {usuario.funcao}
+            </p>
           </div>
           <div className="flex gap-4">
             <button
@@ -213,7 +242,7 @@ export default function PainelFreela() {
             {[
               { key: 'perfil', label: '🧑 Perfil' },
               { key: 'chamadas', label: '📞 Chamadas' },
-              { key: 'agenda', label: '📆 Minha Agenda' },              
+              { key: 'agenda', label: '📆 Minha Agenda' },
               { key: 'chat', label: '💬 Chat' },
               { key: 'avaliacoes', label: '⭐ Avaliações' },
               { key: 'historico', label: '📜 Histórico' },
