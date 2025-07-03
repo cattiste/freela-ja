@@ -40,8 +40,11 @@ export default function VagasDisponiveis({ freela }) {
           )
           const snapshotCand = await getDocs(qCand)
           const listaCandidaturas = snapshotCand.docs.map(doc => ({
-            id: doc.id,  // **Importante para exclusão**
-            ...doc.data()
+            id: doc.id,
+            vagaId: doc.data().vagaId,
+            status: doc.data().status || 'pendente',
+            mensagem: doc.data().mensagem || '',
+            contato: doc.data().contato || '',
           }))
           setCandidaturas(listaCandidaturas)
         }
@@ -99,24 +102,21 @@ export default function VagasDisponiveis({ freela }) {
     return candidaturas.find(c => c.vagaId === vagaId)
   }
 
-  // Função para excluir candidatura (botão para vagas rejeitadas)
-  async function handleExcluirCandidatura(candidaturaId) {
-    if (!candidaturaId) {
-      alert('ID da candidatura não encontrado.')
-      return
-    }
-
-    const confirm = window.confirm('Tem certeza que deseja excluir essa candidatura rejeitada?')
-    if (!confirm) return
+  // Função para excluir candidatura do Firestore e atualizar localmente
+  async function handleExcluirCandidatura(id) {
+    if (!window.confirm('Tem certeza que deseja excluir esta candidatura?')) return
 
     try {
-      await deleteDoc(doc(db, 'candidaturas', candidaturaId))
+      await deleteDoc(doc(db, 'candidaturas', id))
 
-      setCandidaturas(prev => prev.filter(c => c.id !== candidaturaId))
-      setSucesso('Candidatura excluída com sucesso.')
+      // Atualiza o estado local removendo a candidatura deletada
+      setCandidaturas(prev => prev.filter(c => c.id !== id))
+      setSucesso('Candidatura excluída com sucesso!')
+      setErro(null)
     } catch (err) {
       console.error('Erro ao excluir candidatura:', err)
-      alert('Erro ao excluir candidatura.')
+      setErro('Erro ao excluir candidatura. Tente novamente.')
+      setSucesso(null)
     }
   }
 
@@ -227,23 +227,25 @@ export default function VagasDisponiveis({ freela }) {
                     </p>
 
                     {candidatura.status.toLowerCase() === 'rejeitado' && candidatura.mensagem && (
-                      <>
-                        <p className="mt-2 text-red-700 italic">
-                          Mensagem do estabelecimento: {candidatura.mensagem}
-                        </p>
-                        <button
-                          onClick={() => handleExcluirCandidatura(candidatura.id)}
-                          className="mt-2 px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition"
-                        >
-                          Excluir candidatura rejeitada
-                        </button>
-                      </>
+                      <p className="mt-2 text-red-700 italic">
+                        Mensagem do estabelecimento: {candidatura.mensagem}
+                      </p>
                     )}
 
                     {candidatura.status.toLowerCase() === 'aprovado' && candidatura.contato && (
                       <p className="mt-2">
                         📞 <strong>Contato do estabelecimento:</strong> {candidatura.contato}
                       </p>
+                    )}
+
+                    {/* Botão Excluir só aparece para candidaturas rejeitadas */}
+                    {candidatura.status.toLowerCase() === 'rejeitado' && (
+                      <button
+                        onClick={() => handleExcluirCandidatura(candidatura.id)}
+                        className="mt-4 bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded transition"
+                      >
+                        Excluir Candidatura
+                      </button>
                     )}
                   </>
                 ) : (
