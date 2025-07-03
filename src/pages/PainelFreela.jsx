@@ -250,7 +250,7 @@ export default function PainelFreela() {
               { key: 'avaliacoes', label: '⭐ Avaliações' },
               { key: 'historico', label: '📜 Histórico' },
               { key: 'configuracoes', label: '⚙️ Configurações' },
-              { key: 'recebimentos', label: '⚙️ Recebimentos' }
+              { key: 'recebimentos', label: '💵 Recebimentos' }
             ].map(({ key, label }) => (
               <li key={key} className="list-none">
                 <button
