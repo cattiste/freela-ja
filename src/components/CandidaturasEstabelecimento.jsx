@@ -5,7 +5,7 @@ import { db } from '@/firebase'
 export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
   const [candidaturas, setCandidaturas] = useState([])
   const [carregando, setCarregando] = useState(true)
-  const [atualizandoId, setAtualizandoId] = useState(null)
+  const [mensagemRejeicao, setMensagemRejeicao] = useState('')
 
   useEffect(() => {
     if (!estabelecimentoUid) return
@@ -20,8 +20,13 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
           snapshot.docs.map(async docSnap => {
             const data = docSnap.data()
 
-            const freelaSnap = await getDoc(doc(db, 'usuarios', data.freelaUid))
-            const vagaSnap = await getDoc(doc(db, 'vagas', data.vagaId))
+            // Buscar dados do freela
+            const freelaRef = doc(db, 'usuarios', data.freelaUid)
+            const freelaSnap = await getDoc(freelaRef)
+
+            // Buscar dados da vaga
+            const vagaRef = doc(db, 'vagas', data.vagaId)
+            const vagaSnap = await getDoc(vagaRef)
 
             return {
               id: docSnap.id,
@@ -43,19 +48,18 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
     buscarCandidaturas()
   }, [estabelecimentoUid])
 
-  const atualizarStatus = async (id, novoStatus) => {
+  const atualizarStatus = async (id, novoStatus, mensagem = '') => {
     try {
-      setAtualizandoId(id)
-      const ref = doc(db, 'candidaturas', id)
-      await updateDoc(ref, { status: novoStatus })
+      await updateDoc(doc(db, 'candidaturas', id), { 
+        status: novoStatus,
+        mensagemRejeicao: mensagem,
+      })
       setCandidaturas(prev =>
-        prev.map(c => (c.id === id ? { ...c, status: novoStatus } : c))
+        prev.map(c => (c.id === id ? { ...c, status: novoStatus, mensagemRejeicao: mensagem } : c))
       )
+      setMensagemRejeicao('')
     } catch (err) {
       console.error('Erro ao atualizar status:', err)
-      alert('Erro ao atualizar status. Verifique as permissões do Firestore.')
-    } finally {
-      setAtualizandoId(null)
     }
   }
 
@@ -73,9 +77,9 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
         candidaturas.map(c => (
           <div
             key={c.id}
-            className="border border-gray-300 rounded-xl p-4 flex items-center justify-between bg-white shadow-sm"
+            className="border border-gray-300 rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between bg-white shadow-sm gap-4"
           >
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-1">
               {c.freela?.foto ? (
                 <img
                   src={c.freela.foto}
@@ -111,25 +115,41 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
                     {c.status?.toUpperCase() || 'PENDENTE'}
                   </span>
                 </p>
+                {c.status?.toLowerCase() === 'rejeitado' && c.mensagemRejeicao && (
+                  <p className="mt-2 p-2 bg-red-50 text-red-700 rounded border border-red-200">
+                    💬 Mensagem do estabelecimento: {c.mensagemRejeicao}
+                  </p>
+                )}
+                {c.status?.toLowerCase() === 'aprovado' && c.estabelecimentoContato && (
+                  <p className="mt-2 p-2 bg-green-50 text-green-700 rounded border border-green-200">
+                    📞 Contato do estabelecimento: {c.estabelecimentoContato}
+                  </p>
+                )}
               </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => atualizarStatus(c.id, 'aprovado')}
-                disabled={atualizandoId === c.id}
-                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-              >
-                ✅ Aprovar
-              </button>
-              <button
-                onClick={() => atualizarStatus(c.id, 'rejeitado')}
-                disabled={atualizandoId === c.id}
-                className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
-              >
-                ❌ Rejeitar
-              </button>
-            </div>
+            {c.status?.toLowerCase() === 'pendente' && (
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => atualizarStatus(c.id, 'aprovado', '')}
+                  className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                >
+                  ✅ Aprovar
+                </button>
+                <textarea
+                  placeholder="Mensagem para rejeição (opcional)"
+                  className="border border-gray-300 rounded p-2 mt-2 resize-none"
+                  value={mensagemRejeicao}
+                  onChange={e => setMensagemRejeicao(e.target.value)}
+                />
+                <button
+                  onClick={() => atualizarStatus(c.id, 'rejeitado', mensagemRejeicao)}
+                  className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 mt-1"
+                >
+                  ❌ Rejeitar
+                </button>
+              </div>
+            )}
           </div>
         ))
       )}
