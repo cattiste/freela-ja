@@ -21,11 +21,6 @@ import ConfiguracoesFreela from './freelas/ConfiguracoesFreela'
 import PerfilFreela from './PerfilFreela'
 import RecebimentosFreela from './freelas/RecebimentosFreela'
 
-// Placeholder para chat enquanto não estiver pronto
-function ChatFreela() {
-  return <div className="text-gray-500 text-center">🗨️ Chat ainda em desenvolvimento...</div>
-}
-
 export default function PainelFreela() {
   const navigate = useNavigate()
   const [usuario, setUsuario] = useState(null)
@@ -141,7 +136,9 @@ export default function PainelFreela() {
       case 'avaliacoes':
         return <AvaliacoesRecebidasFreela freelaUid={usuario.uid} />
       case 'recebimentos':
-        return <RecebimentosFreela />  
+        return <RecebimentosFreela /> 
+      case 'chat':
+        return <ChatFreela /> 
       case 'chamadas':
         return (
           <div>
