@@ -3,138 +3,104 @@ import Calendar from 'react-calendar'
 import 'react-calendar/styles/Calendar.css'
 import { db } from '@/firebase'
 import {
+  collection,
   doc,
   setDoc,
-  collection,
   deleteDoc,
-  onSnapshot,
-  getDoc
+  onSnapshot
 } from 'firebase/firestore'
 
 export default function AgendaFreela({ freela }) {
-  const [datasOcupadas, setDatasOcupadas] = useState({}) // { '2025-07-10': { ocupado: true, descricao: '...' }, ... }
-  const [dataSelecionada, setDataSelecionada] = useState(null) // data clicada para editar
-  const [descricao, setDescricao] = useState('')
-  const [editavel, setEditavel] = useState(true) // se data bloqueada ou não
+  const [datasOcupadas, setDatasOcupadas] = useState([]) // lista de strings no formato 'YYYY-MM-DD'
+  const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
     if (!freela?.uid) return
 
-    const ref = collection(db, 'usuarios', freela.uid, 'agenda')
+    const agendaRef = collection(db, 'usuarios', freela.uid, 'agenda')
 
-    const unsubscribe = onSnapshot(ref, snapshot => {
-      const datas = {}
-      snapshot.docs.forEach(doc => {
-        datas[doc.id] = doc.data()
-      })
-      setDatasOcupadas(datas)
-    })
+    // Ouve as mudanças na subcoleção 'agenda' do freela
+    const unsubscribe = onSnapshot(
+      agendaRef,
+      snapshot => {
+        const datas = snapshot.docs.map(doc => doc.id) // as datas são os IDs dos docs
+        setDatasOcupadas(datas)
+        setCarregando(false)
+      },
+      error => {
+        console.error('Erro ao ouvir agenda:', error)
+        setCarregando(false)
+      }
+    )
 
     return () => unsubscribe()
-  }, [freela])
+  }, [freela?.uid])
 
-  // abrir modal para editar a data clicada
-  const abrirEdicao = (date) => {
+  // Marca uma data como ocupada (cria doc na subcoleção)
+  const marcarData = async (date) => {
+    if (!freela?.uid) return
     const dia = date.toISOString().split('T')[0]
-    setDataSelecionada(dia)
-
-    // carrega descrição atual
-    if (datasOcupadas[dia]) {
-      setDescricao(datasOcupadas[dia].descricao || '')
-      // Bloqueia edição se a data estiver "travada" (exemplo: se houver evento futuro, adaptar depois)
-      // Por ora, vamos liberar edição, pode ajustar conforme evento real
-      setEditavel(!datasOcupadas[dia].travada) 
-    } else {
-      setDescricao('')
-      setEditavel(true)
+    const docRef = doc(db, 'usuarios', freela.uid, 'agenda', dia)
+    try {
+      await setDoc(docRef, { ocupado: true })
+      // Atualiza localmente no estado
+      setDatasOcupadas(prev => [...prev, dia])
+    } catch (error) {
+      console.error('Erro ao marcar data:', error)
     }
   }
 
-  // salvar a descrição e marcar ocupado
-  const salvarDescricao = async () => {
-    if (!dataSelecionada) return
-    const ref = doc(db, 'usuarios', freela.uid, 'agenda', dataSelecionada)
-    if (descricao.trim() === '') {
-      // Se descrição vazia, remove o registro
-      await deleteDoc(ref)
-    } else {
-      await setDoc(ref, { ocupado: true, descricao: descricao.trim() })
-    }
-    setDataSelecionada(null)
-    setDescricao('')
-  }
-
-  // cancelar edição
-  const cancelarEdicao = () => {
-    setDataSelecionada(null)
-    setDescricao('')
-  }
-
-  const tileClassName = ({ date }) => {
+  // Desmarca uma data (remove o doc na subcoleção)
+  const desmarcarData = async (date) => {
+    if (!freela?.uid) return
     const dia = date.toISOString().split('T')[0]
-    if (datasOcupadas[dia]) {
-      return 'bg-red-200 text-red-800 font-bold cursor-pointer'
+    const docRef = doc(db, 'usuarios', freela.uid, 'agenda', dia)
+    try {
+      await deleteDoc(docRef)
+      // Atualiza localmente no estado
+      setDatasOcupadas(prev => prev.filter(d => d !== dia))
+    } catch (error) {
+      console.error('Erro ao desmarcar data:', error)
     }
-    return ''
+  }
+
+  // Desabilita o dia clicável no calendário se estiver ocupado (já marcado)
+  const tileDisabled = ({ date, view }) => {
+    if (view !== 'month') return false
+    const dia = date.toISOString().split('T')[0]
+    return datasOcupadas.includes(dia)
+  }
+
+  if (carregando) {
+    return (
+      <div className="p-6 bg-white rounded-xl shadow mt-8">
+        <p className="text-center text-orange-600">Carregando agenda...</p>
+      </div>
+    )
   }
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow mt-8">
+    <div className="bg-white p-6 rounded-xl shadow mt-8 max-w-md mx-auto">
       <h2 className="text-xl font-semibold mb-4 text-blue-700">📆 Minha Agenda</h2>
       <Calendar
-        onClickDay={abrirEdicao}
-        tileClassName={tileClassName}
+        onClickDay={async (date) => {
+          const dia = date.toISOString().split('T')[0]
+          if (datasOcupadas.includes(dia)) {
+            // Confirma se quer liberar a data marcada
+            const confirmar = window.confirm('Deseja liberar essa data da agenda?')
+            if (confirmar) {
+              await desmarcarData(date)
+            }
+          } else {
+            // Marca a data como ocupada
+            await marcarData(date)
+          }
+        }}
+        tileDisabled={tileDisabled}
       />
-
-      <p className="text-sm text-gray-500 mt-4">
-        Clique em uma data para adicionar ou editar a descrição. Deixe em branco para liberar a data.
+      <p className="text-sm text-gray-500 mt-4 text-center">
+        Clique em uma data para marcar como ocupada. Para liberar, clique novamente e confirme.
       </p>
-
-      {/* Modal simples */}
-      {dataSelecionada && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg p-6 w-80 shadow-lg">
-            <h3 className="text-lg font-semibold mb-4">Editar {dataSelecionada}</h3>
-            {editavel ? (
-              <>
-                <textarea
-                  rows={4}
-                  value={descricao}
-                  onChange={e => setDescricao(e.target.value)}
-                  placeholder="Digite uma descrição para esta data (ex: Evento, Férias, Indisponível)"
-                  className="w-full border border-gray-300 rounded p-2 mb-4"
-                />
-                <div className="flex justify-end gap-4">
-                  <button
-                    onClick={cancelarEdicao}
-                    className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={salvarDescricao}
-                    className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    Salvar
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="mb-4 text-red-600 font-semibold">
-                  Esta data está bloqueada devido a um evento já aceito.
-                </p>
-                <button
-                  onClick={cancelarEdicao}
-                  className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
-                >
-                  Fechar
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
