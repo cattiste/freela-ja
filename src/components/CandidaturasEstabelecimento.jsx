@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore'
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
@@ -85,10 +85,26 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
         )
       )
 
+      // Se for rejeitado, e mensagem preenchida, remove do estado (sai da tela)
+      if (novoStatus === 'rejeitado' && mensagemEdit.trim() !== '') {
+        setCandidaturas(prev => prev.filter(c => c.id !== id))
+      }
+
       cancelarEdicao()
     } catch (err) {
       console.error('Erro ao atualizar status:', err)
       alert('Erro ao salvar, tente novamente.')
+    }
+  }
+
+  const excluirCandidatura = async (id) => {
+    if (window.confirm('Tem certeza que deseja excluir esta candidatura?')) {
+      try {
+        await deleteDoc(doc(db, 'candidaturas', id))
+        setCandidaturas(prev => prev.filter(c => c.id !== id))
+      } catch (err) {
+        console.error('Erro ao excluir candidatura:', err)
+      }
     }
   }
 
@@ -160,7 +176,7 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
                   placeholder="Exemplo: Obrigado pelo interesse, mas não foi desta vez."
                 />
 
-                { /* Se aprovando, mostrar campo contato */}
+                {/* Se aprovando, mostrar campo contato */}
                 <label className="block mb-2 font-semibold text-gray-700">
                   {`Contato do estabelecimento (aparecerá se aprovado):`}
                 </label>
@@ -201,6 +217,26 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
                 >
                   ✏️ Editar Resposta
                 </button>
+
+                {/* Botão excluir só aparece se status aprovado */}
+                {c.status?.toLowerCase() === 'aprovado' && (
+                  <button
+                    onClick={() => {
+                      if (
+                        window.confirm('Tem certeza que deseja excluir esta candidatura?')
+                      ) {
+                        deleteDoc(doc(db, 'candidaturas', c.id))
+                          .then(() =>
+                            setCandidaturas(prev => prev.filter(item => item.id !== c.id))
+                          )
+                          .catch(err => console.error('Erro ao excluir candidatura:', err))
+                      }
+                    }}
+                    className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700"
+                  >
+                    🗑️ Excluir
+                  </button>
+                )}
               </div>
             )}
           </div>
