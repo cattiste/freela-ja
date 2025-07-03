@@ -8,7 +8,7 @@ import Cadastro from './pages/Cadastro'
 import Login from './pages/Login'
 import PainelFreela from './pages/PainelFreela'
 import PainelEstabelecimento from './pages/PainelEstabelecimento'
-import Perfil from './pages/Perfil'
+import Perfil from './pages/PerfilFreela'
 import CadastroFreela from './pages/CadastroFreela'
 import CadastroEstabelecimento from './pages/CadastroEstabelecimento'
 import PainelVagas from './pages/PainelVagas'
@@ -59,7 +59,7 @@ export default function App() {
           {/* Cadastro e Perfil */}
           <Route path="/cadastrofreela" element={<CadastroFreela />} />
           <Route path="/cadastro-estabelecimento" element={<CadastroEstabelecimento />} />
-          <Route path="/perfil/:id" element={<Perfil />} />
+          <Route path="/perfilfreela/:id" element={<PerfilFreela />} />
           <Route path="/editarfreela/:id" element={<EditarFreela />} />
           <Route path="/editarperfilestabelecimento" element={<EditarPerfilEstabelecimento />} />
 
