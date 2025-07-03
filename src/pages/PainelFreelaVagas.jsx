@@ -44,7 +44,7 @@ export default function PainelFreelaVagas() {
         </button>
       </div>
 
-      <div className="min-h-screen bg-gray-50 p-6 pt-24 max-w-7x1.5 mx-auto">
+      <div className="min-h-screen bg-gray-50 p-6 pt-24 max-w-7x1,5 mx-auto">
         <h2 className="text-3xl font-bold mb-2 text-gray-800">Vagas para Freelancers</h2>
         <p className="mb-6 text-gray-600">Encontre oportunidades rápidas e pontuais</p>
 
