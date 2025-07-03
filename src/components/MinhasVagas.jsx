@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore'
 import { db } from '@/firebase'
-import { useNavigate } from 'react-router-dom'
 
 export default function MinhasVagas({ estabelecimento, onEditar }) {
   const [vagas, setVagas] = useState([])
   const [carregando, setCarregando] = useState(true)
-  const navigate = useNavigate()
 
   useEffect(() => {
     const buscarVagas = async () => {
@@ -41,12 +39,7 @@ export default function MinhasVagas({ estabelecimento, onEditar }) {
     <div className="max-w-4xl mx-auto p-6 mt-6 bg-white rounded-xl shadow-md">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-orange-600">📋 Minhas Vagas Publicadas</h2>
-        <button
-          onClick={() => navigate('/painelestabelecimento')}
-          className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-semibold"
-        >
-          + Nova Vaga
-        </button>
+        {/* Botão "+ Nova Vaga" removido */}
       </div>
 
       {carregando ? (
