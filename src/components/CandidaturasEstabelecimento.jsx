@@ -6,6 +6,7 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
   const [candidaturas, setCandidaturas] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [mensagemRejeicao, setMensagemRejeicao] = useState('')
+  const [editandoId, setEditandoId] = useState(null)
 
   useEffect(() => {
     if (!estabelecimentoUid) return
@@ -50,14 +51,41 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
 
   const atualizarStatus = async (id, novoStatus, mensagem = '') => {
     try {
-      await updateDoc(doc(db, 'candidaturas', id), { 
-        status: novoStatus,
-        mensagemRejeicao: mensagem,
-      })
+      let dadosAtualizacao = { status: novoStatus }
+
+      if (novoStatus.toLowerCase() === 'rejeitado') {
+        dadosAtualizacao.mensagemRejeicao = mensagem
+      } else {
+        dadosAtualizacao.mensagemRejeicao = ''
+      }
+
+      if (novoStatus.toLowerCase() === 'aprovado') {
+        // Buscar dados do estabelecimento para contato
+        const candidaturaRef = doc(db, 'candidaturas', id)
+        const candidaturaSnap = await getDoc(candidaturaRef)
+
+        if (candidaturaSnap.exists()) {
+          const candidaturaData = candidaturaSnap.data()
+          const estabelecimentoRef = doc(db, 'usuarios', candidaturaData.estabelecimentoUid)
+          const estabelecimentoSnap = await getDoc(estabelecimentoRef)
+
+          if (estabelecimentoSnap.exists()) {
+            const estabelecimentoData = estabelecimentoSnap.data()
+            dadosAtualizacao.estabelecimentoContato =
+              estabelecimentoData.email || estabelecimentoData.telefone || ''
+          }
+        }
+      }
+
+      await updateDoc(doc(db, 'candidaturas', id), dadosAtualizacao)
+
       setCandidaturas(prev =>
-        prev.map(c => (c.id === id ? { ...c, status: novoStatus, mensagemRejeicao: mensagem } : c))
+        prev.map(c =>
+          c.id === id ? { ...c, ...dadosAtualizacao } : c
+        )
       )
       setMensagemRejeicao('')
+      setEditandoId(null)
     } catch (err) {
       console.error('Erro ao atualizar status:', err)
     }
@@ -77,9 +105,9 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
         candidaturas.map(c => (
           <div
             key={c.id}
-            className="border border-gray-300 rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between bg-white shadow-sm gap-4"
+            className="border border-gray-300 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between bg-white shadow-sm"
           >
-            <div className="flex items-center gap-4 flex-1">
+            <div className="flex items-center gap-4 mb-4 md:mb-0">
               {c.freela?.foto ? (
                 <img
                   src={c.freela.foto}
@@ -115,41 +143,67 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
                     {c.status?.toUpperCase() || 'PENDENTE'}
                   </span>
                 </p>
+
                 {c.status?.toLowerCase() === 'rejeitado' && c.mensagemRejeicao && (
-                  <p className="mt-2 p-2 bg-red-50 text-red-700 rounded border border-red-200">
-                    💬 Mensagem do estabelecimento: {c.mensagemRejeicao}
-                  </p>
+                  <p className="mt-2 text-sm text-red-600 italic">{c.mensagemRejeicao}</p>
                 )}
+
                 {c.status?.toLowerCase() === 'aprovado' && c.estabelecimentoContato && (
-                  <p className="mt-2 p-2 bg-green-50 text-green-700 rounded border border-green-200">
-                    📞 Contato do estabelecimento: {c.estabelecimentoContato}
+                  <p className="mt-2 text-sm text-green-700">
+                    Contato do estabelecimento: <br />
+                    <a href={`mailto:${c.estabelecimentoContato}`} className="underline">
+                      {c.estabelecimentoContato}
+                    </a>
                   </p>
                 )}
               </div>
             </div>
 
-            {c.status?.toLowerCase() === 'pendente' && (
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => atualizarStatus(c.id, 'aprovado', '')}
-                  className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-                >
-                  ✅ Aprovar
-                </button>
-                <textarea
-                  placeholder="Mensagem para rejeição (opcional)"
-                  className="border border-gray-300 rounded p-2 mt-2 resize-none"
-                  value={mensagemRejeicao}
-                  onChange={e => setMensagemRejeicao(e.target.value)}
-                />
-                <button
-                  onClick={() => atualizarStatus(c.id, 'rejeitado', mensagemRejeicao)}
-                  className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 mt-1"
-                >
-                  ❌ Rejeitar
-                </button>
-              </div>
-            )}
+            <div className="flex flex-col gap-2 w-full md:w-auto">
+              {c.status?.toLowerCase() === 'pendente' && (
+                <>
+                  <button
+                    onClick={() => atualizarStatus(c.id, 'aprovado')}
+                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                  >
+                    ✅ Aprovar
+                  </button>
+
+                  {editandoId === c.id ? (
+                    <>
+                      <textarea
+                        className="border rounded p-2 mt-2"
+                        placeholder="Mensagem para o freela (rejeição)"
+                        value={mensagemRejeicao}
+                        onChange={e => setMensagemRejeicao(e.target.value)}
+                      />
+                      <button
+                        onClick={() => atualizarStatus(c.id, 'rejeitado', mensagemRejeicao)}
+                        className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 mt-1"
+                      >
+                        ❌ Enviar Rejeição
+                      </button>
+                      <button
+                        onClick={() => {
+                          setMensagemRejeicao('')
+                          setEditandoId(null)
+                        }}
+                        className="px-3 py-1 bg-gray-400 text-white rounded hover:bg-gray-500 mt-1"
+                      >
+                        Cancelar
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setEditandoId(c.id)}
+                      className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                    >
+                      ❌ Rejeitar
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         ))
       )}
