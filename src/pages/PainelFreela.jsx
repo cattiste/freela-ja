@@ -28,34 +28,36 @@ export default function PainelFreela() {
   const [loadingCheckout, setLoadingCheckout] = useState(false)
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async user => {
-      if (user) {
-        const docRef = doc(db, 'usuarios', user.uid)
-        const snap = await getDoc(docRef)
+  let unsubscribeChamadas = () => {}
+  const unsubscribeAuth = onAuthStateChanged(auth, async user => {
+    if (user) {
+      const docRef = doc(db, 'usuarios', user.uid)
+      const snap = await getDoc(docRef)
+      if (snap.exists() && snap.data().tipo === 'freela') {
+        setUsuario({ uid: user.uid, ...snap.data() })
 
-        if (snap.exists() && snap.data().tipo === 'freela') {
-          setUsuario({ uid: user.uid, ...snap.data() })
+        const chamadasRef = collection(db, 'chamadas')
+        const q = query(chamadasRef, where('freelaUid', '==', user.uid))
+        unsubscribeChamadas = onSnapshot(q, snapshot => {
+          setChamadas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+        })
 
-          const chamadasRef = collection(db, 'chamadas')
-          const q = query(chamadasRef, where('freelaUid', '==', user.uid))
-          const unsubscribeChamadas = onSnapshot(q, snapshot => {
-            setChamadas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
-          })
-
-          // Desinscreve chamadas quando desmontar o efeito
-          return () => unsubscribeChamadas()
-        } else {
-          setUsuario(null)
-        }
+        setCarregando(false)  // <- importante chamar aqui
       } else {
         setUsuario(null)
+        setCarregando(false)
       }
-
+    } else {
+      setUsuario(null)
       setCarregando(false)
-    })
+    }
+  })
 
-    return () => unsubscribeAuth()
-  }, [])
+  return () => {
+    unsubscribeAuth()
+    unsubscribeChamadas()
+  }
+}, [])
 
   const fazerCheckin = async () => {
     const chamada = chamadas.find(c => !c.checkInFreela && c.status === 'aceita')
