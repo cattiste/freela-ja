@@ -1,33 +1,38 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 
-// Importar suas páginas (incluindo eventos)
+// Páginas públicas
 import Home from './pages/Home'
 import Sobre from './pages/Sobre'
 import Cadastro from './pages/Cadastro'
 import Login from './pages/Login'
-import PainelFreela from './pages/PainelFreela'
-import PainelEstabelecimento from './pages/PainelEstabelecimento'
-import Perfil from './pages/PerfilFreela'
-import CadastroFreela from './pages/CadastroFreela'
-import CadastroEstabelecimento from './pages/CadastroEstabelecimento'
-import PainelVagas from './pages/PainelVagas'
-import PublicarVaga from './pages/PublicarVaga'
-import TesteCriarVaga from './pages/TesteCriarVaga'
-import EditarFreela from './pages/EditarFreela'
-import EditarPerfilEstabelecimento from './pages/EditarPerfilEstabelecimento'
-import VagasDisponiveis from './pages/VagasDisponiveis'
 import EsqueciSenha from './pages/EsqueciSenha'
 import Oportunidades from './pages/Oportunidades'
 
-// Novas páginas eventos
+// Cadastro e Perfil
+import CadastroFreela from './pages/CadastroFreela'
+import CadastroEstabelecimento from './pages/CadastroEstabelecimento'
+import EditarFreela from './pages/EditarFreela'
+import EditarPerfilEstabelecimento from './pages/EditarPerfilEstabelecimento'
+import PerfilFreela from './pages/PerfilFreela'
+
+// Painéis protegidos
+import PainelFreela from './pages/PainelFreela'
+import PainelEstabelecimento from './pages/PainelEstabelecimento'
+
+// Vagas
+import PainelVagas from './pages/PainelVagas'
+import PublicarVaga from './pages/PublicarVaga'
+import VagasDisponiveis from './pages/VagasDisponiveis'
+import TesteCriarVaga from './pages/TesteCriarVaga'
+
+// Eventos
 import PublicarEvento from './pages/PublicarEvento'
 import EventosDisponiveis from './pages/EventosDisponiveis'
 
 // Rotas protegidas
 import RotaProtegidaFreela from './components/RotaProtegidaFreela'
 import RotaProtegidaEstabelecimento from './components/RotaProtegidaEstabelecimento'
-
 
 export default function App() {
   const [usuarioLogado, setUsuarioLogado] = React.useState(null)
@@ -54,7 +59,6 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/esquecisenha" element={<EsqueciSenha />} />
           <Route path="/oportunidades" element={<Oportunidades />} />
-          <Route path="/publicarevento" element={<PublicarEvento />} />
 
           {/* Cadastro e Perfil */}
           <Route path="/cadastrofreela" element={<CadastroFreela />} />
@@ -117,10 +121,10 @@ export default function App() {
             }
           />
 
-          {/* Currículos (aberta ao público) */}
+          {/* Currículos abertos ao público */}
           <Route path="/painelvagas" element={<PainelVagas />} />
 
-          {/* Página de testes ou futuras rotas */}
+          {/* Testes ou futuras rotas */}
           <Route path="/teste-criar-vaga" element={<TesteCriarVaga />} />
         </Routes>
       </div>
