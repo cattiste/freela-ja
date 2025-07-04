@@ -12,7 +12,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
     const q = query(
       collection(db, 'chamadas'),
       where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', 'in', ['aceita', 'checkin', 'checkout', 'finalizado']) // não traz 'pendente'
+      where('status', 'in', ['aceita', 'checkin', 'checkout']) // "finalizado" vai para histórico
     )
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -45,6 +45,14 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
     setLoadingId(null)
   }
 
+  const formatarData = (data) => {
+    try {
+      return data?.toDate().toLocaleString('pt-BR') || '—'
+    } catch {
+      return '—'
+    }
+  }
+
   return (
     <div className="space-y-4">
       {chamadas.length === 0 && (
@@ -52,10 +60,14 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
       )}
 
       {chamadas.map(chamada => (
-        <div key={chamada.id} className="bg-white p-4 rounded shadow space-y-2 border">
+        <div
+          key={chamada.id}
+          className="bg-white rounded-2xl shadow-md border border-orange-100 p-5 transition hover:shadow-lg hover:border-orange-300 space-y-2"
+        >
           <p><strong>Vaga:</strong> {chamada.vagaTitulo}</p>
           <p><strong>Freela:</strong> {chamada.freelaNome}</p>
-          <p><strong>Status da chamada:</strong> {chamada.status}</p>
+          <p><strong>Data da chamada:</strong> {formatarData(chamada.criadoEm)}</p>
+          <p><strong>Status da chamada:</strong> <span className="font-semibold text-orange-700">{chamada.status}</span></p>
 
           <p>
             <strong>Check-in:</strong>{' '}
@@ -63,7 +75,8 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
               ? chamada.checkInEstabelecimentoConfirmado
                 ? '✅ Confirmado'
                 : '⏳ Aguardando confirmação'
-              : '❌ Ainda não realizado'}
+              : '❌ Ainda não realizado'}{' '}
+              {chamada.checkInHora && <span className="text-sm text-gray-600">({formatarData(chamada.checkInHora)})</span>}
           </p>
 
           <p>
@@ -72,7 +85,8 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
               ? chamada.checkOutEstabelecimentoConfirmado
                 ? '✅ Confirmado'
                 : '⏳ Aguardando confirmação'
-              : '❌ Ainda não realizado'}
+              : '❌ Ainda não realizado'}{' '}
+              {chamada.checkOutHora && <span className="text-sm text-gray-600">({formatarData(chamada.checkOutHora)})</span>}
           </p>
 
           <div className="flex gap-2 flex-wrap mt-2">
@@ -94,10 +108,6 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
               >
                 {loadingId === chamada.id ? 'Aguarde...' : '✅ Confirmar Check-out'}
               </button>
-            )}
-
-            {chamada.status === 'finalizado' && (
-              <span className="text-green-600 font-semibold">✅ Serviço finalizado</span>
             )}
           </div>
         </div>
