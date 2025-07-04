@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function HistoricoChamadasFreela({ freelaUid }) {
   const [chamadas, setChamadas] = useState([])
 
   useEffect(() => {
-    if (!estabelecimento?.uid) return
+    if (!freelaUid) return
 
     const q = query(
       collection(db, 'chamadas'),
-      where('freelaUid', '==', freelauid),
-      where('status', '==', 'finalizado')
+      where('freelaUid', '==', freelaUid),
+      where('status', '==', 'finalizado'),
+      orderBy('criadoEm', 'desc')
     )
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -20,7 +21,7 @@ export default function HistoricoChamadasFreela({ freelaUid }) {
     })
 
     return () => unsubscribe()
-  }, [estabelecimento])
+  }, [freelaUid])
 
   const formatarData = (data) => {
     try {
@@ -40,7 +41,7 @@ export default function HistoricoChamadasFreela({ freelaUid }) {
           <thead className="bg-orange-100 text-orange-800">
             <tr>
               <th className="text-left px-4 py-2">Vaga</th>
-              <th className="text-left px-4 py-2">Freela</th>
+              <th className="text-left px-4 py-2">Estabelecimento</th>
               <th className="text-left px-4 py-2">Chamada</th>
               <th className="text-left px-4 py-2">Check-in</th>
               <th className="text-left px-4 py-2">Check-out</th>
@@ -50,7 +51,7 @@ export default function HistoricoChamadasFreela({ freelaUid }) {
             {chamadas.map((chamada) => (
               <tr key={chamada.id} className="border-t hover:bg-orange-50">
                 <td className="px-4 py-2">{chamada.vagaTitulo}</td>
-                <td className="px-4 py-2">{chamada.freelaNome}</td>
+                <td className="px-4 py-2">{chamada.estabelecimentoNome}</td>
                 <td className="px-4 py-2">{formatarData(chamada.criadoEm)}</td>
                 <td className="px-4 py-2">{formatarData(chamada.checkInHora)}</td>
                 <td className="px-4 py-2">{formatarData(chamada.checkOutHora)}</td>

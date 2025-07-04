@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 
 import { auth, db } from '@/firebase'
@@ -29,6 +29,9 @@ export default function PainelEstabelecimento() {
           const snap = await getDoc(docRef)
           if (snap.exists() && snap.data().tipo === 'estabelecimento') {
             setEstabelecimento({ uid: user.uid, ...snap.data() })
+
+            // Marcar online: true
+            await updateDoc(docRef, { online: true })
           } else {
             console.warn('Usuário autenticado não é um estabelecimento.')
             setEstabelecimento(null)
@@ -43,8 +46,19 @@ export default function PainelEstabelecimento() {
       setCarregando(false)
     })
 
-    return () => unsubscribe()
-  }, [])
+    const handleUnload = async () => {
+      if (estabelecimento?.uid) {
+        await updateDoc(doc(db, 'usuarios', estabelecimento.uid), { online: false })
+      }
+    }
+
+    window.addEventListener('beforeunload', handleUnload)
+
+    return () => {
+      unsubscribe()
+      window.removeEventListener('beforeunload', handleUnload)
+    }
+  }, [estabelecimento?.uid])
 
   const abrirEdicao = (vaga) => {
     setVagaEditando(vaga)
@@ -58,6 +72,9 @@ export default function PainelEstabelecimento() {
 
   const handleLogout = async () => {
     try {
+      if (estabelecimento?.uid) {
+        await updateDoc(doc(db, 'usuarios', estabelecimento.uid), { online: false })
+      }
       await signOut(auth)
       localStorage.removeItem('usuarioLogado')
       navigate('/login')
@@ -142,7 +159,7 @@ export default function PainelEstabelecimento() {
           </div>
         </div>
 
-        {/* Navegação por abas */}
+        {/* Abas */}
         <nav className="border-b border-orange-300 mb-6">
           <ul className="flex space-x-2 overflow-x-auto scrollbar-thin scrollbar-thumb-orange-400 scrollbar-track-orange-100">
             {[
@@ -153,7 +170,7 @@ export default function PainelEstabelecimento() {
               { key: 'publicar', label: '📢 Publicar Vaga' },
               { key: 'minhas-vagas', label: '📋 Minhas Vagas' },
               { key: 'candidaturas', label: '📋 Candidaturas' },
-              { key: 'historico', label: '📜 Histórico' },
+              { key: 'historico', label: '📜 Histórico' }
             ].map(({ key, label }) => (
               <li key={key} className="list-none">
                 <button

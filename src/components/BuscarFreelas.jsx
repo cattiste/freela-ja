@@ -12,12 +12,22 @@ export default function BuscarFreelas({ estabelecimento }) {
       try {
         const querySnapshot = await getDocs(collection(db, 'usuarios'))
         const lista = []
+
         querySnapshot.forEach((doc) => {
           const data = doc.data()
-          if (data.tipo === 'freela') {
+
+          if (
+            data.tipo === 'freela' &&
+            data.ativo === true &&
+            data.online === true &&
+            data.nome &&
+            data.funcao &&
+            data.celular
+          ) {
             lista.push({ id: doc.id, ...data })
           }
         })
+
         setFreelas(lista)
       } catch (err) {
         console.error('Erro ao buscar freelancers:', err)
@@ -54,7 +64,7 @@ export default function BuscarFreelas({ estabelecimento }) {
   }
 
   if (carregando) return <p>Carregando freelancers...</p>
-  if (freelas.length === 0) return <p>Nenhum freelancer encontrado.</p>
+  if (freelas.length === 0) return <p>Nenhum freelancer online no momento.</p>
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -69,6 +79,10 @@ export default function BuscarFreelas({ estabelecimento }) {
             <div>
               <p className="font-bold text-lg">{freela.nome}</p>
               <p className="text-sm text-gray-600">{freela.funcao}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="w-2 h-2 rounded-full bg-green-500" />
+                <span className="text-xs text-green-700 font-medium">Online</span>
+              </div>
             </div>
           </div>
 
