@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
-import { getDatabase, ref, onDisconnect, set } from 'firebase/database'
 import {
   collection,
   query,
@@ -12,6 +11,7 @@ import {
   updateDoc,
   serverTimestamp,
   getDoc,
+  addDoc,
   orderBy
 } from 'firebase/firestore'
 
@@ -23,11 +23,7 @@ import RecebimentosFreela from './freelas/RecebimentosFreela'
 import AgendaCompleta from './freelas/AgendaCompleta'
 import HistoricoChamadasFreela from './freelas/HistoricoChamadasFreela'
 
-  const dbRT = getDatabase()
-  const statusRef = ref(dbRT, `/status/${usuario.uid}`)
-   set(statusRef, { online: true })
-   onDisconnect(statusRef).set({ online: false })
-
+// Componente de chat
 function Chat({ chamadaId }) {
   const [usuario, setUsuario] = useState(null)
   const [mensagem, setMensagem] = useState('')
@@ -35,9 +31,8 @@ function Chat({ chamadaId }) {
   const divFimRef = useRef(null)
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) setUsuario(user)
-      else setUsuario(null)
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUsuario(user || null)
     })
     return unsubscribe
   }, [])
@@ -51,7 +46,7 @@ function Chat({ chamadaId }) {
       const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
       setMensagens(msgs)
       setTimeout(() => {
-        if (divFimRef.current) divFimRef.current.scrollIntoView({ behavior: 'smooth' })
+        divFimRef.current?.scrollIntoView({ behavior: 'smooth' })
       }, 100)
     })
 
@@ -60,12 +55,10 @@ function Chat({ chamadaId }) {
 
   const enviarMensagem = async (e) => {
     e.preventDefault()
-    if (!mensagem.trim()) return
-    if (!usuario) return alert('Usuário não autenticado')
+    if (!mensagem.trim() || !usuario) return
 
-    const mensagensRef = collection(db, 'chamadas', chamadaId, 'mensagens')
     try {
-      await addDoc(mensagensRef, {
+      await addDoc(collection(db, 'chamadas', chamadaId, 'mensagens'), {
         texto: mensagem.trim(),
         remetenteUid: usuario.uid,
         remetenteNome: usuario.displayName || usuario.email || 'Usuário',
@@ -74,17 +67,15 @@ function Chat({ chamadaId }) {
       setMensagem('')
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error)
-      alert('Erro ao enviar mensagem')
     }
   }
 
   return (
     <div className="flex flex-col h-[500px] max-w-2xl mx-auto border rounded shadow p-4 bg-white">
       <div className="flex-grow overflow-auto mb-4 space-y-2">
-        {mensagens.length === 0 && (
+        {mensagens.length === 0 ? (
           <p className="text-gray-500 text-center mt-10">Nenhuma mensagem ainda.</p>
-        )}
-        {mensagens.map((msg) => {
+        ) : mensagens.map((msg) => {
           const isRemetente = msg.remetenteUid === usuario?.uid
           return (
             <div key={msg.id} className={`flex ${isRemetente ? 'justify-end' : 'justify-start'}`}>
@@ -121,7 +112,6 @@ function Chat({ chamadaId }) {
     </div>
   )
 }
-
 export default function PainelFreela() {
   const navigate = useNavigate()
   const [usuario, setUsuario] = useState(null)
@@ -131,6 +121,7 @@ export default function PainelFreela() {
   const [loadingCheckin, setLoadingCheckin] = useState(false)
   const [loadingCheckout, setLoadingCheckout] = useState(false)
 
+  // Verifica login e busca usuário
   useEffect(() => {
     let unsubscribeChamadas = null
 
@@ -143,21 +134,23 @@ export default function PainelFreela() {
             const userData = { uid: user.uid, ...snap.data() }
             setUsuario(userData)
 
-            await updateDoc(docRef, { online: true }) // online TRUE
+            unsubscribeChamadas = onSnapshot(
+              query(collection(db, 'chamadas'), where('freelaUid', '==', user.uid)),
+              (snapshot) => {
+                setChamadas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+              }
+            )
 
-            const chamadasRef = collection(db, 'chamadas')
-            const q = query(chamadasRef, where('freelaUid', '==', user.uid))
-            unsubscribeChamadas = onSnapshot(q, (snapshot) => {
-              setChamadas(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })))
-            })
+            // Primeira batida
+            await updateDoc(docRef, { ultimaAtividade: serverTimestamp() })
 
             setCarregando(false)
           } else {
             setUsuario(null)
             setCarregando(false)
           }
-        } catch (error) {
-          console.error('Erro ao buscar usuário:', error)
+        } catch (err) {
+          console.error('Erro ao buscar usuário:', err)
           setUsuario(null)
           setCarregando(false)
         }
@@ -167,60 +160,64 @@ export default function PainelFreela() {
       }
     })
 
-    const handleUnload = async () => {
-      if (usuario?.uid) {
-        await updateDoc(doc(db, 'usuarios', usuario.uid), { online: false }) // online FALSE
-      }
-    }
-
-    window.addEventListener('beforeunload', handleUnload)
-
     return () => {
       unsubscribeAuth()
       if (unsubscribeChamadas) unsubscribeChamadas()
-      window.removeEventListener('beforeunload', handleUnload)
     }
-  }, [usuario])
+  }, [])
 
+  // Heartbeat
   useEffect(() => {
     if (!usuario?.uid) return
 
-    const chamadasRef = collection(db, 'chamadas')
-    const q = query(chamadasRef, where('freelaUid', '==', usuario.uid), where('status', '==', 'pendente'))
+    const interval = setInterval(() => {
+      updateDoc(doc(db, 'usuarios', usuario.uid), {
+        ultimaAtividade: serverTimestamp()
+      }).catch(err => console.error('Erro heartbeat:', err))
+    }, 30000)
 
-    let primeiraCarga = true
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const chamadasPendentes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      if (!primeiraCarga && chamadasPendentes.length > 0) {
+    return () => clearInterval(interval)
+  }, [usuario])
+
+  // Som ao receber chamada
+  useEffect(() => {
+    if (!usuario?.uid) return
+    const q = query(
+      collection(db, 'chamadas'),
+      where('freelaUid', '==', usuario.uid),
+      where('status', '==', 'pendente')
+    )
+
+    let primeiraVez = true
+    const unsub = onSnapshot(q, (snapshot) => {
+      if (!primeiraVez && snapshot.size > 0) {
         const audio = new Audio('/sons/chamada.mp3')
         audio.play().catch(() => {})
       }
-      primeiraCarga = false
+      primeiraVez = false
     })
 
-    return () => unsubscribe()
+    return () => unsub()
   }, [usuario])
 
   const fazerCheckin = async () => {
-    const chamada = chamadas.find((c) => !c.checkInFreela && c.status === 'aceita')
-    if (!chamada) return alert('Nenhuma chamada pendente para check-in.')
+    const chamada = chamadas.find(c => c.status === 'aceita' && !c.checkInFreela)
+    if (!chamada) return alert('Nada para check-in.')
     setLoadingCheckin(true)
     try {
       await updateDoc(doc(db, 'chamadas', chamada.id), {
         checkInFreela: true,
         checkInHora: serverTimestamp()
       })
-      alert('Check-in realizado!')
-    } catch (error) {
-      console.error('Erro ao fazer check-in:', error)
-      alert('Erro ao fazer check-in.')
+    } catch (err) {
+      console.error(err)
     }
     setLoadingCheckin(false)
   }
 
   const fazerCheckout = async () => {
-    const chamada = chamadas.find((c) => c.checkInFreela && !c.checkOutFreela && c.status === 'aceita')
-    if (!chamada) return alert('Nenhuma chamada pendente para check-out.')
+    const chamada = chamadas.find(c => c.status === 'aceita' && c.checkInFreela && !c.checkOutFreela)
+    if (!chamada) return alert('Nada para check-out.')
     setLoadingCheckout(true)
     try {
       await updateDoc(doc(db, 'chamadas', chamada.id), {
@@ -228,17 +225,17 @@ export default function PainelFreela() {
         checkOutHora: serverTimestamp(),
         status: 'checkout'
       })
-      alert('Check-out realizado!')
-    } catch (error) {
-      console.error('Erro ao fazer check-out:', error)
-      alert('Erro ao fazer check-out.')
+    } catch (err) {
+      console.error(err)
     }
     setLoadingCheckout(false)
   }
 
   const handleLogout = async () => {
     if (usuario?.uid) {
-      await updateDoc(doc(db, 'usuarios', usuario.uid), { online: false })
+      await updateDoc(doc(db, 'usuarios', usuario.uid), {
+        ultimaAtividade: serverTimestamp()
+      })
     }
     await signOut(auth)
     localStorage.removeItem('usuarioLogado')
@@ -251,10 +248,10 @@ export default function PainelFreela() {
         return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
       case 'agenda':
         return <AgendaCompleta freela={usuario} />
-      case 'historico':
-        return <HistoricoChamadasFreela freelaUid={usuario.uid} />
       case 'avaliacoes':
         return <AvaliacoesRecebidasFreela freelaUid={usuario.uid} />
+      case 'historico':
+        return <HistoricoChamadasFreela freelaUid={usuario.uid} />
       case 'recebimentos':
         return <RecebimentosFreela />
       case 'chat':
@@ -262,12 +259,59 @@ export default function PainelFreela() {
         return chamadaAtiva ? (
           <Chat chamadaId={chamadaAtiva.id} />
         ) : (
-          <div className="text-center text-gray-500 mt-4">Nenhuma chamada ativa para chat.</div>
+          <p className="text-center text-gray-500 mt-4">Nenhuma chamada ativa.</p>
         )
       case 'chamadas':
         return (
-          <div className="text-center text-orange-600 mt-4">
-            Acesse a aba Chat ou aguarde uma nova chamada.
+          <div>
+            <h2 className="text-xl font-bold mb-4">📞 Chamadas Ativas</h2>
+            {chamadas
+              .filter(c => c.status !== 'finalizado')
+              .map((chamada) => (
+                <div key={chamada.id} className="border rounded p-3 mb-4">
+                  <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
+                  <p><strong>Status:</strong> {chamada.status}</p>
+                  <p><strong>Check-in feito:</strong> {chamada.checkInFreela ? 'Sim' : 'Não'}</p>
+                  <p><strong>Check-out feito:</strong> {chamada.checkOutFreela ? 'Sim' : 'Não'}</p>
+                  {chamada.status === 'pendente' && (
+                    <div className="mt-2 flex gap-3">
+                      <button
+                        onClick={async () =>
+                          await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })
+                        }
+                        className="bg-green-600 text-white px-3 py-1 rounded"
+                      >
+                        ✅ Aceitar
+                      </button>
+                      <button
+                        onClick={async () =>
+                          await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })
+                        }
+                        className="bg-red-600 text-white px-3 py-1 rounded"
+                      >
+                        ❌ Recusar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+            <div className="mt-6 flex gap-4">
+              <button
+                onClick={fazerCheckin}
+                disabled={loadingCheckin}
+                className="bg-green-600 text-white px-6 py-2 rounded"
+              >
+                {loadingCheckin ? 'Check-in...' : 'Fazer Check-in'}
+              </button>
+              <button
+                onClick={fazerCheckout}
+                disabled={loadingCheckout}
+                className="bg-yellow-600 text-white px-6 py-2 rounded"
+              >
+                {loadingCheckout ? 'Check-out...' : 'Fazer Check-out'}
+              </button>
+            </div>
           </div>
         )
       case 'configuracoes':
@@ -296,12 +340,11 @@ export default function PainelFreela() {
   return (
     <div className="min-h-screen bg-orange-50 p-4">
       <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+        {/* Cabeçalho */}
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-orange-700">🧑‍🍳 Painel do Freelancer</h1>
-            <p className="text-gray-600 mt-1">
-              {usuario.nome} — {usuario.funcao}
-            </p>
+            <p className="text-gray-600 mt-1">{usuario.nome} — {usuario.funcao}</p>
           </div>
           <div className="flex gap-4">
             <button
@@ -319,9 +362,10 @@ export default function PainelFreela() {
           </div>
         </div>
 
+        {/* Abas */}
         <nav className="border-b border-orange-300 mb-6">
           <ul className="flex space-x-2 overflow-x-auto">
-            {[
+            {[ 
               { key: 'perfil', label: '🧑 Perfil' },
               { key: 'chamadas', label: '📞 Chamadas' },
               { key: 'agenda', label: '📆 Minha Agenda' },
@@ -347,6 +391,7 @@ export default function PainelFreela() {
           </ul>
         </nav>
 
+        {/* Conteúdo da aba */}
         <section>{renderConteudo()}</section>
       </div>
     </div>
