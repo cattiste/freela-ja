@@ -11,9 +11,6 @@ import {
 
 import Chat from './Chat' // Seu componente Chat, caso já tenha
 
-// Som de notificação - pode ser um arquivo mp3 local ou URL
-const somNotificacaoUrl = '/sons/chamada.mp3' // ajuste o caminho conforme seu projeto
-
 export default function Chamadas() {
   const [chamadas, setChamadas] = useState([])
   const [loading, setLoading] = useState(true)
@@ -27,7 +24,9 @@ export default function Chamadas() {
   }, [])
 
   useEffect(() => {
-    if (!user) return
+    if (!user) return;
+
+    let primeiraCarga = true;
 
     const q = query(
       collection(db, 'chamadas'),
@@ -37,6 +36,16 @@ export default function Chamadas() {
 
     const unsubscribe = onSnapshot(q, snapshot => {
       const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+
+      if (!primeiraCarga) {
+        const chamadasPendentes = lista.filter(c => c.status === 'pendente')
+        if (chamadasPendentes.length > 0) {
+          const audio = new Audio('/sons/chamada.mp3')
+          audio.play().catch(() => {})
+        }
+      }
+
+      primeiraCarga = false
       setChamadas(lista)
       setLoading(false)
     })
@@ -44,7 +53,6 @@ export default function Chamadas() {
     return () => unsubscribe()
   }, [user])
 
-  // Aceitar chamada e abrir chat automaticamente
   async function aceitar(id) {
     setLoadingId(id)
     try {
@@ -56,7 +64,6 @@ export default function Chamadas() {
     setLoadingId(null)
   }
 
-  // Rejeitar chamada e fechar chat se estiver aberto
   async function rejeitar(id) {
     setLoadingId(id)
     try {
@@ -139,7 +146,6 @@ export default function Chamadas() {
             </div>
           </div>
 
-          {/* Exibe o chat se estiver aberto para essa chamada */}
           {chatAbertoId === chamada.id && <Chat chamadaId={chamada.id} />}
         </div>
       ))}
