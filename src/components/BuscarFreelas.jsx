@@ -6,13 +6,6 @@ export default function BuscarFreelas({ estabelecimento }) {
   const [freelas, setFreelas] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [chamando, setChamando] = useState(null)
-  const agora = new Date()
-  const ultimoPing = data.ultimaAtividade?.toDate?.()
-  const segundos = (agora - ultimoPing) / 1000
-
-   if (segundos < 40) {
-     // Usuário está "ativo agora"
-   }
 
   useEffect(() => {
     async function carregarFreelas() {
