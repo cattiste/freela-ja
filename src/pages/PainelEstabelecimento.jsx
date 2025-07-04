@@ -1,172 +1,102 @@
 import React, { useEffect, useState } from 'react'
-import { onAuthStateChanged, signOut } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
-import { useNavigate } from 'react-router-dom'
-
+import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
-
-import BuscarFreelas from './BuscarFreelas'
-import ChamadasEstabelecimento from './ChamadasEstabelecimento'
-import AgendasContratadas from './AgendasContratadas'
-import AvaliacaoFreela from './AvaliacaoFreela'
-import PublicarVaga from './PublicarVaga'
-import MinhasVagas from '@/components/MinhasVagas'
-import CandidaturasEstabelecimento from '@/components/CandidaturasEstabelecimento'
+import ProfissionalCard from './ProfissionalCard' // seu card do freela
 
 export default function PainelEstabelecimento() {
-  const navigate = useNavigate()
-  const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'))
-  const [aba, setAba] = useState('buscar') // aba inicial
-  const [estabelecimento, setEstabelecimento] = useState(null)
+  const [freelas, setFreelas] = useState([])
   const [carregando, setCarregando] = useState(true)
-  const [vagaEditando, setVagaEditando] = useState(null)
+  const [user, setUser] = useState(null)
+  const [chamandoId, setChamandoId] = useState(null)
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async user => {
-      if (user) {
-        try {
-          const docRef = doc(db, 'usuarios', user.uid)
-          const snap = await getDoc(docRef)
-
-          if (snap.exists() && snap.data().tipo === 'estabelecimento') {
-            setEstabelecimento({ uid: user.uid, ...snap.data() })
-          } else {
-            console.warn('Usuário autenticado não é um estabelecimento.')
-            setEstabelecimento(null)
-          }
-        } catch (err) {
-          console.error('Erro ao buscar dados do estabelecimento:', err)
-          setEstabelecimento(null)
-        }
-      } else {
-        setEstabelecimento(null)
-      }
-      setCarregando(false)
-    })
-
-    return () => unsubscribe()
+    // Ouça autenticação
+    const unsub = auth.onAuthStateChanged(u => setUser(u))
+    return () => unsub()
   }, [])
 
-  function abrirEdicao(vaga) {
-    setVagaEditando(vaga)
-    setAba('publicar')
-  }
+  useEffect(() => {
+    if (!user) return
 
-  function onSalvarSucesso() {
-    setVagaEditando(null)
-    setAba('minhas-vagas')
-  }
+    const buscarFreelas = async () => {
+      setCarregando(true)
+      try {
+        const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
+        const snapshot = await getDocs(q)
+        const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        setFreelas(lista)
+      } catch (err) {
+        console.error('Erro ao buscar freelas:', err)
+      } finally {
+        setCarregando(false)
+      }
+    }
 
-  const handleLogout = async () => {
+    buscarFreelas()
+  }, [user])
+
+  // Função para chamar freela: cria chamada no Firestore
+  const handleChamar = async (prof) => {
+    if (!user) {
+      alert('Usuário não autenticado')
+      return
+    }
+
+    setChamandoId(prof.id)
+
     try {
-      await signOut(auth)
-      localStorage.removeItem('usuarioLogado')
-      navigate('/login')
+      await addDoc(collection(db, 'chamadas'), {
+        freelaUid: prof.id,
+        freelaNome: prof.nome,
+        estabelecimentoUid: user.uid,
+        estabelecimentoNome: user.displayName || 'Estabelecimento',
+        vagaTitulo: 'Vaga Genérica', // Ou campo dinâmico, se tiver vaga selecionada
+        status: 'pendente',
+        criadoEm: serverTimestamp()
+      })
+      alert(`Chamada enviada para ${prof.nome}`)
     } catch (err) {
-      alert('Erro ao sair.')
-      console.error(err)
+      console.error('Erro ao criar chamada:', err)
+      alert('Erro ao chamar o profissional')
+    } finally {
+      setChamandoId(null)
     }
   }
 
-  const renderConteudo = () => {
-    switch (aba) {
-      case 'buscar':
-        return <BuscarFreelas estabelecimento={estabelecimento} />
-      case 'chamadas':
-        return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
-      case 'agendas':
-        return <AgendasContratadas estabelecimento={estabelecimento} />
-      case 'avaliacao':
-        return <AvaliacaoFreela estabelecimento={estabelecimento} />
-      case 'publicar':
-        return (
-          <PublicarVaga
-            estabelecimento={estabelecimento}
-            vaga={vagaEditando}
-            onSucesso={onSalvarSucesso}
-          />
-        )
-      case 'minhas-vagas':
-        return <MinhasVagas estabelecimento={estabelecimento} onEditar={abrirEdicao} />
-      case 'candidaturas':
-        return <CandidaturasEstabelecimento estabelecimentoUid={usuarioLogado.uid} />
-      default:
-        return <MinhasVagas estabelecimento={estabelecimento} onEditar={abrirEdicao} />
-    }
-  }
-
-  if (carregando) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-orange-600 text-lg">Carregando painel...</p>
-      </div>
-    )
-  }
-
-  if (!estabelecimento) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-600 text-lg">Acesso não autorizado.</p>
-      </div>
-    )
+  if (!user) {
+    return <p className="text-center mt-10 text-red-600 font-semibold">Você precisa estar logado para acessar este painel.</p>
   }
 
   return (
-    <div className="min-h-screen bg-orange-50 p-4">
-      <div className="max-w-7x2 mx-auto bg-white rounded-2xl shadow-lg p-6">
-        {/* Cabeçalho e Logout */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-orange-700">📊 Painel do Estabelecimento</h1>
-          <div className="flex gap-4">
-            <button
-              onClick={() => navigate('/editarperfilestabelecimento')}
-              className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
+    <div className="max-w-5xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6 text-orange-600 text-center">Painel Estabelecimento</h1>
+
+      {carregando ? (
+        <p className="text-center text-gray-600">Carregando freelancers...</p>
+      ) : freelas.length === 0 ? (
+        <p className="text-center text-gray-500">Nenhum freelancer disponível.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {freelas.map(prof => (
+            <ProfissionalCard
+              key={prof.id}
+              prof={prof}
+              onChamar={() => handleChamar(prof)}
+              distanciaKm={prof.distanciaKm} // se calcular, se não pode omitir
             >
-              ✏️ Editar Perfil
-            </button>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-            >
-              🔒 Logout
-            </button>
+              {/* Pode passar children se quiser */}
+            </ProfissionalCard>
+          ))}
+        </div>
+      )}
+
+      {chamandoId && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl shadow-lg text-center">
+            <p>Enviando chamada...</p>
           </div>
         </div>
-
-        {/* Navegação em abas */}
-        <nav className="border-b border-orange-300 mb-6">
-          <ul className="flex space-x-2 overflow-x-auto">
-            {[
-              { key: 'buscar', label: '🔍 Buscar Freelancers' },
-              { key: 'chamadas', label: '📞 Chamadas' },
-              { key: 'agendas', label: '📅 Agendas' },
-              { key: 'avaliacao', label: '⭐ Avaliar' },
-              { key: 'publicar', label: '📢 Publicar Vaga' },
-              { key: 'minhas-vagas', label: '📋 Minhas Vagas' },
-              { key: 'candidaturas', label: '📋 Candidaturas' }
-            ].map(({ key, label }) => (
-              <li key={key} className="list-none">
-                <button
-                  onClick={() => {
-                    setVagaEditando(null)
-                    setAba(key)
-                  }}
-                  className={`px-4 py-2 -mb-px border-b-2 font-semibold transition whitespace-nowrap ${
-                    aba === key
-                      ? 'border-orange-600 text-orange-600'
-                      : 'border-transparent text-orange-400 hover:text-orange-600 hover:border-orange-400'
-                  }`}
-                >
-                  {label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        {/* Conteúdo da aba */}
-        <section>{renderConteudo()}</section>
-      </div>
+      )}
     </div>
   )
 }
