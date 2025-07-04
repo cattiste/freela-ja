@@ -13,6 +13,7 @@ function validateEmail(email) {
 }
 
 function validateCNPJ(cnpj) {
+  // Mantive sua regex mas você pode ajustar para aceitar números limpos
   return /^\d{2}\.\d{3}\.\d{3}\/\d{4}\-\d{2}$/.test(cnpj)
 }
 
@@ -48,16 +49,25 @@ export default function CadastroEstabelecimento() {
   }, [])
 
   const uploadImage = async (file) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('upload_preset', UPLOAD_PRESET)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('upload_preset', UPLOAD_PRESET)
 
-    const res = await fetch(CLOUDINARY_URL, {
-      method: 'POST',
-      body: formData
-    })
-    const data = await res.json()
-    return data.secure_url
+      const res = await fetch(CLOUDINARY_URL, {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!res.ok) throw new Error('Erro no upload da imagem')
+
+      const data = await res.json()
+      return data.secure_url
+    } catch (err) {
+      setError('Falha ao fazer upload da imagem.')
+      console.error(err)
+      return ''
+    }
   }
 
   const handleCadastro = async (e) => {
@@ -132,14 +142,34 @@ export default function CadastroEstabelecimento() {
 
         <input type="text" placeholder="Endereço" value={endereco} onChange={e => setEndereco(e.target.value)} required className="input" />
 
-        <input type="number" step="any" placeholder="Latitude" value={latitude || ''} onChange={e => setLatitude(parseFloat(e.target.value))} required className="input" />
-        <input type="number" step="any" placeholder="Longitude" value={longitude || ''} onChange={e => setLongitude(parseFloat(e.target.value))} required className="input" />
+        <input
+          type="number"
+          step="any"
+          placeholder="Latitude"
+          value={latitude !== null ? latitude : ''}
+          onChange={e => setLatitude(parseFloat(e.target.value))}
+          required
+          className="input"
+        />
+        <input
+          type="number"
+          step="any"
+          placeholder="Longitude"
+          value={longitude !== null ? longitude : ''}
+          onChange={e => setLongitude(parseFloat(e.target.value))}
+          required
+          className="input"
+        />
 
-        <input type="file" accept="image/*" onChange={(e) => {
-          const file = e.target.files[0]
-          setFoto(file)
-          setFotoPreview(URL.createObjectURL(file))
-        }} />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            const file = e.target.files[0]
+            setFoto(file)
+            setFotoPreview(URL.createObjectURL(file))
+          }}
+        />
 
         {fotoPreview && (
           <img src={fotoPreview} alt="Prévia da Foto" className="w-32 h-32 object-cover rounded mt-2" />
@@ -148,7 +178,11 @@ export default function CadastroEstabelecimento() {
         {localizacaoErro && <p className="text-yellow-600">{localizacaoErro}</p>}
         {error && <p className="text-red-600">{error}</p>}
 
-        <button type="submit" disabled={loading} className="bg-orange-500 text-white font-bold py-3 rounded-xl hover:bg-orange-600">
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-orange-500 text-white font-bold py-3 rounded-xl hover:bg-orange-600"
+        >
           {loading ? 'Cadastrando...' : 'Cadastrar'}
         </button>
       </form>
