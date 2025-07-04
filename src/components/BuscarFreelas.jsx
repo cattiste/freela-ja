@@ -27,7 +27,7 @@ export default function BuscarFreelas({ estabelecimento }) {
             } catch {}
 
             if (segundos < 40) {
-              lista.push({ id, ...data })
+              lista.push({ id, online: segundos < 40, ...data })
             }
           }
         })
@@ -69,6 +69,13 @@ export default function BuscarFreelas({ estabelecimento }) {
 
   if (carregando) return <p>Carregando freelancers...</p>
   if (freelas.length === 0) return <p>Nenhum freelancer online no momento.</p>
+  {freelas.map((freela) => (
+  <div key={freela.id}>
+    <p>{freela.nome}</p>
+    <p>Status: {freela.online ? '🟢 Online' : '⚪ Offline'}</p>
+    <button disabled={!freela.online}>Chamar</button>
+  </div>
+))}
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
