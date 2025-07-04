@@ -1,58 +1,45 @@
-// src/components/BuscarFreelas.jsx
 import React, { useEffect, useState } from 'react'
 import { collection, getDocs } from 'firebase/firestore'
-import { criarChamada } from '@/utils/criarChamada'
-import ProfissionalCard from './ProfissionalCard'
-import { useNavigate } from 'react-router-dom'
+import { db } from '@/firebase'
 
-export default function BuscarFreelas({ estabelecimento, vaga }) {
+export default function BuscarFreelas({ estabelecimento }) {
   const [freelas, setFreelas] = useState([])
   const [carregando, setCarregando] = useState(true)
-  const navigate = useNavigate()
 
   useEffect(() => {
     async function carregarFreelas() {
-      setCarregando(true)
       try {
-        const snapshot = await getDocs(collection('usuarios'))
-        // Filtra somente freelas (tipo === 'freela')
-        const lista = snapshot.docs
-          .map(doc => ({ uid: doc.id, ...doc.data() }))
-          .filter(u => u.tipo === 'freela')
+        const querySnapshot = await getDocs(collection(db, 'usuarios'))
+        const lista = []
+        querySnapshot.forEach((doc) => {
+          const data = doc.data()
+          if (data.tipo === 'freela') {
+            lista.push({ id: doc.id, ...data })
+          }
+        })
         setFreelas(lista)
       } catch (err) {
-        console.error('Erro ao carregar freelas:', err)
+        console.error('Erro ao buscar freelancers:', err)
+      } finally {
+        setCarregando(false)
       }
-      setCarregando(false)
     }
 
     carregarFreelas()
   }, [])
 
-  async function handleChamar(freela) {
-    if (!estabelecimento) {
-      alert('Estabelecimento não definido.')
-      return
-    }
-
-    try {
-      await criarChamada(estabelecimento, freela, vaga)
-    } catch (err) {
-      console.error('Erro ao criar chamada:', err)
-    }
-  }
-
   if (carregando) return <p>Carregando freelancers...</p>
   if (freelas.length === 0) return <p>Nenhum freelancer encontrado.</p>
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {freelas.map(freela => (
-        <ProfissionalCard
-          key={freela.uid}
-          prof={freela}
-          onChamar={handleChamar}
-        />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {freelas.map(f => (
+        <div key={f.id} className="p-4 bg-white rounded shadow">
+          <p><strong>Nome:</strong> {f.nome}</p>
+          <p><strong>Função:</strong> {f.funcao}</p>
+          <p><strong>Celular:</strong> {f.celular}</p>
+          {/* Você pode adicionar botão de chamar aqui */}
+        </div>
       ))}
     </div>
   )
