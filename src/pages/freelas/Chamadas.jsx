@@ -31,7 +31,7 @@ export default function Chamadas() {
     const q = query(
       collection(db, 'chamadas'),
       where('freelaUid', '==', user.uid),
-      where('status', 'in', ['pendente', 'aceita'])
+      where('status', 'in', ['pendente', 'aceita', 'checkin', 'checkout'])
     )
 
     const unsubscribe = onSnapshot(q, snapshot => {
