@@ -1,12 +1,11 @@
-
-// ChamadasEstabelecimento.jsx (com dupla confirmação)
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { collection, query, where, onSnapshot, updateDoc, doc } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function ChamadasEstabelecimento({ estabelecimento }) {
   const [chamadas, setChamadas] = useState([])
   const [loadingId, setLoadingId] = useState(null)
+  const audioRef = useRef(null)
 
   useEffect(() => {
     if (!estabelecimento?.uid) return
@@ -17,9 +16,27 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
       where('status', 'in', ['pendente', 'aceita', 'checkin', 'checkout', 'finalizado'])
     )
 
+    let primeiraCarga = true
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+
+      // Som discreto quando o freela fizer check-in ou check-out novo
+      if (!primeiraCarga) {
+        lista.forEach(chamada => {
+          if (chamada.checkInFreela && !chamada.checkInEstabelecimentoConfirmado) {
+            const audio = new Audio('/sons/confirmar.mp3')
+            audio.play().catch(() => {})
+          }
+          if (chamada.checkOutFreela && !chamada.checkOutEstabelecimentoConfirmado) {
+            const audio = new Audio('/sons/confirmar.mp3')
+            setTimeout(() => audio.play().catch(() => {}), 500)
+          }
+        })
+      }
+
       setChamadas(lista)
+      primeiraCarga = false
     })
 
     return () => unsubscribe()
@@ -36,6 +53,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
       if (etapa === 'checkout') {
         await updateDoc(chamadaRef, { checkOutEstabelecimentoConfirmado: true })
 
+        // ✅ Só finalizar se ambas partes confirmaram
         if (chamada.checkOutFreela) {
           await updateDoc(chamadaRef, { status: 'finalizado' })
         }
@@ -50,14 +68,35 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
   return (
     <div className="space-y-4">
       {chamadas.map(chamada => (
-        <div key={chamada.id} className="bg-white p-4 rounded shadow space-y-2">
+        <div key={chamada.id} className="bg-white p-4 rounded shadow space-y-2 border">
           <p><strong>Vaga:</strong> {chamada.vagaTitulo}</p>
           <p><strong>Freela:</strong> {chamada.freelaNome}</p>
           <p><strong>Status:</strong> {chamada.status}</p>
 
-          <div className="flex gap-2 flex-wrap">
+          <p>
+            <strong>Check-in:</strong>{' '}
+            {chamada.checkInFreela
+              ? chamada.checkInEstabelecimentoConfirmado
+                ? '✅ Confirmado'
+                : '⏳ Aguardando confirmação'
+              : '❌ Ainda não realizado'}
+          </p>
+
+          <p>
+            <strong>Check-out:</strong>{' '}
+            {chamada.checkOutFreela
+              ? chamada.checkOutEstabelecimentoConfirmado
+                ? '✅ Confirmado'
+                : '⏳ Aguardando confirmação'
+              : '❌ Ainda não realizado'}
+          </p>
+
+          <div className="flex gap-2 flex-wrap mt-2">
             {chamada.status === 'pendente' && (
-              <button onClick={() => updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })}>
+              <button
+                onClick={() => updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })}
+                className="bg-green-600 text-white px-3 py-1 rounded"
+              >
                 Aceitar
               </button>
             )}
@@ -66,8 +105,9 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
               <button
                 onClick={() => confirmarEtapa(chamada, 'checkin')}
                 disabled={loadingId === chamada.id}
+                className="bg-blue-600 text-white px-3 py-1 rounded"
               >
-                ✅ Confirmar Check-in
+                {loadingId === chamada.id ? 'Confirmando...' : '✅ Confirmar Check-in'}
               </button>
             )}
 
@@ -75,8 +115,9 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
               <button
                 onClick={() => confirmarEtapa(chamada, 'checkout')}
                 disabled={loadingId === chamada.id}
+                className="bg-indigo-600 text-white px-3 py-1 rounded"
               >
-                ✅ Confirmar Check-out
+                {loadingId === chamada.id ? 'Confirmando...' : '✅ Confirmar Check-out'}
               </button>
             )}
 
