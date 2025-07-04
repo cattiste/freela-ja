@@ -11,6 +11,9 @@ import {
 
 import Chat from './Chat' // Seu componente Chat, caso já tenha
 
+// Som de notificação - pode ser um arquivo mp3 local ou URL
+const somNotificacaoUrl = '/sons/chamada.mp3' // ajuste o caminho conforme seu projeto
+
 export default function Chamadas() {
   const [chamadas, setChamadas] = useState([])
   const [loading, setLoading] = useState(true)
