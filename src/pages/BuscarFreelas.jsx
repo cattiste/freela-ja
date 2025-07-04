@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/firebase'
-import ProfissionalCard from './ProfissionalCard'
+import ProfissionalCard from '@/components/ProfissionalCard'
 import FiltroForm from './FiltroForm'
 
 export default function BuscarFreelas() {
