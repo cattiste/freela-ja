@@ -53,10 +53,18 @@ export default function Chamadas() {
     return () => unsubscribe()
   }, [user])
 
+  const formatarData = (data) => {
+    try {
+      return data?.toDate().toLocaleString('pt-BR') || '—'
+    } catch {
+      return '—'
+    }
+  }
+
   async function aceitar(id) {
     setLoadingId(id)
     try {
-      await updateDoc(doc(db, 'chamadas', id), { status: 'aceita' }) // corrigido aqui!
+      await updateDoc(doc(db, 'chamadas', id), { status: 'aceita' })
       setChatAbertoId(id)
     } catch (err) {
       console.error('Erro ao aceitar chamada:', err)
@@ -92,28 +100,32 @@ export default function Chamadas() {
       <h2 className="text-2xl font-semibold text-orange-700 mb-4">📞 Minhas Chamadas</h2>
 
       {chamadas.map(chamada => (
-        <div key={chamada.id} className="bg-white p-4 rounded-lg shadow">
-          <div className="flex justify-between items-center mb-3">
-            <div>
+        <div key={chamada.id} className="bg-white p-4 rounded-2xl shadow-md border border-orange-100 space-y-2">
+          <div className="flex justify-between items-start gap-6">
+            <div className="space-y-1">
               <p><strong>Vaga:</strong> {chamada.vagaTitulo || 'Título não informado'}</p>
               <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome || 'Nome não informado'}</p>
-              <p>
-                <strong>Status:</strong>{' '}
-                <span
-                  className={`font-semibold ${
-                    chamada.status === 'aceita'
-                      ? 'text-green-600'
-                      : chamada.status === 'pendente'
-                      ? 'text-yellow-600'
-                      : 'text-red-600'
-                  }`}
-                >
+              <p><strong>Status:</strong>{' '}
+                <span className={`font-semibold ${
+                  chamada.status === 'aceita'
+                    ? 'text-green-600'
+                    : chamada.status === 'pendente'
+                    ? 'text-yellow-600'
+                    : 'text-red-600'
+                }`}>
                   {chamada.status.toUpperCase()}
                 </span>
               </p>
+              <p><strong>Data da chamada:</strong> {formatarData(chamada.criadoEm)}</p>
+              {chamada.checkInHora && (
+                <p><strong>Check-in:</strong> {formatarData(chamada.checkInHora)}</p>
+              )}
+              {chamada.checkOutHora && (
+                <p><strong>Check-out:</strong> {formatarData(chamada.checkOutHora)}</p>
+              )}
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2">
               {chamada.status === 'pendente' && (
                 <>
                   <button
