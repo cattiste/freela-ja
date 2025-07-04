@@ -9,7 +9,7 @@ import {
   doc
 } from 'firebase/firestore'
 
-import Chat from './Chat' // Seu componente Chat, caso já tenha
+import Chat from './Chat'
 
 export default function Chamadas() {
   const [chamadas, setChamadas] = useState([])
@@ -24,14 +24,14 @@ export default function Chamadas() {
   }, [])
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) return
 
-    let primeiraCarga = true;
+    let primeiraCarga = true
 
     const q = query(
       collection(db, 'chamadas'),
       where('freelaUid', '==', user.uid),
-      where('status', 'in', ['pendente', 'aceito'])
+      where('status', 'in', ['pendente', 'aceita'])
     )
 
     const unsubscribe = onSnapshot(q, snapshot => {
@@ -56,7 +56,7 @@ export default function Chamadas() {
   async function aceitar(id) {
     setLoadingId(id)
     try {
-      await updateDoc(doc(db, 'chamadas', id), { status: 'aceito' })
+      await updateDoc(doc(db, 'chamadas', id), { status: 'aceita' }) // corrigido aqui!
       setChatAbertoId(id)
     } catch (err) {
       console.error('Erro ao aceitar chamada:', err)
@@ -101,7 +101,7 @@ export default function Chamadas() {
                 <strong>Status:</strong>{' '}
                 <span
                   className={`font-semibold ${
-                    chamada.status === 'aceito'
+                    chamada.status === 'aceita'
                       ? 'text-green-600'
                       : chamada.status === 'pendente'
                       ? 'text-yellow-600'
@@ -133,7 +133,7 @@ export default function Chamadas() {
                 </>
               )}
 
-              {chamada.status === 'aceito' && (
+              {chamada.status === 'aceita' && (
                 <button
                   onClick={() =>
                     setChatAbertoId(prev => (prev === chamada.id ? null : chamada.id))

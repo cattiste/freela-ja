@@ -13,7 +13,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
     const q = query(
       collection(db, 'chamadas'),
       where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', 'in', ['pendente', 'aceito', 'checkin', 'checkout'])
+      where('status', 'in', ['pendente', 'aceita', 'checkin', 'checkout']) // Corrigido aqui
     )
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -56,7 +56,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
             {chamada.status === 'pendente' && (
               <>
                 <button
-                  onClick={() => atualizarStatus(chamada.id, chamada.status, 'aceito')}
+                  onClick={() => atualizarStatus(chamada.id, chamada.status, 'aceita')}
                   disabled={loadingId === chamada.id}
                   className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 disabled:opacity-50"
                 >
@@ -72,7 +72,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
               </>
             )}
 
-            {chamada.status === 'aceito' && !chamada.checkInFreela && (
+            {chamada.status === 'aceita' && !chamada.checkInFreela && (
               <button
                 onClick={() => atualizarStatus(chamada.id, chamada.status, 'checkin')}
                 disabled={loadingId === chamada.id}
