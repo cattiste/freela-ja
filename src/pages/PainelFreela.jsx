@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { getDatabase, ref, onDisconnect, set } from 'firebase/database'
 import {
   collection,
   query,
@@ -24,6 +25,11 @@ import RecebimentosFreela from './freelas/RecebimentosFreela'
 import AgendaCompleta from './freelas/AgendaCompleta'
 import HistoricoChamadasFreela from './freelas/HistoricoChamadasFreela'
 
+  const dbRT = getDatabase()
+  const statusRef = ref(dbRT, `/status/${usuario.uid}`)
+   set(statusRef, { online: true })
+   onDisconnect(statusRef).set({ online: false })
+   
 function Chat({ chamadaId }) {
   const [usuario, setUsuario] = useState(null)
   const [mensagem, setMensagem] = useState('')
