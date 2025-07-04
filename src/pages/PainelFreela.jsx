@@ -1,3 +1,4 @@
+// PainelFreela.jsx (com som fora da aba + check-out ajustado)
 import React, { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
@@ -11,11 +12,9 @@ import {
   updateDoc,
   serverTimestamp,
   getDoc,
-  addDoc,
   orderBy
 } from 'firebase/firestore'
 
-// Componentes
 import HistoricoTrabalhosFreela from './freelas/HistoricoTrabalhosFreela'
 import AvaliacoesRecebidasFreela from './freelas/AvaliacoesRecebidasFreela'
 import ConfiguracoesFreela from './freelas/ConfiguracoesFreela'
@@ -23,7 +22,6 @@ import PerfilFreela from './PerfilFreela'
 import RecebimentosFreela from './freelas/RecebimentosFreela'
 import AgendaCompleta from './freelas/AgendaCompleta'
 
-// Componente Chat completo integrado
 function Chat({ chamadaId }) {
   const [usuario, setUsuario] = useState(null)
   const [mensagem, setMensagem] = useState('')
@@ -40,17 +38,12 @@ function Chat({ chamadaId }) {
 
   useEffect(() => {
     if (!chamadaId) return
-
     const mensagensRef = collection(db, 'chamadas', chamadaId, 'mensagens')
     const q = query(mensagensRef, orderBy('createdAt', 'asc'))
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }))
+      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
       setMensagens(msgs)
-
       setTimeout(() => {
         if (divFimRef.current) divFimRef.current.scrollIntoView({ behavior: 'smooth' })
       }, 100)
@@ -88,21 +81,14 @@ function Chat({ chamadaId }) {
         {mensagens.map((msg) => {
           const isRemetente = msg.remetenteUid === usuario?.uid
           return (
-            <div
-              key={msg.id}
-              className={`flex ${isRemetente ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[70%] px-3 py-2 rounded-lg ${
-                  isRemetente ? 'bg-orange-400 text-white' : 'bg-gray-200 text-gray-800'
-                }`}
-              >
+            <div key={msg.id} className={`flex ${isRemetente ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[70%] px-3 py-2 rounded-lg ${
+                isRemetente ? 'bg-orange-400 text-white' : 'bg-gray-200 text-gray-800'
+              }`}>
                 <p className="text-xs font-semibold">{msg.remetenteNome}</p>
                 <p>{msg.texto}</p>
                 <p className="text-xs text-gray-600 mt-1">
-                  {msg.createdAt?.toDate
-                    ? msg.createdAt.toDate().toLocaleString()
-                    : 'Enviando...'}
+                  {msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleString() : 'Enviando...'}
                 </p>
               </div>
             </div>
@@ -110,7 +96,6 @@ function Chat({ chamadaId }) {
         })}
         <div ref={divFimRef} />
       </div>
-
       <form onSubmit={enviarMensagem} className="flex gap-2">
         <input
           type="text"
@@ -179,6 +164,25 @@ export default function PainelFreela() {
     }
   }, [])
 
+  useEffect(() => {
+    if (!usuario?.uid) return
+
+    const chamadasRef = collection(db, 'chamadas')
+    const q = query(chamadasRef, where('freelaUid', '==', usuario.uid), where('status', '==', 'pendente'))
+
+    let primeiraCarga = true
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const chamadasPendentes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      if (!primeiraCarga && chamadasPendentes.length > 0) {
+        const audio = new Audio('/sons/chamada.mp3')
+        audio.play().catch(() => {})
+      }
+      primeiraCarga = false
+    })
+
+    return () => unsubscribe()
+  }, [usuario])
+
   const fazerCheckin = async () => {
     const chamada = chamadas.find((c) => !c.checkInFreela && c.status === 'aceita')
     if (!chamada) return alert('Nenhuma chamada pendente para check-in.')
@@ -203,7 +207,8 @@ export default function PainelFreela() {
     try {
       await updateDoc(doc(db, 'chamadas', chamada.id), {
         checkOutFreela: true,
-        checkOutHora: serverTimestamp()
+        checkOutHora: serverTimestamp(),
+        status: 'checkout' // ✅ importante para liberar confirmação do estabelecimento
       })
       alert('Check-out realizado!')
     } catch (error) {
