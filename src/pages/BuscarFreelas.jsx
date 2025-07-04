@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/firebase'
 import ProfissionalCard from '@/components/ProfissionalCard'
-import FiltroForm from './FiltroForm'
+import FiltroForm from '@/components/FiltroForm'
 
 export default function BuscarFreelas() {
   const [freelas, setFreelas] = useState([])
