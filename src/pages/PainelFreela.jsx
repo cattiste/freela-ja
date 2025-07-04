@@ -21,6 +21,7 @@ import ConfiguracoesFreela from './freelas/ConfiguracoesFreela'
 import PerfilFreela from './PerfilFreela'
 import RecebimentosFreela from './freelas/RecebimentosFreela'
 import AgendaCompleta from './freelas/AgendaCompleta'
+import HistoricoChamadasFreela from './freelas/HistoricoChamadasFreela'
 
 function Chat({ chamadaId }) {
   const [usuario, setUsuario] = useState(null)
@@ -250,6 +251,8 @@ export default function PainelFreela() {
         return <HistoricoTrabalhosFreela freelaUid={usuario.uid} />
       case 'avaliacoes':
         return <AvaliacoesRecebidasFreela freelaUid={usuario.uid} />
+      case 'historico':
+        return <HistoricoChamadasFreela freelaUid={usuario.uid} />  
       case 'recebimentos':
         return <RecebimentosFreela />
       case 'chat':
@@ -364,7 +367,8 @@ export default function PainelFreela() {
               { key: 'avaliacoes', label: '⭐ Avaliações' },
               { key: 'historico', label: '📜 Histórico' },
               { key: 'configuracoes', label: '⚙️ Configurações' },
-              { key: 'recebimentos', label: '💵 Recebimentos' }
+              { key: 'recebimentos', label: '💵 Recebimentos' },
+              { key: 'historico', label: '📜 Histórico' },
             ].map(({ key, label }) => (
               <li key={key} className="list-none">
                 <button

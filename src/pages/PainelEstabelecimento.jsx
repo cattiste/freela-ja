@@ -12,6 +12,7 @@ import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import PublicarVaga from '@/components/PublicarVaga'
 import MinhasVagas from '@/components/MinhasVagas'
 import CandidaturasEstabelecimento from '@/components/CandidaturasEstabelecimento'
+import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
 
 export default function PainelEstabelecimento() {
   const navigate = useNavigate()
@@ -82,6 +83,8 @@ export default function PainelEstabelecimento() {
         return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
       case 'agendas':
         return <AgendasContratadas estabelecimento={estabelecimento} />
+      case 'historico':
+        return <HistoricoChamadasEstabelecimento estabelecimento={estabelecimento} />  
       case 'avaliacao':
         return <AvaliacaoFreela estabelecimento={estabelecimento} />
       case 'publicar':
@@ -149,7 +152,8 @@ export default function PainelEstabelecimento() {
               { key: 'avaliacao', label: '⭐ Avaliar' },
               { key: 'publicar', label: '📢 Publicar Vaga' },
               { key: 'minhas-vagas', label: '📋 Minhas Vagas' },
-              { key: 'candidaturas', label: '📋 Candidaturas' }
+              { key: 'candidaturas', label: '📋 Candidaturas' },
+              { key: 'historico', label: '📜 Histórico' },
             ].map(({ key, label }) => (
               <li key={key} className="list-none">
                 <button
