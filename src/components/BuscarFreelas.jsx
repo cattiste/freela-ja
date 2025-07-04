@@ -11,20 +11,24 @@ export default function BuscarFreelas({ estabelecimento }) {
     async function carregarFreelas() {
       try {
         const querySnapshot = await getDocs(collection(db, 'usuarios'))
+        const agora = new Date()
         const lista = []
 
         querySnapshot.forEach((doc) => {
           const data = doc.data()
+          const id = doc.id
 
-          if (
-            data.tipo === 'freela' &&
-            data.ativo === true &&
-            data.online === true &&
-            data.nome &&
-            data.funcao &&
-            data.celular
-          ) {
-            lista.push({ id: doc.id, ...data })
+          if (data.tipo === 'freela' && data.ativo && data.nome && data.funcao && data.celular) {
+            let segundos = Infinity
+
+            try {
+              const ultima = data.ultimaAtividade?.toDate?.()
+              segundos = (agora - ultima) / 1000
+            } catch {}
+
+            if (segundos < 40) {
+              lista.push({ id, ...data })
+            }
           }
         })
 
