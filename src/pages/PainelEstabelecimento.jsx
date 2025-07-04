@@ -5,11 +5,11 @@ import { useNavigate } from 'react-router-dom'
 
 import { auth, db } from '@/firebase'
 
-import BuscarFreelas from './BuscarFreelas'
-import ChamadasEstabelecimento from './ChamadasEstabelecimento'
-import AgendasContratadas from './AgendasContratadas'
-import AvaliacaoFreela from './AvaliacaoFreela'
-import PublicarVaga from './PublicarVaga'
+import BuscarFreelas from '@/components/BuscarFreelas'
+import ChamadasEstabelecimento from '@/components/ChamadasEstabelecimento'
+import AgendasContratadas from '@/components/AgendasContratadas'
+import AvaliacaoFreela from '@/components/AvaliacaoFreela'
+import PublicarVaga from '@/components/PublicarVaga'
 import MinhasVagas from '@/components/MinhasVagas'
 import CandidaturasEstabelecimento from '@/components/CandidaturasEstabelecimento'
 
@@ -21,14 +21,11 @@ export default function PainelEstabelecimento() {
   const [vagaEditando, setVagaEditando] = useState(null)
 
   useEffect(() => {
-    let mounted = true
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!mounted) return
       if (user) {
         try {
           const docRef = doc(db, 'usuarios', user.uid)
           const snap = await getDoc(docRef)
-
           if (snap.exists() && snap.data().tipo === 'estabelecimento') {
             setEstabelecimento({ uid: user.uid, ...snap.data() })
           } else {
@@ -45,10 +42,7 @@ export default function PainelEstabelecimento() {
       setCarregando(false)
     })
 
-    return () => {
-      mounted = false
-      unsubscribe()
-    }
+    return () => unsubscribe()
   }, [])
 
   const abrirEdicao = (vaga) => {
@@ -64,6 +58,7 @@ export default function PainelEstabelecimento() {
   const handleLogout = async () => {
     try {
       await signOut(auth)
+      localStorage.removeItem('usuarioLogado')
       navigate('/login')
     } catch (err) {
       alert('Erro ao sair.')
@@ -82,7 +77,7 @@ export default function PainelEstabelecimento() {
 
     switch (aba) {
       case 'buscar':
-        return <BuscarFreelas estabelecimento={estabelecimento} />
+        return <BuscarFreelas estabelecimento={estabelecimento} vaga={vagaEditando} />
       case 'chamadas':
         return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
       case 'agendas':
@@ -125,7 +120,7 @@ export default function PainelEstabelecimento() {
   return (
     <div className="min-h-screen bg-orange-50 p-4">
       <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
-        {/* Cabeçalho e Logout */}
+        {/* Cabeçalho */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <h1 className="text-3xl font-bold text-orange-700">📊 Painel do Estabelecimento</h1>
           <div className="flex gap-4">
@@ -144,7 +139,7 @@ export default function PainelEstabelecimento() {
           </div>
         </div>
 
-        {/* Navegação em abas */}
+        {/* Navegação por abas */}
         <nav className="border-b border-orange-300 mb-6">
           <ul className="flex space-x-2 overflow-x-auto scrollbar-thin scrollbar-thumb-orange-400 scrollbar-track-orange-100">
             {[
@@ -167,7 +162,6 @@ export default function PainelEstabelecimento() {
                       ? 'border-orange-600 text-orange-600'
                       : 'border-transparent text-orange-400 hover:text-orange-600 hover:border-orange-400'
                   }`}
-                  aria-current={aba === key ? 'page' : undefined}
                 >
                   {label}
                 </button>

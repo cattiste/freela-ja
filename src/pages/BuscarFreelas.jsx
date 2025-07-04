@@ -1,87 +1,59 @@
+// src/components/BuscarFreelas.jsx
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, getDocs } from 'firebase/firestore'
-import { db } from '@/firebase'
-import ProfissionalCard from '@/components/ProfissionalCard'
-import FiltroForm from '@/components/FiltroForm'
+import { collection, getDocs } from 'firebase/firestore'
+import { criarChamada } from '@/utils/criarChamada'
+import ProfissionalCard from './ProfissionalCard'
+import { useNavigate } from 'react-router-dom'
 
-export default function BuscarFreelas() {
+export default function BuscarFreelas({ estabelecimento, vaga }) {
   const [freelas, setFreelas] = useState([])
   const [carregando, setCarregando] = useState(true)
-  const [erro, setErro] = useState(null)
-
-  const [filtroEspecialidade, setFiltroEspecialidade] = useState('')
-  const [filtroCidade, setFiltroCidade] = useState('')
-  const [filtroDisponibilidade, setFiltroDisponibilidade] = useState('')
+  const navigate = useNavigate()
 
   useEffect(() => {
-    const buscar = async () => {
+    async function carregarFreelas() {
       setCarregando(true)
       try {
-        // Consulta inicial: tipo 'freela'
-        let q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
-        const snapshot = await getDocs(q)
-        let resultado = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-
-        // Filtragem simples no cliente (refine se possível no servidor)
-        if (filtroEspecialidade.trim()) {
-          resultado = resultado.filter(f =>
-            f.especialidade?.toLowerCase().includes(filtroEspecialidade.toLowerCase())
-          )
-        }
-        if (filtroCidade.trim()) {
-          resultado = resultado.filter(f =>
-            f.endereco?.toLowerCase().includes(filtroCidade.toLowerCase())
-          )
-        }
-
-        // TODO: filtroDisponibilidade - implemente conforme seu modelo de dados
-
-        setFreelas(resultado)
-        setErro(null)
+        const snapshot = await getDocs(collection('usuarios'))
+        // Filtra somente freelas (tipo === 'freela')
+        const lista = snapshot.docs
+          .map(doc => ({ uid: doc.id, ...doc.data() }))
+          .filter(u => u.tipo === 'freela')
+        setFreelas(lista)
       } catch (err) {
-        console.error('Erro ao buscar freelas:', err)
-        setErro('Erro ao buscar freelancers.')
-      } finally {
-        setCarregando(false)
+        console.error('Erro ao carregar freelas:', err)
       }
+      setCarregando(false)
     }
 
-    buscar()
-  }, [filtroEspecialidade, filtroCidade, filtroDisponibilidade])
+    carregarFreelas()
+  }, [])
 
-  if (carregando) return <div className="p-4">🔄 Carregando freelancers...</div>
-  if (erro) return <div className="p-4 text-red-500">{erro}</div>
+  async function handleChamar(freela) {
+    if (!estabelecimento) {
+      alert('Estabelecimento não definido.')
+      return
+    }
+
+    try {
+      await criarChamada(estabelecimento, freela, vaga)
+    } catch (err) {
+      console.error('Erro ao criar chamada:', err)
+    }
+  }
+
+  if (carregando) return <p>Carregando freelancers...</p>
+  if (freelas.length === 0) return <p>Nenhum freelancer encontrado.</p>
 
   return (
-    <div className="p-4 max-w-6xl mx-auto">
-      <h2 className="text-3xl font-bold text-orange-700 mb-4">🔍 Freelancers</h2>
-
-      <FiltroForm
-        filtroEspecialidade={filtroEspecialidade}
-        setFiltroEspecialidade={setFiltroEspecialidade}
-        filtroCidade={filtroCidade}
-        setFiltroCidade={setFiltroCidade}
-        filtroDisponibilidade={filtroDisponibilidade}
-        setFiltroDisponibilidade={setFiltroDisponibilidade}
-      />
-
-      {freelas.length === 0 ? (
-        <p className="text-gray-600 mt-4">Nenhum freelancer encontrado.</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
-          {freelas.map(f => (
-            <ProfissionalCard
-              key={f.id}
-              prof={f}
-              distanciaKm={null} // implemente cálculo se quiser filtrar por distância
-              onChamar={(prof) => {
-                // AQUI substitua pelo seu handler real para chamar o freela
-                alert(`Chamar profissional: ${prof.nome}`)
-              }}
-            />
-          ))}
-        </div>
-      )}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {freelas.map(freela => (
+        <ProfissionalCard
+          key={freela.uid}
+          prof={freela}
+          onChamar={handleChamar}
+        />
+      ))}
     </div>
   )
 }

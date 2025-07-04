@@ -1,3 +1,4 @@
+// src/components/ProfissionalCard.jsx
 import React from 'react'
 
 export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
@@ -7,17 +8,6 @@ export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
       : 'https://i.imgur.com/3W8i1sT.png'
 
   const diariaNumerica = !isNaN(parseFloat(prof.valorDiaria))
-
-  // Função local para tratar clique no botão chamar
-  const handleChamar = () => {
-    if (typeof onChamar === 'function') {
-      // Debug
-      console.log('Chamar profissional:', prof)
-      onChamar(prof)
-    } else {
-      console.warn('Função onChamar não definida')
-    }
-  }
 
   return (
     <div className="bg-white rounded-2xl p-5 m-4 max-w-xs shadow-md text-center transition-transform duration-200 hover:-translate-y-1">
@@ -64,9 +54,8 @@ export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
 
       {onChamar && (
         <button
-          onClick={handleChamar}
+          onClick={() => onChamar(prof)}
           className="bg-green-600 text-white py-2 px-4 rounded-xl mt-4 hover:bg-green-700 cursor-pointer transition-colors duration-200"
-          aria-label={`Chamar ${prof.nome || 'profissional'}`}
         >
           📩 Chamar
         </button>
