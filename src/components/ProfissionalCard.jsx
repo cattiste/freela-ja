@@ -2,8 +2,8 @@ import React from 'react'
 
 export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
   const imagemValida =
-    typeof prof.imagem === 'string' && prof.imagem.trim() !== ''
-      ? prof.imagem
+    typeof prof.foto === 'string' && prof.foto.trim() !== ''
+      ? prof.foto
       : 'https://i.imgur.com/3W8i1sT.png'
 
   const diariaNumerica = !isNaN(parseFloat(prof.valorDiaria))
@@ -28,7 +28,6 @@ export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
         <strong>Endereço:</strong> {prof.endereco || 'Não informado'}
       </p>
 
-      {/* Distância só aparece se for passada */}
       {typeof distanciaKm === 'number' && (
         <p className="text-blue-600 mt-1">
           <strong>📍 Distância:</strong> {distanciaKm.toFixed(1)} km
