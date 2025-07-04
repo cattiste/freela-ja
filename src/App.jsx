@@ -22,7 +22,7 @@ import PainelEstabelecimento from './pages/PainelEstabelecimento'
 
 // Vagas
 import PainelVagas from './pages/PainelVagas'
-import PublicarVaga from './pages/PublicarVaga'
+import PublicarVaga from './components/PublicarVaga'
 import VagasDisponiveis from './pages/VagasDisponiveis'
 import TesteCriarVaga from './pages/TesteCriarVaga'
 
