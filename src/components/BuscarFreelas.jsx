@@ -11,24 +11,20 @@ export default function BuscarFreelas({ estabelecimento }) {
     async function carregarFreelas() {
       try {
         const querySnapshot = await getDocs(collection(db, 'usuarios'))
-        const agora = new Date()
         const lista = []
 
         querySnapshot.forEach((doc) => {
           const data = doc.data()
-          const id = doc.id
 
-          if (data.tipo === 'freela' && data.ativo && data.nome && data.funcao && data.celular) {
-            let segundos = Infinity
-
-            try {
-              const ultima = data.ultimaAtividade?.toDate?.()
-              segundos = (agora - ultima) / 1000
-            } catch {}
-
-            if (segundos < 40) {
-              lista.push({ id, online: segundos < 40, ...data })
-            }
+          if (
+            data.tipo === 'freela' &&
+            data.ativo === true &&
+            data.online === true &&
+            data.nome &&
+            data.funcao &&
+            data.celular
+          ) {
+            lista.push({ id: doc.id, ...data })
           }
         })
 
@@ -69,13 +65,6 @@ export default function BuscarFreelas({ estabelecimento }) {
 
   if (carregando) return <p>Carregando freelancers...</p>
   if (freelas.length === 0) return <p>Nenhum freelancer online no momento.</p>
-  {freelas.map((freela) => (
-  <div key={freela.id}>
-    <p>{freela.nome}</p>
-    <p>Status: {freela.online ? '🟢 Online' : '⚪ Offline'}</p>
-    <button disabled={!freela.online}>Chamar</button>
-  </div>
-))}
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
