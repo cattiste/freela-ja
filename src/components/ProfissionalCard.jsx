@@ -8,6 +8,17 @@ export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
 
   const diariaNumerica = !isNaN(parseFloat(prof.valorDiaria))
 
+  // Função local para tratar clique no botão chamar
+  const handleChamar = () => {
+    if (typeof onChamar === 'function') {
+      // Debug
+      console.log('Chamar profissional:', prof)
+      onChamar(prof)
+    } else {
+      console.warn('Função onChamar não definida')
+    }
+  }
+
   return (
     <div className="bg-white rounded-2xl p-5 m-4 max-w-xs shadow-md text-center transition-transform duration-200 hover:-translate-y-1">
       <img
@@ -48,15 +59,14 @@ export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
       )}
 
       {prof.descricao && (
-        <p className="italic mt-2 text-sm text-gray-600">
-          {prof.descricao}
-        </p>
+        <p className="italic mt-2 text-sm text-gray-600">{prof.descricao}</p>
       )}
 
       {onChamar && (
         <button
-          onClick={() => onChamar(prof)}
+          onClick={handleChamar}
           className="bg-green-600 text-white py-2 px-4 rounded-xl mt-4 hover:bg-green-700 cursor-pointer transition-colors duration-200"
+          aria-label={`Chamar ${prof.nome || 'profissional'}`}
         >
           📩 Chamar
         </button>

@@ -12,9 +12,13 @@ function validateEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
+// Aceita CNPJ com ou sem máscara (opcional, ajuste conforme necessidade)
 function validateCNPJ(cnpj) {
-  // Mantive sua regex mas você pode ajustar para aceitar números limpos
-  return /^\d{2}\.\d{3}\.\d{3}\/\d{4}\-\d{2}$/.test(cnpj)
+  // Com máscara: 00.000.000/0000-00
+  const cnpjMascara = /^\d{2}\.\d{3}\.\d{3}\/\d{4}\-\d{2}$/
+  // Sem máscara: apenas números
+  const cnpjLimpo = /^\d{14}$/
+  return cnpjMascara.test(cnpj) || cnpjLimpo.test(cnpj.replace(/\D/g, ''))
 }
 
 export default function CadastroEstabelecimento() {
@@ -42,11 +46,18 @@ export default function CadastroEstabelecimento() {
           setLongitude(pos.coords.longitude)
         },
         () => {
-          setLocalizacaoErro('Não foi possível obter a localização. Preencha manualmente.')
+          setLocalizacaoErro('Não foi possível obter a localização automaticamente. Preencha manualmente.')
         }
       )
     }
   }, [])
+
+  useEffect(() => {
+    // Limpar URL objeto para evitar vazamento de memória
+    return () => {
+      if (fotoPreview) URL.revokeObjectURL(fotoPreview)
+    }
+  }, [fotoPreview])
 
   const uploadImage = async (file) => {
     try {
@@ -85,7 +96,13 @@ export default function CadastroEstabelecimento() {
     }
 
     if (!validateCNPJ(cnpj)) {
-      setError('CNPJ inválido. Use o formato: 00.000.000/0000-00')
+      setError('CNPJ inválido. Use o formato: 00.000.000/0000-00 ou números limpos.')
+      return
+    }
+
+    // Evitar NaN ao converter latitude e longitude
+    if (isNaN(latitude) || isNaN(longitude)) {
+      setError('Latitude e Longitude inválidas.')
       return
     }
 
@@ -117,7 +134,7 @@ export default function CadastroEstabelecimento() {
       navigate('/login')
     } catch (err) {
       console.error('Erro no cadastro:', err)
-      setError(err.message)
+      setError(err.message || 'Erro ao realizar cadastro.')
     } finally {
       setLoading(false)
     }
@@ -127,36 +144,103 @@ export default function CadastroEstabelecimento() {
     <div className="max-w-md mx-auto mt-20 p-6 bg-white rounded-2xl shadow-xl">
       <h1 className="text-2xl font-bold mb-6 text-center text-orange-600">Cadastro Estabelecimento</h1>
 
-      <form onSubmit={handleCadastro} className="flex flex-col gap-4">
-        <input type="text" placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} required className="input" />
-        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required className="input" />
-        <input type="password" placeholder="Senha" value={senha} onChange={e => setSenha(e.target.value)} required className="input" />
+      <form onSubmit={handleCadastro} className="flex flex-col gap-4" noValidate>
+        <input
+          type="text"
+          placeholder="Nome"
+          value={nome}
+          onChange={e => setNome(e.target.value)}
+          required
+          className="input"
+          autoComplete="name"
+        />
 
-        <InputMask mask="(99) 99999-9999" value={celular} onChange={e => setCelular(e.target.value)}>
-          {(inputProps) => <input {...inputProps} type="tel" placeholder="Celular" required className="input" />}
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+          className="input"
+          autoComplete="email"
+        />
+
+        <input
+          type="password"
+          placeholder="Senha"
+          value={senha}
+          onChange={e => setSenha(e.target.value)}
+          required
+          className="input"
+          autoComplete="new-password"
+        />
+
+        <InputMask
+          mask="(99) 99999-9999"
+          value={celular}
+          onChange={e => setCelular(e.target.value)}
+        >
+          {(inputProps) => (
+            <input
+              {...inputProps}
+              type="tel"
+              placeholder="Celular"
+              required
+              className="input"
+              autoComplete="tel"
+            />
+          )}
         </InputMask>
 
-        <InputMask mask="99.999.999/9999-99" value={cnpj} onChange={e => setCnpj(e.target.value)}>
-          {(inputProps) => <input {...inputProps} type="text" placeholder="CNPJ" required className="input" />}
+        <InputMask
+          mask="99.999.999/9999-99"
+          value={cnpj}
+          onChange={e => setCnpj(e.target.value)}
+        >
+          {(inputProps) => (
+            <input
+              {...inputProps}
+              type="text"
+              placeholder="CNPJ"
+              required
+              className="input"
+              autoComplete="off"
+            />
+          )}
         </InputMask>
 
-        <input type="text" placeholder="Endereço" value={endereco} onChange={e => setEndereco(e.target.value)} required className="input" />
+        <input
+          type="text"
+          placeholder="Endereço"
+          value={endereco}
+          onChange={e => setEndereco(e.target.value)}
+          required
+          className="input"
+          autoComplete="street-address"
+        />
 
         <input
           type="number"
           step="any"
           placeholder="Latitude"
           value={latitude !== null ? latitude : ''}
-          onChange={e => setLatitude(parseFloat(e.target.value))}
+          onChange={e => {
+            const val = parseFloat(e.target.value)
+            setLatitude(isNaN(val) ? null : val)
+          }}
           required
           className="input"
         />
+
         <input
           type="number"
           step="any"
           placeholder="Longitude"
           value={longitude !== null ? longitude : ''}
-          onChange={e => setLongitude(parseFloat(e.target.value))}
+          onChange={e => {
+            const val = parseFloat(e.target.value)
+            setLongitude(isNaN(val) ? null : val)
+          }}
           required
           className="input"
         />
@@ -167,12 +251,20 @@ export default function CadastroEstabelecimento() {
           onChange={(e) => {
             const file = e.target.files[0]
             setFoto(file)
-            setFotoPreview(URL.createObjectURL(file))
+            if (file) {
+              setFotoPreview(URL.createObjectURL(file))
+            } else {
+              setFotoPreview(null)
+            }
           }}
         />
 
         {fotoPreview && (
-          <img src={fotoPreview} alt="Prévia da Foto" className="w-32 h-32 object-cover rounded mt-2" />
+          <img
+            src={fotoPreview}
+            alt="Prévia da Foto"
+            className="w-32 h-32 object-cover rounded mt-2"
+          />
         )}
 
         {localizacaoErro && <p className="text-yellow-600">{localizacaoErro}</p>}
@@ -181,7 +273,7 @@ export default function CadastroEstabelecimento() {
         <button
           type="submit"
           disabled={loading}
-          className="bg-orange-500 text-white font-bold py-3 rounded-xl hover:bg-orange-600"
+          className="bg-orange-500 text-white font-bold py-3 rounded-xl hover:bg-orange-600 disabled:opacity-60"
         >
           {loading ? 'Cadastrando...' : 'Cadastrar'}
         </button>

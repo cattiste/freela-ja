@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/firebase'
-import ProfissionalCard from '@/components/ProfissionalCard' // ajuste o caminho se precisar
-import FiltroForm from '@/components/FiltroForm' // filtro que você mostrou antes
+import ProfissionalCard from '@/components/ProfissionalCard'
+import FiltroForm from '@/components/FiltroForm'
 
 export default function BuscarFreelas() {
   const [freelas, setFreelas] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
 
-  // filtros
   const [filtroEspecialidade, setFiltroEspecialidade] = useState('')
   const [filtroCidade, setFiltroCidade] = useState('')
   const [filtroDisponibilidade, setFiltroDisponibilidade] = useState('')
@@ -18,23 +17,24 @@ export default function BuscarFreelas() {
     const buscar = async () => {
       setCarregando(true)
       try {
-        // Query base para tipo freela
+        // Consulta inicial: tipo 'freela'
         let q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
         const snapshot = await getDocs(q)
         let resultado = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
-        // Aplicar filtros simples no cliente (você pode refinar com queries compostas, mas firebase tem limites)
-        if (filtroEspecialidade.trim() !== '') {
+        // Filtragem simples no cliente (refine se possível no servidor)
+        if (filtroEspecialidade.trim()) {
           resultado = resultado.filter(f =>
             f.especialidade?.toLowerCase().includes(filtroEspecialidade.toLowerCase())
           )
         }
-        if (filtroCidade.trim() !== '') {
+        if (filtroCidade.trim()) {
           resultado = resultado.filter(f =>
             f.endereco?.toLowerCase().includes(filtroCidade.toLowerCase())
           )
         }
-        // filtroDisponibilidade você precisa tratar no seu modelo de dados, aqui não apliquei filtro por falta de info
+
+        // TODO: filtroDisponibilidade - implemente conforme seu modelo de dados
 
         setFreelas(resultado)
         setErro(null)
@@ -66,15 +66,18 @@ export default function BuscarFreelas() {
       />
 
       {freelas.length === 0 ? (
-        <p className="text-gray-600">Nenhum freelancer encontrado.</p>
+        <p className="text-gray-600 mt-4">Nenhum freelancer encontrado.</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
           {freelas.map(f => (
             <ProfissionalCard
               key={f.id}
               prof={f}
-              distanciaKm={null} // se tiver cálculo de distância, passe aqui
-              onChamar={(prof) => alert(`Chamar profissional: ${prof.nome}`)} // substitua pelo seu handler real
+              distanciaKm={null} // implemente cálculo se quiser filtrar por distância
+              onChamar={(prof) => {
+                // AQUI substitua pelo seu handler real para chamar o freela
+                alert(`Chamar profissional: ${prof.nome}`)
+              }}
             />
           ))}
         </div>

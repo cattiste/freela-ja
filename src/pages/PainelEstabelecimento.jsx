@@ -15,14 +15,15 @@ import CandidaturasEstabelecimento from '@/components/CandidaturasEstabeleciment
 
 export default function PainelEstabelecimento() {
   const navigate = useNavigate()
-  const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'))
-  const [aba, setAba] = useState('buscar') // aba inicial
+  const [aba, setAba] = useState('buscar')
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [vagaEditando, setVagaEditando] = useState(null)
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async user => {
+    let mounted = true
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!mounted) return
       if (user) {
         try {
           const docRef = doc(db, 'usuarios', user.uid)
@@ -44,15 +45,18 @@ export default function PainelEstabelecimento() {
       setCarregando(false)
     })
 
-    return () => unsubscribe()
+    return () => {
+      mounted = false
+      unsubscribe()
+    }
   }, [])
 
-  function abrirEdicao(vaga) {
+  const abrirEdicao = (vaga) => {
     setVagaEditando(vaga)
     setAba('publicar')
   }
 
-  function onSalvarSucesso() {
+  const onSalvarSucesso = () => {
     setVagaEditando(null)
     setAba('minhas-vagas')
   }
@@ -60,7 +64,6 @@ export default function PainelEstabelecimento() {
   const handleLogout = async () => {
     try {
       await signOut(auth)
-      localStorage.removeItem('usuarioLogado')
       navigate('/login')
     } catch (err) {
       alert('Erro ao sair.')
@@ -69,6 +72,14 @@ export default function PainelEstabelecimento() {
   }
 
   const renderConteudo = () => {
+    if (!estabelecimento) {
+      return (
+        <p className="text-center text-red-600 mt-10 font-semibold">
+          Acesso não autorizado.
+        </p>
+      )
+    }
+
     switch (aba) {
       case 'buscar':
         return <BuscarFreelas estabelecimento={estabelecimento} />
@@ -89,7 +100,7 @@ export default function PainelEstabelecimento() {
       case 'minhas-vagas':
         return <MinhasVagas estabelecimento={estabelecimento} onEditar={abrirEdicao} />
       case 'candidaturas':
-        return <CandidaturasEstabelecimento estabelecimentoUid={usuarioLogado.uid} />
+        return <CandidaturasEstabelecimento estabelecimentoUid={estabelecimento.uid} />
       default:
         return <MinhasVagas estabelecimento={estabelecimento} onEditar={abrirEdicao} />
     }
@@ -98,7 +109,7 @@ export default function PainelEstabelecimento() {
   if (carregando) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-orange-600 text-lg">Carregando painel...</p>
+        <p className="text-orange-600 text-lg font-semibold">Carregando painel...</p>
       </div>
     )
   }
@@ -106,16 +117,16 @@ export default function PainelEstabelecimento() {
   if (!estabelecimento) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-600 text-lg">Acesso não autorizado.</p>
+        <p className="text-red-600 text-lg font-semibold">Acesso não autorizado.</p>
       </div>
     )
   }
 
   return (
     <div className="min-h-screen bg-orange-50 p-4">
-      <div className="max-w-7x2 mx-auto bg-white rounded-2xl shadow-lg p-6">
+      <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
         {/* Cabeçalho e Logout */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <h1 className="text-3xl font-bold text-orange-700">📊 Painel do Estabelecimento</h1>
           <div className="flex gap-4">
             <button
@@ -135,7 +146,7 @@ export default function PainelEstabelecimento() {
 
         {/* Navegação em abas */}
         <nav className="border-b border-orange-300 mb-6">
-          <ul className="flex space-x-2 overflow-x-auto">
+          <ul className="flex space-x-2 overflow-x-auto scrollbar-thin scrollbar-thumb-orange-400 scrollbar-track-orange-100">
             {[
               { key: 'buscar', label: '🔍 Buscar Freelancers' },
               { key: 'chamadas', label: '📞 Chamadas' },
@@ -156,6 +167,7 @@ export default function PainelEstabelecimento() {
                       ? 'border-orange-600 text-orange-600'
                       : 'border-transparent text-orange-400 hover:text-orange-600 hover:border-orange-400'
                   }`}
+                  aria-current={aba === key ? 'page' : undefined}
                 >
                   {label}
                 </button>
