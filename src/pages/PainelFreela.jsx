@@ -1,4 +1,5 @@
-// PainelFreela.jsx (com som fora da aba + check-out ajustado)
+// PainelFreela.jsx — COMPLETO com som de chamada, status online, check-out e histórico
+
 import React, { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
@@ -135,7 +136,10 @@ export default function PainelFreela() {
         try {
           const snap = await getDoc(docRef)
           if (snap.exists() && snap.data().tipo === 'freela') {
-            setUsuario({ uid: user.uid, ...snap.data() })
+            const userData = { uid: user.uid, ...snap.data() }
+            setUsuario(userData)
+
+            await updateDoc(docRef, { online: true }) // online TRUE
 
             const chamadasRef = collection(db, 'chamadas')
             const q = query(chamadasRef, where('freelaUid', '==', user.uid))
@@ -159,11 +163,20 @@ export default function PainelFreela() {
       }
     })
 
+    const handleUnload = async () => {
+      if (usuario?.uid) {
+        await updateDoc(doc(db, 'usuarios', usuario.uid), { online: false }) // online FALSE
+      }
+    }
+
+    window.addEventListener('beforeunload', handleUnload)
+
     return () => {
       unsubscribeAuth()
       if (unsubscribeChamadas) unsubscribeChamadas()
+      window.removeEventListener('beforeunload', handleUnload)
     }
-  }, [])
+  }, [usuario])
 
   useEffect(() => {
     if (!usuario?.uid) return
@@ -209,7 +222,7 @@ export default function PainelFreela() {
       await updateDoc(doc(db, 'chamadas', chamada.id), {
         checkOutFreela: true,
         checkOutHora: serverTimestamp(),
-        status: 'checkout' // ✅ importante para liberar confirmação do estabelecimento
+        status: 'checkout'
       })
       alert('Check-out realizado!')
     } catch (error) {
@@ -220,9 +233,44 @@ export default function PainelFreela() {
   }
 
   const handleLogout = async () => {
+    if (usuario?.uid) {
+      await updateDoc(doc(db, 'usuarios', usuario.uid), { online: false })
+    }
     await signOut(auth)
     localStorage.removeItem('usuarioLogado')
     navigate('/login')
+  }
+
+  const renderConteudo = () => {
+    switch (aba) {
+      case 'perfil':
+        return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
+      case 'agenda':
+        return <AgendaCompleta freela={usuario} />
+      case 'historico':
+        return <HistoricoChamadasFreela freelaUid={usuario.uid} />
+      case 'avaliacoes':
+        return <AvaliacoesRecebidasFreela freelaUid={usuario.uid} />
+      case 'recebimentos':
+        return <RecebimentosFreela />
+      case 'chat':
+        const chamadaAtiva = chamadas.find(c => c.status === 'aceita')
+        return chamadaAtiva ? (
+          <Chat chamadaId={chamadaAtiva.id} />
+        ) : (
+          <div className="text-center text-gray-500 mt-4">Nenhuma chamada ativa para chat.</div>
+        )
+      case 'chamadas':
+        return (
+          <div className="text-center text-orange-600 mt-4">
+            Acesse a aba Chat ou aguarde uma nova chamada.
+          </div>
+        )
+      case 'configuracoes':
+        return <ConfiguracoesFreela />
+      default:
+        return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
+    }
   }
 
   if (carregando) {
@@ -241,98 +289,9 @@ export default function PainelFreela() {
     )
   }
 
-  const renderConteudo = () => {
-    switch (aba) {
-      case 'perfil':
-        return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
-      case 'agenda':
-        return <AgendaCompleta freela={usuario} />
-      case 'historico':
-        return <HistoricoTrabalhosFreela freelaUid={usuario.uid} />
-      case 'avaliacoes':
-        return <AvaliacoesRecebidasFreela freelaUid={usuario.uid} />
-      case 'historico':
-        return <HistoricoChamadasFreela freelaUid={usuario.uid} />  
-      case 'recebimentos':
-        return <RecebimentosFreela />
-      case 'chat':
-        const chamadaAtiva = chamadas.find(c => c.status === 'aceita')
-        return chamadaAtiva ? (
-          <Chat chamadaId={chamadaAtiva.id} />
-        ) : (
-          <div className="text-center text-gray-500 mt-4">Nenhuma chamada ativa para chat.</div>
-        )
-      case 'chamadas':
-        return (
-          <div>
-            <h2 className="text-2xl font-semibold mb-4">Chamadas Ativas</h2>
-            {chamadas.length === 0 && <p>Nenhuma chamada ativa.</p>}
-            {chamadas.map((chamada) => (
-              <div key={chamada.id} className="border rounded p-3 mb-4">
-                <p>
-                  <strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}
-                </p>
-                <p>
-                  <strong>Status:</strong> {chamada.status}
-                </p>
-                <p>
-                  <strong>Check-in feito:</strong> {chamada.checkInFreela ? 'Sim' : 'Não'}
-                </p>
-                <p>
-                  <strong>Check-out feito:</strong> {chamada.checkOutFreela ? 'Sim' : 'Não'}
-                </p>
-                {chamada.status === 'pendente' && (
-                  <div className="mt-2 flex gap-3">
-                    <button
-                      onClick={async () =>
-                        await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })
-                      }
-                      className="bg-green-600 text-white px-3 py-1 rounded"
-                    >
-                      ✅ Aceitar
-                    </button>
-                    <button
-                      onClick={async () =>
-                        await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })
-                      }
-                      className="bg-red-600 text-white px-3 py-1 rounded"
-                    >
-                      ❌ Recusar
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-
-            <div className="mt-6 flex gap-4">
-              <button
-                onClick={fazerCheckin}
-                disabled={loadingCheckin}
-                className="bg-green-600 text-white px-6 py-2 rounded"
-              >
-                {loadingCheckin ? 'Registrando...' : 'Check-in'}
-              </button>
-              <button
-                onClick={fazerCheckout}
-                disabled={loadingCheckout}
-                className="bg-yellow-600 text-white px-6 py-2 rounded"
-              >
-                {loadingCheckout ? 'Registrando...' : 'Check-out'}
-              </button>
-            </div>
-          </div>
-        )
-      case 'configuracoes':
-        return <ConfiguracoesFreela />
-      default:
-        return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
-    }
-  }
-
   return (
     <div className="min-h-screen bg-orange-50 p-4">
-      <div className="max-w-7x2 mx-auto bg-white rounded-2xl shadow-lg p-6">
-        {/* Cabeçalho */}
+      <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-orange-700">🧑‍🍳 Painel do Freelancer</h1>
@@ -356,7 +315,6 @@ export default function PainelFreela() {
           </div>
         </div>
 
-        {/* Navegação por abas */}
         <nav className="border-b border-orange-300 mb-6">
           <ul className="flex space-x-2 overflow-x-auto">
             {[
@@ -367,8 +325,7 @@ export default function PainelFreela() {
               { key: 'avaliacoes', label: '⭐ Avaliações' },
               { key: 'historico', label: '📜 Histórico' },
               { key: 'configuracoes', label: '⚙️ Configurações' },
-              { key: 'recebimentos', label: '💵 Recebimentos' },
-              { key: 'historico', label: '📜 Histórico' },
+              { key: 'recebimentos', label: '💵 Recebimentos' }
             ].map(({ key, label }) => (
               <li key={key} className="list-none">
                 <button
@@ -386,7 +343,6 @@ export default function PainelFreela() {
           </ul>
         </nav>
 
-        {/* Conteúdo */}
         <section>{renderConteudo()}</section>
       </div>
     </div>
