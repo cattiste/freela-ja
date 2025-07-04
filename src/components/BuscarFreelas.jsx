@@ -19,7 +19,7 @@ export default function BuscarFreelas({ estabelecimento }) {
           // Filtra apenas freelancers ativos com perfil completo
           if (
             data.tipo === 'freela' &&
-            data.ativo === true &&
+            data.ativo === false &&
             data.nome &&
             data.funcao &&
             data.celular
