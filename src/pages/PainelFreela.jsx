@@ -20,6 +20,7 @@ import PerfilFreela from './PerfilFreela'
 import RecebimentosFreela from './freelas/RecebimentosFreela'
 import AgendaCompleta from './freelas/AgendaCompleta'
 import Chat from './freelas/Chat'
+import AvaliacaoEstabelecimento from '@/components/AvaliacaoEstabelecimento'
 
 export default function PainelFreela() {
   const navigate = useNavigate()
@@ -233,6 +234,21 @@ export default function PainelFreela() {
         )
       case 'configuracoes':
         return <ConfiguracoesFreela />
+      case 'avaliar-estabelecimento': {
+        // Buscar chamada finalizada e ainda não avaliada
+        const chamadaParaAvaliar = chamadas.find(
+          c => c.status === 'finalizado' && !c.avaliacaoFreelaFeita
+        )
+        return chamadaParaAvaliar ? (
+          <AvaliacaoEstabelecimento
+            chamadaId={chamadaParaAvaliar.id}
+            estabelecimentoUid={chamadaParaAvaliar.estabelecimentoUid}
+            freelaUid={usuario.uid}
+          />
+        ) : (
+          <p className="text-center text-gray-600 mt-4">Nenhuma avaliação pendente.</p>
+        )
+      }
       default:
         return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
     }
@@ -290,7 +306,8 @@ export default function PainelFreela() {
               { key: 'avaliacoes', label: '⭐ Avaliações' },
               { key: 'recebimentos', label: '💰 Recebimentos' },
               { key: 'chat', label: '💬 Chat' },
-              { key: 'configuracoes', label: '⚙️ Configurações' }
+              { key: 'configuracoes', label: '⚙️ Configurações' },
+              { key: 'avaliar-estabelecimento', label: '📝 Avaliar Estabelecimento' }
             ].map(({ key, label }) => (
               <li key={key} className="list-none">
                 <button
