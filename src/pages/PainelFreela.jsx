@@ -19,7 +19,7 @@ import ConfiguracoesFreela from './freelas/ConfiguracoesFreela'
 import PerfilFreela from './PerfilFreela'
 import RecebimentosFreela from './freelas/RecebimentosFreela'
 import AgendaCompleta from './freelas/AgendaCompleta'
-import Chat from './Chat'
+import Chat from './freelas/Chat'
 
 import useOnlineStatus from '@/hooks/useOnlineStatus'
 
