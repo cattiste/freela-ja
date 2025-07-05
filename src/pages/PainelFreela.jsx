@@ -3,7 +3,7 @@ import { collection, query, where, onSnapshot, updateDoc, doc, orderBy } from 'f
 import { db } from '@/firebase'
 import useOnlineStatus from '@/hooks/useOnlineStatus'
 
-import HistoricoChamadasFreela from '@/components/HistoricoChamadasFreela'
+import HistoricoChamadasFreela from '@/freelas/HistoricoChamadasFreela'
 import Chat from './freelas/Chat'
 
 export default function PainelFreela() {
