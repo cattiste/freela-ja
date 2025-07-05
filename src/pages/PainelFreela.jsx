@@ -133,21 +133,16 @@ export default function PainelFreela() {
     try {
       await updateDoc(doc(db, 'chamadas', chamada.id), {
         checkOutFreela: true,
-        checkOutHora: serverTimestamp(),        
+        checkOutHora: serverTimestamp()
       })
       alert('Check-out feito! Agora o estabelecimento precisa confirmar para finalizar o serviço.')
+      setAba('historico') // mudar aba para histórico após o check-out
     } catch (err) {
       console.error(err)
     }
     setLoadingCheckout(false)
   }
-    } catch (err) {
-      console.error(err)
-    }
-    setLoadingCheckout(false)
-    setAba('historico') // mudar aba para histórico após checkout
-  }
-
+    
   const handleLogout = async () => {
     if (usuario?.uid) {
       await updateDoc(doc(db, 'usuarios', usuario.uid), {
