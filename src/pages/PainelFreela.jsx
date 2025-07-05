@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
@@ -10,108 +10,19 @@ import {
   doc,
   updateDoc,
   serverTimestamp,
-  getDoc,
-  addDoc,
-  orderBy
+  getDoc
 } from 'firebase/firestore'
 
-import HistoricoTrabalhosFreela from './freelas/HistoricoTrabalhosFreela'
+import HistoricoChamadasFreela from './freelas/HistoricoChamadasFreela'
 import AvaliacoesRecebidasFreela from './freelas/AvaliacoesRecebidasFreela'
 import ConfiguracoesFreela from './freelas/ConfiguracoesFreela'
 import PerfilFreela from './PerfilFreela'
 import RecebimentosFreela from './freelas/RecebimentosFreela'
 import AgendaCompleta from './freelas/AgendaCompleta'
-import HistoricoChamadasFreela from './freelas/HistoricoChamadasFreela'
+import Chat from './Chat'
 
-// Componente de chat
-function Chat({ chamadaId }) {
-  const [usuario, setUsuario] = useState(null)
-  const [mensagem, setMensagem] = useState('')
-  const [mensagens, setMensagens] = useState([])
-  const divFimRef = useRef(null)
+import useOnlineStatus from '@/hooks/useOnlineStatus'
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUsuario(user || null)
-    })
-    return unsubscribe
-  }, [])
-
-  useEffect(() => {
-    if (!chamadaId) return
-    const mensagensRef = collection(db, 'chamadas', chamadaId, 'mensagens')
-    const q = query(mensagensRef, orderBy('createdAt', 'asc'))
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      setMensagens(msgs)
-      setTimeout(() => {
-        divFimRef.current?.scrollIntoView({ behavior: 'smooth' })
-      }, 100)
-    })
-
-    return () => unsubscribe()
-  }, [chamadaId])
-
-  const enviarMensagem = async (e) => {
-    e.preventDefault()
-    if (!mensagem.trim() || !usuario) return
-
-    try {
-      await addDoc(collection(db, 'chamadas', chamadaId, 'mensagens'), {
-        texto: mensagem.trim(),
-        remetenteUid: usuario.uid,
-        remetenteNome: usuario.displayName || usuario.email || 'Usuário',
-        createdAt: serverTimestamp()
-      })
-      setMensagem('')
-    } catch (error) {
-      console.error('Erro ao enviar mensagem:', error)
-    }
-  }
-
-  return (
-    <div className="flex flex-col h-[500px] max-w-2xl mx-auto border rounded shadow p-4 bg-white">
-      <div className="flex-grow overflow-auto mb-4 space-y-2">
-        {mensagens.length === 0 ? (
-          <p className="text-gray-500 text-center mt-10">Nenhuma mensagem ainda.</p>
-        ) : mensagens.map((msg) => {
-          const isRemetente = msg.remetenteUid === usuario?.uid
-          return (
-            <div key={msg.id} className={`flex ${isRemetente ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[70%] px-3 py-2 rounded-lg ${
-                isRemetente ? 'bg-orange-400 text-white' : 'bg-gray-200 text-gray-800'
-              }`}>
-                <p className="text-xs font-semibold">{msg.remetenteNome}</p>
-                <p>{msg.texto}</p>
-                <p className="text-xs text-gray-600 mt-1">
-                  {msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleString() : 'Enviando...'}
-                </p>
-              </div>
-            </div>
-          )
-        })}
-        <div ref={divFimRef} />
-      </div>
-      <form onSubmit={enviarMensagem} className="flex gap-2">
-        <input
-          type="text"
-          value={mensagem}
-          onChange={(e) => setMensagem(e.target.value)}
-          placeholder="Digite sua mensagem..."
-          className="flex-grow border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
-        />
-        <button
-          type="submit"
-          className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 transition"
-          disabled={!mensagem.trim()}
-        >
-          Enviar
-        </button>
-      </form>
-    </div>
-  )
-}
 export default function PainelFreela() {
   const navigate = useNavigate()
   const [usuario, setUsuario] = useState(null)
@@ -121,7 +32,10 @@ export default function PainelFreela() {
   const [loadingCheckin, setLoadingCheckin] = useState(false)
   const [loadingCheckout, setLoadingCheckout] = useState(false)
 
-  // Verifica login e busca usuário
+  // Hook para online status do freela
+  const { online } = useOnlineStatus(usuario?.uid)
+
+  // Monitorar autenticação e carregar dados do usuário freela
   useEffect(() => {
     let unsubscribeChamadas = null
 
@@ -141,7 +55,7 @@ export default function PainelFreela() {
               }
             )
 
-            // Primeira batida
+            // Atualiza a última atividade na primeira carga
             await updateDoc(docRef, { ultimaAtividade: serverTimestamp() })
 
             setCarregando(false)
@@ -166,7 +80,7 @@ export default function PainelFreela() {
     }
   }, [])
 
-  // Heartbeat
+  // Heartbeat: atualizar ultimaAtividade a cada 30 segundos
   useEffect(() => {
     if (!usuario?.uid) return
 
@@ -177,27 +91,6 @@ export default function PainelFreela() {
     }, 30000)
 
     return () => clearInterval(interval)
-  }, [usuario])
-
-  // Som ao receber chamada
-  useEffect(() => {
-    if (!usuario?.uid) return
-    const q = query(
-      collection(db, 'chamadas'),
-      where('freelaUid', '==', usuario.uid),
-      where('status', '==', 'pendente')
-    )
-
-    let primeiraVez = true
-    const unsub = onSnapshot(q, (snapshot) => {
-      if (!primeiraVez && snapshot.size > 0) {
-        const audio = new Audio('/sons/chamada.mp3')
-        audio.play().catch(() => {})
-      }
-      primeiraVez = false
-    })
-
-    return () => unsub()
   }, [usuario])
 
   const fazerCheckin = async () => {
@@ -343,7 +236,12 @@ export default function PainelFreela() {
         {/* Cabeçalho */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-orange-700">🧑‍🍳 Painel do Freelancer</h1>
+            <h1 className="text-3xl font-bold text-orange-700 flex items-center gap-2">
+              🧑‍🍳 Painel do Freelancer
+              <span className={`text-sm font-semibold ${online ? 'text-green-600' : 'text-gray-400'}`}>
+                ● {online ? 'Online' : 'Offline'}
+              </span>
+            </h1>
             <p className="text-gray-600 mt-1">{usuario.nome} — {usuario.funcao}</p>
           </div>
           <div className="flex gap-4">

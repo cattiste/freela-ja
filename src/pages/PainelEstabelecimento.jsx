@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
-import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 
 import { auth, db } from '@/firebase'
@@ -14,6 +14,16 @@ import MinhasVagas from '@/components/MinhasVagas'
 import CandidaturasEstabelecimento from '@/components/CandidaturasEstabelecimento'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
 
+import useOnlineStatus from '@/hooks/useOnlineStatus'
+
+// Função para verificar se está online (atividade em até 2 minutos)
+function estaOnline(ultimaAtividadeTimestamp) {
+  if (!ultimaAtividadeTimestamp) return false
+  const agora = Date.now()
+  const ultimaAtividade = ultimaAtividadeTimestamp.toMillis()
+  return agora - ultimaAtividade < 120000 // 2 minutos em ms
+}
+
 export default function PainelEstabelecimento() {
   const navigate = useNavigate()
   const [aba, setAba] = useState('buscar')
@@ -21,6 +31,10 @@ export default function PainelEstabelecimento() {
   const [carregando, setCarregando] = useState(true)
   const [vagaEditando, setVagaEditando] = useState(null)
 
+  // Hook para status online estabelecimento
+  const { online } = useOnlineStatus(estabelecimento?.uid)
+
+  // Captura usuário e atualiza ultimaAtividade
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -29,11 +43,8 @@ export default function PainelEstabelecimento() {
           const snap = await getDoc(docRef)
           if (snap.exists() && snap.data().tipo === 'estabelecimento') {
             setEstabelecimento({ uid: user.uid, ...snap.data() })
-
-            // Marcar online: true
-            await updateDoc(docRef, { online: true })
+            await updateDoc(docRef, { ultimaAtividade: serverTimestamp() })
           } else {
-            console.warn('Usuário autenticado não é um estabelecimento.')
             setEstabelecimento(null)
           }
         } catch (err) {
@@ -46,18 +57,20 @@ export default function PainelEstabelecimento() {
       setCarregando(false)
     })
 
-    const handleUnload = async () => {
-      if (estabelecimento?.uid) {
-        await updateDoc(doc(db, 'usuarios', estabelecimento.uid), { online: false })
-      }
-    }
+    return () => unsubscribe()
+  }, [])
 
-    window.addEventListener('beforeunload', handleUnload)
+  // Heartbeat para manter ultimaAtividade atualizada
+  useEffect(() => {
+    if (!estabelecimento?.uid) return
 
-    return () => {
-      unsubscribe()
-      window.removeEventListener('beforeunload', handleUnload)
-    }
+    const interval = setInterval(() => {
+      updateDoc(doc(db, 'usuarios', estabelecimento.uid), {
+        ultimaAtividade: serverTimestamp()
+      }).catch(console.error)
+    }, 30000)
+
+    return () => clearInterval(interval)
   }, [estabelecimento?.uid])
 
   const abrirEdicao = (vaga) => {
@@ -73,7 +86,7 @@ export default function PainelEstabelecimento() {
   const handleLogout = async () => {
     try {
       if (estabelecimento?.uid) {
-        await updateDoc(doc(db, 'usuarios', estabelecimento.uid), { online: false })
+        await updateDoc(doc(db, 'usuarios', estabelecimento.uid), { ultimaAtividade: serverTimestamp() })
       }
       await signOut(auth)
       localStorage.removeItem('usuarioLogado')
@@ -101,7 +114,7 @@ export default function PainelEstabelecimento() {
       case 'agendas':
         return <AgendasContratadas estabelecimento={estabelecimento} />
       case 'historico':
-        return <HistoricoChamadasEstabelecimento estabelecimento={estabelecimento} />  
+        return <HistoricoChamadasEstabelecimento estabelecimento={estabelecimento} />
       case 'avaliacao':
         return <AvaliacaoFreela estabelecimento={estabelecimento} />
       case 'publicar':
@@ -142,7 +155,12 @@ export default function PainelEstabelecimento() {
       <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
         {/* Cabeçalho */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-          <h1 className="text-3xl font-bold text-orange-700">📊 Painel do Estabelecimento</h1>
+          <h1 className="text-3xl font-bold text-orange-700 flex items-center gap-3">
+            📊 Painel do Estabelecimento
+            <span className={`text-sm font-semibold ${online ? 'text-green-600' : 'text-gray-400'}`}>
+              ● {online ? 'Online' : 'Offline'}
+            </span>
+          </h1>
           <div className="flex gap-4">
             <button
               onClick={() => navigate('/editarperfilestabelecimento')}
@@ -162,7 +180,7 @@ export default function PainelEstabelecimento() {
         {/* Abas */}
         <nav className="border-b border-orange-300 mb-6">
           <ul className="flex space-x-2 overflow-x-auto scrollbar-thin scrollbar-thumb-orange-400 scrollbar-track-orange-100">
-            {[
+            {[ 
               { key: 'buscar', label: '🔍 Buscar Freelancers' },
               { key: 'chamadas', label: '📞 Chamadas' },
               { key: 'agendas', label: '📅 Agendas' },
