@@ -14,7 +14,7 @@ import MinhasVagas from '@/components/MinhasVagas'
 import CandidaturasEstabelecimento from '@/components/CandidaturasEstabelecimento'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
 
-import useOnlineStatus from '@/hooks/useOnlineStatus'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
 // Função para verificar se está online (atividade em até 2 minutos)
 function estaOnline(ultimaAtividadeTimestamp) {

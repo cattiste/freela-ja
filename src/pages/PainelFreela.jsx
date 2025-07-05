@@ -21,7 +21,7 @@ import RecebimentosFreela from './freelas/RecebimentosFreela'
 import AgendaCompleta from './freelas/AgendaCompleta'
 import Chat from './freelas/Chat'
 
-import useOnlineStatus from '@/hooks/useOnlineStatus'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
 export default function PainelFreela() {
   const navigate = useNavigate()
