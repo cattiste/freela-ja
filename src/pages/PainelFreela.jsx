@@ -133,9 +133,14 @@ export default function PainelFreela() {
     try {
       await updateDoc(doc(db, 'chamadas', chamada.id), {
         checkOutFreela: true,
-        checkOutHora: serverTimestamp(),
-        status: 'finalizado' // atualizei aqui para 'finalizado', que é o que seu histórico usa
+        checkOutHora: serverTimestamp(),        
       })
+      alert('Check-out feito! Agora o estabelecimento precisa confirmar para finalizar o serviço.')
+    } catch (err) {
+      console.error(err)
+    }
+    setLoadingCheckout(false)
+  }
     } catch (err) {
       console.error(err)
     }
