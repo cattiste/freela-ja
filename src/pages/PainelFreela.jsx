@@ -13,8 +13,6 @@ import {
   getDoc
 } from 'firebase/firestore'
 
-import { collection, addDoc, updateDoc, doc, serverTimestamp } from "firebase/firestore";
-
 async function salvarAvaliacao({ chamadaId, freelaUid, estabelecimentoUid, nota, comentario }) {
   try {
     // 1. Adiciona avaliação na coleção avaliacoesEstabelecimentos
