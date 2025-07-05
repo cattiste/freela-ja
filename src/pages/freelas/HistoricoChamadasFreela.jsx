@@ -8,10 +8,11 @@ export default function HistoricoChamadasFreela({ freelaUid }) {
   useEffect(() => {
     if (!freelaUid) return
 
+    // Consulta para status finalizado ou recusada
     const q = query(
       collection(db, 'chamadas'),
       where('freelaUid', '==', freelaUid),
-      where('status', '==', 'finalizado'),
+      where('status', 'in', ['finalizado', 'recusada']),
       orderBy('criadoEm', 'desc')
     )
 
@@ -33,9 +34,9 @@ export default function HistoricoChamadasFreela({ freelaUid }) {
 
   return (
     <div className="overflow-x-auto">
-      <h2 className="text-2xl font-semibold mb-4">📜 Histórico de Chamadas Finalizadas</h2>
+      <h2 className="text-2xl font-semibold mb-4">📜 Histórico de Chamadas Finalizadas e Recusadas</h2>
       {chamadas.length === 0 ? (
-        <p className="text-gray-500">Nenhum serviço finalizado até o momento.</p>
+        <p className="text-gray-500">Nenhum serviço finalizado ou recusado até o momento.</p>
       ) : (
         <table className="min-w-full border border-orange-200 rounded-xl overflow-hidden">
           <thead className="bg-orange-100 text-orange-800">
@@ -45,6 +46,7 @@ export default function HistoricoChamadasFreela({ freelaUid }) {
               <th className="text-left px-4 py-2">Chamada</th>
               <th className="text-left px-4 py-2">Check-in</th>
               <th className="text-left px-4 py-2">Check-out</th>
+              <th className="text-left px-4 py-2">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -55,6 +57,7 @@ export default function HistoricoChamadasFreela({ freelaUid }) {
                 <td className="px-4 py-2">{formatarData(chamada.criadoEm)}</td>
                 <td className="px-4 py-2">{formatarData(chamada.checkInHora)}</td>
                 <td className="px-4 py-2">{formatarData(chamada.checkOutHora)}</td>
+                <td className="px-4 py-2 capitalize">{chamada.status}</td>
               </tr>
             ))}
           </tbody>

@@ -1,311 +1,159 @@
-import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { auth, db } from '@/firebase'
-import { onAuthStateChanged, signOut } from 'firebase/auth'
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  doc,
-  updateDoc,
-  serverTimestamp,
-  getDoc
-} from 'firebase/firestore'
+import React, { useEffect, useState, useRef } from 'react'
+import { collection, query, where, onSnapshot, updateDoc, doc, orderBy } from 'firebase/firestore'
+import { db } from '@/firebase'
+import useOnlineStatus from '@/hooks/useOnlineStatus'
 
-import HistoricoChamadasFreela from './freelas/HistoricoChamadasFreela'
-import AvaliacoesRecebidasFreela from './freelas/AvaliacoesRecebidasFreela'
-import ConfiguracoesFreela from './freelas/ConfiguracoesFreela'
-import PerfilFreela from './PerfilFreela'
-import RecebimentosFreela from './freelas/RecebimentosFreela'
-import AgendaCompleta from './freelas/AgendaCompleta'
+import HistoricoChamadasFreela from '@/components/HistoricoChamadasFreela'
 import Chat from './freelas/Chat'
 
 export default function PainelFreela() {
-  const navigate = useNavigate()
-  const [usuario, setUsuario] = useState(null)
-  const [aba, setAba] = useState('perfil')
-  const [carregando, setCarregando] = useState(true)
+  const user = auth.currentUser
+  const uid = user?.uid
+  const { online, loading: onlineLoading } = useOnlineStatus(uid)
+
+  const [aba, setAba] = useState('chamadas')
   const [chamadas, setChamadas] = useState([])
-  const [loadingCheckin, setLoadingCheckin] = useState(false)
-  const [loadingCheckout, setLoadingCheckout] = useState(false)
+  const [chamadaAtiva, setChamadaAtiva] = useState(null)
+  const audioRef = useRef(null)
 
-  // Monitorar autenticação e carregar dados do usuário freela
   useEffect(() => {
-    let unsubscribeChamadas = null
+    if (!uid) return
 
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const docRef = doc(db, 'usuarios', user.uid)
-        try {
-          const snap = await getDoc(docRef)
-          if (snap.exists() && snap.data().tipo === 'freela') {
-            const userData = { uid: user.uid, ...snap.data() }
-            setUsuario(userData)
-
-            unsubscribeChamadas = onSnapshot(
-              query(collection(db, 'chamadas'), where('freelaUid', '==', user.uid)),
-              (snapshot) => {
-                setChamadas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
-              }
-            )
-
-            // Atualiza a última atividade na primeira carga
-            await updateDoc(docRef, { ultimaAtividade: serverTimestamp() })
-
-            setCarregando(false)
-          } else {
-            setUsuario(null)
-            setCarregando(false)
-          }
-        } catch (err) {
-          console.error('Erro ao buscar usuário:', err)
-          setUsuario(null)
-          setCarregando(false)
-        }
-      } else {
-        setUsuario(null)
-        setCarregando(false)
-      }
-    })
-
-    return () => {
-      unsubscribeAuth()
-      if (unsubscribeChamadas) unsubscribeChamadas()
-    }
-  }, [])
-
-  // Heartbeat: atualizar campo ultimaAtividade a cada 30 segundos
-  useEffect(() => {
-    if (!usuario?.uid) return
-
-    const interval = setInterval(() => {
-      updateDoc(doc(db, 'usuarios', usuario.uid), {
-        ultimaAtividade: serverTimestamp()
-      }).catch(err => console.error('Erro heartbeat:', err))
-    }, 30000)
-
-    return () => clearInterval(interval)
-  }, [usuario])
-
-  // Som ao receber chamada pendente (tocar só em novas chamadas, ignorar carga inicial)
-  useEffect(() => {
-    if (!usuario?.uid) return
+    // Query para chamadas pendentes e em andamento
     const q = query(
       collection(db, 'chamadas'),
-      where('freelaUid', '==', usuario.uid),
-      where('status', '==', 'pendente')
+      where('freelaUid', '==', uid),
+      where('status', 'in', ['pendente', 'em_andamento']),
+      orderBy('criadoEm', 'desc')
     )
 
-    let primeiraVez = true
-    const unsub = onSnapshot(q, (snapshot) => {
-      if (!primeiraVez && snapshot.size > 0) {
-        const audio = new Audio('/sons/chamada.mp3')
-        audio.play().catch(() => {
-          console.log('Erro ao tentar tocar o som da chamada')
-        })
-      }
-      primeiraVez = false
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+
+      setChamadas(lista)
+
+      // Se tiver chamada pendente, define a primeira como ativa para notificação
+      const pendente = lista.find(c => c.status === 'pendente')
+      setChamadaAtiva(pendente || null)
     })
 
-    return () => unsub()
-  }, [usuario])
+    return () => unsubscribe()
+  }, [uid])
 
-  const fazerCheckin = async () => {
-    const chamada = chamadas.find(c => c.status === 'aceita' && !c.checkInFreela)
-    if (!chamada) return alert('Nada para check-in.')
-    setLoadingCheckin(true)
+  // Toca som quando tiver chamada pendente nova
+  useEffect(() => {
+    if (chamadaAtiva && audioRef.current) {
+      audioRef.current.play().catch(() => {
+        // Não bloquear se autoplay for bloqueado
+      })
+    }
+  }, [chamadaAtiva])
+
+  const recusarChamada = async (id) => {
     try {
-      await updateDoc(doc(db, 'chamadas', chamada.id), {
-        checkInFreela: true,
-        checkInHora: serverTimestamp()
+      await updateDoc(doc(db, 'chamadas', id), {
+        status: 'recusada',
       })
+      setChamadaAtiva(null)
+      setAba('historico') // Muda para aba histórico após recusar
     } catch (err) {
-      console.error(err)
+      console.error('Erro ao recusar chamada:', err)
+      alert('Erro ao recusar a chamada.')
     }
-    setLoadingCheckin(false)
   }
 
-  const fazerCheckout = async () => {
-    const chamada = chamadas.find(c => c.status === 'aceita' && c.checkInFreela && !c.checkOutFreela)
-    if (!chamada) return alert('Nada para check-out.')
-    setLoadingCheckout(true)
+  const aceitarChamada = async (id) => {
     try {
-      await updateDoc(doc(db, 'chamadas', chamada.id), {
-        checkOutFreela: true,
-        checkOutHora: serverTimestamp(),
-        status: 'checkout'
+      await updateDoc(doc(db, 'chamadas', id), {
+        status: 'em_andamento',
+        aceitaEm: new Date()
       })
+      setChamadaAtiva(null)
+      // Aqui pode mudar aba para chat ou manter na chamadas
     } catch (err) {
-      console.error(err)
-    }
-    setLoadingCheckout(false)
-  }
-
-  const handleLogout = async () => {
-    if (usuario?.uid) {
-      await updateDoc(doc(db, 'usuarios', usuario.uid), {
-        ultimaAtividade: serverTimestamp()
-      })
-    }
-    await signOut(auth)
-    localStorage.removeItem('usuarioLogado')
-    navigate('/login')
-  }
-
-  const renderConteudo = () => {
-    switch (aba) {
-      case 'perfil':
-        return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
-      case 'agenda':
-        return <AgendaCompleta freela={usuario} />
-      case 'avaliacoes':
-        return <AvaliacoesRecebidasFreela freelaUid={usuario.uid} />
-      case 'historico':
-        return <HistoricoChamadasFreela freelaUid={usuario.uid} />
-      case 'recebimentos':
-        return <RecebimentosFreela />
-      case 'chat': {
-        const chamadaAtiva = chamadas.find(c => c.status === 'aceita')
-        return chamadaAtiva ? (
-          <Chat chamadaId={chamadaAtiva.id} />
-        ) : (
-          <p className="text-center text-gray-500 mt-4">Nenhuma chamada ativa.</p>
-        )
-      }
-      case 'chamadas':
-        return (
-          <div>
-            <h2 className="text-xl font-bold mb-4">📞 Chamadas Ativas</h2>
-            {chamadas
-              .filter(c => c.status !== 'finalizado')
-              .map((chamada) => (
-                <div key={chamada.id} className="border rounded p-3 mb-4">
-                  <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
-                  <p><strong>Status:</strong> {chamada.status}</p>
-                  <p><strong>Check-in feito:</strong> {chamada.checkInFreela ? 'Sim' : 'Não'}</p>
-                  <p><strong>Check-out feito:</strong> {chamada.checkOutFreela ? 'Sim' : 'Não'}</p>
-                  {chamada.status === 'pendente' && (
-                    <div className="mt-2 flex gap-3">
-                      <button
-                        onClick={async () => {
-                          await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })
-                        }}
-                        className="bg-green-600 text-white px-3 py-1 rounded"
-                      >
-                        ✅ Aceitar
-                      </button>
-                      <button
-                        onClick={async () => {
-                          await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })
-                          setAba('historico') // redireciona para histórico ao recusar
-                        }}
-                        className="bg-red-600 text-white px-3 py-1 rounded"
-                      >
-                        ❌ Recusar
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            <div className="mt-6 flex gap-4">
-              <button
-                onClick={fazerCheckin}
-                disabled={loadingCheckin}
-                className="bg-green-600 text-white px-6 py-2 rounded"
-              >
-                {loadingCheckin ? 'Check-in...' : 'Fazer Check-in'}
-              </button>
-              <button
-                onClick={fazerCheckout}
-                disabled={loadingCheckout}
-                className="bg-yellow-600 text-white px-6 py-2 rounded"
-              >
-                {loadingCheckout ? 'Check-out...' : 'Fazer Check-out'}
-              </button>
-            </div>
-          </div>
-        )
-      case 'configuracoes':
-        return <ConfiguracoesFreela />
-      default:
-        return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
+      console.error('Erro ao aceitar chamada:', err)
+      alert('Erro ao aceitar a chamada.')
     }
   }
 
-  if (carregando) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-orange-600 text-lg">
-        Carregando painel...
-      </div>
-    )
+  if (onlineLoading) {
+    return <p>Verificando status online...</p>
   }
 
-  if (!usuario) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-red-600 text-lg">
-        Acesso não autorizado.
-      </div>
-    )
+  if (!uid) {
+    return <p>Usuário não autenticado.</p>
   }
 
   return (
-    <div className="min-h-screen bg-orange-50 p-4">
-      <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
-        {/* Cabeçalho */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-orange-700">🧑‍🍳 Painel do Freelancer</h1>
-            <p className="text-gray-600 mt-1">{usuario.nome} — {usuario.funcao}</p>
-          </div>
-          <div className="flex gap-4">
-            <button
-              onClick={() => navigate(`/editarfreela/${usuario.uid}`)}
-              className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
-            >
-              ✏️ Editar Perfil
-            </button>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-            >
-              🔒 Logout
-            </button>
-          </div>
-        </div>
+    <div className="min-h-screen p-4 bg-gray-50 max-w-7xl mx-auto">
+      <audio ref={audioRef} src="/sounds/chamada.mp3" preload="auto" />
 
-        {/* Abas */}
-        <nav className="border-b border-orange-300 mb-6">
-          <ul className="flex space-x-2 overflow-x-auto scrollbar-thin scrollbar-thumb-orange-400 scrollbar-track-orange-100">
-            {[
-              { key: 'perfil', label: '👤 Perfil' },
-              { key: 'chamadas', label: '📞 Chamadas' },
-              { key: 'agenda', label: '📅 Agenda' },
-              { key: 'historico', label: '📜 Histórico' },
-              { key: 'avaliacoes', label: '⭐ Avaliações' },
-              { key: 'recebimentos', label: '💰 Recebimentos' },
-              { key: 'chat', label: '💬 Chat' },
-              { key: 'configuracoes', label: '⚙️ Configurações' }
-            ].map(({ key, label }) => (
-              <li key={key} className="list-none">
-                <button
-                  onClick={() => setAba(key)}
-                  className={`px-4 py-2 -mb-px border-b-2 font-semibold transition whitespace-nowrap ${
-                    aba === key
-                      ? 'border-orange-600 text-orange-600'
-                      : 'border-transparent text-orange-400 hover:text-orange-600 hover:border-orange-400'
-                  }`}
-                >
-                  {label}
-                </button>
+      <header className="mb-6 flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-gray-700">Painel do Freelancer</h1>
+        <nav className="space-x-4">
+          <button
+            className={`px-4 py-2 rounded font-semibold ${aba === 'chamadas' ? 'bg-orange-500 text-white' : 'bg-gray-200'}`}
+            onClick={() => setAba('chamadas')}
+          >
+            Chamadas
+          </button>
+          <button
+            className={`px-4 py-2 rounded font-semibold ${aba === 'historico' ? 'bg-orange-500 text-white' : 'bg-gray-200'}`}
+            onClick={() => setAba('historico')}
+          >
+            Histórico
+          </button>
+          <button
+            className={`px-4 py-2 rounded font-semibold ${aba === 'chat' ? 'bg-orange-500 text-white' : 'bg-gray-200'}`}
+            onClick={() => setAba('chat')}
+          >
+            Chat
+          </button>
+        </nav>
+      </header>
+
+      {aba === 'chamadas' && (
+        <section>
+          <h2 className="text-xl font-semibold mb-4">Chamadas Pendentes e em Andamento</h2>
+
+          {chamadas.length === 0 && <p>Nenhuma chamada no momento.</p>}
+
+          <ul className="space-y-4">
+            {chamadas.map((chamada) => (
+              <li key={chamada.id} className="p-4 bg-white rounded shadow flex justify-between items-center">
+                <div>
+                  <p><strong>Vaga:</strong> {chamada.vagaTitulo}</p>
+                  <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
+                  <p><strong>Status:</strong> {chamada.status}</p>
+                </div>
+                {chamada.status === 'pendente' && (
+                  <div className="space-x-2">
+                    <button
+                      onClick={() => aceitarChamada(chamada.id)}
+                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                    >
+                      Aceitar
+                    </button>
+                    <button
+                      onClick={() => recusarChamada(chamada.id)}
+                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                    >
+                      Recusar
+                    </button>
+                  </div>
+                )}
+                {chamada.status === 'em_andamento' && (
+                  <span className="text-green-600 font-semibold">Em andamento</span>
+                )}
               </li>
             ))}
           </ul>
-        </nav>
+        </section>
+      )}
 
-        {/* Conteúdo */}
-        <section>{renderConteudo()}</section>
-      </div>
+      {aba === 'historico' && <HistoricoChamadasFreela freelaUid={uid} />}
+
+      {aba === 'chat' && <Chat freelaUid={uid} />}
     </div>
   )
 }
