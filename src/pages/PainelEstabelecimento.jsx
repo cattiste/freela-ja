@@ -19,12 +19,11 @@ import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEsta
 
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
-// Função para verificar se está online (atividade em até 2 minutos)
 function estaOnline(ultimaAtividadeTimestamp) {
   if (!ultimaAtividadeTimestamp) return false
   const agora = Date.now()
   const ultimaAtividade = ultimaAtividadeTimestamp.toMillis()
-  return agora - ultimaAtividade < 120000 // 2 minutos em ms
+  return agora - ultimaAtividade < 120000
 }
 
 export default function PainelEstabelecimento() {
@@ -34,10 +33,8 @@ export default function PainelEstabelecimento() {
   const [carregando, setCarregando] = useState(true)
   const [vagaEditando, setVagaEditando] = useState(null)
 
-  // Hook para status online estabelecimento
   const { online } = useOnlineStatus(estabelecimento?.uid)
 
-  // Captura usuário e atualiza ultimaAtividade
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -63,7 +60,6 @@ export default function PainelEstabelecimento() {
     return () => unsubscribe()
   }, [])
 
-  // Heartbeat para manter ultimaAtividade atualizada
   useEffect(() => {
     if (!estabelecimento?.uid) return
 
@@ -75,37 +71,36 @@ export default function PainelEstabelecimento() {
 
     return () => clearInterval(interval)
   }, [estabelecimento?.uid])
+
   useEffect(() => {
-  if (!estabelecimento?.uid) return
+    if (!estabelecimento?.uid) return
 
-  const unsubscribe = onSnapshot(
-    query(
-      collection(db, 'chamadas'),
-      where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', '==', 'finalizado'),
-      where('checkOutFreela', '==', true),
-      where('checkOutEstabelecimento', '==', false)
-    ),
-    (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === 'added') {
-          const chamada = change.doc.data()
+    const unsubscribe = onSnapshot(
+      query(
+        collection(db, 'chamadas'),
+        where('estabelecimentoUid', '==', estabelecimento.uid),
+        where('status', '==', 'finalizado'),
+        where('checkOutFreela', '==', true),
+        where('checkOutEstabelecimento', '==', false)
+      ),
+      (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const chamada = change.doc.data()
 
-          // Tocar som
-          const audio = new Audio('/sons/checkout.mp3')
-          audio.play().catch(() => {
-            console.warn('Erro ao tocar som de checkout.')
-          })
+            const audio = new Audio('/sons/checkout.mp3')
+            audio.play().catch(() => {
+              console.warn('Erro ao tocar som de checkout.')
+            })
 
-          // Exibir toast
-          toast.success(`O freela ${chamada.freelaNome} finalizou o serviço. Confirme o check-out.`)
-        }
-      })
-    }
-  )
+            toast.success(`O freela ${chamada.freelaNome} finalizou o serviço. Confirme o check-out.`)
+          }
+        })
+      }
+    )
 
-  return () => unsubscribe()
-}, [estabelecimento?.uid])
+    return () => unsubscribe()
+  }, [estabelecimento?.uid])
 
   const abrirEdicao = (vaga) => {
     setVagaEditando(vaga)
@@ -185,70 +180,66 @@ export default function PainelEstabelecimento() {
   }
 
   return (
-  <div className="min-h-screen bg-orange-50 p-4">
-    <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
-      {/* Cabeçalho */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-        <h1 className="text-3xl font-bold text-orange-700 flex items-center gap-3">
-          📊 Painel do Estabelecimento
-          <span className={`text-sm font-semibold ${online ? 'text-green-600' : 'text-gray-400'}`}>
-            ● {online ? 'Online' : 'Offline'}
-          </span>
-        </h1>
-        <div className="flex gap-4">
-          <button
-            onClick={() => navigate('/editarperfilestabelecimento')}
-            className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
-          >
-            ✏️ Editar Perfil
-          </button>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-          >
-            🔒 Logout
-          </button>
+    <div className="min-h-screen bg-orange-50 p-4">
+      <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+          <h1 className="text-3xl font-bold text-orange-700 flex items-center gap-3">
+            📊 Painel do Estabelecimento
+            <span className={`text-sm font-semibold ${online ? 'text-green-600' : 'text-gray-400'}`}>
+              ● {online ? 'Online' : 'Offline'}
+            </span>
+          </h1>
+          <div className="flex gap-4">
+            <button
+              onClick={() => navigate('/editarperfilestabelecimento')}
+              className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
+            >
+              ✏️ Editar Perfil
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            >
+              🔒 Logout
+            </button>
+          </div>
         </div>
+
+        <nav className="border-b border-orange-300 mb-6">
+          <ul className="flex space-x-2 overflow-x-auto scrollbar-thin scrollbar-thumb-orange-400 scrollbar-track-orange-100">
+            {[ 
+              { key: 'buscar', label: '🔍 Buscar Freelancers' },
+              { key: 'chamadas', label: '📞 Chamadas' },
+              { key: 'agendas', label: '📅 Agendas' },
+              { key: 'avaliacao', label: '⭐ Avaliar' },
+              { key: 'publicar', label: '📢 Publicar Vaga' },
+              { key: 'minhas-vagas', label: '📋 Minhas Vagas' },
+              { key: 'candidaturas', label: '📋 Candidaturas' },
+              { key: 'historico', label: '📜 Histórico' }
+            ].map(({ key, label }) => (
+              <li key={key} className="list-none">
+                <button
+                  onClick={() => {
+                    setVagaEditando(null)
+                    setAba(key)
+                  }}
+                  className={`px-4 py-2 -mb-px border-b-2 font-semibold transition whitespace-nowrap ${
+                    aba === key
+                      ? 'border-orange-600 text-orange-600'
+                      : 'border-transparent text-orange-400 hover:text-orange-600 hover:border-orange-400'
+                  }`}
+                >
+                  {label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <section>{renderConteudo()}</section>
       </div>
 
-      {/* Abas */}
-      <nav className="border-b border-orange-300 mb-6">
-        <ul className="flex space-x-2 overflow-x-auto scrollbar-thin scrollbar-thumb-orange-400 scrollbar-track-orange-100">
-          {[ 
-            { key: 'buscar', label: '🔍 Buscar Freelancers' },
-            { key: 'chamadas', label: '📞 Chamadas' },
-            { key: 'agendas', label: '📅 Agendas' },
-            { key: 'avaliacao', label: '⭐ Avaliar' },
-            { key: 'publicar', label: '📢 Publicar Vaga' },
-            { key: 'minhas-vagas', label: '📋 Minhas Vagas' },
-            { key: 'candidaturas', label: '📋 Candidaturas' },
-            { key: 'historico', label: '📜 Histórico' }
-          ].map(({ key, label }) => (
-            <li key={key} className="list-none">
-              <button
-                onClick={() => {
-                  setVagaEditando(null)
-                  setAba(key)
-                }}
-                className={`px-4 py-2 -mb-px border-b-2 font-semibold transition whitespace-nowrap ${
-                  aba === key
-                    ? 'border-orange-600 text-orange-600'
-                    : 'border-transparent text-orange-400 hover:text-orange-600 hover:border-orange-400'
-                }`}
-              >
-                {label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      {/* Conteúdo da aba */}
-      <section>{renderConteudo()}</section>
+      <Toaster position="top-center" reverseOrder={false} />
     </div>
-
-    {/* Toasts */}
-    <Toaster position="top-center" reverseOrder={false} />
-  </div>
-)
+  )
 }

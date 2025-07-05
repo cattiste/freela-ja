@@ -1,10 +1,21 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, onSnapshot, updateDoc, doc } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  updateDoc,
+  doc,
+  addDoc,
+  serverTimestamp
+} from 'firebase/firestore'
 import { db } from '@/firebase'
+import { toast } from 'react-hot-toast'
 
 export default function ChamadasEstabelecimento({ estabelecimento }) {
   const [chamadas, setChamadas] = useState([])
   const [loadingId, setLoadingId] = useState(null)
+  const [avaliacoes, setAvaliacoes] = useState({})
 
   useEffect(() => {
     if (!estabelecimento?.uid) return
@@ -12,7 +23,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
     const q = query(
       collection(db, 'chamadas'),
       where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', 'in', ['aceita', 'checkin', 'checkout']) // "finalizado" vai para histórico
+      where('status', 'in', ['aceita', 'checkin', 'checkout'])
     )
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -43,6 +54,29 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
       alert('Erro ao confirmar etapa.')
     }
     setLoadingId(null)
+  }
+
+  const enviarAvaliacao = async (chamadaId, freelaUid, nota, comentario) => {
+    try {
+      await addDoc(collection(db, 'avaliacoesFreelas'), {
+        chamadaId,
+        freelaUid,
+        estabelecimentoUid: estabelecimento.uid,
+        nota,
+        comentario,
+        dataCriacao: serverTimestamp()
+      })
+
+      await updateDoc(doc(db, 'chamadas', chamadaId), {
+        avaliacaoEstabelecimentoFeita: true
+      })
+
+      toast.success('Avaliação enviada com sucesso!')
+      setAvaliacoes((prev) => ({ ...prev, [chamadaId]: { nota, comentario } }))
+    } catch (err) {
+      toast.error('Erro ao enviar avaliação.')
+      console.error(err)
+    }
   }
 
   const formatarData = (data) => {
@@ -110,6 +144,46 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
               </button>
             )}
           </div>
+
+          {chamada.checkOutEstabelecimentoConfirmado && !chamada.avaliacaoEstabelecimentoFeita && !avaliacoes[chamada.id] && (
+            <div className="mt-4 border-t pt-3">
+              <h3 className="text-lg font-semibold mb-2">📝 Avalie o freelancer</h3>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  const nota = parseInt(e.target.nota.value)
+                  const comentario = e.target.comentario.value.trim()
+                  if (comentario.length < 5) {
+                    toast.error('Comentário deve ter pelo menos 5 caracteres.')
+                    return
+                  }
+                  enviarAvaliacao(chamada.id, chamada.freelaUid, nota, comentario)
+                }}
+                className="flex flex-col gap-2"
+              >
+                <label>
+                  Nota:
+                  <select name="nota" className="ml-2 border p-1 rounded" defaultValue="5">
+                    {[1, 2, 3, 4, 5].map(n => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </label>
+                <textarea
+                  name="comentario"
+                  placeholder="Comentário"
+                  className="border p-2 rounded"
+                  required
+                />
+                <button
+                  type="submit"
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                >
+                  Enviar Avaliação
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       ))}
     </div>

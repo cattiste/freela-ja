@@ -12,30 +12,7 @@ import {
   serverTimestamp,
   getDoc
 } from 'firebase/firestore'
-
-async function salvarAvaliacao({ chamadaId, freelaUid, estabelecimentoUid, nota, comentario }) {
-  try {
-    // 1. Adiciona avaliação na coleção avaliacoesEstabelecimentos
-    await addDoc(collection(db, "avaliacoesEstabelecimentos"), {
-      chamadaId,
-      freelaUid,
-      estabelecimentoUid,
-      nota,
-      comentario,
-      dataCriacao: serverTimestamp()
-    })
-
-    // 2. Atualiza a chamada para marcar que avaliação foi feita
-    await updateDoc(doc(db, "chamadas", chamadaId), {
-      avaliacaoFreelaFeita: true
-    })
-
-    alert("Avaliação enviada com sucesso!")
-  } catch (err) {
-    console.error("Erro ao salvar avaliação:", err)
-    alert("Erro ao enviar avaliação. Tente novamente.")
-  }
-}
+import { toast } from 'react-hot-toast'
 
 import HistoricoChamadasFreela from './freelas/HistoricoChamadasFreela'
 import AvaliacoesRecebidasFreela from './freelas/AvaliacoesRecebidasFreela'
@@ -55,7 +32,6 @@ export default function PainelFreela() {
   const [loadingCheckin, setLoadingCheckin] = useState(false)
   const [loadingCheckout, setLoadingCheckout] = useState(false)
 
-  // Monitorar autenticação e carregar dados do usuário freela
   useEffect(() => {
     let unsubscribeChamadas = null
 
@@ -75,7 +51,6 @@ export default function PainelFreela() {
               }
             )
 
-            // Atualiza a última atividade na primeira carga
             await updateDoc(docRef, { ultimaAtividade: serverTimestamp() })
 
             setCarregando(false)
@@ -100,7 +75,6 @@ export default function PainelFreela() {
     }
   }, [])
 
-  // Heartbeat: atualizar campo ultimaAtividade a cada 30 segundos
   useEffect(() => {
     if (!usuario?.uid) return
 
@@ -113,7 +87,6 @@ export default function PainelFreela() {
     return () => clearInterval(interval)
   }, [usuario])
 
-  // Som ao receber chamada pendente (tocar só em novas chamadas, ignorar carga inicial)
   useEffect(() => {
     if (!usuario?.uid) return
     const q = query(
@@ -161,7 +134,7 @@ export default function PainelFreela() {
         checkOutHora: serverTimestamp()
       })
       alert('Check-out feito! Agora o estabelecimento precisa confirmar para finalizar o serviço.')
-      setAba('historico') // mudar aba para histórico após o check-out
+      setAba('historico')
     } catch (err) {
       console.error(err)
     }
@@ -204,13 +177,14 @@ export default function PainelFreela() {
           <div>
             <h2 className="text-xl font-bold mb-4">📞 Chamadas Ativas</h2>
             {chamadas
-              .filter(c => c.status !== 'finalizado' && c.status !== 'recusada')
+              .filter(c => c.status !== 'recusada')
               .map((chamada) => (
-                <div key={chamada.id} className="border rounded p-3 mb-4">
+                <div key={chamada.id} className="border rounded p-3 mb-4 bg-white shadow">
                   <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
                   <p><strong>Status:</strong> {chamada.status}</p>
                   <p><strong>Check-in feito:</strong> {chamada.checkInFreela ? 'Sim' : 'Não'}</p>
                   <p><strong>Check-out feito:</strong> {chamada.checkOutFreela ? 'Sim' : 'Não'}</p>
+
                   {chamada.status === 'pendente' && (
                     <div className="mt-2 flex gap-3">
                       <button
@@ -224,11 +198,8 @@ export default function PainelFreela() {
                       <button
                         onClick={async () => {
                           await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })
-
-                          // Remove do estado local para sumir da lista imediatamente
                           setChamadas((prev) => prev.filter(c => c.id !== chamada.id))
-
-                          setAba('historico') // muda aba para histórico
+                          setAba('historico')
                         }}
                         className="bg-red-600 text-white px-3 py-1 rounded"
                       >
@@ -236,30 +207,98 @@ export default function PainelFreela() {
                       </button>
                     </div>
                   )}
+
+                  {chamada.status === 'aceita' && (
+                    <div className="mt-4 flex gap-4">
+                      {!chamada.checkInFreela && (
+                        <button
+                          onClick={fazerCheckin}
+                          disabled={loadingCheckin}
+                          className="bg-green-600 text-white px-6 py-2 rounded"
+                        >
+                          {loadingCheckin ? 'Check-in...' : 'Fazer Check-in'}
+                        </button>
+                      )}
+                      {chamada.checkInFreela && !chamada.checkOutFreela && (
+                        <button
+                          onClick={fazerCheckout}
+                          disabled={loadingCheckout}
+                          className="bg-yellow-600 text-white px-6 py-2 rounded"
+                        >
+                          {loadingCheckout ? 'Check-out...' : 'Fazer Check-out'}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {chamada.checkOutFreela && !chamada.avaliacaoFreelaFeita && (
+                    <div className="mt-4 border-t pt-3">
+                      <h3 className="text-lg font-semibold mb-2">📝 Avalie o estabelecimento</h3>
+                      <form
+                        onSubmit={async (e) => {
+                          e.preventDefault()
+                          const form = e.target
+                          const nota = parseInt(form.nota.value)
+                          const comentario = form.comentario.value
+                          try {
+                            await addDoc(collection(db, "avaliacoesEstabelecimentos"), {
+                              chamadaId: chamada.id,
+                              freelaUid: usuario.uid,
+                              estabelecimentoUid: chamada.estabelecimentoUid,
+                              nota,
+                              comentario,
+                              dataCriacao: serverTimestamp()
+                            })
+
+                            await updateDoc(doc(db, 'chamadas', chamada.id), {
+                              avaliacaoFreelaFeita: true
+                            })
+
+                            toast.success('Avaliação enviada com sucesso!')
+                            setChamadas((prev) =>
+                              prev.map((c) =>
+                                c.id === chamada.id
+                                  ? { ...c, avaliacaoFreelaFeita: true }
+                                  : c
+                              )
+                            )
+                          } catch (err) {
+                            toast.error('Erro ao enviar avaliação.')
+                            console.error(err)
+                          }
+                        }}
+                        className="flex flex-col gap-2"
+                      >
+                        <label>
+                          Nota:
+                          <select name="nota" className="ml-2 border p-1 rounded" defaultValue="5">
+                            {[1, 2, 3, 4, 5].map(n => (
+                              <option key={n} value={n}>{n}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <textarea
+                          name="comentario"
+                          placeholder="Comentário"
+                          className="border p-2 rounded"
+                          required
+                        />
+                        <button
+                          type="submit"
+                          className="bg-blue-600 text-white px-4 py-2 rounded"
+                        >
+                          Enviar Avaliação
+                        </button>
+                      </form>
+                    </div>
+                  )}
                 </div>
               ))}
-            <div className="mt-6 flex gap-4">
-              <button
-                onClick={fazerCheckin}
-                disabled={loadingCheckin}
-                className="bg-green-600 text-white px-6 py-2 rounded"
-              >
-                {loadingCheckin ? 'Check-in...' : 'Fazer Check-in'}
-              </button>
-              <button
-                onClick={fazerCheckout}
-                disabled={loadingCheckout}
-                className="bg-yellow-600 text-white px-6 py-2 rounded"
-              >
-                {loadingCheckout ? 'Check-out...' : 'Fazer Check-out'}
-              </button>
-            </div>
           </div>
         )
       case 'configuracoes':
         return <ConfiguracoesFreela />
       case 'avaliar-estabelecimento': {
-        // Buscar chamada finalizada e ainda não avaliada
         const chamadaParaAvaliar = chamadas.find(
           c => c.status === 'finalizado' && !c.avaliacaoFreelaFeita
         )
