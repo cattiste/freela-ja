@@ -21,8 +21,6 @@ import RecebimentosFreela from './freelas/RecebimentosFreela'
 import AgendaCompleta from './freelas/AgendaCompleta'
 import Chat from './freelas/Chat'
 
-import { useOnlineStatus } from '@/hooks/useOnlineStatus'
-
 export default function PainelFreela() {
   const navigate = useNavigate()
   const [usuario, setUsuario] = useState(null)
@@ -31,9 +29,6 @@ export default function PainelFreela() {
   const [chamadas, setChamadas] = useState([])
   const [loadingCheckin, setLoadingCheckin] = useState(false)
   const [loadingCheckout, setLoadingCheckout] = useState(false)
-
-  // Hook para online status do freela
-  const { online } = useOnlineStatus(usuario?.uid)
 
   // Monitorar autenticação e carregar dados do usuário freela
   useEffect(() => {
@@ -80,7 +75,7 @@ export default function PainelFreela() {
     }
   }, [])
 
-  // Heartbeat: atualizar ultimaAtividade a cada 30 segundos
+  // Heartbeat: atualizar campo ultimaAtividade a cada 30 segundos
   useEffect(() => {
     if (!usuario?.uid) return
 
@@ -91,6 +86,29 @@ export default function PainelFreela() {
     }, 30000)
 
     return () => clearInterval(interval)
+  }, [usuario])
+
+  // Som ao receber chamada pendente (tocar só em novas chamadas, ignorar carga inicial)
+  useEffect(() => {
+    if (!usuario?.uid) return
+    const q = query(
+      collection(db, 'chamadas'),
+      where('freelaUid', '==', usuario.uid),
+      where('status', '==', 'pendente')
+    )
+
+    let primeiraVez = true
+    const unsub = onSnapshot(q, (snapshot) => {
+      if (!primeiraVez && snapshot.size > 0) {
+        const audio = new Audio('/sons/chamada.mp3')
+        audio.play().catch(() => {
+          console.log('Erro ao tentar tocar o som da chamada')
+        })
+      }
+      primeiraVez = false
+    })
+
+    return () => unsub()
   }, [usuario])
 
   const fazerCheckin = async () => {
@@ -147,13 +165,14 @@ export default function PainelFreela() {
         return <HistoricoChamadasFreela freelaUid={usuario.uid} />
       case 'recebimentos':
         return <RecebimentosFreela />
-      case 'chat':
+      case 'chat': {
         const chamadaAtiva = chamadas.find(c => c.status === 'aceita')
         return chamadaAtiva ? (
           <Chat chamadaId={chamadaAtiva.id} />
         ) : (
           <p className="text-center text-gray-500 mt-4">Nenhuma chamada ativa.</p>
         )
+      }
       case 'chamadas':
         return (
           <div>
@@ -169,17 +188,18 @@ export default function PainelFreela() {
                   {chamada.status === 'pendente' && (
                     <div className="mt-2 flex gap-3">
                       <button
-                        onClick={async () =>
+                        onClick={async () => {
                           await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })
-                        }
+                        }}
                         className="bg-green-600 text-white px-3 py-1 rounded"
                       >
                         ✅ Aceitar
                       </button>
                       <button
-                        onClick={async () =>
+                        onClick={async () => {
                           await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })
-                        }
+                          setAba('historico') // redireciona para histórico ao recusar
+                        }}
                         className="bg-red-600 text-white px-3 py-1 rounded"
                       >
                         ❌ Recusar
@@ -188,7 +208,6 @@ export default function PainelFreela() {
                   )}
                 </div>
               ))}
-
             <div className="mt-6 flex gap-4">
               <button
                 onClick={fazerCheckin}
@@ -236,12 +255,7 @@ export default function PainelFreela() {
         {/* Cabeçalho */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-orange-700 flex items-center gap-2">
-              🧑‍🍳 Painel do Freelancer
-              <span className={`text-sm font-semibold ${online ? 'text-green-600' : 'text-gray-400'}`}>
-                ● {online ? 'Online' : 'Offline'}
-              </span>
-            </h1>
+            <h1 className="text-3xl font-bold text-orange-700">🧑‍🍳 Painel do Freelancer</h1>
             <p className="text-gray-600 mt-1">{usuario.nome} — {usuario.funcao}</p>
           </div>
           <div className="flex gap-4">
@@ -262,16 +276,16 @@ export default function PainelFreela() {
 
         {/* Abas */}
         <nav className="border-b border-orange-300 mb-6">
-          <ul className="flex space-x-2 overflow-x-auto">
-            {[ 
-              { key: 'perfil', label: '🧑 Perfil' },
+          <ul className="flex space-x-2 overflow-x-auto scrollbar-thin scrollbar-thumb-orange-400 scrollbar-track-orange-100">
+            {[
+              { key: 'perfil', label: '👤 Perfil' },
               { key: 'chamadas', label: '📞 Chamadas' },
-              { key: 'agenda', label: '📆 Minha Agenda' },
-              { key: 'chat', label: '💬 Chat' },
-              { key: 'avaliacoes', label: '⭐ Avaliações' },
+              { key: 'agenda', label: '📅 Agenda' },
               { key: 'historico', label: '📜 Histórico' },
-              { key: 'configuracoes', label: '⚙️ Configurações' },
-              { key: 'recebimentos', label: '💵 Recebimentos' }
+              { key: 'avaliacoes', label: '⭐ Avaliações' },
+              { key: 'recebimentos', label: '💰 Recebimentos' },
+              { key: 'chat', label: '💬 Chat' },
+              { key: 'configuracoes', label: '⚙️ Configurações' }
             ].map(({ key, label }) => (
               <li key={key} className="list-none">
                 <button
@@ -289,7 +303,7 @@ export default function PainelFreela() {
           </ul>
         </nav>
 
-        {/* Conteúdo da aba */}
+        {/* Conteúdo */}
         <section>{renderConteudo()}</section>
       </div>
     </div>
