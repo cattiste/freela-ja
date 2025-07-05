@@ -1,0 +1,48 @@
+/* orange.css - tema laranja para react-multi-date-picker */
+
+.rmdp-wrapper.orange .rmdp-main {
+  background-color: #fff7f0;
+  border: 1px solid #f97316; /* laranja */
+  border-radius: 8px;
+  color: #c2410c;
+  font-family: 'Inter', sans-serif;
+}
+
+.rmdp-wrapper.orange .rmdp-header {
+  background-color: #fb923c; /* laranja vivo */
+  color: white;
+  font-weight: 700;
+  padding: 8px;
+  border-radius: 8px 8px 0 0;
+}
+
+.rmdp-wrapper.orange .rmdp-day.rmdp-day_selected {
+  background-color: #f97316; /* laranja */
+  color: white;
+  border-radius: 50%;
+}
+
+.rmdp-wrapper.orange .rmdp-day:hover {
+  background-color: #fb923c;
+  color: white;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.rmdp-wrapper.orange .rmdp-day.rmdp-day_today {
+  border: 2px solid #f97316;
+  font-weight: 700;
+}
+
+.rmdp-wrapper.orange .rmdp-arrow {
+  fill: #f97316;
+}
+
+.rmdp-wrapper.orange .rmdp-footer {
+  background-color: #fff7f0;
+  border-top: 1px solid #f97316;
+  border-radius: 0 0 8px 8px;
+  padding: 6px;
+  color: #c2410c;
+  font-size: 14px;
+}
