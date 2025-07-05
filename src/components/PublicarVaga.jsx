@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 import DatePicker from 'react-multi-date-picker'
-import 'react-multi-date-picker/styles/colors/orange.css'
+import '@/styles/orange.css'
+
 
 export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }) {
   const [form, setForm] = useState({
