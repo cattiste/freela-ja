@@ -134,12 +134,13 @@ export default function PainelFreela() {
       await updateDoc(doc(db, 'chamadas', chamada.id), {
         checkOutFreela: true,
         checkOutHora: serverTimestamp(),
-        status: 'checkout'
+        status: 'finalizado' // atualizei aqui para 'finalizado', que é o que seu histórico usa
       })
     } catch (err) {
       console.error(err)
     }
     setLoadingCheckout(false)
+    setAba('historico') // mudar aba para histórico após checkout
   }
 
   const handleLogout = async () => {
@@ -178,7 +179,7 @@ export default function PainelFreela() {
           <div>
             <h2 className="text-xl font-bold mb-4">📞 Chamadas Ativas</h2>
             {chamadas
-              .filter(c => c.status !== 'finalizado')
+              .filter(c => c.status !== 'finalizado' && c.status !== 'recusada')
               .map((chamada) => (
                 <div key={chamada.id} className="border rounded p-3 mb-4">
                   <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
@@ -198,7 +199,11 @@ export default function PainelFreela() {
                       <button
                         onClick={async () => {
                           await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })
-                          setAba('historico') // redireciona para histórico ao recusar
+
+                          // Remove do estado local para sumir da lista imediatamente
+                          setChamadas((prev) => prev.filter(c => c.id !== chamada.id))
+
+                          setAba('historico') // muda aba para histórico
                         }}
                         className="bg-red-600 text-white px-3 py-1 rounded"
                       >
