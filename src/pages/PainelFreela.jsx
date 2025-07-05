@@ -13,6 +13,32 @@ import {
   getDoc
 } from 'firebase/firestore'
 
+import { collection, addDoc, updateDoc, doc, serverTimestamp } from "firebase/firestore";
+
+async function salvarAvaliacao({ chamadaId, freelaUid, estabelecimentoUid, nota, comentario }) {
+  try {
+    // 1. Adiciona avaliação na coleção avaliacoesEstabelecimentos
+    await addDoc(collection(db, "avaliacoesEstabelecimentos"), {
+      chamadaId,
+      freelaUid,
+      estabelecimentoUid,
+      nota,
+      comentario,
+      dataCriacao: serverTimestamp()
+    })
+
+    // 2. Atualiza a chamada para marcar que avaliação foi feita
+    await updateDoc(doc(db, "chamadas", chamadaId), {
+      avaliacaoFreelaFeita: true
+    })
+
+    alert("Avaliação enviada com sucesso!")
+  } catch (err) {
+    console.error("Erro ao salvar avaliação:", err)
+    alert("Erro ao enviar avaliação. Tente novamente.")
+  }
+}
+
 import HistoricoChamadasFreela from './freelas/HistoricoChamadasFreela'
 import AvaliacoesRecebidasFreela from './freelas/AvaliacoesRecebidasFreela'
 import ConfiguracoesFreela from './freelas/ConfiguracoesFreela'
