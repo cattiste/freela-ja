@@ -1,66 +1,48 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, getDocs, orderBy, doc, getDoc } from 'firebase/firestore'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function AvaliacoesRecebidasFreela({ freelaUid }) {
   const [avaliacoes, setAvaliacoes] = useState([])
-  const [carregando, setCarregando] = useState(true)
+  const [loading, setLoading] = useState(true)
+  const [erro, setErro] = useState(null)
 
   useEffect(() => {
-    const buscarAvaliacoes = async () => {
-      try {
-        const avaliacoesRef = collection(db, 'avaliacoes')
-        const q = query(
-          avaliacoesRef,
-          where('freelaUid', '==', freelaUid),
-          orderBy('data', 'desc')
-        )
-        const snapshot = await getDocs(q)
+    if (!freelaUid) return
 
-        const lista = await Promise.all(snapshot.docs.map(async docSnap => {
-          const data = docSnap.data()
-
-          // Buscar nome do estabelecimento (opcional, caso queira mostrar nome)
-          let estabelecimentoNome = 'Estabelecimento Desconhecido'
-          if (data.estabelecimentoUid) {
-            const estRef = doc(db, 'usuarios', data.estabelecimentoUid)
-            const estSnap = await getDoc(estRef)
-            if (estSnap.exists()) {
-              estabelecimentoNome = estSnap.data().nome || estabelecimentoNome
-            }
-          }
-
-          return {
-            id: docSnap.id,
-            ...data,
-            estabelecimentoNome
-          }
-        }))
-
-        setAvaliacoes(lista)
-      } catch (err) {
-        console.error('Erro ao buscar avaliações:', err)
-      } finally {
-        setCarregando(false)
+    const q = query(collection(db, 'avaliacoesEstabelecimentos'), where('freelaUid', '==', freelaUid))
+    const unsubscribe = onSnapshot(q,
+      (snapshot) => {
+        const avals = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        setAvaliacoes(avals)
+        setLoading(false)
+      },
+      (error) => {
+        console.error('Erro ao buscar avaliações:', error)
+        setErro('Erro ao carregar avaliações.')
+        setLoading(false)
       }
-    }
+    )
 
-    if (freelaUid) buscarAvaliacoes()
+    return () => unsubscribe()
   }, [freelaUid])
 
-  if (carregando) return <p className="text-orange-600 text-center">Carregando avaliações...</p>
-
-  if (avaliacoes.length === 0) return <p className="text-gray-600 text-center">Nenhuma avaliação recebida ainda.</p>
+  if (loading) return <p className="text-center text-gray-600">Carregando avaliações...</p>
+  if (erro) return <p className="text-center text-red-600">{erro}</p>
+  if (avaliacoes.length === 0)
+    return <p className="text-center text-gray-600">Nenhuma avaliação recebida ainda.</p>
 
   return (
-    <div className="space-y-4 p-4 bg-white rounded-lg shadow">
-      <h2 className="text-2xl font-bold text-orange-700 mb-4">⭐ Avaliações Recebidas</h2>
-      {avaliacoes.map(av => (
-        <div key={av.id} className="border rounded p-3 shadow-sm">
-          <p><strong>Estabelecimento:</strong> {av.estabelecimentoNome}</p>
-          <p><strong>Nota:</strong> {av.nota} ★</p>
-          <p><strong>Comentário:</strong> {av.comentario || 'Sem comentário'}</p>
-          <p><strong>Data:</strong> {av.data?.toDate ? av.data.toDate().toLocaleDateString() : 'N/A'}</p>
+    <div className="space-y-4">
+      {avaliacoes.map(avaliacao => (
+        <div key={avaliacao.id} className="border p-4 rounded shadow-sm bg-white">
+          <p><strong>Nota:</strong> {avaliacao.nota} ⭐</p>
+          <p><strong>Comentário:</strong> {avaliacao.comentario || 'Sem comentário'}</p>
+          <p className="text-sm text-gray-500">
+            {avaliacao.dataCriacao?.toDate
+              ? avaliacao.dataCriacao.toDate().toLocaleString()
+              : 'Data não disponível'}
+          </p>
         </div>
       ))}
     </div>
