@@ -120,26 +120,23 @@ export default function Chamadas() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto mt-6 space-y-4">
-      <h2 className="text-xl font-bold text-orange-700 mb-3">📞 Minhas Chamadas</h2>
+    <div className="max-w-4xl mx-auto mt-6 space-y-3">
+      <h2 className="text-lg font-bold text-orange-700 mb-2">📞 Minhas Chamadas</h2>
 
       {chamadas.map(chamada => (
         <div
           key={chamada.id}
-          className="bg-white p-4 rounded-xl shadow-sm border border-orange-200 space-y-3"
+          className="bg-white p-2 rounded-md shadow-sm border border-orange-200 space-y-2 text-sm"
         >
-          <div className="flex justify-between items-start gap-4 text-sm">
+          <div className="flex justify-between items-start gap-4">
             <div>
-              <p><strong>{chamada.vagaTitulo}</strong></p>
+              <p className="font-semibold">{chamada.vagaTitulo}</p>
               <p className="text-gray-600">{chamada.estabelecimentoNome}</p>
               <p>
-                <strong>Status: </strong>
-                <span className={`font-bold ${
-                  chamada.status === 'aceita'
-                    ? 'text-green-600'
-                    : chamada.status === 'pendente'
-                    ? 'text-yellow-600'
-                    : 'text-red-600'
+                <strong>Status:</strong>{' '}
+                <span className={`font-semibold ${
+                  chamada.status === 'aceita' ? 'text-green-600' :
+                  chamada.status === 'pendente' ? 'text-yellow-600' : 'text-red-600'
                 }`}>
                   {chamada.status.toUpperCase()}
                 </span>
@@ -147,7 +144,7 @@ export default function Chamadas() {
               <p className="text-gray-500">{formatarData(chamada.criadoEm)}</p>
             </div>
 
-            <div className="flex flex-col gap-2 text-sm">
+            <div className="flex flex-col gap-1">
               {chamada.status === 'pendente' && (
                 <>
                   <button
@@ -186,61 +183,64 @@ export default function Chamadas() {
             </div>
           )}
 
-          {/* Avaliação embutida com estrelinhas */}
-{chamada.checkOutHora &&
-  chamada.status === 'finalizado' &&
-  !chamada.avaliacaoFreelaFeita && (
-    <div className="mt-3 border-t pt-3">
-      <h3 className="text-sm font-semibold mb-2">📝 Avalie o estabelecimento</h3>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          const comentario = e.target.comentario.value
-          if (!avaliacoes[chamada.id]?.nota) {
-            toast.error('Por favor, selecione uma nota.')
-            return
-          }
-          enviarAvaliacao(
-            chamada.id,
-            chamada.estabelecimentoUid,
-            avaliacoes[chamada.id]?.nota,
-            comentario
-          )
-        }}
-        className="flex flex-col gap-2"
-      >
-        {/* Estrelinhas */}
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <span
-              key={n}
-              onClick={() =>
-                setAvaliacoes((prev) => ({
-                  ...prev,
-                  [chamada.id]: { ...(prev[chamada.id] || {}), nota: n }
-                }))
-              }
-              className={`cursor-pointer text-2xl ${
-                avaliacoes[chamada.id]?.nota >= n ? 'text-yellow-400' : 'text-gray-300'
-              } hover:scale-110 transition-transform`}
-            >
-              ★
-            </span>
-          ))}
+          {chamada.checkOutHora && chamada.status === 'finalizado' && !chamada.avaliacaoFreelaFeita && (
+            <div className="mt-2 border-t pt-2">
+              <h3 className="text-sm font-semibold mb-1">📝 Avalie o estabelecimento</h3>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  const comentario = e.target.comentario.value.trim()
+                  const notaSelecionada = avaliacoes[chamada.id]?.nota
+
+                  if (!notaSelecionada) {
+                    toast.error('Por favor, selecione uma nota.')
+                    return
+                  }
+
+                  enviarAvaliacao(
+                    chamada.id,
+                    chamada.estabelecimentoUid,
+                    notaSelecionada,
+                    comentario
+                  )
+                }}
+                className="flex flex-col gap-1"
+              >
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <span
+                      key={n}
+                      onClick={() =>
+                        setAvaliacoes((prev) => ({
+                          ...prev,
+                          [chamada.id]: { ...(prev[chamada.id] || {}), nota: n }
+                        }))
+                      }
+                      className={`cursor-pointer text-lg ${
+                        avaliacoes[chamada.id]?.nota >= n ? 'text-yellow-400' : 'text-gray-300'
+                      } hover:scale-110 transition-transform`}
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+
+                <textarea
+                  name="comentario"
+                  placeholder="Comentário (opcional)"
+                  className="border p-1 rounded text-sm"
+                />
+                <button
+                  type="submit"
+                  className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm"
+                >
+                  Enviar Avaliação
+                </button>
+              </form>
+            </div>
+          )}
         </div>
-
-        <textarea
-          name="comentario"
-          placeholder="Comentário (opcional)"
-          className="border p-2 rounded text-sm"
-        />
-        <button
-          type="submit"
-          className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm transition-all active:scale-95"
-        >
-          Enviar Avaliação
-        </button>
-      </form>
+      ))}
     </div>
-)}
-
+  )
+}
