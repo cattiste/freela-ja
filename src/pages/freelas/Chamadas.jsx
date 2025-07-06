@@ -186,45 +186,61 @@ export default function Chamadas() {
             </div>
           )}
 
-          {/* Avaliação embutida */}
-          {chamada.checkOutHora &&
-            chamada.status === 'finalizado' &&
-            !chamada.avaliacaoFreelaFeita && (
-              <div className="mt-3 border-t pt-3">
-                <h3 className="text-sm font-semibold mb-1">📝 Avalie o estabelecimento</h3>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    const nota = parseInt(e.target.nota.value)
-                    const comentario = e.target.comentario.value
-                    enviarAvaliacao(chamada.id, chamada.estabelecimentoUid, nota, comentario)
-                  }}
-                  className="flex flex-col gap-2"
-                >
-                  <label className="text-sm">
-                    Nota:
-                    <select name="nota" className="ml-2 border p-1 rounded text-sm">
-                      {[1, 2, 3, 4, 5].map(n => (
-                        <option key={n} value={n}>{n}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <textarea
-                    name="comentario"
-                    placeholder="Comentário"
-                    className="border p-2 rounded text-sm"
-                  />
-                  <button
-                    type="submit"
-                    className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm"
-                  >
-                    Enviar Avaliação
-                  </button>
-                </form>
-              </div>
-          )}
+          {/* Avaliação embutida com estrelinhas */}
+{chamada.checkOutHora &&
+  chamada.status === 'finalizado' &&
+  !chamada.avaliacaoFreelaFeita && (
+    <div className="mt-3 border-t pt-3">
+      <h3 className="text-sm font-semibold mb-2">📝 Avalie o estabelecimento</h3>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          const comentario = e.target.comentario.value
+          if (!avaliacoes[chamada.id]?.nota) {
+            toast.error('Por favor, selecione uma nota.')
+            return
+          }
+          enviarAvaliacao(
+            chamada.id,
+            chamada.estabelecimentoUid,
+            avaliacoes[chamada.id]?.nota,
+            comentario
+          )
+        }}
+        className="flex flex-col gap-2"
+      >
+        {/* Estrelinhas */}
+        <div className="flex gap-1">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <span
+              key={n}
+              onClick={() =>
+                setAvaliacoes((prev) => ({
+                  ...prev,
+                  [chamada.id]: { ...(prev[chamada.id] || {}), nota: n }
+                }))
+              }
+              className={`cursor-pointer text-2xl ${
+                avaliacoes[chamada.id]?.nota >= n ? 'text-yellow-400' : 'text-gray-300'
+              } hover:scale-110 transition-transform`}
+            >
+              ★
+            </span>
+          ))}
         </div>
-      ))}
+
+        <textarea
+          name="comentario"
+          placeholder="Comentário (opcional)"
+          className="border p-2 rounded text-sm"
+        />
+        <button
+          type="submit"
+          className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm transition-all active:scale-95"
+        >
+          Enviar Avaliação
+        </button>
+      </form>
     </div>
-  )
-}
+)}
+
