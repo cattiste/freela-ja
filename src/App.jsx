@@ -21,10 +21,8 @@ import PainelFreela from './pages/PainelFreela'
 import PainelEstabelecimento from './pages/PainelEstabelecimento'
 
 // Vagas
-import PainelVagas from './pages/PainelVagas'
 import PublicarVaga from './components/PublicarVaga'
 import VagasDisponiveis from './pages/VagasDisponiveis'
-import TesteCriarVaga from './pages/TesteCriarVaga'
 
 // Eventos
 import PublicarEvento from './pages/PublicarEvento'
@@ -124,9 +122,7 @@ export default function App() {
           {/* Currículos abertos ao público */}
           <Route path="/painelvagas" element={<PainelVagas />} />
 
-          {/* Testes ou futuras rotas */}
-          <Route path="/teste-criar-vaga" element={<TesteCriarVaga />} />
-        </Routes>
+      
       </div>
     </Router>
   )
