@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function PerfilFreela({ freelaUidProp, mostrarBotaoVoltar = true }) {
   const params = useParams()
   const navigate = useNavigate()
   const [freela, setFreela] = useState(null)
+  const [avaliacoes, setAvaliacoes] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
 
@@ -21,6 +22,7 @@ export default function PerfilFreela({ freelaUidProp, mostrarBotaoVoltar = true 
           return
         }
 
+        // Buscar dados do freela
         const freelaRef = doc(db, 'usuarios', uid)
         const freelaSnap = await getDoc(freelaRef)
 
@@ -31,6 +33,15 @@ export default function PerfilFreela({ freelaUidProp, mostrarBotaoVoltar = true 
         }
 
         setFreela(freelaSnap.data())
+
+        // Buscar avaliações recebidas
+        const q = query(
+          collection(db, 'avaliacoesFreelas'),
+          where('freelaUid', '==', uid)
+        )
+        const snapshot = await getDocs(q)
+        const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        setAvaliacoes(lista)
       } catch (e) {
         console.error(e)
         setErro('Erro ao carregar dados do freelancer.')
@@ -41,6 +52,33 @@ export default function PerfilFreela({ freelaUidProp, mostrarBotaoVoltar = true 
 
     carregarFreela()
   }, [uid])
+
+  const renderEstrelas = nota => {
+    const estrelasCheias = Math.floor(nota)
+    const meiaEstrela = nota % 1 >= 0.5
+    const estrelasVazias = 5 - estrelasCheias - (meiaEstrela ? 1 : 0)
+
+    return (
+      <div className="flex text-yellow-500 text-lg">
+        {'★'.repeat(estrelasCheias)}
+        {meiaEstrela && '☆'}
+        {'☆'.repeat(estrelasVazias)}
+      </div>
+    )
+  }
+
+  const formatarValor = valor => {
+    if (!valor) return null
+    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  }
+
+  const formatarData = data => {
+    try {
+      return data?.toDate().toLocaleDateString('pt-BR') || '—'
+    } catch {
+      return '—'
+    }
+  }
 
   if (carregando) {
     return (
@@ -58,43 +96,20 @@ export default function PerfilFreela({ freelaUidProp, mostrarBotaoVoltar = true 
     )
   }
 
-  // Função para exibir estrelas
-  const renderEstrelas = nota => {
-    const estrelasCheias = Math.floor(nota)
-    const meiaEstrela = nota % 1 >= 0.5
-    const estrelasVazias = 5 - estrelasCheias - (meiaEstrela ? 1 : 0)
-
-    return (
-      <div className="flex justify-center text-yellow-500 text-xl mb-2">
-        {'★'.repeat(estrelasCheias)}
-        {meiaEstrela && '☆'}
-        {'☆'.repeat(estrelasVazias)}
-      </div>
-    )
-  }
-
-  // Formata o valor da diária para moeda brasileira
-  const formatarValor = valor => {
-    if (!valor) return null
-    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-  }
-
   return (
     <div className="min-h-screen bg-blue-50 flex items-center justify-center p-6">
-      <div className="bg-white rounded-3xl shadow-lg max-w-md w-full p-8 text-center">
+      <div className="bg-white rounded-3xl shadow-lg max-w-md w-full p-6 text-center">
         <img
           src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'}
           alt={freela.nome}
-          className="mx-auto w-32 h-32 rounded-full object-cover border-2 border-blue-400 shadow mb-6"
+          className="mx-auto w-32 h-32 rounded-full object-cover border-2 border-blue-400 shadow mb-4"
         />
-        <h1 className="text-3xl font-bold text-blue-700 mb-2">{freela.nome}</h1>
-        <p className="text-blue-600 text-lg mb-1">{freela.funcao || freela.especialidades}</p>
-        <p className="text-gray-600 mb-2">{freela.endereco}</p>
-        {freela.celular && (
-          <p className="text-gray-600 mb-2">📱 {freela.celular}</p>
-        )}
+        <h1 className="text-2xl font-bold text-blue-700 mb-1">{freela.nome}</h1>
+        <p className="text-blue-600 text-base mb-1">{freela.funcao || freela.especialidades}</p>
+        <p className="text-gray-600 text-sm mb-2">{freela.endereco}</p>
+        {freela.celular && <p className="text-gray-600 text-sm mb-2">📱 {freela.celular}</p>}
 
-        {/* Estrelas de avaliação se houver */}
+        {/* Avaliação média */}
         {freela.mediaAvaliacao && (
           <>
             {renderEstrelas(freela.mediaAvaliacao)}
@@ -104,19 +119,34 @@ export default function PerfilFreela({ freelaUidProp, mostrarBotaoVoltar = true 
           </>
         )}
 
-        {/* Descrição */}
         {freela.descricao && (
-          <p className="text-gray-700 mb-4 italic">{freela.descricao}</p>
+          <p className="text-gray-700 text-sm mb-3 italic">{freela.descricao}</p>
         )}
 
-        {/* Valor da diária */}
         {freela.valorDiaria && (
-          <p className="text-green-700 font-semibold">
+          <p className="text-green-700 font-semibold mb-4">
             💰 Valor da diária: {formatarValor(freela.valorDiaria)}
           </p>
         )}
 
-        {/* Botões */}
+        {/* Avaliações reais */}
+        {avaliacoes.length > 0 && (
+          <div className="mt-6 text-left">
+            <h3 className="text-sm font-bold text-blue-700 mb-2">⭐ Avaliações Recebidas</h3>
+            <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+              {avaliacoes.map((av) => (
+                <div key={av.id} className="bg-gray-50 p-2 rounded border border-gray-200">
+                  {renderEstrelas(av.nota)}
+                  <p className="text-gray-700 text-sm">{av.comentario || 'Sem comentário'}</p>
+                  <p className="text-xs text-gray-500 italic mt-1">
+                    {av.estabelecimentoNome || 'Estabelecimento'} — {formatarData(av.dataCriacao)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {mostrarBotaoVoltar && (
           <button
             onClick={() => navigate(-1)}
