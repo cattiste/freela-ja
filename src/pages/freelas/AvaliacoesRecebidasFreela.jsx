@@ -10,8 +10,9 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
   useEffect(() => {
     if (!freelaUid) return
 
-    const q = query(collection(db, 'avaliacoesEstabelecimentos'), where('freelaUid', '==', freelaUid))
-    const unsubscribe = onSnapshot(q,
+    const q = query(collection(db, 'avaliacoesFreelas'), where('freelaUid', '==', freelaUid))
+    const unsubscribe = onSnapshot(
+      q,
       (snapshot) => {
         const avals = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
         setAvaliacoes(avals)
@@ -27,6 +28,19 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
     return () => unsubscribe()
   }, [freelaUid])
 
+  const renderEstrelas = (nota) => {
+    const estrelasCheias = Math.floor(nota)
+    const meiaEstrela = nota % 1 >= 0.5
+    const estrelasVazias = 5 - estrelasCheias - (meiaEstrela ? 1 : 0)
+    return (
+      <div className="flex text-yellow-500 text-lg">
+        {'★'.repeat(estrelasCheias)}
+        {meiaEstrela && '☆'}
+        {'☆'.repeat(estrelasVazias)}
+      </div>
+    )
+  }
+
   if (loading) return <p className="text-center text-gray-600">Carregando avaliações...</p>
   if (erro) return <p className="text-center text-red-600">{erro}</p>
   if (avaliacoes.length === 0)
@@ -36,11 +50,13 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
     <div className="space-y-4">
       {avaliacoes.map(avaliacao => (
         <div key={avaliacao.id} className="border p-4 rounded shadow-sm bg-white">
-          <p><strong>Nota:</strong> {avaliacao.nota} ⭐</p>
-          <p><strong>Comentário:</strong> {avaliacao.comentario || 'Sem comentário'}</p>
-          <p className="text-sm text-gray-500">
+          {renderEstrelas(avaliacao.nota)}
+          <p className="text-sm mt-1"><strong>Comentário:</strong> {avaliacao.comentario || 'Sem comentário'}</p>
+          <p className="text-xs text-gray-500 italic mt-1">
+            {avaliacao.estabelecimentoNome || 'Estabelecimento'} —
+            {' '}
             {avaliacao.dataCriacao?.toDate
-              ? avaliacao.dataCriacao.toDate().toLocaleString()
+              ? avaliacao.dataCriacao.toDate().toLocaleDateString('pt-BR')
               : 'Data não disponível'}
           </p>
         </div>
