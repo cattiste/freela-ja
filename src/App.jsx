@@ -118,8 +118,7 @@ export default function App() {
               </RotaProtegidaFreela>
             }
           />
-
-                
+        </Routes> {/* ✅ fechamento necessário */}
       </div>
     </Router>
   )
