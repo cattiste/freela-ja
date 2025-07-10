@@ -1,10 +1,12 @@
 import React, { useState } from 'react'
 import { doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
+import AvaliacaoEstabelecimento from './AvaliacaoEstabelecimento'
 
 export default function ChamadaInline({ chamada, onStatusAtualizado }) {
   const [loading, setLoading] = useState(false)
   const [etapa, setEtapa] = useState(chamada.status)
+  const [mostrarAvaliacao, setMostrarAvaliacao] = useState(false)
 
   const confirmarEtapa = async (tipo) => {
     setLoading(true)
@@ -20,6 +22,7 @@ export default function ChamadaInline({ chamada, onStatusAtualizado }) {
         if (chamada.checkOutFreela) {
           await updateDoc(chamadaRef, { status: 'finalizado' })
           setEtapa('finalizado')
+          setMostrarAvaliacao(true)
         } else {
           setEtapa('checkout')
         }
@@ -58,8 +61,19 @@ export default function ChamadaInline({ chamada, onStatusAtualizado }) {
         </button>
       )}
 
-      {etapa === 'finalizado' && (
+      {etapa === 'finalizado' && !mostrarAvaliacao && (
         <p className="text-green-600 mt-2 font-semibold">✅ Serviço finalizado!</p>
+      )}
+
+      {etapa === 'finalizado' && (
+        <div className="mt-4">
+          <AvaliacaoEstabelecimento
+            chamadaId={chamada.id}
+            freelaUid={chamada.freelaUid}
+            estabelecimentoUid={chamada.estabelecimentoUid}
+            onSucesso={() => setMostrarAvaliacao(false)}
+          />
+        </div>
       )}
     </div>
   )
