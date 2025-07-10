@@ -102,10 +102,10 @@ export default function Chamadas() {
       })
 
       toast.success('Avaliação enviada com sucesso!')
-      setAvaliacoes((prev) => {
-        const atualizado = { ...prev }
-        delete atualizado[chamadaId] // limpa nota/comentário após envio
-        return atualizado
+      setAvaliacoes(prev => {
+        const novo = { ...prev }
+        delete novo[chamadaId]
+        return novo
       })
     } catch (err) {
       toast.error('Erro ao enviar avaliação.')
@@ -197,7 +197,11 @@ export default function Chamadas() {
                 onSubmit={(e) => {
                   e.preventDefault()
                   const comentario = e.target.comentario.value || ''
-                  const notaSelecionada = avaliacoes[chamada.id]?.nota
+                  const avaliacaoAtual = avaliacoes[chamada.id]
+                  const notaSelecionada = avaliacaoAtual?.nota
+
+                  console.log('Nota selecionada:', notaSelecionada)
+                  console.log('Comentário:', comentario)
 
                   if (!notaSelecionada) {
                     toast.error('Por favor, selecione uma nota.')
@@ -220,7 +224,10 @@ export default function Chamadas() {
                       onClick={() =>
                         setAvaliacoes((prev) => ({
                           ...prev,
-                          [chamada.id]: { ...(prev[chamada.id] || {}), nota: n }
+                          [chamada.id]: {
+                            ...(prev[chamada.id] || {}),
+                            nota: n
+                          }
                         }))
                       }
                       className={`cursor-pointer text-lg ${
