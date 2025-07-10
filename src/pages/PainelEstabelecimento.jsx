@@ -9,7 +9,6 @@ import { Toaster } from 'react-hot-toast'
 import { auth, db } from '@/firebase'
 
 import BuscarFreelas from '@/components/BuscarFreelas'
-import ChamadasEstabelecimento from '@/components/ChamadasEstabelecimento'
 import AgendasContratadas from '@/components/AgendasContratadas'
 import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import PublicarVaga from '@/components/PublicarVaga'
@@ -138,8 +137,6 @@ export default function PainelEstabelecimento() {
     switch (aba) {
       case 'buscar':
         return <BuscarFreelas estabelecimento={estabelecimento} vaga={vagaEditando} />
-      case 'chamadas':
-        return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
       case 'agendas':
         return <AgendasContratadas estabelecimento={estabelecimento} />
       case 'historico':
@@ -209,7 +206,6 @@ export default function PainelEstabelecimento() {
           <ul className="flex space-x-2 overflow-x-auto scrollbar-thin scrollbar-thumb-orange-400 scrollbar-track-orange-100">
             {[ 
               { key: 'buscar', label: '🔍 Buscar Freelancers' },
-              { key: 'chamadas', label: '📞 Chamadas' },
               { key: 'agendas', label: '📅 Agendas' },
               { key: 'avaliacao', label: '⭐ Avaliar' },
               { key: 'publicar', label: '📢 Publicar Vaga' },
