@@ -20,6 +20,7 @@ export default function Chamadas() {
   const [loadingId, setLoadingId] = useState(null)
   const [avaliacoes, setAvaliacoes] = useState({})
   const [user, setUser] = useState(null)
+  const [enviando, setEnviando] = useState(null)
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(u => setUser(u))
@@ -85,6 +86,7 @@ export default function Chamadas() {
   }
 
   async function enviarAvaliacao(chamadaId, estabelecimentoUid, nota, comentario) {
+    setEnviando(chamadaId)
     try {
       await addDoc(collection(db, 'avaliacoesEstabelecimentos'), {
         chamadaId,
@@ -100,11 +102,16 @@ export default function Chamadas() {
       })
 
       toast.success('Avaliação enviada com sucesso!')
-      setAvaliacoes((prev) => ({ ...prev, [chamadaId]: { nota, comentario } }))
+      setAvaliacoes((prev) => {
+        const atualizado = { ...prev }
+        delete atualizado[chamadaId] // limpa nota/comentário após envio
+        return atualizado
+      })
     } catch (err) {
       toast.error('Erro ao enviar avaliação.')
       console.error(err)
     }
+    setEnviando(null)
   }
 
   if (!user) {
@@ -120,19 +127,19 @@ export default function Chamadas() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto mt-6 space-y-3">
-      <h2 className="text-lg font-bold text-orange-700 mb-2">📞 Minhas Chamadas</h2>
+    <div className="max-w-3xl mx-auto mt-6 space-y-3">
+      <h2 className="text-base font-bold text-orange-700 mb-2">📞 Minhas Chamadas</h2>
 
       {chamadas.map(chamada => (
         <div
           key={chamada.id}
-          className="bg-white p-2 rounded-md shadow-sm border border-orange-200 space-y-2 text-sm"
+          className="bg-white p-2 rounded border shadow-sm text-sm space-y-2"
         >
-          <div className="flex justify-between items-start gap-4">
-            <div>
+          <div className="flex justify-between items-start gap-2">
+            <div className="flex-1">
               <p className="font-semibold">{chamada.vagaTitulo}</p>
               <p className="text-gray-600">{chamada.estabelecimentoNome}</p>
-              <p>
+              <p className="text-xs">
                 <strong>Status:</strong>{' '}
                 <span className={`font-semibold ${
                   chamada.status === 'aceita' ? 'text-green-600' :
@@ -141,7 +148,7 @@ export default function Chamadas() {
                   {chamada.status.toUpperCase()}
                 </span>
               </p>
-              <p className="text-gray-500">{formatarData(chamada.criadoEm)}</p>
+              <p className="text-gray-500 text-xs">{formatarData(chamada.criadoEm)}</p>
             </div>
 
             <div className="flex flex-col gap-1">
@@ -150,16 +157,16 @@ export default function Chamadas() {
                   <button
                     onClick={() => aceitar(chamada.id)}
                     disabled={loadingId === chamada.id}
-                    className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 disabled:opacity-50"
+                    className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 disabled:opacity-50"
                   >
-                    {loadingId === chamada.id ? 'Aguarde...' : '✅ Aceitar'}
+                    {loadingId === chamada.id ? 'Aguarde...' : 'Aceitar'}
                   </button>
                   <button
                     onClick={() => rejeitar(chamada.id)}
                     disabled={loadingId === chamada.id}
-                    className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 disabled:opacity-50"
+                    className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 disabled:opacity-50"
                   >
-                    {loadingId === chamada.id ? 'Aguarde...' : '❌ Rejeitar'}
+                    {loadingId === chamada.id ? 'Aguarde...' : 'Rejeitar'}
                   </button>
                 </>
               )}
@@ -169,7 +176,7 @@ export default function Chamadas() {
                   onClick={() =>
                     setChatAbertoId(prev => (prev === chamada.id ? null : chamada.id))
                   }
-                  className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                  className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700"
                 >
                   {chatAbertoId === chamada.id ? 'Fechar Chat' : 'Abrir Chat'}
                 </button>
@@ -178,7 +185,7 @@ export default function Chamadas() {
           </div>
 
           {chatAbertoId === chamada.id && (
-            <div className="w-full mt-2">
+            <div className="w-full mt-2 border-t pt-2">
               <Chat chamadaId={chamada.id} />
             </div>
           )}
@@ -189,7 +196,7 @@ export default function Chamadas() {
               <form
                 onSubmit={(e) => {
                   e.preventDefault()
-                  const comentario = e.target.comentario.value.trim()
+                  const comentario = e.target.comentario.value || ''
                   const notaSelecionada = avaliacoes[chamada.id]?.nota
 
                   if (!notaSelecionada) {
@@ -228,13 +235,14 @@ export default function Chamadas() {
                 <textarea
                   name="comentario"
                   placeholder="Comentário (opcional)"
-                  className="border p-1 rounded text-sm"
+                  className="border p-1 rounded text-xs"
                 />
                 <button
                   type="submit"
-                  className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm"
+                  disabled={enviando === chamada.id}
+                  className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 disabled:opacity-50"
                 >
-                  Enviar Avaliação
+                  {enviando === chamada.id ? 'Enviando...' : 'Enviar Avaliação'}
                 </button>
               </form>
             </div>
