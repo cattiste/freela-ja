@@ -1,12 +1,14 @@
 import React, { useState } from 'react'
 import { doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
+import Chat from './Chat'
 import AvaliacaoEstabelecimento from './AvaliacaoEstabelecimento'
 
 export default function ChamadaInline({ chamada, onStatusAtualizado }) {
   const [loading, setLoading] = useState(false)
   const [etapa, setEtapa] = useState(chamada.status)
   const [mostrarAvaliacao, setMostrarAvaliacao] = useState(false)
+  const [mostrarChat, setMostrarChat] = useState(false)
 
   const confirmarEtapa = async (tipo) => {
     setLoading(true)
@@ -59,6 +61,19 @@ export default function ChamadaInline({ chamada, onStatusAtualizado }) {
         >
           ✔️ Confirmar Check-out
         </button>
+      )}
+
+      <button
+        onClick={() => setMostrarChat(prev => !prev)}
+        className="mt-3 text-blue-600 underline hover:text-blue-800"
+      >
+        {mostrarChat ? 'Fechar Chat' : 'Abrir Chat'}
+      </button>
+
+      {mostrarChat && (
+        <div className="mt-2">
+          <Chat chamadaId={chamada.id} />
+        </div>
       )}
 
       {etapa === 'finalizado' && !mostrarAvaliacao && (
