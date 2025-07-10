@@ -119,10 +119,7 @@ export default function App() {
             }
           />
 
-          {/* Currículos abertos ao público */}
-          <Route path="/painelvagas" element={<PainelVagas />} />
-
-      
+                
       </div>
     </Router>
   )
