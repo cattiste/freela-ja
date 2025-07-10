@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+import ChamadaInline from './ChamadaInline'
 
-function FreelaCard({ freela, onChamar, chamando }) {
-  // Usa hook para presença em tempo real
+function FreelaCard({ freela, onChamar, chamando, chamadaAtiva }) {
   const { online } = useOnlineStatus(freela.id)
 
   return (
@@ -40,6 +40,8 @@ function FreelaCard({ freela, onChamar, chamando }) {
       >
         {chamando === freela.id ? 'Chamando...' : '📞 Chamar'}
       </button>
+
+      {chamadaAtiva && <ChamadaInline chamada={chamadaAtiva} />}
     </div>
   )
 }
@@ -48,6 +50,7 @@ export default function BuscarFreelas({ estabelecimento }) {
   const [freelas, setFreelas] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [chamando, setChamando] = useState(null)
+  const [chamadasAtivas, setChamadasAtivas] = useState({})
 
   useEffect(() => {
     const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
@@ -72,7 +75,7 @@ export default function BuscarFreelas({ estabelecimento }) {
     setChamando(freela.id)
 
     try {
-      await addDoc(collection(db, 'chamadas'), {
+      const chamadaRef = await addDoc(collection(db, 'chamadas'), {
         freelaUid: freela.id,
         freelaNome: freela.nome,
         estabelecimentoUid: estabelecimento.uid,
@@ -81,6 +84,9 @@ export default function BuscarFreelas({ estabelecimento }) {
         status: 'pendente',
         criadoEm: serverTimestamp()
       })
+
+      const docSnap = await getDoc(doc(db, 'chamadas', chamadaRef.id))
+      setChamadasAtivas(prev => ({ ...prev, [freela.id]: { id: chamadaRef.id, ...docSnap.data() } }))
 
       alert(`Freelancer ${freela.nome} foi chamado com sucesso.`)
     } catch (err) {
@@ -102,6 +108,7 @@ export default function BuscarFreelas({ estabelecimento }) {
           freela={freela}
           onChamar={chamarFreela}
           chamando={chamando}
+          chamadaAtiva={chamadasAtivas[freela.id]}
         />
       ))}
     </div>
