@@ -80,7 +80,7 @@ export default function App() {
             }
           />
           <Route
-            path="/painel-estabelecimento"
+            path="/painel-estabelecimento/*"
             element={
               <RotaProtegidaEstabelecimento>
                 <PainelEstabelecimento />
