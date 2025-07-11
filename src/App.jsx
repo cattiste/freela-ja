@@ -62,7 +62,6 @@ export default function App() {
           <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
           <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
 
-
           {/* Cadastro e Perfil */}
           <Route path="/cadastrofreela" element={<CadastroFreela />} />
           <Route path="/cadastro-estabelecimento" element={<CadastroEstabelecimento />} />
@@ -73,7 +72,7 @@ export default function App() {
 
           {/* Painéis protegidos */}
           <Route
-            path="/painelfreela"
+            path="/painelfreela/*"
             element={
               <RotaProtegidaFreela>
                 <PainelFreela />
@@ -124,7 +123,7 @@ export default function App() {
               </RotaProtegidaFreela>
             }
           />
-        </Routes> {/* ✅ fechamento necessário */}
+        </Routes>
       </div>
     </Router>
   )
