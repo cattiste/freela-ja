@@ -10,7 +10,8 @@ import {
   doc,
   updateDoc,
   serverTimestamp,
-  getDoc
+  getDoc,
+  addDoc
 } from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
 
@@ -21,7 +22,6 @@ import PerfilFreela from './PerfilFreela'
 import RecebimentosFreela from './freelas/RecebimentosFreela'
 import AgendaCompleta from './freelas/AgendaCompleta'
 import Chat from './freelas/Chat'
-import AvaliacaoEstabelecimento from '@/components/AvaliacaoEstabelecimento'
 
 export default function PainelFreela() {
   const navigate = useNavigate()
@@ -29,6 +29,8 @@ export default function PainelFreela() {
   const [usuario, setUsuario] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [chamadas, setChamadas] = useState([])
+  const [loadingCheckin, setLoadingCheckin] = useState(false)
+  const [loadingCheckout, setLoadingCheckout] = useState(false)
 
   useEffect(() => {
     let unsubscribeChamadas = null
@@ -91,6 +93,40 @@ export default function PainelFreela() {
 
   const rota = location.pathname.split('/')[2] || 'perfil'
 
+  const fazerCheckin = async () => {
+    const chamada = chamadas.find(c => c.status === 'aceita' && !c.checkInFreela)
+    if (!chamada) return toast.error('Nada para check-in.')
+    setLoadingCheckin(true)
+    try {
+      await updateDoc(doc(db, 'chamadas', chamada.id), {
+        checkInFreela: true,
+        checkInHora: serverTimestamp()
+      })
+      toast.success('Check-in realizado!')
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro no check-in.')
+    }
+    setLoadingCheckin(false)
+  }
+
+  const fazerCheckout = async () => {
+    const chamada = chamadas.find(c => c.status === 'aceita' && c.checkInFreela && !c.checkOutFreela)
+    if (!chamada) return toast.error('Nada para check-out.')
+    setLoadingCheckout(true)
+    try {
+      await updateDoc(doc(db, 'chamadas', chamada.id), {
+        checkOutFreela: true,
+        checkOutHora: serverTimestamp()
+      })
+      toast.success('Check-out realizado! Aguarde a avaliação.')
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro no check-out.')
+    }
+    setLoadingCheckout(false)
+  }
+
   const renderConteudo = () => {
     switch (rota) {
       case 'perfil':
@@ -115,14 +151,59 @@ export default function PainelFreela() {
         return <ConfiguracoesFreela />
       case 'avaliar-estabelecimento': {
         const chamadaParaAvaliar = chamadas.find(
-          c => c.status === 'finalizado' && !c.avaliacaoFreelaFeita
+          c => c.checkOutFreela && !c.avaliacaoFreelaFeita
         )
         return chamadaParaAvaliar ? (
-          <AvaliacaoEstabelecimento
-            chamadaId={chamadaParaAvaliar.id}
-            estabelecimentoUid={chamadaParaAvaliar.estabelecimentoUid}
-            freelaUid={usuario.uid}
-          />
+          <div className="p-4 border rounded">
+            <h3 className="text-lg font-semibold mb-2">📝 Avalie o estabelecimento</h3>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault()
+                const form = e.target
+                const nota = parseInt(form.nota.value)
+                const comentario = form.comentario.value
+                try {
+                  await addDoc(collection(db, 'avaliacoesEstabelecimentos'), {
+                    chamadaId: chamadaParaAvaliar.id,
+                    freelaUid: usuario.uid,
+                    estabelecimentoUid: chamadaParaAvaliar.estabelecimentoUid,
+                    nota,
+                    comentario,
+                    dataCriacao: serverTimestamp()
+                  })
+                  await updateDoc(doc(db, 'chamadas', chamadaParaAvaliar.id), {
+                    avaliacaoFreelaFeita: true
+                  })
+                  toast.success('Avaliação enviada com sucesso!')
+                } catch (err) {
+                  toast.error('Erro ao enviar avaliação.')
+                  console.error(err)
+                }
+              }}
+              className="flex flex-col gap-2"
+            >
+              <label>
+                Nota:
+                <select name="nota" className="ml-2 border p-1 rounded" defaultValue="5">
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </label>
+              <textarea
+                name="comentario"
+                placeholder="Comentário"
+                className="border p-2 rounded"
+                required
+              />
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                Enviar Avaliação
+              </button>
+            </form>
+          </div>
         ) : (
           <p className="text-center text-gray-600 mt-4">Nenhuma avaliação pendente.</p>
         )
@@ -143,7 +224,7 @@ export default function PainelFreela() {
   return (
     <div className="min-h-screen bg-orange-50 p-4">
       <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold text-orange-700">🧑‍🍳 Painel do Freelancer</h1>
             <p className="text-gray-600 mt-1">{usuario.nome} — {usuario.funcao}</p>
