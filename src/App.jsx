@@ -15,6 +15,8 @@ import CadastroEstabelecimento from './pages/CadastroEstabelecimento'
 import EditarFreela from './pages/EditarFreela'
 import EditarPerfilEstabelecimento from './pages/EditarPerfilEstabelecimento'
 import PerfilFreela from './pages/PerfilFreela'
+import PerfilEstabelecimento from './pages/PerfilEstabelecimento'
+import Avaliacao from './pages/Avaliacao'
 
 // Painéis protegidos
 import PainelFreela from './pages/PainelFreela'
@@ -57,6 +59,9 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/esquecisenha" element={<EsqueciSenha />} />
           <Route path="/oportunidades" element={<Oportunidades />} />
+          <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
+          <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
+
 
           {/* Cadastro e Perfil */}
           <Route path="/cadastrofreela" element={<CadastroFreela />} />
@@ -64,6 +69,7 @@ export default function App() {
           <Route path="/perfilfreela/:id" element={<PerfilFreela />} />
           <Route path="/editarfreela/:id" element={<EditarFreela />} />
           <Route path="/editarperfilestabelecimento" element={<EditarPerfilEstabelecimento />} />
+          <Route path="/avaliacao/:tipo/:id" element={<Avaliacao />} />
 
           {/* Painéis protegidos */}
           <Route

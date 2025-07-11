@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
+import { doc, getDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore'
 import { db } from '@/firebase'
+import { useAuth } from '@/context/AuthContext'
 
 export default function PerfilFreela({ freelaUidProp, mostrarBotaoVoltar = true }) {
   const params = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [freela, setFreela] = useState(null)
   const [avaliacoes, setAvaliacoes] = useState([])
   const [carregando, setCarregando] = useState(true)
@@ -22,7 +24,6 @@ export default function PerfilFreela({ freelaUidProp, mostrarBotaoVoltar = true 
           return
         }
 
-        // Buscar dados do freela
         const freelaRef = doc(db, 'usuarios', uid)
         const freelaSnap = await getDoc(freelaRef)
 
@@ -34,14 +35,22 @@ export default function PerfilFreela({ freelaUidProp, mostrarBotaoVoltar = true 
 
         setFreela(freelaSnap.data())
 
-        // Buscar avaliações recebidas
         const q = query(
           collection(db, 'avaliacoesFreelas'),
-          where('freelaUid', '==', uid)
+          where('freelaUid', '==', uid),
+          orderBy('dataCriacao', 'desc')
         )
         const snapshot = await getDocs(q)
         const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
         setAvaliacoes(lista)
+
+        // Calcula média
+        if (lista.length > 0) {
+          const soma = lista.reduce((total, av) => total + av.nota, 0)
+          const media = soma / lista.length
+          setFreela((prev) => ({ ...prev, mediaAvaliacao: media }))
+        }
+
       } catch (e) {
         console.error(e)
         setErro('Erro ao carregar dados do freelancer.')
@@ -109,7 +118,6 @@ export default function PerfilFreela({ freelaUidProp, mostrarBotaoVoltar = true 
         <p className="text-gray-600 text-sm mb-2">{freela.endereco}</p>
         {freela.celular && <p className="text-gray-600 text-sm mb-2">📱 {freela.celular}</p>}
 
-        {/* Avaliação média */}
         {freela.mediaAvaliacao && (
           <>
             {renderEstrelas(freela.mediaAvaliacao)}
@@ -129,7 +137,6 @@ export default function PerfilFreela({ freelaUidProp, mostrarBotaoVoltar = true 
           </p>
         )}
 
-        {/* Avaliações reais */}
         {avaliacoes.length > 0 && (
           <div className="mt-6 text-left">
             <h3 className="text-sm font-bold text-blue-700 mb-2">⭐ Avaliações Recebidas</h3>
@@ -145,6 +152,15 @@ export default function PerfilFreela({ freelaUidProp, mostrarBotaoVoltar = true 
               ))}
             </div>
           </div>
+        )}
+
+        {user && user.tipo === 'estabelecimento' && user.uid !== uid && (
+          <button
+            onClick={() => navigate(`/avaliacao/freela/${uid}`)}
+            className="mt-4 px-4 py-2 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 transition"
+          >
+            Avaliar este Freela
+          </button>
         )}
 
         {mostrarBotaoVoltar && (
