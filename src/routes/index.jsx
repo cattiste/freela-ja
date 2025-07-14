@@ -1,15 +1,10 @@
 import React from 'react'
-import { Routes } from 'react-router-dom'
-import RotasPublicas from './RotasPublicas'
-import { RotasFreela } from './RotasFreela'
-import { RotasEstabelecimento } from './RotasEstabelecimento'
+import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import App from './App'
 
-export default function RotasApp({ usuario }) {
-  return (
-    <Routes>
-      <RotasPublicas />
-      <RotasFreela usuario={usuario} />
-      <RotasEstabelecimento usuario={usuario} />
-    </Routes>
-  )
-}
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
+)

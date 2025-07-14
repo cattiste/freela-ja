@@ -15,6 +15,8 @@ export const RotasFreela = ({ usuario }) => (
     <Route path="/cadastrofreela" element={<CadastroFreela />} />
     <Route path="/editarfreela/:id" element={<EditarFreela />} />
     <Route path="/perfilfreela/:id" element={<PerfilFreela />} />
+    <Route path="/vagasdisponiveis" element={<VagasDisponiveis freela={usuario} />} />
+    <Route path="/eventosdisponiveis" element={<EventosDisponiveis freela={usuario} />} />
 
     <Route
       path="/painelfreela/*"

@@ -10,6 +10,7 @@ import EsqueciSenha from '../pages/gerais/EsqueciSenha'
 import Oportunidades from '../pages/gerais/Oportunidades'
 import PerfilFreela from '../pages/freelas/PerfilFreela'
 import PerfilEstabelecimento from '../pages/estabelecimentos/PerfilEstabelecimento'
+import PublicarEvento from '../pages/PublicarEvento'
 
 const RotasPublicas = () => (
   <>
@@ -21,6 +22,7 @@ const RotasPublicas = () => (
     <Route path="/oportunidades" element={<Oportunidades />} />
     <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
     <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
+    <Route path="/publicarevento" element={<PublicarEvento />} />
   </>
 )
 

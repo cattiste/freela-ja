@@ -8,6 +8,7 @@ import EditarPerfilEstabelecimento from '../pages/estabelecimentos/EditarPerfilE
 import PainelEstabelecimento from '../pages/estabelecimentos/PainelEstabelecimento'
 import PublicarVaga from '../components/gerais/PublicarVaga.jsx'
 import Avaliacao from '../components/gerais/Avaliacao'
+import PublicarEvento from '../pages/PublicarEvento'
 
 export const RotasEstabelecimento = ({ usuario }) => (
   <>
@@ -29,6 +30,14 @@ export const RotasEstabelecimento = ({ usuario }) => (
         <RotaProtegidaEstabelecimento>
           <PublicarVaga estabelecimento={usuario} />
         </RotaProtegidaEstabelecimento>
+      }
+    />
+    <Route
+       path="/publicarevento"
+       element={
+         <RotaProtegidaEstabelecimento>
+            <PublicarEvento estabelecimento={usuario} />
+         </RotaProtegidaEstabelecimento>
       }
     />
   </>

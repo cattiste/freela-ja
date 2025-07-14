@@ -24,6 +24,10 @@ function formatarData(timestamp) {
   return new Date(timestamp).toLocaleDateString('pt-BR')
 }
 
+  if (!freela || !freela.uid) {
+  return <div className="text-center text-red-600 mt-10">⚠️ Acesso não autorizado. Faça login novamente.</div>
+}
+
 export default function VagasDisponiveis({ freela }) {
   const [vagas, setVagas] = useState([])
   const [loading, setLoading] = useState(true)

@@ -20,6 +20,10 @@ export default function EventosDisponiveis({ freela }) {
         }))
         setEventos(listaEventos)
 
+         if (!freela || !freela.uid) {
+           return <p className="text-center text-red-500">⚠️ Usuário não autenticado.</p>
+         }
+
         // Buscar candidaturas já feitas pelo freela
         if (freela?.uid) {
           const candidaturasRef = collection(db, 'candidaturasEventos')
