@@ -11,7 +11,7 @@ import Oportunidades from '../pages/gerais/Oportunidades'
 import PerfilFreela from '../pages/freelas/PerfilFreela'
 import PerfilEstabelecimento from '../pages/estabelecimentos/PerfilEstabelecimento'
 
-export const RotasPublicas = () => (
+const RotasPublicas = () => (
   <>
     <Route path="/" element={<Home />} />
     <Route path="/sobre" element={<Sobre />} />
@@ -23,3 +23,5 @@ export const RotasPublicas = () => (
     <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
   </>
 )
+
+export default RotasPublicas
