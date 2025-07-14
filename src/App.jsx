@@ -33,9 +33,6 @@ export default function App() {
     return <div className="text-center mt-20 text-orange-600 font-bold">🔄 Carregando...</div>
   }
 
-  return (
-    <BrowserRouter>
-      <RotasApp usuario={usuario} />
-    </BrowserRouter>
-  )
+  // ✅ sem BrowserRouter aqui
+  return <RotasApp usuario={usuario} />
 }
