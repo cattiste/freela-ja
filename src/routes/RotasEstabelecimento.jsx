@@ -6,7 +6,7 @@ import RotaProtegidaEstabelecimento from '../components/protegidas/RotaProtegida
 import CadastroEstabelecimento from '../pages/estabelecimentos/CadastroEstabelecimento'
 import EditarPerfilEstabelecimento from '../pages/estabelecimentos/EditarPerfilEstabelecimento'
 import PainelEstabelecimento from '../pages/estabelecimentos/PainelEstabelecimento'
-import PublicarVaga from '../components/gerais/PublicarVaga'
+import PublicarVaga from '../components/gerais/PublicarVaga.jsx'
 import Avaliacao from '../pages/gerais/Avaliacao'
 
 export const RotasEstabelecimento = ({ usuario }) => (
