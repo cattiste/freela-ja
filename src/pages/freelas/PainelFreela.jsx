@@ -15,13 +15,14 @@ import {
 } from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
 
-import HistoricoChamadasFreela from '@/pages/freelas/HistoricoChamadasFreela'
-import AvaliacoesRecebidasFreela from './freelas/AvaliacoesRecebidasFreela'
-import ConfiguracoesFreela from './freelas/ConfiguracoesFreela'
+import HistoricoChamadasFreela from './HistoricoChamadasFreela'
+import AvaliacoesRecebidasFreela from './AvaliacoesRecebidasFreela'
+import ConfiguracoesFreela from './ConfiguracoesFreela'
 import PerfilFreela from './PerfilFreela'
-import RecebimentosFreela from './freelas/RecebimentosFreela'
-import AgendaCompleta from './freelas/AgendaCompleta'
-import Chat from './freelas/Chat'
+import RecebimentosFreela from './RecebimentosFreela'
+import AgendaCompleta from './AgendaCompleta'
+import Chat from './Chat'
+
 
 export default function PainelFreela() {
   const navigate = useNavigate()
