@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/firebase' // import da instância do Firebase
 import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { useAuth } from '../context/AuthContext'; // Se estiver usando contexto de auth
+import { useAuth } from '@/context/AuthContext';
 
 function Avaliacao() {
   const { tipo, id } = useParams(); // tipo = freela ou estabelecimento, id = avaliado
