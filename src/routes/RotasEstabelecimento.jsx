@@ -1,6 +1,7 @@
 import React from 'react'
 import { Route } from 'react-router-dom'
-import RotaProtegidaEstabelecimento from '../components/protegidas/RotaProtegidaEstabelecimento'
+import RotaProtegidaEstabelecimento from '../components/protegidas/RotaProtegidaEstabelecimento.jsx'
+
 
 import CadastroEstabelecimento from '../pages/estabelecimentos/CadastroEstabelecimento'
 import EditarPerfilEstabelecimento from '../pages/estabelecimentos/EditarPerfilEstabelecimento'
