@@ -1,37 +1,27 @@
 import React from 'react'
-import { BrowserRouter as Router } from 'react-router-dom'
-import RotasApp from './routes'
-import './styles/index.js'
+import { Route } from 'react-router-dom'
 
-export default function App() {
-  const [usuarioLogado, setUsuarioLogado] = React.useState(null)
-  const [carregando, setCarregando] = React.useState(true)
+// Páginas públicas
+import Home from '../pages/gerais/Home'
+import Sobre from '../pages/gerais/Sobre'
+import Cadastro from '../pages/gerais/Cadastro'
+import Login from '../pages/gerais/Login'
+import EsqueciSenha from '../pages/gerais/EsqueciSenha'
+import Oportunidades from '../pages/gerais/Oportunidades'
+import PerfilFreela from '../pages/freelas/PerfilFreela'
+import PerfilEstabelecimento from '../pages/estabelecimentos/PerfilEstabelecimento'
 
-  React.useEffect(() => {
-    const dados = localStorage.getItem('usuarioLogado')
-    if (dados) {
-      try {
-        setUsuarioLogado(JSON.parse(dados))
-      } catch {
-        setUsuarioLogado(null)
-      }
-    }
-    setCarregando(false)
-  }, [])
+const RotasPublicas = () => (
+  <>
+    <Route path="/" element={<Home />} />
+    <Route path="/sobre" element={<Sobre />} />
+    <Route path="/cadastro" element={<Cadastro />} />
+    <Route path="/login" element={<Login />} />
+    <Route path="/esquecisenha" element={<EsqueciSenha />} />
+    <Route path="/oportunidades" element={<Oportunidades />} />
+    <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
+    <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
+  </>
+)
 
-  if (carregando) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-700">
-        Carregando...
-      </div>
-    )
-  }
-
-  return (
-    <Router>
-      <div className="min-h-screen bg-gray-50 text-gray-900">
-        <RotasApp usuario={usuarioLogado} />
-      </div>
-    </Router>
-  )
-}
+export default RotasPublicas

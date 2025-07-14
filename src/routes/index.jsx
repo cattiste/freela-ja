@@ -1,6 +1,6 @@
 import React from 'react'
 import { Routes } from 'react-router-dom'
-import { RotasPublicas } from './RotasPublicas'
+import RotasPublicas from './RotasPublicas'
 import { RotasFreela } from './RotasFreela'
 import { RotasEstabelecimento } from './RotasEstabelecimento'
 
