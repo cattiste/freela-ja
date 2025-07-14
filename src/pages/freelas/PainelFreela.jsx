@@ -15,7 +15,7 @@ import {
 } from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
 
-import HistoricoChamadasFreela from './freelas/HistoricoChamadasFreela'
+import HistoricoChamadasFreela from '@/pages/freelas/HistoricoChamadasFreela'
 import AvaliacoesRecebidasFreela from './freelas/AvaliacoesRecebidasFreela'
 import ConfiguracoesFreela from './freelas/ConfiguracoesFreela'
 import PerfilFreela from './PerfilFreela'
