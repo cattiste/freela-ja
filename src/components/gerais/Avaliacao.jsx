@@ -1,7 +1,7 @@
 // pages/Avaliacao.jsx
 import { useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { db } from '../firebase'; // import da instância do Firebase
+import { auth, db } from '@/firebase' // import da instância do Firebase
 import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext'; // Se estiver usando contexto de auth
 
