@@ -24,17 +24,22 @@ function formatarData(timestamp) {
   return new Date(timestamp).toLocaleDateString('pt-BR')
 }
 
-  if (!freela || !freela.uid) {
-  return <div className="text-center text-red-600 mt-10">⚠️ Acesso não autorizado. Faça login novamente.</div>
-}
-
 export default function VagasDisponiveis({ freela }) {
   const [vagas, setVagas] = useState([])
   const [loading, setLoading] = useState(true)
   const [erro, setErro] = useState(null)
   const [sucesso, setSucesso] = useState(null)
-  const [candidaturas, setCandidaturas] = useState([]) // candidaturas do freela
-  const [vagasExcluidas, setVagasExcluidas] = useState(new Set()) // vagas cuja candidatura foi excluída
+  const [candidaturas, setCandidaturas] = useState([])
+  const [vagasExcluidas, setVagasExcluidas] = useState(new Set())
+
+  // ✅ Fallback de segurança colocado no lugar certo:
+  if (!freela || !freela.uid) {
+    return (
+      <div className="text-center text-red-600 mt-10">
+        ⚠️ Acesso não autorizado. Faça login novamente.
+      </div>
+    )
+  }
 
   useEffect(() => {
     async function carregarVagas() {
@@ -42,12 +47,10 @@ export default function VagasDisponiveis({ freela }) {
       setErro(null)
       setSucesso(null)
       try {
-        // Buscar vagas abertas
         const q = query(collection(db, 'vagas'), where('status', '==', 'aberta'))
         const snapshot = await getDocs(q)
         const listaVagas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
-        // Buscar candidaturas do freela
         if (freela?.uid) {
           const qCand = query(
             collection(db, 'candidaturas'),
@@ -96,7 +99,6 @@ export default function VagasDisponiveis({ freela }) {
 
       setSucesso(`Candidatura enviada para vaga: ${vaga.titulo || vaga.funcao || ''}`)
 
-      // Atualizar candidaturas localmente para refletir a nova candidatura
       setCandidaturas(prev => [
         ...prev,
         {
@@ -107,7 +109,6 @@ export default function VagasDisponiveis({ freela }) {
         },
       ])
 
-      // Se a vaga estava marcada como excluída, remove ela do set para permitir candidatura
       setVagasExcluidas(prev => {
         const copy = new Set(prev)
         copy.delete(vaga.id)
@@ -125,12 +126,8 @@ export default function VagasDisponiveis({ freela }) {
 
     try {
       await deleteDoc(doc(db, 'candidaturas', id))
-
       setCandidaturas(prev => prev.filter(c => c.id !== id))
-
-      // Marca essa vaga como excluída para não mostrar botão candidatar
       setVagasExcluidas(prev => new Set(prev).add(vagaId))
-
       setSucesso('Candidatura excluída com sucesso!')
       setErro(null)
     } catch (err) {
@@ -140,7 +137,6 @@ export default function VagasDisponiveis({ freela }) {
     }
   }
 
-  // Função para encontrar candidatura relacionada à vaga
   function getCandidaturaDaVaga(vagaId) {
     return candidaturas.find(c => c.vagaId === vagaId)
   }
@@ -188,129 +184,127 @@ export default function VagasDisponiveis({ freela }) {
       ) : (
         <div className="space-y-6">
           {vagas.map(vaga => {
-            // Se a vaga está na lista de excluídas, não permite candidatura e não mostra botão candidatar
-            if (vagasExcluidas.has(vaga.id)) {
-              const candidatura = getCandidaturaDaVaga(vaga.id)
-              return (
-                <div
-                  key={vaga.id}
-                  className={`p-5 border rounded-xl shadow ${
-                    vaga.urgente ? 'border-red-400 bg-red-50' : 'border-gray-300'
-                  }`}
-                >
-                  <h3 className="text-xl font-semibold text-orange-700 mb-2">
-                    {vaga.titulo || vaga.funcao || 'Sem título'}
-                  </h3>
-                  <p className="text-red-600 font-semibold">
-                    Candidatura excluída - Você não pode se candidatar novamente a esta vaga.
-                  </p>
-                  {candidatura?.mensagem && (
-                    <p className="mt-2 text-red-700 italic">
-                      Mensagem do estabelecimento: {candidatura.mensagem}
-                    </p>
-                  )}
-                  <button
-                    onClick={() => handleExcluirCandidatura(candidatura.id, vaga.id)}
-                    className="mt-3 bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-1 rounded"
-                  >
-                    Excluir candidatura
-                  </button>
-                </div>
-              )
-            }
-
             const candidatura = getCandidaturaDaVaga(vaga.id)
+
+            const isExcluida = vagasExcluidas.has(vaga.id)
+            const isUrgente = vaga.urgente
 
             return (
               <div
                 key={vaga.id}
                 className={`p-5 border rounded-xl shadow ${
-                  vaga.urgente ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                  isUrgente ? 'border-red-400 bg-red-50' : 'border-gray-300'
                 }`}
               >
                 <h3 className="text-xl font-semibold text-orange-700 mb-2">
                   {vaga.titulo || vaga.funcao || 'Sem título'}
                 </h3>
 
-                <p>
-                  <strong>Tipo:</strong>{' '}
-                  {vaga.tipoVaga?.toLowerCase() === 'clt' ? 'CLT (Fixa)' : 'Freela (Diária)'}
-                </p>
-
-                {vaga.tipoVaga?.toLowerCase() === 'freela' && vaga.valorDiaria != null && (
-                  <p>
-                    <strong>Valor da diária:</strong> R${' '}
-                    {Number(vaga.valorDiaria).toFixed(2).replace('.', ',')}
-                  </p>
-                )}
-
-                {vaga.tipoVaga?.toLowerCase() === 'clt' && vaga.salario != null && (
-                  <p>
-                    <strong>Salário:</strong> R$ {Number(vaga.salario).toFixed(2).replace('.', ',')}
-                  </p>
-                )}
-
-                <p>
-                  <strong>Data da publicação:</strong> {formatarData(vaga.dataPublicacao)}
-                </p>
-
-                {vaga.descricao && (
-                  <p className="mt-2 text-gray-700">
-                    <strong>Descrição:</strong> {vaga.descricao}
-                  </p>
-                )}
-
-                {vaga.urgente && (
-                  <p className="text-red-600 font-semibold mt-3 uppercase tracking-wide">URGENTE</p>
-                )}
-
-                {/* Status e botões */}
-                {candidatura ? (
+                {isExcluida ? (
                   <>
-                    <p className="mt-4 font-semibold">
-                      Status da candidatura:{' '}
-                      <span
-                        className={`px-2 py-1 rounded ${
-                          candidatura.status.toLowerCase() === 'aprovado'
-                            ? 'bg-green-100 text-green-700'
-                            : candidatura.status.toLowerCase() === 'rejeitado'
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-yellow-100 text-yellow-700'
-                        }`}
-                      >
-                        {candidatura.status.toUpperCase()}
-                      </span>
+                    <p className="text-red-600 font-semibold">
+                      Candidatura excluída - Você não pode se candidatar novamente a esta vaga.
                     </p>
-
-                    {candidatura.status.toLowerCase() === 'rejeitado' && candidatura.mensagem && (
+                    {candidatura?.mensagem && (
                       <p className="mt-2 text-red-700 italic">
                         Mensagem do estabelecimento: {candidatura.mensagem}
                       </p>
                     )}
+                    <button
+                      onClick={() => handleExcluirCandidatura(candidatura.id, vaga.id)}
+                      className="mt-3 bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-1 rounded"
+                    >
+                      Excluir candidatura
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      <strong>Tipo:</strong>{' '}
+                      {vaga.tipoVaga?.toLowerCase() === 'clt' ? 'CLT (Fixa)' : 'Freela (Diária)'}
+                    </p>
 
-                    {candidatura.status.toLowerCase() === 'aprovado' && candidatura.contato && (
-                      <p className="mt-2">
-                        📞 <strong>Contato do estabelecimento:</strong> {candidatura.contato}
+                    {vaga.tipoVaga?.toLowerCase() === 'freela' && vaga.valorDiaria != null && (
+                      <p>
+                        <strong>Valor da diária:</strong> R${' '}
+                        {Number(vaga.valorDiaria).toFixed(2).replace('.', ',')}
                       </p>
                     )}
 
-                    {/* Botão excluir apenas se for rejeitado */}
-                    {candidatura.status.toLowerCase() === 'rejeitado' && (
+                    {vaga.tipoVaga?.toLowerCase() === 'clt' && vaga.salario != null && (
+                      <p>
+                        <strong>Salário:</strong> R${' '}
+                        {Number(vaga.salario).toFixed(2).replace('.', ',')}
+                      </p>
+                    )}
+
+                    <p>
+                      <strong>Data da publicação:</strong> {formatarData(vaga.dataPublicacao)}
+                    </p>
+
+                    {vaga.descricao && (
+                      <p className="mt-2 text-gray-700">
+                        <strong>Descrição:</strong> {vaga.descricao}
+                      </p>
+                    )}
+
+                    {vaga.urgente && (
+                      <p className="text-red-600 font-semibold mt-3 uppercase tracking-wide">
+                        URGENTE
+                      </p>
+                    )}
+
+                    {candidatura ? (
+                      <>
+                        <p className="mt-4 font-semibold">
+                          Status da candidatura:{' '}
+                          <span
+                            className={`px-2 py-1 rounded ${
+                              candidatura.status.toLowerCase() === 'aprovado'
+                                ? 'bg-green-100 text-green-700'
+                                : candidatura.status.toLowerCase() === 'rejeitado'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-yellow-100 text-yellow-700'
+                            }`}
+                          >
+                            {candidatura.status.toUpperCase()}
+                          </span>
+                        </p>
+
+                        {candidatura.status.toLowerCase() === 'rejeitado' &&
+                          candidatura.mensagem && (
+                            <p className="mt-2 text-red-700 italic">
+                              Mensagem do estabelecimento: {candidatura.mensagem}
+                            </p>
+                          )}
+
+                        {candidatura.status.toLowerCase() === 'aprovado' &&
+                          candidatura.contato && (
+                            <p className="mt-2">
+                              📞 <strong>Contato do estabelecimento:</strong> {candidatura.contato}
+                            </p>
+                          )}
+
+                        {candidatura.status.toLowerCase() === 'rejeitado' && (
+                          <button
+                            onClick={() =>
+                              handleExcluirCandidatura(candidatura.id, vaga.id)
+                            }
+                            className="mt-3 bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-1 rounded"
+                          >
+                            Excluir candidatura
+                          </button>
+                        )}
+                      </>
+                    ) : (
                       <button
-                        onClick={() => handleExcluirCandidatura(candidatura.id, vaga.id)}
-                        className="mt-3 bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-1 rounded"
+                        onClick={() => handleCandidatar(vaga)}
+                        className="mt-4 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded transition"
                       >
-                        Excluir candidatura
+                        Candidatar-se
                       </button>
                     )}
                   </>
-                ) : (
-                  <button
-                    onClick={() => handleCandidatar(vaga)}
-                    className="mt-4 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded transition"
-                  >
-                    Candidatar-se
-                  </button>
                 )}
               </div>
             )
