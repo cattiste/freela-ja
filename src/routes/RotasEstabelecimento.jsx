@@ -10,6 +10,8 @@ import PublicarVaga from '../components/gerais/PublicarVaga.jsx'
 import Avaliacao from '../components/gerais/Avaliacao'
 import PublicarEvento from '../pages/gerais/PublicarEvento'
 
+console.log('🔁 Render RotasPublicas')
+
 export const RotasEstabelecimento = ({ usuario }) => (
   <>
     <Route path="/cadastro-estabelecimento" element={<CadastroEstabelecimento />} />

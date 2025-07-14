@@ -12,6 +12,8 @@ import PerfilFreela from '../pages/freelas/PerfilFreela'
 import PerfilEstabelecimento from '../pages/estabelecimentos/PerfilEstabelecimento'
 import PublicarEvento from '../pages/gerais/PublicarEvento'
 
+console.log('🔁 Render RotasPublicas')
+
 export default function RotasPublicas() {
   return (
     <>

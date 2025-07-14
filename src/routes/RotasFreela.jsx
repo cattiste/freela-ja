@@ -10,6 +10,8 @@ import PublicarEvento from '../pages/gerais/PublicarEvento'
 import EventosDisponiveis from '../pages/gerais/EventosDisponiveis'
 import CadastroEvento from '../pages/gerais/CadastroEvento'
 
+console.log('🔁 Render RotasPublicas')
+
 export const RotasFreela = ({ usuario }) => (
   <>
     <Route path="/cadastrofreela" element={<CadastroFreela />} />
