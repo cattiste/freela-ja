@@ -1,9 +1,8 @@
 import React from 'react'
 import { Routes } from 'react-router-dom'
 import { RotasPublicas } from './RotasPublicas'
-import RotaProtegidaFreela from '@/components/protegidas/RotaProtegidaFreela.jsx'
-import RotaProtegidaEstabelecimento from '@/components/protegidas/RotaProtegidaEstabelecimento.jsx'
-
+import { RotasFreela } from './RotasFreela'
+import { RotasEstabelecimento } from './RotasEstabelecimento'
 
 export default function RotasApp({ usuario }) {
   return (
