@@ -31,8 +31,5 @@ export default function App() {
 
   if (carregando) {
     return <div className="text-center mt-20 text-orange-600 font-bold">🔄 Carregando...</div>
-  }
-
-  // ✅ sem BrowserRouter aqui
-  return <RotasApp usuario={usuario} />
+  } 
 }
