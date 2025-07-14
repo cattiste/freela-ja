@@ -2,7 +2,7 @@ import React from 'react'
 import { Route } from 'react-router-dom'
 
 // Páginas públicas
-import Home from '../pages/gerais/Home'
+import Home from '../pages/gerais/Home.jsx'
 import Sobre from '../pages/gerais/Sobre'
 import Cadastro from '../pages/gerais/Cadastro'
 import Login from '../pages/gerais/Login'
