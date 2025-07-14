@@ -1,4 +1,4 @@
-// 📁 src/App.jsx
+// 📄 src/App.jsx
 import React, { useEffect, useState } from 'react'
 import RotasApp from './routes/RotasApp'
 import { onAuthStateChanged } from 'firebase/auth'
@@ -32,5 +32,7 @@ export default function App() {
     return <div className="text-center mt-20 text-orange-600 font-bold">🔄 Carregando...</div>
   }
 
-  return <RotasApp usuario={usuario} />
+  return (
+    <RotasApp usuario={usuario} />
+  )
 }
