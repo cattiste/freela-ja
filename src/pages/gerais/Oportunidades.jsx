@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet'
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useNavigate } from 'react-router-dom'
 import Input from '@/components/ui/Input'
@@ -14,12 +14,18 @@ export default function Oportunidades() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    const q = query(collection(db, 'vagas'), where('status', '==', 'ativo'))
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      setVagas(lista)
-    })
-    return () => unsubscribe()
+    async function carregarVagas() {
+      try {
+        const q = query(collection(db, 'vagas'), where('status', '==', 'ativo'))
+        const snapshot = await getDocs(q)
+        const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        setVagas(lista)
+      } catch (err) {
+        console.error('Erro ao buscar vagas:', err)
+      }
+    }
+
+    carregarVagas()
   }, [])
 
   const filtrarVagas = (vaga) => {

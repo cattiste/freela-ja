@@ -10,7 +10,6 @@ export default function EventosDisponiveis({ freela }) {
   useEffect(() => {
     const buscarDados = async () => {
       try {
-        // Buscar eventos ativos
         const eventosRef = collection(db, 'eventos')
         const qEventos = query(eventosRef, where('ativo', '==', true))
         const snapshotEventos = await getDocs(qEventos)
@@ -20,11 +19,6 @@ export default function EventosDisponiveis({ freela }) {
         }))
         setEventos(listaEventos)
 
-         if (!freela || !freela.uid) {
-           return <p className="text-center text-red-500">⚠️ Usuário não autenticado.</p>
-         }
-
-        // Buscar candidaturas já feitas pelo freela
         if (freela?.uid) {
           const candidaturasRef = collection(db, 'candidaturasEventos')
           const qCandidaturas = query(
@@ -61,7 +55,16 @@ export default function EventosDisponiveis({ freela }) {
     }
   }
 
-  if (carregando) return <p>🔄 Carregando eventos...</p>
+  // ✅ VERIFICAÇÃO ANTES DO RENDER
+  if (!freela || !freela.uid) {
+    return (
+      <p className="text-center text-red-600 mt-10">
+        ⚠️ Acesso não autorizado. Faça login novamente.
+      </p>
+    )
+  }
+
+  if (carregando) return <p className="text-center text-orange-600 mt-10">🔄 Carregando eventos...</p>
 
   return (
     <div className="max-w-full p-4 bg-white rounded-xl shadow">
