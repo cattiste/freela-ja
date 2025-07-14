@@ -10,7 +10,7 @@ import EsqueciSenha from '../pages/gerais/EsqueciSenha'
 import Oportunidades from '../pages/gerais/Oportunidades'
 import PerfilFreela from '../pages/freelas/PerfilFreela'
 import PerfilEstabelecimento from '../pages/estabelecimentos/PerfilEstabelecimento'
-import PublicarEvento from '../pages/PublicarEvento'
+import PublicarEvento from '../pages/gerais/PublicarEvento'
 
 const RotasPublicas = () => (
   <>
