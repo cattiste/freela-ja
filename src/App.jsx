@@ -3,13 +3,13 @@ import { Route } from 'react-router-dom'
 
 // Páginas públicas
 import Home from '../pages/gerais/Home.jsx'
-import Sobre from '../pages/gerais/Sobre'
-import Cadastro from '../pages/gerais/Cadastro'
-import Login from '../pages/gerais/Login'
-import EsqueciSenha from '../pages/gerais/EsqueciSenha'
-import Oportunidades from '../pages/gerais/Oportunidades'
-import PerfilFreela from '../pages/freelas/PerfilFreela'
-import PerfilEstabelecimento from '../pages/estabelecimentos/PerfilEstabelecimento'
+import Sobre from '../pages/gerais/Sobre.jsx'
+import Cadastro from '../pages/gerais/Cadastro.jsx'
+import Login from '../pages/gerais/Login.jsx'
+import EsqueciSenha from '../pages/gerais/EsqueciSenha.jsx'
+import Oportunidades from '../pages/gerais/Oportunidades.jsx'
+import PerfilFreela from '../pages/freelas/PerfilFreela.jsx'
+import PerfilEstabelecimento from '../pages/estabelecimentos/PerfilEstabelecimento.jsx'
 
 const RotasPublicas = () => (
   <>
