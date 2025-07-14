@@ -7,7 +7,7 @@ import CadastroEstabelecimento from '../pages/estabelecimentos/CadastroEstabelec
 import EditarPerfilEstabelecimento from '../pages/estabelecimentos/EditarPerfilEstabelecimento'
 import PainelEstabelecimento from '../pages/estabelecimentos/PainelEstabelecimento'
 import PublicarVaga from '../components/gerais/PublicarVaga.jsx'
-import Avaliacao from '../pages/gerais/Avaliacao'
+import Avaliacao from '../components/gerais/Avaliacao'
 
 export const RotasEstabelecimento = ({ usuario }) => (
   <>

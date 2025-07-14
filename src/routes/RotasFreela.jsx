@@ -1,7 +1,6 @@
 import React from 'react'
 import { Route } from 'react-router-dom'
 import RotaProtegidaFreela from '../components/protegidas/RotaProtegidaFreela.jsx'
-
 import CadastroFreela from '../pages/freelas/CadastroFreela'
 import EditarFreela from '../pages/freelas/EditarFreela'
 import PainelFreela from '../pages/freelas/PainelFreela'
