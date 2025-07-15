@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
-import Chat from '@/pages/freelas/Chat'
+import Chat from '@/pages/Chat'
 import AvaliacaoEstabelecimento from './AvaliacaoEstabelecimento'
 
 export default function ChamadaInline({ chamada, onAtualizar }) {

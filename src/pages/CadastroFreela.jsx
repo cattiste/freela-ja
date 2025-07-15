@@ -1,4 +1,4 @@
-// 📄 src/pages/estabelecimentos/CadastroEstabelecimento.jsx
+// 📄 src/pages/CadastroFreela.jsx
 import React, { useState } from 'react'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { doc, setDoc, GeoPoint, serverTimestamp } from 'firebase/firestore'
@@ -9,12 +9,8 @@ import { auth, db } from '@/firebase'
 const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dbemvuau3/image/upload'
 const UPLOAD_PRESET = 'preset-publico'
 
-function validateEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-}
-
-function validateCNPJ(cnpj) {
-  return /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(cnpj)
+function validateCPF(cpf) {
+  return /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf)
 }
 
 async function uploadImage(file) {
@@ -31,34 +27,33 @@ async function uploadImage(file) {
   return data.secure_url
 }
 
-export default function CadastroEstabelecimento() {
+export default function CadastroFreela() {
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [celular, setCelular] = useState('')
-  const [cnpj, setCnpj] = useState('')
   const [endereco, setEndereco] = useState('')
+  const [funcao, setFuncao] = useState('')
+  const [especialidades, setEspecialidades] = useState('')
+  const [valorDiaria, setValorDiaria] = useState('')
+  const [cpf, setCpf] = useState('')
   const [foto, setFoto] = useState(null)
   const [fotoPreview, setFotoPreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-
   const navigate = useNavigate()
 
   const handleCadastro = async (e) => {
     e.preventDefault()
     setError(null)
 
-    if (!nome || !email || !senha || !celular || !cnpj || !endereco) {
+    if (!nome || !email || !senha || !celular || !endereco || !funcao || !especialidades || !valorDiaria || !cpf) {
       setError('Preencha todos os campos obrigatórios.')
       return
     }
-    if (!validateEmail(email)) {
-      setError('Email inválido.')
-      return
-    }
-    if (!validateCNPJ(cnpj)) {
-      setError('CNPJ inválido. Formato esperado: 00.000.000/0000-00')
+
+    if (!validateCPF(cpf)) {
+      setError('CPF inválido. Formato esperado: 000.000.000-00')
       return
     }
 
@@ -70,28 +65,29 @@ export default function CadastroEstabelecimento() {
         fotoUrl = await uploadImage(foto)
       }
 
-      const userCredential = await createUserWithEmailAndPassword(auth, email, senha)
-      const usuario = userCredential.user
+      const usuarioCredential = await createUserWithEmailAndPassword(auth, email, senha)
+      const usuario = usuarioCredential.user
 
-      const geo = new GeoPoint(-23.55052, -46.633308) // Posição padrão SP
+      const geo = new GeoPoint(-23.55052, -46.633308) // SP padrão
 
-      const usuarioData = {
+      await setDoc(doc(db, 'usuarios', usuario.uid), {
         uid: usuario.uid,
         nome,
         email,
         celular,
-        cnpj,
         endereco,
-        tipo: 'estabelecimento',
-        localizacao: geo,
+        funcao,
+        especialidades,
+        valorDiaria: parseFloat(valorDiaria),
+        cpf,
+        tipo: 'freela',
+        foto: fotoUrl,
         criadoEm: serverTimestamp(),
-        ...(fotoUrl && { foto: fotoUrl })
-      }
-
-      await setDoc(doc(db, 'usuarios', usuario.uid), usuarioData)
+        localizacao: geo
+      })
 
       alert('Cadastro realizado com sucesso!')
-      navigate('/login')
+      navigate('/painelfreela')
     } catch (err) {
       console.error('Erro no cadastro:', err)
       setError(err.message || 'Erro desconhecido')
@@ -101,10 +97,10 @@ export default function CadastroEstabelecimento() {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-20 p-6 bg-white rounded-2xl shadow-xl">
-      <h1 className="text-2xl font-bold mb-6 text-center text-orange-600">Cadastro Estabelecimento</h1>
+    <div className="max-w-md mx-auto mt-16 p-6 bg-white rounded-2xl shadow-xl">
+      <h1 className="text-2xl font-bold mb-6 text-center text-orange-600">Cadastro Freelancer</h1>
 
-      <form onSubmit={handleCadastro} className="flex flex-col gap-4">
+      <form onSubmit={handleCadastro} className="flex flex-col gap-4" noValidate>
         <input type="text" placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} className="input-field" required />
         <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" required />
         <input type="password" placeholder="Senha" value={senha} onChange={e => setSenha(e.target.value)} className="input-field" required />
@@ -113,21 +109,23 @@ export default function CadastroEstabelecimento() {
           {(inputProps) => <input {...inputProps} type="tel" placeholder="Celular" className="input-field" required />}
         </InputMask>
 
-        <InputMask mask="99.999.999/9999-99" value={cnpj} onChange={e => setCnpj(e.target.value)}>
-          {(inputProps) => <input {...inputProps} type="text" placeholder="CNPJ" className="input-field" required />}
+        <InputMask mask="999.999.999-99" value={cpf} onChange={e => setCpf(e.target.value)}>
+          {(inputProps) => <input {...inputProps} type="text" placeholder="CPF" className="input-field" required />}
         </InputMask>
 
         <input type="text" placeholder="Endereço" value={endereco} onChange={e => setEndereco(e.target.value)} className="input-field" required />
+        <input type="text" placeholder="Função" value={funcao} onChange={e => setFuncao(e.target.value)} className="input-field" required />
+        <input type="text" placeholder="Especialidades" value={especialidades} onChange={e => setEspecialidades(e.target.value)} className="input-field" required />
+        <input type="number" placeholder="Valor da diária" value={valorDiaria} onChange={e => setValorDiaria(e.target.value)} className="input-field" required />
 
-        <input type="file" accept="image/*" onChange={(e) => {
+        <input type="file" accept="image/*" onChange={e => {
           const file = e.target.files[0]
           setFoto(file)
           setFotoPreview(URL.createObjectURL(file))
         }} />
 
-        {fotoPreview && <img src={fotoPreview} alt="Preview" className="mt-2 rounded-lg border shadow w-32 h-32 object-cover" />}
-
-        {error && <p className="text-red-600 text-sm">{error}</p>}
+        {fotoPreview && <img src={fotoPreview} alt="Preview" className="w-32 h-32 rounded-lg object-cover" />}
+        {error && <p className="text-red-600 text-center">{error}</p>}
 
         <button type="submit" disabled={loading} className="btn-primary">
           {loading ? 'Cadastrando...' : 'Cadastrar'}

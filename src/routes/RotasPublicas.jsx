@@ -8,8 +8,8 @@ import Cadastro from '../pages/gerais/Cadastro'
 import Login from '../pages/gerais/Login'
 import EsqueciSenha from '../pages/gerais/EsqueciSenha'
 import Oportunidades from '../pages/gerais/Oportunidades'
-import PerfilFreela from '../pages/freelas/PerfilFreela'
-import PerfilEstabelecimento from '../pages/estabelecimentos/PerfilEstabelecimento'
+import PerfilFreela from '../pages/PerfilFreela'
+import PerfilEstabelecimento from '../pages/PerfilEstabelecimento'
 import PublicarEvento from '../pages/gerais/PublicarEvento'
 
 console.log('🔁 Render RotasPublicas')

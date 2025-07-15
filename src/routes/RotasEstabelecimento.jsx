@@ -3,9 +3,9 @@ import { Route } from 'react-router-dom'
 import RotaProtegidaEstabelecimento from '../components/protegidas/RotaProtegidaEstabelecimento.jsx'
 
 
-import CadastroEstabelecimento from '../pages/estabelecimentos/CadastroEstabelecimento'
-import EditarPerfilEstabelecimento from '../pages/estabelecimentos/EditarPerfilEstabelecimento'
-import PainelEstabelecimento from '../pages/estabelecimentos/PainelEstabelecimento'
+import CadastroEstabelecimento from '../pages/CadastroEstabelecimento'
+import EditarPerfilEstabelecimento from '../pages/EditarPerfilEstabelecimento'
+import PainelEstabelecimento from '../pages/PainelEstabelecimento'
 import PublicarVaga from '../components/gerais/PublicarVaga.jsx'
 import Avaliacao from '../components/gerais/Avaliacao'
 import PublicarEvento from '../pages/gerais/PublicarEvento'
