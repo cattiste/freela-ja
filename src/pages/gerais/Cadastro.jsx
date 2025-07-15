@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { import { createUserWithEmailAndPassword } from 'firebase/auth' } from 'firebase/auth'
+import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { collection, addDoc } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
@@ -19,8 +19,8 @@ export default function Cadastro() {
     setError(null)
 
     try {
-      const usuarioCredential = await import { createUserWithEmailAndPassword } from 'firebase/auth'(auth, email, senha)
-      const usuario = usuarioCredential.usuario
+      const userCredential = await import { createUserWithEmailAndPassword } from 'firebase/auth'(auth, email, senha)
+      const usuario = userCredential.usuario
 
       await addDoc(collection(db, 'usuarios'), {
         uid: usuario.uid,
