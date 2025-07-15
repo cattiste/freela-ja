@@ -19,7 +19,7 @@ export default function Cadastro() {
     setError(null)
 
     try {
-      const userCredential = await import { createUserWithEmailAndPassword } from 'firebase/auth'(auth, email, senha)
+      const userCredential = await createUserWithEmailAndPassword(auth, email, senha)
       const usuario = userCredential.user
 
       await addDoc(collection(db, 'usuarios'), {
