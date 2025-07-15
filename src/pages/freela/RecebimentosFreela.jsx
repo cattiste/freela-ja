@@ -1,8 +1,10 @@
+// src/pages/freela/RecebimentosFreela.jsx
 import React, { useEffect, useState } from 'react'
 import { auth, db } from '@/firebase'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
 
 export default function RecebimentosFreela() {
+  const usuario = auth.currentUser  // corrige aqui
   const [form, setForm] = useState({
     nomeTitular: '',
     cpf: '',
@@ -15,11 +17,13 @@ export default function RecebimentosFreela() {
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
 
-  const usuario = auth.currentusuario
-
   useEffect(() => {
-    if (!usuario) return
-    const fetch = async () => {
+    // se não tiver usuário, para o loading
+    if (!usuario) {
+      setCarregando(false)
+      return
+    }
+    const fetchDados = async () => {
       try {
         const ref = doc(db, 'usuarios', usuario.uid)
         const snap = await getDoc(ref)
@@ -41,7 +45,7 @@ export default function RecebimentosFreela() {
         setCarregando(false)
       }
     }
-    fetch()
+    fetchDados()
   }, [usuario])
 
   const handleChange = e => {
@@ -64,7 +68,9 @@ export default function RecebimentosFreela() {
     }
   }
 
-  if (carregando) return <p className="text-center text-orange-500">Carregando dados...</p>
+  if (carregando) {
+    return <p className="text-center text-orange-500">Carregando dados...</p>
+  }
 
   return (
     <div className="max-w-xl mx-auto bg-white p-6 rounded-lg shadow space-y-5">

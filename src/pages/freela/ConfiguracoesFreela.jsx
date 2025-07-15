@@ -6,13 +6,19 @@ import { useNavigate } from 'react-router-dom'
 
 export default function ConfiguracoesFreela() {
   const navigate = useNavigate()
-  const usuario = auth.currentusuario
+
+  // pega o usuário corretamente:
+  const usuario = auth.currentUser 
   const [config, setConfig] = useState({
     notificacoes: true,
     visibilidadePerfil: true,
     chamadasAutomaticas: false
   })
-  const [infoConta, setInfoConta] = useState({})
+  const [infoConta, setInfoConta] = useState({
+    email: '',
+    uid: '',
+    criadoEm: ''
+  })
   const [salvando, setSalvando] = useState(false)
 
   useEffect(() => {
@@ -30,15 +36,14 @@ export default function ConfiguracoesFreela() {
         setInfoConta({
           email: usuario.email,
           uid: usuario.uid,
-          criadoEm: usuario.metadata.creationTime
+          criadoEm: usuario.metadata?.creationTime || ''
         })
       }
     }
     fetchDados()
   }, [usuario])
 
-  const handleToggle = (e) => {
-    const { name, checked } = e.target
+  const handleToggle = ({ target: { name, checked } }) => {
     setConfig(prev => ({ ...prev, [name]: checked }))
   }
 
@@ -49,32 +54,34 @@ export default function ConfiguracoesFreela() {
       await updateDoc(doc(db, 'usuarios', usuario.uid), config)
       alert('Configurações salvas!')
     } catch (err) {
-      alert('Erro ao salvar.')
       console.error(err)
+      alert('Erro ao salvar.')
     }
     setSalvando(false)
   }
 
   const redefinirSenha = async () => {
+    if (!usuario) return
     try {
       await sendPasswordResetEmail(auth, usuario.email)
       alert('E-mail de redefinição enviado!')
     } catch (err) {
-      alert('Erro ao enviar e-mail.')
       console.error(err)
+      alert('Erro ao enviar e-mail.')
     }
   }
 
   const excluirConta = async () => {
-    if (!window.confirm('Tem certeza que deseja excluir sua conta? Esta ação é irreversível.')) return
+    if (!usuario) return
+    if (!window.confirm('Tem certeza? Ação irreversível.')) return
     try {
       await deleteDoc(doc(db, 'usuarios', usuario.uid))
       await usuario.delete()
       alert('Conta excluída.')
       navigate('/login')
     } catch (err) {
-      alert('Erro ao excluir conta. Faça login recente para confirmar.')
       console.error(err)
+      alert('Erro ao excluir conta. Faça login recente para confirmar.')
     }
   }
 
@@ -91,25 +98,32 @@ export default function ConfiguracoesFreela() {
       {/* Preferências */}
       <div>
         <h3 className="text-lg font-semibold mb-2">Preferências</h3>
-        <label className="flex items-center gap-3 mb-2">
-          <input type="checkbox" name="notificacoes" checked={config.notificacoes} onChange={handleToggle} />
-          <span>Receber notificações por e-mail</span>
-        </label>
-        <label className="flex items-center gap-3 mb-2">
-          <input type="checkbox" name="visibilidadePerfil" checked={config.visibilidadePerfil} onChange={handleToggle} />
-          <span>Perfil visível para estabelecimentos</span>
-        </label>
-        <label className="flex items-center gap-3 mb-2">
-          <input type="checkbox" name="chamadasAutomaticas" checked={config.chamadasAutomaticas} onChange={handleToggle} />
-          <span>Aceitar chamadas automáticas</span>
-        </label>
+        {['notificacoes','visibilidadePerfil','chamadasAutomaticas'].map(name => (
+          <label key={name} className="flex items-center gap-3 mb-2">
+            <input
+              type="checkbox"
+              name={name}
+              checked={config[name]}
+              onChange={handleToggle}
+            />
+            <span>
+              {{
+                notificacoes: 'Receber notificações por e-mail',
+                visibilidadePerfil: 'Perfil visível para estabelecimentos',
+                chamadasAutomaticas: 'Aceitar chamadas automáticas'
+              }[name]}
+            </span>
+          </label>
+        ))}
       </div>
 
       {/* Segurança */}
       <div>
         <h3 className="text-lg font-semibold mb-2">Segurança</h3>
         <p className="text-sm mb-2">E-mail: {infoConta.email}</p>
-        <button onClick={redefinirSenha} className="text-blue-600 hover:underline">Redefinir senha</button>
+        <button onClick={redefinirSenha} className="text-blue-600 hover:underline">
+          Redefinir senha
+        </button>
       </div>
 
       {/* Conta */}
@@ -117,7 +131,9 @@ export default function ConfiguracoesFreela() {
         <h3 className="text-lg font-semibold mb-2">Conta</h3>
         <p className="text-sm text-gray-600">UID: {infoConta.uid}</p>
         <p className="text-sm text-gray-600 mb-2">Criada em: {infoConta.criadoEm}</p>
-        <button onClick={excluirConta} className="text-red-600 hover:underline">Excluir minha conta</button>
+        <button onClick={excluirConta} className="text-red-600 hover:underline">
+          Excluir minha conta
+        </button>
       </div>
 
       {/* Ações */}
@@ -129,7 +145,9 @@ export default function ConfiguracoesFreela() {
         >
           {salvando ? 'Salvando...' : 'Salvar alterações'}
         </button>
-        <button onClick={sair} className="bg-gray-300 text-gray-800 px-4 py-2 rounded">Sair</button>
+        <button onClick={sair} className="bg-gray-300 text-gray-800 px-4 py-2 rounded">
+          Sair
+        </button>
       </div>
     </div>
   )
