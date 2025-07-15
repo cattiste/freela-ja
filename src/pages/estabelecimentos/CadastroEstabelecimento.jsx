@@ -70,8 +70,8 @@ export default function CadastroEstabelecimento() {
         fotoUrl = await uploadImage(foto)
       }
 
-      const usuarioCredential = await import { createUserWithEmailAndPassword } from 'firebase/auth'(auth, email, senha)
-      const usuario = usuarioCredential.usuario
+      const userCredential = await import { createUserWithEmailAndPassword } from 'firebase/auth'(auth, email, senha)
+      const usuario = userCredential.usuario
 
       const geo = new GeoPoint(-23.55052, -46.633308) // SP default
 
@@ -95,7 +95,7 @@ export default function CadastroEstabelecimento() {
       navigate('/login')
     } catch (err) {
       console.error('Erro no cadastro:', err)
-      if (auth.currentusuario) await auth.currentusuario.delete()
+      if (auth.currentusuer) await auth.currentuser.delete()
       setError(err.message || 'Erro desconhecido')
     } finally {
       setLoading(false)
