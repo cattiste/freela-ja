@@ -17,6 +17,7 @@ import PainelEstabelecimento from '@/pages/PainelEstabelecimento'
 import CadastroFreela from '@/pages/freela/CadastroFreela'
 import PainelFreela from '@/pages/freela/PainelFreela'
 import PerfilFreela from '@/pages/freela/PerfilFreela'
+import Avaliacao from '@/pages/gerais/Avaliacao'
 
 export default function App() {
   const [usuario, setUsuario] = useState(null)
@@ -62,6 +63,7 @@ export default function App() {
         <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
         <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
         <Route path="/publicarevento" element={<PublicarEvento />} />
+        <Route path="/avaliar/:tipo/:id" element={<Avaliacao />} />
         {/* Painel freelancer com parâmetro opcional */}
         <Route
           path="/painelfreela/:rota?"

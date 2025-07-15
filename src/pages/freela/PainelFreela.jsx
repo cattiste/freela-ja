@@ -1,3 +1,4 @@
+// src/pages/freela/PainelFreela.jsx
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { auth, db } from '@/firebase'
@@ -10,8 +11,7 @@ import {
   doc,
   updateDoc,
   serverTimestamp,
-  getDoc,
-  addDoc
+  getDoc
 } from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
 
@@ -21,6 +21,7 @@ import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
 import PerfilFreela from '@/pages/freela/PerfilFreela'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
+import Avaliacao from '@/pages/gerais/Avaliacao'
 import Chat from '@/pages/Chat'
 
 export default function PainelFreela() {
@@ -35,19 +36,19 @@ export default function PainelFreela() {
   useEffect(() => {
     let unsubscribeChamadas = null
 
-    const unsubscribeAuth = onAuthStateChanged(auth, async (usuario) => {
-      if (usuario) {
-        const docRef = doc(db, 'usuarios', usuario.uid)
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const docRef = doc(db, 'usuarios', user.uid)
         try {
           const snap = await getDoc(docRef)
           if (snap.exists() && snap.data().tipo === 'freela') {
-            const usuarioData = { uid: usuario.uid, ...snap.data() }
+            const usuarioData = { uid: user.uid, ...snap.data() }
             setUsuario(usuarioData)
 
             unsubscribeChamadas = onSnapshot(
-              query(collection(db, 'chamadas'), where('freelaUid', '==', usuario.uid)),
+              query(collection(db, 'chamadas'), where('freelaUid', '==', user.uid)),
               (snapshot) => {
-                setChamadas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+                setChamadas(snapshot.docs.map(d => ({ id: d.id, ...d.data() })))
               }
             )
 
@@ -68,7 +69,7 @@ export default function PainelFreela() {
       unsubscribeAuth()
       if (unsubscribeChamadas) unsubscribeChamadas()
     }
-  }, [])
+  }, [navigate])
 
   useEffect(() => {
     if (!usuario?.uid) return
@@ -116,62 +117,15 @@ export default function PainelFreela() {
       case 'configuracoes':
         return <ConfiguracoesFreela freela={usuario} />
       case 'avaliar-estabelecimento': {
-        const chamadaParaAvaliar = chamadas.find(
-          c => c.checkOutFreela && !c.avaliacaoFreelaFeita
-        )
-        return chamadaParaAvaliar ? (
-          <div className="p-4 border rounded">
-            <h3 className="text-lg font-semibold mb-2">📝 Avalie o estabelecimento</h3>
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault()
-                const form = e.target
-                const nota = parseInt(form.nota.value)
-                const comentario = form.comentario.value
-                try {
-                  await addDoc(collection(db, 'avaliacoesEstabelecimentos'), {
-                    chamadaId: chamadaParaAvaliar.id,
-                    freelaUid: usuario.uid,
-                    estabelecimentoUid: chamadaParaAvaliar.estabelecimentoUid,
-                    nota,
-                    comentario,
-                    dataCriacao: serverTimestamp()
-                  })
-                  await updateDoc(doc(db, 'chamadas', chamadaParaAvaliar.id), {
-                    avaliacaoFreelaFeita: true
-                  })
-                  toast.success('Avaliação enviada com sucesso!')
-                } catch (err) {
-                  toast.error('Erro ao enviar avaliação.')
-                  console.error(err)
-                }
-              }}
-              className="flex flex-col gap-2"
-            >
-              <label>
-                Nota:
-                <select name="nota" className="ml-2 border p-1 rounded" defaultValue="5">
-                  {[1, 2, 3, 4, 5].map(n => (
-                    <option key={n} value={n}>{n}</option>
-                  ))}
-                </select>
-              </label>
-              <textarea
-                name="comentario"
-                placeholder="Comentário"
-                className="border p-2 rounded"
-                required
-              />
-              <button
-                type="submit"
-                className="bg-blue-600 text-white px-4 py-2 rounded"
-              >
-                Enviar Avaliação
-              </button>
-            </form>
-          </div>
-        ) : (
-          <p className="text-center text-gray-600 mt-4">Nenhuma avaliação pendente.</p>
+        const chamada = chamadas.find(c => c.checkOutFreela && !c.avaliacaoFreelaFeita)
+        if (!chamada) {
+          return <p className="text-center text-gray-600 mt-4">Nenhuma avaliação pendente.</p>
+        }
+        return (
+          <Avaliacao
+            tipo="estabelecimento"
+            id={chamada.estabelecimentoUid}
+          />
         )
       }
       default:
@@ -227,7 +181,7 @@ export default function PainelFreela() {
                 <button
                   onClick={() => navigate(`/painelfreela/${key}`)}
                   className={`px-4 py-2 border-b-2 font-semibold transition ${
-                    (rota || 'perfil') === key
+                    rotaFinal === key
                       ? 'border-orange-600 text-orange-600'
                       : 'border-transparent text-orange-400 hover:text-orange-600 hover:border-orange-400'
                   }`}
