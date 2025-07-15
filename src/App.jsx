@@ -50,31 +50,21 @@ export default function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/sobre" element={<Sobre />} />
-        <Route path="/cadastrofreela" element={<CadastroFreela />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/esquecisenha" element={<EsqueciSenha />} />
-        <Route path="/oportunidades" element={<Oportunidades />} />
-        <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
-        <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
-        <Route path="/publicarevento" element={<PublicarEvento />} />
-        <Route path="/painelfreela/:rota" element={<PainelFreela freela={usuario} />} />
-        <Route path="/painelestabelecimento" element={<PainelEstabelecimento usuario={usuario} />} />
-      </Routes>
-    </BrowserRouter>
-    <BrowserRouter>
-       <Routes>
-        {/* ...outras rotas */}
-        <Route path="/cadastrofreela" element={<CadastroFreela />} />
-        <Route path="/login" element={<Login />} />
-        {/* painel freela COM parâmetro opcional */}
-        <Route path="/painelfreela/:rota?" element={<PainelFreela freela={usuario} />} />
-        <Route path="/painelestabelecimento" element={<PainelEstabelecimento usuario={usuario} />} />
-      </Routes>
-    </BrowserRouter>
-  )
-}
+  <BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/home" element={<Home />} />
+      <Route path="/sobre" element={<Sobre />} />
+      <Route path="/cadastrofreela" element={<CadastroFreela />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/esquecisenha" element={<EsqueciSenha />} />
+      <Route path="/oportunidades" element={<Oportunidades />} />
+      <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
+      <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
+      <Route path="/publicarevento" element={<PublicarEvento />} />
+      {/* painel freela COM parâmetro opcional */}
+      <Route path="/painelfreela/:rota?" element={<PainelFreela freela={usuario} />} />
+      <Route path="/painelestabelecimento" element={<PainelEstabelecimento usuario={usuario} />} />
+    </Routes>
+  </BrowserRouter>
+)
