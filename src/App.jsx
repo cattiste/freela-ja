@@ -8,15 +8,16 @@ import { doc, getDoc } from 'firebase/firestore'
 // Páginas
 import Home from '@/pages/gerais/Home'
 import Sobre from '@/pages/gerais/Sobre'
-import CadastroFreela from './freela/CadastroFreela'
 import Login from '@/pages/gerais/Login'
 import EsqueciSenha from '@/pages/gerais/EsqueciSenha'
 import Oportunidades from '@/pages/gerais/Oportunidades'
-import PerfilFreela from './freela/PerfilFreela'
 import PerfilEstabelecimento from '@/pages/PerfilEstabelecimento'
 import PublicarEvento from '@/pages/gerais/PublicarEvento'
 import PainelEstabelecimento from '@/pages/PainelEstabelecimento'
-import PainelFreela from './freela/PainelFreela'
+import CadastroFreela from '@/pages/freela/CadastroFreela'
+import PainelFreela from '@/pages/freela/PainelFreela'
+import PerfilFreela from '@/pages/freela/PerfilFreela'
+
 
 // Se quiser usar rotas agrupadas no futuro:
 // import { RotasPublicas } from './routes/RotasPublicas'
