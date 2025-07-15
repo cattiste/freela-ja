@@ -12,7 +12,7 @@ console.log('🔁 Render RotasPublicas')
 
 export const RotasEstabelecimento = ({ usuario }) => (
   <>
-    <Route path="/cadastro-estabelecimento" element={<CadastroEstabelecimento />} />
+    <Route path="/cadastroestabelecimento" element={<CadastroEstabelecimento />} />
     <Route path="/editarperfilestabelecimento" element={<EditarPerfilEstabelecimento />} />
     <Route path="/avaliacao/:tipo/:id" element={<Avaliacao />} />
 

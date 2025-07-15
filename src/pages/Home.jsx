@@ -22,7 +22,7 @@ export default function Home() {
         </Link>
 
         <Link
-          to="/cadastro-estabelecimento"
+          to="/cadastroestabelecimento"
           className="px-6 py-3 rounded-lg text-white font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200"
         >
           Estabelecimento
