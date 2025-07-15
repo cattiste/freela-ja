@@ -17,7 +17,9 @@ import PerfilEstabelecimento from '@/pages/PerfilEstabelecimento'
 import PublicarEvento from '@/pages/gerais/PublicarEvento'
 import PainelFreela from '@/pages/PainelFreela'
 import PainelEstabelecimento from '@/pages/PainelEstabelecimento'
-import { RotasPublicas } from './routes/RotasPublicas'
+
+// Se quiser usar rotas agrupadas no futuro:
+// import { RotasPublicas } from './routes/RotasPublicas'
 
 export default function App() {
   const [usuario, setUsuario] = useState(null)
@@ -49,6 +51,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
         <Route path="/sobre" element={<Sobre />} />
         <Route path="/cadastro" element={<Cadastro />} />
@@ -60,11 +63,6 @@ export default function App() {
         <Route path="/publicarevento" element={<PublicarEvento />} />
         <Route path="/painelfreela" element={<PainelFreela freela={usuario} />} />
         <Route path="/painelestabelecimento" element={<PainelEstabelecimento usuario={usuario} />} />
-      </Routes>
-
-      <Routes>
-        <RotasPublicas />
-        {/* Depois colocamos as RotasFreela e Estabelecimento aqui */}
       </Routes>
     </BrowserRouter>
   )
