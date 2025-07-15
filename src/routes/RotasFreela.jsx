@@ -1,14 +1,14 @@
 import React from 'react'
 import { Route } from 'react-router-dom'
-import RotaProtegidaFreela from '../components/protegidas/RotaProtegidaFreela.jsx'
-import CadastroFreela from '../pages/CadastroFreela'
-import EditarFreela from '../pages/EditarFreela'
-import PainelFreela from '../pages/PainelFreela'
-import PerfilFreela from '../pages/PerfilFreela'
-import VagasDisponiveis from '../pages/gerais/VagasDisponiveis'
-import PublicarEvento from '../pages/gerais/PublicarEvento'
-import EventosDisponiveis from '../pages/gerais/EventosDisponiveis'
-import CadastroEvento from '../pages/gerais/CadastroEvento'
+import RotaProtegidaFreela from '@/components/protegidas/RotaProtegidaFreela.jsx'
+import CadastroFreela from '@/pages/CadastroFreela'
+import EditarFreela from '@/pages/EditarFreela'
+import PainelFreela from '@/pages/PainelFreela'
+import PerfilFreela from '@/pages/PerfilFreela'
+import VagasDisponiveis from '@/pages/gerais/VagasDisponiveis'
+import PublicarEvento from '@/pages/gerais/PublicarEvento'
+import EventosDisponiveis from '@/pages/gerais/EventosDisponiveis'
+import CadastroEvento from '@/pages/gerais/CadastroEvento'
 
 console.log('🔁 Render RotasPublicas')
 
