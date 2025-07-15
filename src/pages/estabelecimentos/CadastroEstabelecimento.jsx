@@ -1,6 +1,6 @@
 // CadastroEstabelecimento.jsx
 import React, { useState } from 'react'
-import { createusuarioWithEmailAndPassword } from 'firebase/auth'
+import { import { createUserWithEmailAndPassword } from 'firebase/auth' } from 'firebase/auth'
 import { doc, setDoc, GeoPoint, serverTimestamp } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import InputMask from 'react-input-mask'
@@ -70,7 +70,7 @@ export default function CadastroEstabelecimento() {
         fotoUrl = await uploadImage(foto)
       }
 
-      const usuarioCredential = await createusuarioWithEmailAndPassword(auth, email, senha)
+      const usuarioCredential = await import { createUserWithEmailAndPassword } from 'firebase/auth'(auth, email, senha)
       const usuario = usuarioCredential.usuario
 
       const geo = new GeoPoint(-23.55052, -46.633308) // SP default
