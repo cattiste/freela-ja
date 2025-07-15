@@ -4,9 +4,8 @@ import RotasPublicas from './RotasPublicas'
 import { RotasFreela } from './RotasFreela'
 import { RotasEstabelecimento } from './RotasEstabelecimento'
 
-console.log('Renderizando RotasApp com usuario:', usuario)
-
 export default function RotasApp({ usuario }) {
+  console.log('Renderizando RotasApp com usuario:', usuario)
   return (
     <Routes>
       <RotasPublicas />
