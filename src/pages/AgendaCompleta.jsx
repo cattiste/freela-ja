@@ -1,7 +1,7 @@
 import React from 'react'
 import AgendaFreela from './AgendaFreela'
-import VagasDisponiveis from '@/gerais/VagasDisponiveis'
-import EventosDisponiveis from '@/gerais/EventosDisponiveis'
+import VagasDisponiveis from '@/pages/gerais/VagasDisponiveis'
+import EventosDisponiveis from '@/pages/gerais/EventosDisponiveis'
 
 export default function AgendaCompleta({ freela }) {
   return (
