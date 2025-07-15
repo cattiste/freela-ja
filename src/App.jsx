@@ -62,7 +62,7 @@ export default function App() {
         <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
         <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
         <Route path="/publicarevento" element={<PublicarEvento />} />
-        <Route path="/painelfreela" element={<PainelFreela freela={usuario} />} />
+        <Route path="/painelfreela/:rota" element={<PainelFreela freela={usuario} />} />
         <Route path="/painelestabelecimento" element={<PainelEstabelecimento usuario={usuario} />} />
       </Routes>
     </BrowserRouter>

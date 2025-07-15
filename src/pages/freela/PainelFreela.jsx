@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { auth, db } from '@/firebase'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import {
@@ -23,10 +23,9 @@ import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import Chat from '@/pages/Chat'
 
-
 export default function PainelFreela() {
   const navigate = useNavigate()
-  const location = useLocation()
+  const { rota } = useParams()
   const [usuario, setUsuario] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [chamadas, setChamadas] = useState([])
@@ -92,44 +91,10 @@ export default function PainelFreela() {
     navigate('/login')
   }
 
-  const rota = location.pathname.split('/')[2] || 'perfil'
-
-  const fazerCheckin = async () => {
-    const chamada = chamadas.find(c => c.status === 'aceita' && !c.checkInFreela)
-    if (!chamada) return toast.error('Nada para check-in.')
-    setLoadingCheckin(true)
-    try {
-      await updateDoc(doc(db, 'chamadas', chamada.id), {
-        checkInFreela: true,
-        checkInHora: serverTimestamp()
-      })
-      toast.success('Check-in realizado!')
-    } catch (err) {
-      console.error(err)
-      toast.error('Erro no check-in.')
-    }
-    setLoadingCheckin(false)
-  }
-
-  const fazerCheckout = async () => {
-    const chamada = chamadas.find(c => c.status === 'aceita' && c.checkInFreela && !c.checkOutFreela)
-    if (!chamada) return toast.error('Nada para check-out.')
-    setLoadingCheckout(true)
-    try {
-      await updateDoc(doc(db, 'chamadas', chamada.id), {
-        checkOutFreela: true,
-        checkOutHora: serverTimestamp()
-      })
-      toast.success('Check-out realizado! Aguarde a avaliação.')
-    } catch (err) {
-      console.error(err)
-      toast.error('Erro no check-out.')
-    }
-    setLoadingCheckout(false)
-  }
-
   const renderConteudo = () => {
-    switch (rota) {
+    const rotaFinal = rota || 'perfil'
+
+    switch (rotaFinal) {
       case 'perfil':
         return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
       case 'agenda':
@@ -262,7 +227,7 @@ export default function PainelFreela() {
                 <button
                   onClick={() => navigate(`/painelfreela/${key}`)}
                   className={`px-4 py-2 border-b-2 font-semibold transition ${
-                    rota === key
+                    (rota || 'perfil') === key
                       ? 'border-orange-600 text-orange-600'
                       : 'border-transparent text-orange-400 hover:text-orange-600 hover:border-orange-400'
                   }`}
