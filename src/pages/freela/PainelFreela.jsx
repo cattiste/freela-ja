@@ -104,7 +104,7 @@ export default function PainelFreela() {
       case 'historico':
         return <HistoricoChamadasFreela freelaUid={usuario.uid} />
       case 'recebimentos':
-        return <RecebimentosFreela />
+        return <RecebimentosFreela freela={usuario} />
       case 'chat': {
         const chamadaAtiva = chamadas.find(c => c.status === 'aceita')
         return chamadaAtiva ? (
@@ -114,7 +114,7 @@ export default function PainelFreela() {
         )
       }
       case 'configuracoes':
-        return <ConfiguracoesFreela />
+        return <ConfiguracoesFreela freela={usuario} />
       case 'avaliar-estabelecimento': {
         const chamadaParaAvaliar = chamadas.find(
           c => c.checkOutFreela && !c.avaliacaoFreelaFeita
