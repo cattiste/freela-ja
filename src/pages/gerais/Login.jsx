@@ -19,7 +19,7 @@ export default function Login() {
 
     try {
       const credenciais = await signInWithEmailAndPassword(auth, email, senha)
-      const usuario = credenciais.usuario
+      const usuario = credenciais.user
       const docRef = doc(db, 'usuarios', usuario.uid)
       const docSnap = await getDoc(docRef)
 
@@ -28,10 +28,10 @@ export default function Login() {
       if (docSnap.exists()) {
         dadosUsuario = docSnap.data()
       } else {
-        // Cria um novo perfil básico
+        // Cria um novo perfil padrão como freela
         dadosUsuario = {
           nome: usuario.displayName || '',
-          tipo: '',
+          tipo: 'freela', // define automaticamente como freela
           funcao: '',
           endereco: '',
           foto: usuario.photoURL || '',
@@ -44,6 +44,8 @@ export default function Login() {
         await setDoc(docRef, dadosUsuario)
         console.warn('⚠️ Perfil criado automaticamente no Firestore.')
       }
+
+      console.log('🧠 Dados do usuário carregado:', dadosUsuario)
 
       const usuarioLocal = {
         uid: usuario.uid,
@@ -61,12 +63,12 @@ export default function Login() {
       const perfilIncompleto = !dadosUsuario.tipo || !dadosUsuario.nome || !dadosUsuario.funcao
 
       if (perfilIncompleto) {
-        if (dadosUsuario.tipo === 'freela') {
+        if (dadosUsuario.tipo === 'freela' || !dadosUsuario.tipo) {
           navigate('/editarperfilfreela')
         } else if (dadosUsuario.tipo === 'estabelecimento') {
           navigate('/editarperfilestabelecimento')
         } else {
-          navigate('/escolher-tipo-usuario') // ou redirecione para uma tela genérica
+          navigate('/editarperfilfreela') // fallback se não tiver tipo
         }
         return
       }
