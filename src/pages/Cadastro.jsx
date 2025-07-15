@@ -1,4 +1,4 @@
-// 📄 src/pages/gerais/Cadastro.jsx
+// 📄 src/pages/Cadastro.jsx
 import React, { useState } from 'react'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { collection, addDoc } from 'firebase/firestore'

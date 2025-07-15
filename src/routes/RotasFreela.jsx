@@ -5,10 +5,10 @@ import CadastroFreela from '@/pages/CadastroFreela'
 import EditarFreela from '@/pages/EditarFreela'
 import PainelFreela from '@/pages/PainelFreela'
 import PerfilFreela from '@/pages/PerfilFreela'
-import VagasDisponiveis from '@/pages/gerais/VagasDisponiveis'
-import PublicarEvento from '@/pages/gerais/PublicarEvento'
-import EventosDisponiveis from '@/pages/gerais/EventosDisponiveis'
-import CadastroEvento from '@/pages/gerais/CadastroEvento'
+import VagasDisponiveis from '@/pages/VagasDisponiveis'
+import PublicarEvento from '@/pages/PublicarEvento'
+import EventosDisponiveis from '@/pages/EventosDisponiveis'
+import CadastroEvento from '@/pages/CadastroEvento'
 
 console.log('🔁 Render RotasPublicas')
 

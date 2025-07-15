@@ -2,15 +2,15 @@ import React from 'react'
 import { Route } from 'react-router-dom'
 
 // Páginas públicas
-import Home from '../pages/gerais/Home'
-import Sobre from '../pages/gerais/Sobre'
-import Cadastro from '../pages/gerais/Cadastro'
-import Login from '../pages/gerais/Login'
-import EsqueciSenha from '../pages/gerais/EsqueciSenha'
-import Oportunidades from '../pages/gerais/Oportunidades'
+import Home from '../pages/Home'
+import Sobre from '../pages/Sobre'
+import Cadastro from '../pages/Cadastro'
+import Login from '../pages/Login'
+import EsqueciSenha from '../pages/EsqueciSenha'
+import Oportunidades from '../pages/Oportunidades'
 import PerfilFreela from '../pages/PerfilFreela'
 import PerfilEstabelecimento from '../pages/PerfilEstabelecimento'
-import PublicarEvento from '../pages/gerais/PublicarEvento'
+import PublicarEvento from '../pages/PublicarEvento'
 
 export default function RotasPublicas({ usuario }) {
   console.log('🔁 Render RotasPublicas', usuario)
