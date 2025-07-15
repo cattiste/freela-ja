@@ -1,4 +1,4 @@
-// CadastroEstabelecimento.jsx
+// 📄 src/pages/estabelecimentos/CadastroEstabelecimento.jsx
 import React, { useState } from 'react'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { doc, setDoc, GeoPoint, serverTimestamp } from 'firebase/firestore'
@@ -14,7 +14,7 @@ function validateEmail(email) {
 }
 
 function validateCNPJ(cnpj) {
-  return /^\d{2}\.\d{3}\.\d{3}\/\d{4}\-\d{2}$/.test(cnpj)
+  return /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(cnpj)
 }
 
 async function uploadImage(file) {
@@ -70,10 +70,10 @@ export default function CadastroEstabelecimento() {
         fotoUrl = await uploadImage(foto)
       }
 
-      const userCredential = await import { createUserWithEmailAndPassword } from 'firebase/auth'(auth, email, senha)
-      const usuario = userCredential.usuario
+      const userCredential = await createUserWithEmailAndPassword(auth, email, senha)
+      const usuario = userCredential.user
 
-      const geo = new GeoPoint(-23.55052, -46.633308) // SP default
+      const geo = new GeoPoint(-23.55052, -46.633308) // Posição padrão SP
 
       const usuarioData = {
         uid: usuario.uid,
@@ -84,10 +84,9 @@ export default function CadastroEstabelecimento() {
         endereco,
         tipo: 'estabelecimento',
         localizacao: geo,
-        criadoEm: serverTimestamp()
+        criadoEm: serverTimestamp(),
+        ...(fotoUrl && { foto: fotoUrl })
       }
-
-      if (fotoUrl) usuarioData.foto = fotoUrl
 
       await setDoc(doc(db, 'usuarios', usuario.uid), usuarioData)
 
@@ -95,7 +94,6 @@ export default function CadastroEstabelecimento() {
       navigate('/login')
     } catch (err) {
       console.error('Erro no cadastro:', err)
-      if (auth.currentusuer) await auth.currentuser.delete()
       setError(err.message || 'Erro desconhecido')
     } finally {
       setLoading(false)
@@ -107,19 +105,19 @@ export default function CadastroEstabelecimento() {
       <h1 className="text-2xl font-bold mb-6 text-center text-orange-600">Cadastro Estabelecimento</h1>
 
       <form onSubmit={handleCadastro} className="flex flex-col gap-4">
-        <input type="text" placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} className="input" required />
-        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input" required />
-        <input type="password" placeholder="Senha" value={senha} onChange={e => setSenha(e.target.value)} className="input" required />
+        <input type="text" placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} className="input-field" required />
+        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" required />
+        <input type="password" placeholder="Senha" value={senha} onChange={e => setSenha(e.target.value)} className="input-field" required />
 
         <InputMask mask="(99) 99999-9999" value={celular} onChange={e => setCelular(e.target.value)}>
-          {(inputProps) => <input {...inputProps} type="tel" placeholder="Celular" className="input" required />}
+          {(inputProps) => <input {...inputProps} type="tel" placeholder="Celular" className="input-field" required />}
         </InputMask>
 
         <InputMask mask="99.999.999/9999-99" value={cnpj} onChange={e => setCnpj(e.target.value)}>
-          {(inputProps) => <input {...inputProps} type="text" placeholder="CNPJ" className="input" required />}
+          {(inputProps) => <input {...inputProps} type="text" placeholder="CNPJ" className="input-field" required />}
         </InputMask>
 
-        <input type="text" placeholder="Endereço" value={endereco} onChange={e => setEndereco(e.target.value)} className="input" required />
+        <input type="text" placeholder="Endereço" value={endereco} onChange={e => setEndereco(e.target.value)} className="input-field" required />
 
         <input type="file" accept="image/*" onChange={(e) => {
           const file = e.target.files[0]
@@ -131,7 +129,7 @@ export default function CadastroEstabelecimento() {
 
         {error && <p className="text-red-600 text-sm">{error}</p>}
 
-        <button type="submit" disabled={loading} className="bg-orange-500 text-white py-3 rounded-xl hover:bg-orange-600">
+        <button type="submit" disabled={loading} className="btn-primary">
           {loading ? 'Cadastrando...' : 'Cadastrar'}
         </button>
       </form>

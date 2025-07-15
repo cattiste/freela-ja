@@ -1,6 +1,6 @@
-// CadastroFreela.jsx
+// 📄 src/pages/freelas/CadastroFreela.jsx
 import React, { useState } from 'react'
-import { import { createUserWithEmailAndPassword } from 'firebase/auth' } from 'firebase/auth'
+import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { doc, setDoc, GeoPoint, serverTimestamp } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import InputMask from 'react-input-mask'
@@ -10,7 +10,7 @@ const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dbemvuau3/image/upload'
 const UPLOAD_PRESET = 'preset-publico'
 
 function validateCPF(cpf) {
-  return /^\d{3}\.\d{3}\.\d{3}\-\d{2}$/.test(cpf)
+  return /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf)
 }
 
 async function uploadImage(file) {
@@ -53,7 +53,7 @@ export default function CadastroFreela() {
     }
 
     if (!validateCPF(cpf)) {
-      setError('CPF inválido.')
+      setError('CPF inválido. Formato esperado: 000.000.000-00')
       return
     }
 
@@ -65,11 +65,10 @@ export default function CadastroFreela() {
         fotoUrl = await uploadImage(foto)
       }
 
-      const usuarioCredential = await import { createUserWithEmailAndPassword } from 'firebase/auth'(auth, email, senha)
-      const usuario = usuarioCredential.usuario
+      const usuarioCredential = await createUserWithEmailAndPassword(auth, email, senha)
+      const usuario = usuarioCredential.user
 
-      // Dummy coordinates (ou usar geolocalização real depois)
-      const geo = new GeoPoint(-23.55052, -46.633308) // SP default
+      const geo = new GeoPoint(-23.55052, -46.633308) // SP padrão
 
       await setDoc(doc(db, 'usuarios', usuario.uid), {
         uid: usuario.uid,
@@ -91,7 +90,6 @@ export default function CadastroFreela() {
       navigate('/painelfreela')
     } catch (err) {
       console.error('Erro no cadastro:', err)
-      if (auth.currentusuario) await auth.currentusuario.delete()
       setError(err.message || 'Erro desconhecido')
     } finally {
       setLoading(false)
@@ -103,19 +101,22 @@ export default function CadastroFreela() {
       <h1 className="text-2xl font-bold mb-6 text-center text-orange-600">Cadastro Freelancer</h1>
 
       <form onSubmit={handleCadastro} className="flex flex-col gap-4" noValidate>
-        <input type="text" placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} className="input" required />
-        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input" required />
-        <input type="password" placeholder="Senha" value={senha} onChange={e => setSenha(e.target.value)} className="input" required />
+        <input type="text" placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} className="input-field" required />
+        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" required />
+        <input type="password" placeholder="Senha" value={senha} onChange={e => setSenha(e.target.value)} className="input-field" required />
+
         <InputMask mask="(99) 99999-9999" value={celular} onChange={e => setCelular(e.target.value)}>
-          {(inputProps) => <input {...inputProps} type="tel" placeholder="Celular" className="input" required />}
+          {(inputProps) => <input {...inputProps} type="tel" placeholder="Celular" className="input-field" required />}
         </InputMask>
+
         <InputMask mask="999.999.999-99" value={cpf} onChange={e => setCpf(e.target.value)}>
-          {(inputProps) => <input {...inputProps} type="text" placeholder="CPF" className="input" required />}
+          {(inputProps) => <input {...inputProps} type="text" placeholder="CPF" className="input-field" required />}
         </InputMask>
-        <input type="text" placeholder="Endereço" value={endereco} onChange={e => setEndereco(e.target.value)} className="input" required />
-        <input type="text" placeholder="Função" value={funcao} onChange={e => setFuncao(e.target.value)} className="input" required />
-        <input type="text" placeholder="Especialidades" value={especialidades} onChange={e => setEspecialidades(e.target.value)} className="input" required />
-        <input type="number" placeholder="Valor da diária" value={valorDiaria} onChange={e => setValorDiaria(e.target.value)} className="input" required />
+
+        <input type="text" placeholder="Endereço" value={endereco} onChange={e => setEndereco(e.target.value)} className="input-field" required />
+        <input type="text" placeholder="Função" value={funcao} onChange={e => setFuncao(e.target.value)} className="input-field" required />
+        <input type="text" placeholder="Especialidades" value={especialidades} onChange={e => setEspecialidades(e.target.value)} className="input-field" required />
+        <input type="number" placeholder="Valor da diária" value={valorDiaria} onChange={e => setValorDiaria(e.target.value)} className="input-field" required />
 
         <input type="file" accept="image/*" onChange={e => {
           const file = e.target.files[0]
@@ -126,7 +127,7 @@ export default function CadastroFreela() {
         {fotoPreview && <img src={fotoPreview} alt="Preview" className="w-32 h-32 rounded-lg object-cover" />}
         {error && <p className="text-red-600 text-center">{error}</p>}
 
-        <button type="submit" disabled={loading} className="bg-orange-500 text-white py-3 rounded-xl hover:bg-orange-600">
+        <button type="submit" disabled={loading} className="btn-primary">
           {loading ? 'Cadastrando...' : 'Cadastrar'}
         </button>
       </form>
