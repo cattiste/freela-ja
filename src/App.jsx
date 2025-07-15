@@ -66,5 +66,15 @@ export default function App() {
         <Route path="/painelestabelecimento" element={<PainelEstabelecimento usuario={usuario} />} />
       </Routes>
     </BrowserRouter>
+    <BrowserRouter>
+       <Routes>
+        {/* ...outras rotas */}
+        <Route path="/cadastrofreela" element={<CadastroFreela />} />
+        <Route path="/login" element={<Login />} />
+        {/* painel freela COM parâmetro opcional */}
+        <Route path="/painelfreela/:rota?" element={<PainelFreela freela={usuario} />} />
+        <Route path="/painelestabelecimento" element={<PainelEstabelecimento usuario={usuario} />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
