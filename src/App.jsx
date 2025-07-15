@@ -6,17 +6,18 @@ import { auth, db } from './firebase'
 import { doc, getDoc } from 'firebase/firestore'
 
 // Páginas
-import Home from '@/pages/Home'
-import Sobre from '@/pages/Sobre'
-import Cadastro from '@/pages/Cadastro'
-import Login from '@/pages/Login'
-import EsqueciSenha from '@/pages/EsqueciSenha'
-import Oportunidades from '@/pages/Oportunidades'
+import Home from '@/pages/gerais/Home'
+import Sobre from '@/pages/gerais/Sobre'
+import Cadastro from '@/pages/gerais/Cadastro'
+import Login from '@/pages/gerais/Login'
+import EsqueciSenha from '@/pages/gerais/EsqueciSenha'
+import Oportunidades from '@/pages/gerais/Oportunidades'
 import PerfilFreela from '@/pages/PerfilFreela'
 import PerfilEstabelecimento from '@/pages/PerfilEstabelecimento'
-import PublicarEvento from '@/pages/PublicarEvento'
+import PublicarEvento from '@/pages/gerais/PublicarEvento'
 import PainelFreela from '@/pages/PainelFreela'
 import PainelEstabelecimento from '@/pages/PainelEstabelecimento'
+import { RotasPublicas } from './routes/RotasPublicas'
 
 export default function App() {
   const [usuario, setUsuario] = useState(null)
@@ -59,6 +60,11 @@ export default function App() {
         <Route path="/publicarevento" element={<PublicarEvento />} />
         <Route path="/painelfreela" element={<PainelFreela freela={usuario} />} />
         <Route path="/painelestabelecimento" element={<PainelEstabelecimento usuario={usuario} />} />
+      </Routes>
+      
+      <Routes>
+        <RotasPublicas />
+        {/* Depois colocamos as RotasFreela e Estabelecimento aqui */}
       </Routes>
     </BrowserRouter>
   )
