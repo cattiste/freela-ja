@@ -12,11 +12,11 @@ import Cadastro from '@/freela/CadastroFreela'
 import Login from '@/pages/gerais/Login'
 import EsqueciSenha from '@/pages/gerais/EsqueciSenha'
 import Oportunidades from '@/pages/gerais/Oportunidades'
-import PerfilFreela from './freela/PerfilFreela'
+import PerfilFreela from '@/freela/PerfilFreela'
 import PerfilEstabelecimento from '@/pages/PerfilEstabelecimento'
 import PublicarEvento from '@/pages/gerais/PublicarEvento'
 import PainelEstabelecimento from '@/pages/PainelEstabelecimento'
-import PainelFreela from './freela/PainelFreela'
+import PainelFreela from '@/freela/PainelFreela'
 
 // Se quiser usar rotas agrupadas no futuro:
 // import { RotasPublicas } from './routes/RotasPublicas'
