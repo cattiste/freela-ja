@@ -21,7 +21,6 @@ import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
 import PerfilFreela from '@/pages/freela/PerfilFreela'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
-import Avaliacao from '@/pages/gerais/Avaliacao'
 import Chat from '@/pages/Chat'
 
 export default function PainelFreela() {
