@@ -1,17 +1,14 @@
-import React from 'react'
-import { Routes } from 'react-router-dom'
-import RotasPublicas from './RotasPublicas'
-import { RotasFreela } from './RotasFreela'
-import { RotasEstabelecimento } from './RotasEstabelecimento'
+import { Routes, Route } from 'react-router-dom'
+import Home from '@/pages/gerais/Home'
+import Sobre from '@/pages/gerais/Sobre'
+// ...
 
-export default function RotasApp({ usuario }) {
-  console.log('Renderizando RotasApp com usuario:', usuario)
-
+export default function App() {
   return (
     <Routes>
-      <RotasPublicas usuario={usuario} />
-      <RotasFreela usuario={usuario} />
-      <RotasEstabelecimento usuario={usuario} />
+      <Route path="/" element={<Home />} />
+      <Route path="/sobre" element={<Sobre />} />
+      {/* outras rotas */}
     </Routes>
   )
 }
