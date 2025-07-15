@@ -8,7 +8,7 @@ import { doc, getDoc } from 'firebase/firestore'
 // Páginas
 import Home from '@/pages/gerais/Home'
 import Sobre from '@/pages/gerais/Sobre'
-import Cadastro from '@/pages/gerais/Cadastro'
+import Cadastro from './freela/CadastroFreela'
 import Login from '@/pages/gerais/Login'
 import EsqueciSenha from '@/pages/gerais/EsqueciSenha'
 import Oportunidades from '@/pages/gerais/Oportunidades'
@@ -54,7 +54,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
         <Route path="/sobre" element={<Sobre />} />
-        <Route path="/cadastro" element={<Cadastro />} />
+        <Route path="/cadastrofreela" element={<CadastroFreela />} />
         <Route path="/login" element={<Login />} />
         <Route path="/esquecisenha" element={<EsqueciSenha />} />
         <Route path="/oportunidades" element={<Oportunidades />} />
