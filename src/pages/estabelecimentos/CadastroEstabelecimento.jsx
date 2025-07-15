@@ -1,6 +1,6 @@
 // CadastroEstabelecimento.jsx
 import React, { useState } from 'react'
-import { import { createUserWithEmailAndPassword } from 'firebase/auth' } from 'firebase/auth'
+import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { doc, setDoc, GeoPoint, serverTimestamp } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import InputMask from 'react-input-mask'
