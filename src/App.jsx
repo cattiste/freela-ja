@@ -18,10 +18,6 @@ import CadastroFreela from '@/pages/freela/CadastroFreela'
 import PainelFreela from '@/pages/freela/PainelFreela'
 import PerfilFreela from '@/pages/freela/PerfilFreela'
 
-
-// Se quiser usar rotas agrupadas no futuro:
-// import { RotasPublicas } from './routes/RotasPublicas'
-
 export default function App() {
   const [usuario, setUsuario] = useState(null)
   const [carregando, setCarregando] = useState(true)
@@ -46,25 +42,36 @@ export default function App() {
   }, [])
 
   if (carregando) {
-    return <div className="text-center mt-20 text-orange-600 font-bold">🔄 Carregando...</div>
+    return (
+      <div className="text-center mt-20 text-orange-600 font-bold">
+        🔄 Carregando...
+      </div>
+    )
   }
 
   return (
-  <BrowserRouter>
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/home" element={<Home />} />
-      <Route path="/sobre" element={<Sobre />} />
-      <Route path="/cadastrofreela" element={<CadastroFreela />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/esquecisenha" element={<EsqueciSenha />} />
-      <Route path="/oportunidades" element={<Oportunidades />} />
-      <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
-      <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
-      <Route path="/publicarevento" element={<PublicarEvento />} />
-      {/* painel freela COM parâmetro opcional */}
-      <Route path="/painelfreela/:rota?" element={<PainelFreela freela={usuario} />} />
-      <Route path="/painelestabelecimento" element={<PainelEstabelecimento usuario={usuario} />} />
-    </Routes>
-  </BrowserRouter>
-)
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/sobre" element={<Sobre />} />
+        <Route path="/cadastrofreela" element={<CadastroFreela />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/esquecisenha" element={<EsqueciSenha />} />
+        <Route path="/oportunidades" element={<Oportunidades />} />
+        <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
+        <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
+        <Route path="/publicarevento" element={<PublicarEvento />} />
+        {/* Painel freelancer com parâmetro opcional */}
+        <Route
+          path="/painelfreela/:rota?"
+          element={<PainelFreela freela={usuario} />}
+        />
+        <Route
+          path="/painelestabelecimento"
+          element={<PainelEstabelecimento usuario={usuario} />}
+        />
+      </Routes>
+    </BrowserRouter>
+  )
+}
