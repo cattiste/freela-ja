@@ -18,10 +18,10 @@ import { toast } from 'react-hot-toast'
 import HistoricoChamadasFreela from './HistoricoChamadasFreela'
 import AvaliacoesRecebidasFreela from './AvaliacoesRecebidasFreela'
 import ConfiguracoesFreela from './ConfiguracoesFreela'
-import PerfilFreela from './PerfilFreela'
+import PerfilFreela from './freela/PerfilFreela'
 import RecebimentosFreela from './RecebimentosFreela'
 import AgendaCompleta from './AgendaCompleta'
-import Chat from './Chat'
+import Chat from '../Chat'
 
 
 export default function PainelFreela() {
