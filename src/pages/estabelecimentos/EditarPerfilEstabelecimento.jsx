@@ -24,21 +24,21 @@ export default function EditarPerfilEstabelecimento() {
   })
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
+    const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
+      if (!usuario) {
         navigate('/login')
         return
       }
 
       try {
-        const docRef = doc(db, 'usuarios', user.uid)
+        const docRef = doc(db, 'usuarios', usuario.uid)
         const docSnap = await getDoc(docRef)
 
         if (docSnap.exists() && docSnap.data().tipo === 'estabelecimento') {
           const data = docSnap.data()
           setEstabelecimento({
             nome: data.nome || '',
-            email: data.email || user.email || '',
+            email: data.email || usuario.email || '',
             celular: data.celular || '',
             endereco: data.endereco || '',
             descricao: data.descricao || '',
@@ -87,8 +87,8 @@ export default function EditarPerfilEstabelecimento() {
     setSalvando(true)
 
     try {
-      const user = auth.currentUser
-      if (!user) {
+      const usuario = auth.currentusuario
+      if (!usuario) {
         alert('Usuário não autenticado.')
         navigate('/login')
         return
@@ -99,7 +99,7 @@ export default function EditarPerfilEstabelecimento() {
         fotoUrl = await uploadImage(foto)
       }
 
-      const docRef = doc(db, 'usuarios', user.uid)
+      const docRef = doc(db, 'usuarios', usuario.uid)
       await updateDoc(docRef, {
         nome: estabelecimento.nome,
         celular: estabelecimento.celular,

@@ -19,22 +19,22 @@ export default function Chamadas() {
   const [chatAbertoId, setChatAbertoId] = useState(null)
   const [loadingId, setLoadingId] = useState(null)
   const [avaliacoes, setAvaliacoes] = useState({})
-  const [user, setUser] = useState(null)
+  const [usuario, setusuario] = useState(null)
   const [enviando, setEnviando] = useState(null)
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(u => setUser(u))
+    const unsubscribe = auth.onAuthStateChanged(u => setusuario(u))
     return unsubscribe
   }, [])
 
   useEffect(() => {
-    if (!user) return
+    if (!usuario) return
 
     let primeiraCarga = true
 
     const q = query(
       collection(db, 'chamadas'),
-      where('freelaUid', '==', user.uid),
+      where('freelaUid', '==', usuario.uid),
       where('status', 'in', ['pendente', 'aceita', 'checkin', 'checkout', 'finalizado'])
     )
 
@@ -53,7 +53,7 @@ export default function Chamadas() {
     })
 
     return () => unsubscribe()
-  }, [user])
+  }, [usuario])
 
   const formatarData = (data) => {
     try {
@@ -91,7 +91,7 @@ export default function Chamadas() {
       await addDoc(collection(db, 'avaliacoesEstabelecimentos'), {
         chamadaId,
         estabelecimentoUid,
-        freelaUid: user.uid,
+        freelaUid: usuario.uid,
         nota,
         comentario,
         dataCriacao: serverTimestamp()
@@ -114,7 +114,7 @@ export default function Chamadas() {
     setEnviando(null)
   }
 
-  if (!user) {
+  if (!usuario) {
     return <p className="text-center text-red-600 mt-6">Você precisa estar logado para ver as chamadas.</p>
   }
 

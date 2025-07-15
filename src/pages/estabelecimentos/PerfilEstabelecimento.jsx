@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext'
 export default function PerfilEstabelecimento() {
   const { uid } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { usuario } = useAuth()
   const [estab, setEstab] = useState(null)
   const [avaliacoes, setAvaliacoes] = useState([])
   const [carregando, setCarregando] = useState(true)
@@ -111,7 +111,7 @@ export default function PerfilEstabelecimento() {
           </div>
         )}
 
-        {user && user.tipo === 'freela' && user.uid !== uid && (
+        {usuario && usuario.tipo === 'freela' && usuario.uid !== uid && (
           <button
             onClick={() => navigate(`/avaliacao/estabelecimento/${uid}`)}
             className="mt-4 px-4 py-2 bg-yellow-600 text-white rounded-full hover:bg-yellow-700 transition"

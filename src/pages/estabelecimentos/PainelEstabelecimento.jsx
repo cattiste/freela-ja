@@ -35,13 +35,13 @@ export default function PainelEstabelecimento() {
   const { online } = useOnlineStatus(estabelecimento?.uid)
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
+    const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
+      if (usuario) {
         try {
-          const docRef = doc(db, 'usuarios', user.uid)
+          const docRef = doc(db, 'usuarios', usuario.uid)
           const snap = await getDoc(docRef)
           if (snap.exists() && snap.data().tipo === 'estabelecimento') {
-            setEstabelecimento({ uid: user.uid, ...snap.data() })
+            setEstabelecimento({ uid: usuario.uid, ...snap.data() })
             await updateDoc(docRef, { ultimaAtividade: serverTimestamp() })
           } else {
             setEstabelecimento(null)

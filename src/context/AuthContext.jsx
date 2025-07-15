@@ -11,14 +11,14 @@ export function AuthProvider({ children }) {
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const docRef = doc(db, 'usuarios', user.uid)
+    const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
+      if (usuario) {
+        const docRef = doc(db, 'usuarios', usuario.uid)
         const docSnap = await getDoc(docRef)
         if (docSnap.exists()) {
-          setUsuario({ uid: user.uid, ...docSnap.data() })
+          setUsuario({ uid: usuario.uid, ...docSnap.data() })
         } else {
-          setUsuario({ uid: user.uid, email: user.email })
+          setUsuario({ uid: usuario.uid, email: usuario.email })
         }
       } else {
         setUsuario(null)

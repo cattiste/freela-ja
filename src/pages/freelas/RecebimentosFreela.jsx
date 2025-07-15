@@ -15,13 +15,13 @@ export default function RecebimentosFreela() {
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
 
-  const user = auth.currentUser
+  const usuario = auth.currentusuario
 
   useEffect(() => {
-    if (!user) return
+    if (!usuario) return
     const fetch = async () => {
       try {
-        const ref = doc(db, 'usuarios', user.uid)
+        const ref = doc(db, 'usuarios', usuario.uid)
         const snap = await getDoc(ref)
         if (snap.exists()) {
           const dados = snap.data().dadosBancarios || {}
@@ -42,7 +42,7 @@ export default function RecebimentosFreela() {
       }
     }
     fetch()
-  }, [user])
+  }, [usuario])
 
   const handleChange = e => {
     const { name, value } = e.target
@@ -50,10 +50,10 @@ export default function RecebimentosFreela() {
   }
 
   const salvar = async () => {
-    if (!user) return
+    if (!usuario) return
     setSalvando(true)
     try {
-      const ref = doc(db, 'usuarios', user.uid)
+      const ref = doc(db, 'usuarios', usuario.uid)
       await updateDoc(ref, { dadosBancarios: form })
       alert('Dados bancários salvos com sucesso!')
     } catch (err) {

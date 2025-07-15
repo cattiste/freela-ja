@@ -19,8 +19,8 @@ export default function Login() {
 
     try {
       const credenciais = await signInWithEmailAndPassword(auth, email, senha)
-      const user = credenciais.user
-      const docRef = doc(db, 'usuarios', user.uid)
+      const usuario = credenciais.usuario
+      const docRef = doc(db, 'usuarios', usuario.uid)
       const docSnap = await getDoc(docRef)
 
       let dadosUsuario = {}
@@ -30,14 +30,14 @@ export default function Login() {
       } else {
         // Cria um novo perfil básico
         dadosUsuario = {
-          nome: user.displayName || '',
+          nome: usuario.displayName || '',
           tipo: '',
           funcao: '',
           endereco: '',
-          foto: user.photoURL || '',
+          foto: usuario.photoURL || '',
           celular: '',
           valorDiaria: '',
-          email: user.email,
+          email: usuario.email,
           criadoEm: new Date()
         }
 
@@ -46,8 +46,8 @@ export default function Login() {
       }
 
       const usuarioLocal = {
-        uid: user.uid,
-        email: user.email,
+        uid: usuario.uid,
+        email: usuario.email,
         nome: dadosUsuario.nome,
         tipo: dadosUsuario.tipo,
         funcao: dadosUsuario.funcao || '',

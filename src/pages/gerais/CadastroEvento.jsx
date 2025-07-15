@@ -36,7 +36,7 @@ export default function CadastroEvento() {
         status: 'ativo',
         dataPublicacao: serverTimestamp(),
         // opcional: se tiver auth, pode adicionar UID do criador
-        // criadorUid: auth.currentUser.uid,
+        // criadorUid: auth.currentusuario.uid,
       })
       alert('Evento cadastrado com sucesso!')
       navigate('/eventosfreelas') // redireciona para lista de eventos

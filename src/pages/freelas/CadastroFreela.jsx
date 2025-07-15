@@ -1,6 +1,6 @@
 // CadastroFreela.jsx
 import React, { useState } from 'react'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { createusuarioWithEmailAndPassword } from 'firebase/auth'
 import { doc, setDoc, GeoPoint, serverTimestamp } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import InputMask from 'react-input-mask'
@@ -65,14 +65,14 @@ export default function CadastroFreela() {
         fotoUrl = await uploadImage(foto)
       }
 
-      const userCredential = await createUserWithEmailAndPassword(auth, email, senha)
-      const user = userCredential.user
+      const usuarioCredential = await createusuarioWithEmailAndPassword(auth, email, senha)
+      const usuario = usuarioCredential.usuario
 
       // Dummy coordinates (ou usar geolocalização real depois)
       const geo = new GeoPoint(-23.55052, -46.633308) // SP default
 
-      await setDoc(doc(db, 'usuarios', user.uid), {
-        uid: user.uid,
+      await setDoc(doc(db, 'usuarios', usuario.uid), {
+        uid: usuario.uid,
         nome,
         email,
         celular,
@@ -91,7 +91,7 @@ export default function CadastroFreela() {
       navigate('/painelfreela')
     } catch (err) {
       console.error('Erro no cadastro:', err)
-      if (auth.currentUser) await auth.currentUser.delete()
+      if (auth.currentusuario) await auth.currentusuario.delete()
       setError(err.message || 'Erro desconhecido')
     } finally {
       setLoading(false)

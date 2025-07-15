@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext'
 export default function PerfilFreela({ freelaUidProp, mostrarBotaoVoltar = true }) {
   const params = useParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { usuario } = useAuth()
   const [freela, setFreela] = useState(null)
   const [avaliacoes, setAvaliacoes] = useState([])
   const [carregando, setCarregando] = useState(true)
@@ -154,7 +154,7 @@ export default function PerfilFreela({ freelaUidProp, mostrarBotaoVoltar = true 
           </div>
         )}
 
-        {user && user.tipo === 'estabelecimento' && user.uid !== uid && (
+        {usuario && usuario.tipo === 'estabelecimento' && usuario.uid !== uid && (
           <button
             onClick={() => navigate(`/avaliacao/freela/${uid}`)}
             className="mt-4 px-4 py-2 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 transition"

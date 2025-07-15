@@ -36,17 +36,17 @@ export default function PainelFreela() {
   useEffect(() => {
     let unsubscribeChamadas = null
 
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const docRef = doc(db, 'usuarios', user.uid)
+    const unsubscribeAuth = onAuthStateChanged(auth, async (usuario) => {
+      if (usuario) {
+        const docRef = doc(db, 'usuarios', usuario.uid)
         try {
           const snap = await getDoc(docRef)
           if (snap.exists() && snap.data().tipo === 'freela') {
-            const userData = { uid: user.uid, ...snap.data() }
-            setUsuario(userData)
+            const usuarioData = { uid: usuario.uid, ...snap.data() }
+            setUsuario(usuarioData)
 
             unsubscribeChamadas = onSnapshot(
-              query(collection(db, 'chamadas'), where('freelaUid', '==', user.uid)),
+              query(collection(db, 'chamadas'), where('freelaUid', '==', usuario.uid)),
               (snapshot) => {
                 setChamadas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
               }

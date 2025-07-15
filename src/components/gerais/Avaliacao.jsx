@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 
 function Avaliacao() {
   const { tipo, id } = useParams(); // tipo = freela ou estabelecimento, id = avaliado
-  const { user } = useAuth(); // usuário logado que está avaliando
+  const { usuario } = useAuth(); // usuário logado que está avaliando
   const [avaliado, setAvaliado] = useState(null);
   const [nota, setNota] = useState(5);
   const [comentario, setComentario] = useState('');
@@ -34,7 +34,7 @@ function Avaliacao() {
       const collectionRef = collection(db, tipo === 'freela' ? 'avaliacoes_freelas' : 'avaliacoes_estabelecimentos');
       await addDoc(collectionRef, {
         avaliadoId: id,
-        avaliadorId: user.uid,
+        avaliadorId: usuario.uid,
         nota,
         comentario,
         data: serverTimestamp()

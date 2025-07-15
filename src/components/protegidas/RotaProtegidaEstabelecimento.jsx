@@ -9,14 +9,14 @@ export default function RotaProtegidaEstabelecimento({ children }) {
   const [permitido, setPermitido] = useState(false)
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
+    const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
+      if (!usuario) {
         setPermitido(false)
         setCarregando(false)
         return
       }
 
-      const docRef = doc(db, 'usuarios', user.uid)
+      const docRef = doc(db, 'usuarios', usuario.uid)
       const docSnap = await getDoc(docRef)
 
       if (docSnap.exists() && docSnap.data().tipo === 'estabelecimento') {

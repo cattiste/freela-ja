@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 
 export default function ConfiguracoesFreela() {
   const navigate = useNavigate()
-  const user = auth.currentUser
+  const usuario = auth.currentusuario
   const [config, setConfig] = useState({
     notificacoes: true,
     visibilidadePerfil: true,
@@ -16,9 +16,9 @@ export default function ConfiguracoesFreela() {
   const [salvando, setSalvando] = useState(false)
 
   useEffect(() => {
-    if (!user) return
+    if (!usuario) return
     const fetchDados = async () => {
-      const ref = doc(db, 'usuarios', user.uid)
+      const ref = doc(db, 'usuarios', usuario.uid)
       const snap = await getDoc(ref)
       if (snap.exists()) {
         const data = snap.data()
@@ -28,14 +28,14 @@ export default function ConfiguracoesFreela() {
           chamadasAutomaticas: data.chamadasAutomaticas ?? false
         })
         setInfoConta({
-          email: user.email,
-          uid: user.uid,
-          criadoEm: user.metadata.creationTime
+          email: usuario.email,
+          uid: usuario.uid,
+          criadoEm: usuario.metadata.creationTime
         })
       }
     }
     fetchDados()
-  }, [user])
+  }, [usuario])
 
   const handleToggle = (e) => {
     const { name, checked } = e.target
@@ -43,10 +43,10 @@ export default function ConfiguracoesFreela() {
   }
 
   const salvar = async () => {
-    if (!user) return
+    if (!usuario) return
     setSalvando(true)
     try {
-      await updateDoc(doc(db, 'usuarios', user.uid), config)
+      await updateDoc(doc(db, 'usuarios', usuario.uid), config)
       alert('Configurações salvas!')
     } catch (err) {
       alert('Erro ao salvar.')
@@ -57,7 +57,7 @@ export default function ConfiguracoesFreela() {
 
   const redefinirSenha = async () => {
     try {
-      await sendPasswordResetEmail(auth, user.email)
+      await sendPasswordResetEmail(auth, usuario.email)
       alert('E-mail de redefinição enviado!')
     } catch (err) {
       alert('Erro ao enviar e-mail.')
@@ -68,8 +68,8 @@ export default function ConfiguracoesFreela() {
   const excluirConta = async () => {
     if (!window.confirm('Tem certeza que deseja excluir sua conta? Esta ação é irreversível.')) return
     try {
-      await deleteDoc(doc(db, 'usuarios', user.uid))
-      await user.delete()
+      await deleteDoc(doc(db, 'usuarios', usuario.uid))
+      await usuario.delete()
       alert('Conta excluída.')
       navigate('/login')
     } catch (err) {

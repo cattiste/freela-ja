@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, usuarioef } from 'react'
 import { auth, db } from '@/firebase'
 import {
   collection,
@@ -14,12 +14,12 @@ export default function Chat({ chamadaId }) {
   const [usuario, setUsuario] = useState(null)
   const [mensagem, setMensagem] = useState('')
   const [mensagens, setMensagens] = useState([])
-  const divFimRef = useRef(null)
+  const divFimRef = usuarioef(null)
 
   // Pega usuário atual
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) setUsuario(user)
+    const unsubscribe = auth.onAuthStateChanged((usuario) => {
+      if (usuario) setUsuario(usuario)
       else setUsuario(null)
     })
     return unsubscribe
