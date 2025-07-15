@@ -8,7 +8,7 @@ import { doc, getDoc } from 'firebase/firestore'
 // Páginas
 import Home from '@/pages/gerais/Home'
 import Sobre from '@/pages/gerais/Sobre'
-import Cadastro from './freela/CadastroFreela'
+import Cadastro from '@/freela/CadastroFreela'
 import Login from '@/pages/gerais/Login'
 import EsqueciSenha from '@/pages/gerais/EsqueciSenha'
 import Oportunidades from '@/pages/gerais/Oportunidades'
