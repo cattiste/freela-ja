@@ -1,5 +1,5 @@
 import React from 'react'
-import AgendaFreela from '@/AgendaFreela'
+import AgendaFreela from '@/gerais/AgendaFreela'
 import VagasDisponiveis from '@/gerais/VagasDisponiveis'
 import EventosDisponiveis from '@/gerais/EventosDisponiveis'
 
