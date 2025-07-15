@@ -49,7 +49,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/home" element={<Home />} />
         <Route path="/sobre" element={<Sobre />} />
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/login" element={<Login />} />
@@ -61,7 +61,7 @@ export default function App() {
         <Route path="/painelfreela" element={<PainelFreela freela={usuario} />} />
         <Route path="/painelestabelecimento" element={<PainelEstabelecimento usuario={usuario} />} />
       </Routes>
-      
+
       <Routes>
         <RotasPublicas />
         {/* Depois colocamos as RotasFreela e Estabelecimento aqui */}

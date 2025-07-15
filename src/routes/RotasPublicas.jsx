@@ -13,7 +13,7 @@ import PublicarEvento from '@/pages/gerais/PublicarEvento'
 export function RotasPublicas() {
   return (
     <>
-      <Route path="/" element={<Home />} />
+      <Route path="/home" element={<Home />} />
       <Route path="/sobre" element={<Sobre />} />
       <Route path="/cadastro" element={<Cadastro />} />
       <Route path="/login" element={<Login />} />
