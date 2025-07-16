@@ -15,12 +15,14 @@ import {
 } from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
 
-import HistoricoChamadasFreela from './HistoricoChamadasFreela'
-import AvaliacoesRecebidasFreela from './AvaliacoesRecebidasFreela'
-import ConfiguracoesFreela from './ConfiguracoesFreela'
-import PerfilFreela from './PerfilFreela'
-import RecebimentosFreela from './RecebimentosFreela'
-import AgendaCompleta from './AgendaCompleta'
+import HistoricoChamadasFreela from '@/pages/freela//HistoricoChamadasFreela'
+import AvaliacoesRecebidasFreela from '@/pages/freela//AvaliacoesRecebidasFreela'
+import ConfiguracoesFreela from '@/pages/freela//ConfiguracoesFreela'
+import PerfilFreela from '@/pages/freela//PerfilFreela'
+import RecebimentosFreela from '@/pages/freela//RecebimentosFreela'
+import AgendaCompleta from '@/pages/freela//AgendaCompleta'
+import VagasDisponiveis from '@/pages/freela/VagasDisponiveis'
+import EventosDisponiveis from '@/pages/freela/EventosDisponiveis'
 import Chat from './Chat'
 
 
