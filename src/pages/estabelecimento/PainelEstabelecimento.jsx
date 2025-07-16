@@ -167,7 +167,7 @@ export default function PainelEstabelecimento() {
             <span className={`text-sm font-semibold ${online ? 'text-green-600' : 'text-gray-400'}`}>
               ● {online ? 'Online' : 'Offline'}
             </span>
-          </div>
+          </h1>
 
         <nav className="border-b border-orange-300 mb-6 overflow-x-auto">
           <ul className="flex space-x-2 whitespace-nowrap">
