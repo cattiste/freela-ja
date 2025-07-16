@@ -1,22 +1,21 @@
-import { onSnapshot, query, collection, where } from 'firebase/firestore'
+// src/pages/estabelecimento/PainelEstabelecimento.jsx
 import React, { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { onSnapshot, query, collection, where } from 'firebase/firestore'
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
-import { useNavigate } from 'react-router-dom'
-import { toast } from 'react-hot-toast'
-import { Toaster } from 'react-hot-toast'
+import { toast, Toaster } from 'react-hot-toast'
 
 import { auth, db } from '@/firebase'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
 import BuscarFreelas from '@/components/BuscarFreelas'
 import AgendasContratadas from '@/components/AgendasContratadas'
 import AvaliacaoFreela from '@/components/AvaliacaoFreela'
-import PublicarVaga from '@/pages/PublicarVaga'
+import PublicarVaga from '@/pages/estabelecimento/PublicarVaga'
 import MinhasVagas from '@/components/MinhasVagas'
 import CandidaturasEstabelecimento from '@/components/CandidaturasEstabelecimento'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
-
-import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
 function estaOnline(ultimaAtividadeTimestamp) {
   if (!ultimaAtividadeTimestamp) return false
@@ -27,114 +26,105 @@ function estaOnline(ultimaAtividadeTimestamp) {
 
 export default function PainelEstabelecimento() {
   const navigate = useNavigate()
-  const [aba, setAba] = useState('buscar')
+  const { rota } = useParams()            // extrai /painelestabelecimento/:rota?
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [vagaEditando, setVagaEditando] = useState(null)
 
-  const { online } = useOnlineStatus(estabelecimento?.uid)
+  const { online } = useOnlineStatus(estabelecimento?.ultimaAtividade)
 
+  // auth + fetch perfil
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
-      if (usuario) {
-        try {
-          const docRef = doc(db, 'usuarios', usuario.uid)
-          const snap = await getDoc(docRef)
-          if (snap.exists() && snap.data().tipo === 'estabelecimento') {
-            setEstabelecimento({ uid: usuario.uid, ...snap.data() })
-            await updateDoc(docRef, { ultimaAtividade: serverTimestamp() })
-          } else {
-            setEstabelecimento(null)
-          }
-        } catch (err) {
-          console.error('Erro ao buscar dados do estabelecimento:', err)
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setEstabelecimento(null)
+        setCarregando(false)
+        return
+      }
+      try {
+        const ref = doc(db, 'usuarios', user.uid)
+        const snap = await getDoc(ref)
+        if (snap.exists() && snap.data().tipo === 'estabelecimento') {
+          const data = snap.data()
+          setEstabelecimento({ uid: user.uid, ...data })
+          await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
+        } else {
           setEstabelecimento(null)
         }
-      } else {
+      } catch (err) {
+        console.error('Erro ao buscar dados:', err)
         setEstabelecimento(null)
+      } finally {
+        setCarregando(false)
       }
-      setCarregando(false)
     })
-
     return () => unsubscribe()
   }, [])
 
+  // atualização periódica de última atividade
   useEffect(() => {
     if (!estabelecimento?.uid) return
-
     const interval = setInterval(() => {
       updateDoc(doc(db, 'usuarios', estabelecimento.uid), {
         ultimaAtividade: serverTimestamp()
       }).catch(console.error)
     }, 30000)
-
     return () => clearInterval(interval)
-  }, [estabelecimento?.uid])
+  }, [estabelecimento])
 
+  // notificação de checkout do freela
   useEffect(() => {
     if (!estabelecimento?.uid) return
-
-    const unsubscribe = onSnapshot(
+    const unsub = onSnapshot(
       query(
         collection(db, 'chamadas'),
         where('estabelecimentoUid', '==', estabelecimento.uid),
-        where('status', '==', 'finalizado'),
-        where('checkOutFreela', '==', true),
+        where('status', '==', 'checkout_freela'),
         where('checkOutEstabelecimento', '==', false)
       ),
-      (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-          if (change.type === 'added') {
-            const chamada = change.doc.data()
-
-            const audio = new Audio('/sons/checkout.mp3')
-            audio.play().catch(() => {
-              console.warn('Erro ao tocar som de checkout.')
-            })
-
-            toast.success(`O freela ${chamada.freelaNome} finalizou o serviço. Confirme o check-out.`)
+      (snap) => {
+        snap.docChanges().forEach(({ doc: d, type }) => {
+          if (type === 'added') {
+            const data = d.data()
+            new Audio('/sons/checkout.mp3').play().catch(() => {})
+            toast.success(
+              `O freela ${data.freelaNome} finalizou o serviço. Confirme o checkout.`
+            )
           }
         })
       }
     )
+    return () => unsub()
+  }, [estabelecimento])
 
-    return () => unsubscribe()
-  }, [estabelecimento?.uid])
+  const handleLogout = async () => {
+    if (estabelecimento?.uid) {
+      await updateDoc(doc(db, 'usuarios', estabelecimento.uid), {
+        ultimaAtividade: serverTimestamp()
+      })
+    }
+    await signOut(auth)
+    localStorage.removeItem('usuarioLogado')
+    navigate('/login')
+  }
 
   const abrirEdicao = (vaga) => {
     setVagaEditando(vaga)
-    setAba('publicar')
+    navigate('/painelestabelecimento/publicar')
   }
 
   const onSalvarSucesso = () => {
     setVagaEditando(null)
-    setAba('minhas-vagas')
+    navigate('/painelestabelecimento/minhas-vagas')
   }
 
-  const handleLogout = async () => {
-    try {
-      if (estabelecimento?.uid) {
-        await updateDoc(doc(db, 'usuarios', estabelecimento.uid), { ultimaAtividade: serverTimestamp() })
-      }
-      await signOut(auth)
-      localStorage.removeItem('usuarioLogado')
-      navigate('/login')
-    } catch (err) {
-      alert('Erro ao sair.')
-      console.error(err)
-    }
-  }
+  const rotaFinal = rota || 'buscar'
 
   const renderConteudo = () => {
     if (!estabelecimento) {
-      return (
-        <p className="text-center text-red-600 mt-10 font-semibold">
-          Acesso não autorizado.
-        </p>
-      )
+      return <p className="text-center text-red-600 mt-10 font-semibold">Acesso não autorizado.</p>
     }
-
-    switch (aba) {
+    switch (rotaFinal) {
       case 'buscar':
         return <BuscarFreelas estabelecimento={estabelecimento} vaga={vagaEditando} />
       case 'agendas':
@@ -156,7 +146,7 @@ export default function PainelEstabelecimento() {
       case 'candidaturas':
         return <CandidaturasEstabelecimento estabelecimentoUid={estabelecimento.uid} />
       default:
-        return <MinhasVagas estabelecimento={estabelecimento} onEditar={abrirEdicao} />
+        return <BuscarFreelas estabelecimento={estabelecimento} />
     }
   }
 
@@ -168,17 +158,10 @@ export default function PainelEstabelecimento() {
     )
   }
 
-  if (!estabelecimento) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-600 text-lg font-semibold">Acesso não autorizado.</p>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-orange-50 p-4">
       <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+        {/* Cabeçalho */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <h1 className="text-3xl font-bold text-orange-700 flex items-center gap-3">
             📊 Painel do Estabelecimento
@@ -189,38 +172,39 @@ export default function PainelEstabelecimento() {
           <div className="flex gap-4">
             <button
               onClick={() => navigate('/editarperfilestabelecimento')}
-              className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
+              className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700"
             >
               ✏️ Editar Perfil
             </button>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
             >
               🔒 Logout
             </button>
           </div>
         </div>
 
-        <nav className="border-b border-orange-300 mb-6">
-          <ul className="flex space-x-2 overflow-x-auto scrollbar-thin scrollbar-thumb-orange-400 scrollbar-track-orange-100">
-            {[ 
-              { key: 'buscar', label: '🔍 Buscar Freelancers' },
-              { key: 'agendas', label: '📅 Agendas' },
-              { key: 'avaliacao', label: '⭐ Avaliar' },
-              { key: 'publicar', label: '📢 Publicar Vaga' },
-              { key: 'minhas-vagas', label: '📋 Minhas Vagas' },
-              { key: 'candidaturas', label: '📋 Candidaturas' },
-              { key: 'historico', label: '📜 Histórico' }
-            ].map(({ key, label }) => (
-              <li key={key} className="list-none">
+        {/* Navegação de abas */}
+        <nav className="border-b border-orange-300 mb-6 overflow-x-auto">
+          <ul className="flex space-x-2 whitespace-nowrap">
+            {[
+              ['buscar', '🔍 Buscar Freelancers'],
+              ['agendas', '📅 Agendas'],
+              ['avaliacao', '⭐ Avaliar'],
+              ['publicar', '📢 Publicar Vaga'],
+              ['minhas-vagas', '📋 Minhas Vagas'],
+              ['candidaturas', '📄 Candidaturas'],
+              ['historico', '📜 Histórico']
+            ].map(([key, label]) => (
+              <li key={key}>
                 <button
                   onClick={() => {
                     setVagaEditando(null)
-                    setAba(key)
+                    navigate(`/painelestabelecimento/${key}`)
                   }}
-                  className={`px-4 py-2 -mb-px border-b-2 font-semibold transition whitespace-nowrap ${
-                    aba === key
+                  className={`px-4 py-2 border-b-2 font-semibold transition ${
+                    rotaFinal === key
                       ? 'border-orange-600 text-orange-600'
                       : 'border-transparent text-orange-400 hover:text-orange-600 hover:border-orange-400'
                   }`}
@@ -232,9 +216,11 @@ export default function PainelEstabelecimento() {
           </ul>
         </nav>
 
+        {/* Conteúdo dinamicamente renderizado */}
         <section>{renderConteudo()}</section>
       </div>
 
+      {/* Toaster para notificações */}
       <Toaster position="top-center" reverseOrder={false} />
     </div>
   )

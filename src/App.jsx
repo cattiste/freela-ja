@@ -5,19 +5,26 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { auth, db } from './firebase'
 import { doc, getDoc } from 'firebase/firestore'
 
-// Páginas
+// Páginas gerais
 import Home from '@/pages/gerais/Home'
 import Sobre from '@/pages/gerais/Sobre'
 import Login from '@/pages/gerais/Login'
 import EsqueciSenha from '@/pages/gerais/EsqueciSenha'
 import Oportunidades from '@/pages/gerais/Oportunidades'
-import PerfilEstabelecimento from '@/pages/estabelecimento/PerfilEstabelecimento'
 import PublicarEvento from '@/pages/gerais/PublicarEvento'
-import PainelEstabelecimento from '@/pages/estabelecimento/PainelEstabelecimento'
-import CadastroFreela from '@/pages/freela/CadastroFreela'
-import PainelFreela from '@/pages/freela/PainelFreela'
-import PerfilFreela from '@/pages/freela/PerfilFreela'
 import Avaliacao from '@/pages/gerais/Avaliacao'
+
+// Páginas de freela
+import CadastroFreela from '@/pages/freela/CadastroFreela'
+import PerfilFreela from '@/pages/freela/PerfilFreela'
+import PainelFreela from '@/pages/freela/PainelFreela'
+
+// Páginas de estabelecimento
+import PerfilEstabelecimento from '@/pages/estabelecimento/PerfilEstabelecimento'
+import PainelEstabelecimento from '@/pages/estabelecimento/PainelEstabelecimento'
+import CadastroEstabelecimento from '@/pages/estabelecimento/CadastroEstabelecimento'
+import EditarPerfilEstabelecimento from '@/pages/estabelecimento/EditarPerfilEstabelecimento'
+import PublicarVaga from '@/pages/estabelecimento/PublicarVaga'
 
 export default function App() {
   const [usuario, setUsuario] = useState(null)
@@ -38,8 +45,7 @@ export default function App() {
       }
       setCarregando(false)
     })
-
-    return () => unsubscribe()
+    return unsubscribe
   }, [])
 
   if (carregando) {
@@ -53,26 +59,32 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Gerais */}
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
         <Route path="/sobre" element={<Sobre />} />
-        <Route path="/cadastrofreela" element={<CadastroFreela />} />
         <Route path="/login" element={<Login />} />
         <Route path="/esquecisenha" element={<EsqueciSenha />} />
         <Route path="/oportunidades" element={<Oportunidades />} />
-        <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
-        <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
         <Route path="/publicarevento" element={<PublicarEvento />} />
+
+        {/* Avaliação compartilhada */}
         <Route path="/avaliar/:tipo/:id" element={<Avaliacao />} />
-        {/* Painel freelancer com parâmetro opcional */}
+
+        {/* Freela */}
+        <Route path="/cadastrofreela" element={<CadastroFreela />} />
+        <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
         <Route
           path="/painelfreela/:rota?"
           element={<PainelFreela freela={usuario} />}
         />
-        <Route
-          path="/painelestabelecimento"
-          element={<PainelEstabelecimento usuario={usuario} />}
-        />
+
+        {/* Estabelecimento */}
+        <Route path="/cadastroestabelecimento" element={<CadastroEstabelecimento />} />
+        <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
+        <Route path="/painelestabelecimento/:rota?" element={<PainelEstabelecimento usuario={usuario} />} />
+        <Route path="/editarperfilestabelecimento/:uid" element={<EditarPerfilEstabelecimento />} />
+        <Route path="/publicarvaga" element={<PublicarVaga />} />
       </Routes>
     </BrowserRouter>
   )
