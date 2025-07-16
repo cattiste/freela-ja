@@ -24,11 +24,7 @@ function FreelaCard({ freela, onChamar, chamando, chamadaAtiva }) {
           </span>
         </div>
       </div>
-
-      <p className="text-sm text-center text-gray-500 mb-4">
-        <strong>Celular:</strong> {freela.celular}
-      </p>
-
+      
       <button
         onClick={() => onChamar(freela)}
         disabled={!online || chamando === freela.id}
