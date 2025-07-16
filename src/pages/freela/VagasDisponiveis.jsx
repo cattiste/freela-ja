@@ -9,12 +9,8 @@ export default function VagasDisponiveis({ freela }) {
   const [erro, setErro] = useState(null)
   const [candidaturas, setCandidaturas] = useState([])
 
-  // Protege acesso
-  if (!freela?.uid) {
-    return <p className="text-center text-red-600 mt-10">⚠️ Faça login novamente.</p>
-  }
-
   useEffect(() => {
+    if (!freela?.uid) return
     async function fetchVagas() {
       setLoading(true)
       setErro(null)
@@ -26,9 +22,9 @@ export default function VagasDisponiveis({ freela }) {
         )
         const snap = await getDocs(q)
         const list = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        console.log('[VagasDisponiveis] fetched CLT vagas:', list)
         setVagas(list)
 
-        // carrega candidaturas do freela
         const qCand = query(
           collection(db, 'candidaturas'),
           where('freelaUid', '==', freela.uid)
@@ -36,7 +32,7 @@ export default function VagasDisponiveis({ freela }) {
         const snapCand = await getDocs(qCand)
         setCandidaturas(snapCand.docs.map(c => ({ id: c.id, ...c.data() })))
       } catch (err) {
-        console.error(err)
+        console.error('[VagasDisponiveis] erro:', err)
         setErro('Erro ao carregar vagas CLT.')
       } finally {
         setLoading(false)
@@ -45,24 +41,9 @@ export default function VagasDisponiveis({ freela }) {
     fetchVagas()
   }, [freela.uid])
 
-  const handleCandidatar = async vaga => {
-    try {
-      await addDoc(collection(db, 'candidaturas'), {
-        vagaId: vaga.id,
-        estabelecimentoUid: vaga.estabelecimentoUid,
-        freelaUid: freela.uid,
-        dataCandidatura: serverTimestamp(),
-        status: 'pendente'
-      })
-      setCandidaturas(prev => [...prev, { vagaId: vaga.id }])
-    } catch (err) {
-      console.error(err)
-      setErro('Falha ao candidatar.')
-    }
-  }
-
   if (loading) return <p className="text-center text-orange-600">Carregando vagas CLT...</p>
   if (erro) return <p className="text-center text-red-600">{erro}</p>
+  if (vagas.length === 0) return <p className="text-center text-gray-600">Nenhuma vaga CLT disponível.</p>
 
   return (
     <div className="space-y-6">
@@ -72,7 +53,15 @@ export default function VagasDisponiveis({ freela }) {
           <p><strong>Cidade:</strong> {vaga.cidade}</p>
           <p><strong>Descrição:</strong> {vaga.descricao}</p>
           <button
-            onClick={() => handleCandidatar(vaga)}
+            onClick={async () => {
+              await addDoc(collection(db, 'candidaturas'), {
+                vagaId: vaga.id,
+                estabelecimentoUid: vaga.estabelecimentoUid,
+                freelaUid: freela.uid,
+                dataCandidatura: serverTimestamp(),
+                status: 'pendente'
+              })
+            }}
             className="mt-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
           >Candidatar-se</button>
         </div>
