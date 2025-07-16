@@ -164,41 +164,45 @@ export default function PainelEstabelecimento() {
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <h1 className="text-3xl font-bold text-orange-700 flex items-center gap-3">
             📊 Painel do Estabelecimento
-            <span className={`text-sm font-semibold ${online ? 'text-green-600' : 'text-gray-400'}`}>
+            <span
+              className={`text-sm font-semibold ${
+                online ? 'text-green-600' : 'text-gray-400'
+              }`}
+            >
               ● {online ? 'Online' : 'Offline'}
             </span>
           </h1>
-
-        <nav className="border-b border-orange-300 mb-6 overflow-x-auto">
-          <ul className="flex space-x-2 whitespace-nowrap">
-            {[
-              ['buscar', '🔍 Buscar Freelancers'],
-              ['agendas', '📅 Agendas'],
-              ['avaliacao', '⭐ Avaliar'],
-              ['publicar', '📢 Publicar Vaga'],
-              ['minhas-vagas', '📋 Minhas Vagas'],
-              ['candidaturas', '📄 Candidaturas'],
-              ['historico', '📜 Histórico'],
-              ['config-pagamento', '⚙️ Configurações & Pagamentos']
-            ].map(([key, label]) => (
-              <li key={key}>
-                <button
-                  onClick={() => {
-                    setVagaEditando(null)
-                    navigate(`/painelestabelecimento/${key}`)
-                  }}
-                  className={`px-4 py-2 border-b-2 font-semibold transition ${
-                    aba === key
-                      ? 'border-orange-600 text-orange-600'
-                      : 'border-transparent text-gray-400 hover:text-orange-600 hover:border-orange-400'
-                  }`}
-                >
-                  {label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
+          <nav className="border-b border-orange-300 mb-6 overflow-x-auto">
+            <ul className="flex space-x-2 whitespace-nowrap">
+              {[
+                ['buscar', '🔍 Buscar Freelancers'],
+                ['agendas', '📅 Agendas'],
+                ['avaliacao', '⭐ Avaliar'],
+                ['publicar', '📢 Publicar Vaga'],
+                ['minhas-vagas', '📋 Minhas Vagas'],
+                ['candidaturas', '📄 Candidaturas'],
+                ['historico', '📜 Histórico'],
+                ['config-pagamento', '⚙️ Configurações & Pagamentos']
+              ].map(([key, label]) => (
+                <li key={key}>
+                  <button
+                    onClick={() => {
+                      setVagaEditando(null)
+                      navigate(`/painelestabelecimento/${key}`)
+                    }}
+                    className={`px-4 py-2 border-b-2 font-semibold transition ${
+                      aba === key
+                        ? 'border-orange-600 text-orange-600'
+                        : 'border-transparent text-gray-400 hover:text-orange-600 hover:border-orange-400'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
 
         {/* Conteúdo dinâmico */}
         <section>{renderConteudo()}</section>
@@ -206,7 +210,5 @@ export default function PainelEstabelecimento() {
 
       <Toaster position="top-center" reverseOrder={false} />
     </div>
-      {/* …restante do JSX… */}
-      </div> {/* Fecha o container principal */}
-    )
-   }
+  )
+}
