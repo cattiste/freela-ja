@@ -1,3 +1,4 @@
+// src/pages/gerais/Login.jsx
 import React, { useState } from 'react'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
@@ -31,7 +32,7 @@ export default function Login() {
         // Cria um novo perfil padrão como freela
         dadosUsuario = {
           nome: usuario.displayName || '',
-          tipo: 'freela', // define automaticamente como freela
+          tipo: 'freela',
           funcao: '',
           endereco: '',
           foto: usuario.photoURL || '',
@@ -40,7 +41,6 @@ export default function Login() {
           email: usuario.email,
           criadoEm: new Date()
         }
-
         await setDoc(docRef, dadosUsuario)
         console.warn('⚠️ Perfil criado automaticamente no Firestore.')
       }
@@ -59,25 +59,18 @@ export default function Login() {
 
       localStorage.setItem('usuarioLogado', JSON.stringify(usuarioLocal))
 
-      // Verifica se o perfil está incompleto
-      const perfilIncompleto = !dadosUsuario.tipo || !dadosUsuario.nome || !dadosUsuario.funcao
-
-      if (perfilIncompleto) {
-        if (dadosUsuario.tipo === 'freela' || !dadosUsuario.tipo) {
-          navigate('/editarperfilfreela')
-        } else if (dadosUsuario.tipo === 'estabelecimento') {
-          navigate('/editarperfilestabelecimento')
-        } else {
-          navigate('/editarperfilfreela') // fallback se não tiver tipo
-        }
+      // Se for freela com perfil incompleto, direciona para edição
+      const perfilIncompleto = !dadosUsuario.nome || !dadosUsuario.funcao
+      if (dadosUsuario.tipo === 'freela' && perfilIncompleto) {
+        navigate('/editarperfilfreela')
         return
       }
 
-      // Redireciona com base no tipo
+      // Redireciona de acordo com o tipo
       if (dadosUsuario.tipo === 'freela') {
         navigate('/painelfreela')
       } else if (dadosUsuario.tipo === 'estabelecimento') {
-        navigate('/painel-estabelecimento')
+        navigate('/painelestabelecimento')
       } else {
         throw new Error('Tipo de usuário não reconhecido.')
       }
