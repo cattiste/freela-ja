@@ -98,7 +98,18 @@ export default function PainelFreela() {
       case 'perfil':
         return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
       case 'agenda':
-        return <AgendaCompleta freela={usuario} />
+          return (
+            <>
+              <AgendaCompleta freela={usuario} />
+              <div className="mt-6">
+                <h2 className="text-2xl font-bold text-orange-700 mb-4">📋 Vagas Disponíveis</h2>
+                <VagasDisponiveis freela={usuario} />
+
+                <h2 className="text-2xl font-bold text-orange-700 mt-8 mb-4">🎉 Eventos Disponíveis</h2>
+                <EventosDisponiveis freela={usuario} />
+              </div>
+            </>
+          )
       case 'avaliacoes':
         return <AvaliacoesRecebidasFreela freelaUid={usuario.uid} />
       case 'historico':
