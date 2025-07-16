@@ -206,5 +206,7 @@ export default function PainelEstabelecimento() {
 
       <Toaster position="top-center" reverseOrder={false} />
     </div>
-  )
-}
+      {/* …restante do JSX… */}
+      </div> {/* Fecha o container principal */}
+    )
+   }
