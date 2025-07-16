@@ -24,7 +24,7 @@ import HistoricoChamadasFreela from '@/pages/freela/HistoricoChamadasFreela'
 import AvaliacoesRecebidasFreela from '@/pages/freela/AvaliacoesRecebidasFreela'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
-import Chat from '@/pages/Chat.jsx'
+import Chat from '@/pages/Chat'
 
 export default function PainelFreela() {
   const navigate = useNavigate()

@@ -10,7 +10,7 @@ import {
   addDoc,
   serverTimestamp
 } from 'firebase/firestore'
-import Chat from './Chat'
+import Chat from '@/pages/Chat'
 import { toast } from 'react-hot-toast'
 
 export default function Chamadas() {
