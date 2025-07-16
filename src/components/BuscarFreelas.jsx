@@ -16,6 +16,10 @@ function FreelaCard({ freela, onChamar, chamando, chamadaAtiva }) {
           className="w-20 h-20 rounded-full object-cover border-2 border-orange-400"
         />
         <h3 className="mt-2 text-lg font-bold text-orange-700 text-center">{freela.nome}</h3>
+        {/* Especialidades adicionadas abaixo */}
+        {freela.especialidades && freela.especialidades.length > 0 && (
+          <p className="text-sm text-gray-600 text-center">{freela.especialidades.join(', ')}</p>
+        )}
         <p className="text-sm text-gray-600 text-center">{freela.funcao}</p>
         <div className="flex items-center gap-2 mt-1">
           <span className={`w-2 h-2 rounded-full ${online ? 'bg-green-500' : 'bg-gray-400'}`} />
