@@ -16,6 +16,7 @@ import PublicarVaga from '@/pages/estabelecimento/PublicarVaga'
 import MinhasVagas from '@/components/MinhasVagas'
 import CandidaturasEstabelecimento from '@/components/CandidaturasEstabelecimento'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
+import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
 
 export default function PainelEstabelecimento() {
   const navigate = useNavigate()
@@ -149,6 +150,8 @@ export default function PainelEstabelecimento() {
         return <MinhasVagas estabelecimento={estabelecimento} onEditar={abrirEdicao} />
       case 'candidaturas':
         return <CandidaturasEstabelecimento estabelecimentoUid={estabelecimento.uid} />
+      case 'config-pagamento':
+        return <ConfigPagamentoEstabelecimento usuario={estabelecimento} />
       default:
         return <BuscarFreelas estabelecimento={estabelecimento} vaga={vagaEditando} />
     }
@@ -164,25 +167,8 @@ export default function PainelEstabelecimento() {
             <span className={`text-sm font-semibold ${online ? 'text-green-600' : 'text-gray-400'}`}>
               ● {online ? 'Online' : 'Offline'}
             </span>
-          </h1>
-          <div className="flex gap-4">
-            {/* Botão de editar perfil com UID */}
-            <button
-              onClick={() => navigate(`/editarperfilestabelecimento/${estabelecimento.uid}`)}
-              className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
-            >
-              ✏️ Editar Perfil
-            </button>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-            >
-              🔒 Logout
-            </button>
           </div>
-        </div>
 
-        {/* Navegação de abas */}
         <nav className="border-b border-orange-300 mb-6 overflow-x-auto">
           <ul className="flex space-x-2 whitespace-nowrap">
             {[
@@ -192,7 +178,8 @@ export default function PainelEstabelecimento() {
               ['publicar', '📢 Publicar Vaga'],
               ['minhas-vagas', '📋 Minhas Vagas'],
               ['candidaturas', '📄 Candidaturas'],
-              ['historico', '📜 Histórico']
+              ['historico', '📜 Histórico'],
+              ['config-pagamento', '⚙️ Configurações & Pagamentos']
             ].map(([key, label]) => (
               <li key={key}>
                 <button
