@@ -10,7 +10,7 @@ export default function MinhasVagas({ estabelecimento, onEditar }) {
     const buscarVagas = async () => {
       if (!estabelecimento?.email) return
       try {
-        const q = query(collection(db, 'vagas'), where('emailContato', '==', estabelecimento.email))
+        const q = query(collection(db, 'vagas'), where('estabelecimentoUid', '==', estabelecimento.uid))
         const snapshot = await getDocs(q)
         const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
         setVagas(lista)

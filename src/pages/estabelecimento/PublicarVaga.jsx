@@ -20,6 +20,7 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
   })
   const [enviando, setEnviando] = useState(false)
 
+  // Pré-preenche campos se for edição
   useEffect(() => {
     if (vaga) {
       setForm({
@@ -29,9 +30,9 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
         endereco: vaga.endereco || '',
         funcao: vaga.funcao || '',
         tipo: vaga.tipo || 'freela',
-        valorDiaria: vaga.valorDiaria ?? '',
+        valorDiaria: vaga.valorDiaria || '',
         datas: vaga.datas || [],
-        urgente: vaga.urgente ?? false
+        urgente: vaga.urgente || false
       })
     }
   }, [vaga])
@@ -47,7 +48,7 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    // Validações
+    // Validações básicas
     if (!form.titulo || !form.descricao || !form.cidade || !form.funcao) {
       return toast.error('Preencha todos os campos obrigatórios.')
     }
@@ -66,7 +67,7 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
 
     setEnviando(true)
     try {
-      // Converte datas para Timestamp
+      // Converte datas do DatePicker para Timestamp
       const datasParaFirestore = form.datas.map(d => {
         const jsDate = d.toDate ? d.toDate() : d
         return Timestamp.fromDate(jsDate)
@@ -82,6 +83,8 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
         valorDiaria: form.valorDiaria ? Number(form.valorDiaria) : null,
         datas: datasParaFirestore,
         urgente: form.urgente,
+        status: 'aberta',              // para ser listada no painel do freela
+        dataPublicacao: serverTimestamp(),
         criadoEm: serverTimestamp(),
         estabelecimentoUid: estabelecimento.uid,
         estabelecimentoNome: estabelecimento.nome
@@ -115,7 +118,6 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
         {vaga ? '✏️ Editar Vaga' : '📢 Publicar Nova Vaga'}
       </h2>
 
-      {/* Título e Função */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block font-medium text-sm mb-1">Título *</label>
@@ -141,7 +143,6 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
         </div>
       </div>
 
-      {/* Cidade e Endereço (CLT) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block font-medium text-sm mb-1">Cidade *</label>
@@ -169,7 +170,6 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
         )}
       </div>
 
-      {/* Tipo e Valor/Diária */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block font-medium text-sm mb-1">Tipo da Vaga *</label>
@@ -200,7 +200,6 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
         )}
       </div>
 
-      {/* Datas (Freela) */}
       {form.tipo === 'freela' && (
         <div>
           <label className="block font-medium text-sm mb-1">
@@ -217,7 +216,6 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
         </div>
       )}
 
-      {/* Urgente */}
       <div className="flex items-center gap-2 mt-2">
         <input
           type="checkbox"
@@ -228,7 +226,6 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
         <label className="text-sm">Vaga urgente</label>
       </div>
 
-      {/* Descrição */}
       <div>
         <label className="block font-medium text-sm mb-1">Descrição *</label>
         <textarea
@@ -241,7 +238,6 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
         />
       </div>
 
-      {/* Botão de envio */}
       <button
         type="submit"
         disabled={enviando}
