@@ -1,76 +1,204 @@
-// src/pages/estabelecimento/ConfiguracoesEstabelecimento.jsx
+// src/pages/estabelecimento/ConfigPagamentoEstabelecimento.jsx
 import React, { useState, useEffect } from 'react'
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { toast } from 'react-hot-toast'
 
-export default function ConfiguracoesEstabelecimento({ usuario, config, onSalvar }) {
-  const [pix, setPix] = useState('')
-  const [banco, setBanco] = useState('')
-  const [agencia, setAgencia] = useState('')
-  const [conta, setConta] = useState('')
+import { db } from '@/firebase'
+import { auth } from '@/firebase'
+import { useNavigate } from 'react-router-dom'
 
+export default function ConfigPagamentoEstabelecimento() {
+  const navigate = useNavigate()
+  const user = auth.currentUser
+  const [form, setForm] = useState({
+    nomeTitular: '',
+    cpf: '',
+    banco: '',
+    agencia: '',
+    conta: '',
+    tipoConta: '',
+    chavePix: '',
+    cardHolder: '',
+    cardNumber: '',
+    cardExpiry: '',
+    cardCvv: '',
+    pagamentoAtivo: false,
+  })
+  const [carregando, setCarregando] = useState(true)
+  const [salvando, setSalvando] = useState(false)
+
+  // Carrega configurações existentes
   useEffect(() => {
-    if (config) {
-      setPix(config.pix || '')
-      setBanco(config.banco || '')
-      setAgencia(config.agencia || '')
-      setConta(config.conta || '')
+    if (!user) return navigate('/login')
+    const load = async () => {
+      try {
+        const ref = doc(db, 'configuracoes', user.uid)
+        const snap = await getDoc(ref)
+        if (snap.exists()) {
+          setForm({
+            ...form,
+            ...snap.data(),
+          })
+        }
+      } catch (err) {
+        console.error(err)
+        toast.error('Erro ao carregar configurações')
+      } finally {
+        setCarregando(false)
+      }
     }
-  }, [config])
+    load()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
 
-  const handleSubmit = (e) => {
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target
+    setForm(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }))
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    onSalvar({ pix, banco, agencia, conta })
+    setSalvando(true)
+    try {
+      await updateDoc(doc(db, 'configuracoes', user.uid), {
+        ...form,
+        atualizadoEm: serverTimestamp(),
+      })
+      toast.success('Configurações salvas com sucesso')
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao salvar configurações')
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  if (carregando) {
+    return <p className="text-center text-orange-500 mt-6">Carregando configurações...</p>
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium">Chave PIX</label>
-        <input
-          type="text"
-          value={pix}
-          onChange={(e) => setPix(e.target.value)}
-          className="mt-1 block w-full border rounded p-2"
-          placeholder="00000000-00"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium">Banco</label>
-        <input
-          type="text"
-          value={banco}
-          onChange={(e) => setBanco(e.target.value)}
-          className="mt-1 block w-full border rounded p-2"
-          placeholder="Nome do banco"
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
+    <div className="max-w-xl mx-auto bg-white p-6 rounded-lg shadow space-y-6">
+      <h2 className="text-2xl font-bold text-orange-700">⚙️ Configurações & Pagamentos</h2>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Dados Bancários */}
         <div>
-          <label className="block text-sm font-medium">Agência</label>
+          <h3 className="text-lg font-semibold mb-2">💵 Dados Bancários / PIX</h3>
           <input
-            type="text"
-            value={agencia}
-            onChange={(e) => setAgencia(e.target.value)}
-            className="mt-1 block w-full border rounded p-2"
-            placeholder="0000"
+            name="nomeTitular"
+            value={form.nomeTitular}
+            onChange={handleChange}
+            placeholder="Nome do Titular"
+            className="w-full border rounded px-3 py-2 mb-3"
+          />
+          <input
+            name="cpf"
+            value={form.cpf}
+            onChange={handleChange}
+            placeholder="CPF (somente números)"
+            className="w-full border rounded px-3 py-2 mb-3"
+          />
+          <input
+            name="banco"
+            value={form.banco}
+            onChange={handleChange}
+            placeholder="Banco (ex: 001 - Banco do Brasil)"
+            className="w-full border rounded px-3 py-2 mb-3"
+          />
+          <div className="flex gap-2 mb-3">
+            <input
+              name="agencia"
+              value={form.agencia}
+              onChange={handleChange}
+              placeholder="Agência"
+              className="flex-1 border rounded px-3 py-2"
+            />
+            <input
+              name="conta"
+              value={form.conta}
+              onChange={handleChange}
+              placeholder="Conta"
+              className="flex-1 border rounded px-3 py-2"
+            />
+          </div>
+          <input
+            name="tipoConta"
+            value={form.tipoConta}
+            onChange={handleChange}
+            placeholder="Tipo de Conta (corrente/poupança)"
+            className="w-full border rounded px-3 py-2 mb-3"
+          />
+          <input
+            name="chavePix"
+            value={form.chavePix}
+            onChange={handleChange}
+            placeholder="Chave PIX"
+            className="w-full border rounded px-3 py-2"
           />
         </div>
+
+        {/* Dados de Cartão */}
         <div>
-          <label className="block text-sm font-medium">Conta</label>
+          <h3 className="text-lg font-semibold mb-2">💳 Dados do Cartão</h3>
           <input
-            type="text"
-            value={conta}
-            onChange={(e) => setConta(e.target.value)}
-            className="mt-1 block w-full border rounded p-2"
-            placeholder="00000-0"
+            name="cardHolder"
+            value={form.cardHolder}
+            onChange={handleChange}
+            placeholder="Nome no Cartão"
+            className="w-full border rounded px-3 py-2 mb-3"
           />
+          <input
+            name="cardNumber"
+            value={form.cardNumber}
+            onChange={handleChange}
+            placeholder="Número do Cartão"
+            className="w-full border rounded px-3 py-2 mb-3"
+          />
+          <div className="flex gap-2 mb-3">
+            <input
+              name="cardExpiry"
+              value={form.cardExpiry}
+              onChange={handleChange}
+              placeholder="Validade (MM/AA)"
+              className="flex-1 border rounded px-3 py-2"
+            />
+            <input
+              name="cardCvv"
+              value={form.cardCvv}
+              onChange={handleChange}
+              placeholder="CVV"
+              className="flex-1 border rounded px-3 py-2"
+            />
+          </div>
         </div>
-      </div>
-      <button
-        type="submit"
-        className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700"
-      >
-        Salvar
-      </button>
-    </form>
+
+        {/* Situação de Pagamento */}
+        <div>
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              name="pagamentoAtivo"
+              checked={form.pagamentoAtivo}
+              onChange={handleChange}
+            />
+            <span>Ativar pagamentos automáticos</span>
+          </label>
+        </div>
+
+        {/* Ações */}
+        <div className="flex justify-end mt-4">
+          <button
+            type="submit"
+            disabled={salvando}
+            className="bg-orange-600 text-white px-6 py-2 rounded hover:bg-orange-700 transition disabled:opacity-50"
+          >
+            {salvando ? 'Salvando...' : 'Salvar Configurações'}
+          </button>
+        </div>
+      </form>
+    </div>
   )
 }
