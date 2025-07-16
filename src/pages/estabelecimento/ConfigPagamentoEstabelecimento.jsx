@@ -1,56 +1,61 @@
-import React, { useState } from 'react'
-import ConfiguracoesEstabelecimento from './ConfiguracoesEstabelecimento'
-import PagamentosEstabelecimento from './PagamentosEstabelecimento'
+// src/pages/estabelecimento/ConfigPagamentoEstabelecimento.jsx
+import React, { useState, useEffect } from 'react'
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { toast } from 'react-hot-toast'
+
+import { db } from '@/firebase'
+import ConfiguracoesEstabelecimento from '@/pages/estabelecimento/ConfiguracoesEstabelecimento'  // caminho absoluto
 
 export default function ConfigPagamentoEstabelecimento({ usuario }) {
-  const [aba, setAba] = useState('configuracoes')
+  const [config, setConfig] = useState(null)
+  const [carregando, setCarregando] = useState(true)
 
-  const renderConteudo = () => {
-    switch (aba) {
-      case 'configuracoes':
-        return <ConfiguracoesEstabelecimento estabelecimento={usuario} />
-      case 'pagamentos':
-        return <PagamentosEstabelecimento estabelecimento={usuario} />
-      default:
-        return <ConfiguracoesEstabelecimento estabelecimento={usuario} />
+  useEffect(() => {
+    if (!usuario?.uid) return
+    const load = async () => {
+      try {
+        const snap = await getDoc(doc(db, 'configuracoes', usuario.uid))
+        if (snap.exists()) setConfig(snap.data())
+      } catch (err) {
+        console.error(err)
+        toast.error('Erro ao carregar configurações')
+      } finally {
+        setCarregando(false)
+      }
+    }
+    load()
+  }, [usuario])
+
+  const handleSalvar = async (novasConfig) => {
+    try {
+      await updateDoc(doc(db, 'configuracoes', usuario.uid), {
+        ...novasConfig,
+        atualizadoEm: serverTimestamp(),
+      })
+      toast.success('Configurações salvas com sucesso')
+      setConfig(novasConfig)
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao salvar configurações')
     }
   }
 
-  return (
-    <div className="min-h-screen bg-orange-50 p-4">
-      <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg p-6">
-        <nav className="border-b border-orange-300 mb-6">
-          <ul className="flex space-x-4">
-            <li>
-              <button
-                onClick={() => setAba('configuracoes')}
-                className={`px-4 py-2 font-semibold border-b-2 transition ${
-                  aba === 'configuracoes'
-                    ? 'border-orange-600 text-orange-600'
-                    : 'border-transparent text-gray-500 hover:text-orange-600'
-                }`}
-              >
-                ⚙️ Configurações
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={() => setAba('pagamentos')}
-                className={`px-4 py-2 font-semibold border-b-2 transition ${
-                  aba === 'pagamentos'
-                    ? 'border-orange-600 text-orange-600'
-                    : 'border-transparent text-gray-500 hover:text-orange-600'
-                }`}
-              >
-                💳 Pagamentos
-              </button>
-            </li>
-          </ul>
-        </nav>
-        <section>
-          {renderConteudo()}
-        </section>
+  if (carregando) {
+    return (
+      <div className="p-6">
+        <p className="text-gray-500">Carregando configurações...</p>
       </div>
+    )
+  }
+
+  return (
+    <div className="p-6 bg-white rounded-lg shadow">
+      <h2 className="text-2xl font-semibold mb-4">Configurações & Pagamentos</h2>
+      <ConfiguracoesEstabelecimento
+        usuario={usuario}
+        config={config}
+        onSalvar={handleSalvar}
+      />
     </div>
   )
 }
