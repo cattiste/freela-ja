@@ -1,3 +1,4 @@
+// src/pages/estabelecimento/EditarPerfilEstabelecimento.jsx
 import React, { useEffect, useState } from 'react'
 import { auth, db } from '@/firebase'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
@@ -87,7 +88,8 @@ export default function EditarPerfilEstabelecimento() {
     setSalvando(true)
 
     try {
-      const usuario = auth.currentusuario
+      // corrige para currentUser
+      const usuario = auth.currentUser
       if (!usuario) {
         alert('Usuário não autenticado.')
         navigate('/login')
@@ -110,13 +112,14 @@ export default function EditarPerfilEstabelecimento() {
       })
 
       alert('Perfil atualizado com sucesso!')
-      navigate('/painel-estabelecimento')
+      // rota corrigida: painelestabelecimento
+      navigate('/painelestabelecimento')
     } catch (error) {
       console.error('Erro ao salvar:', error)
       alert('Erro ao salvar perfil.')
+    } finally {
+      setSalvando(false)
     }
-
-    setSalvando(false)
   }
 
   if (loading) {
@@ -134,6 +137,7 @@ export default function EditarPerfilEstabelecimento() {
           ✍️ Editar Perfil do Estabelecimento
         </h1>
 
+        {/* Nome */}
         <label className="block mb-4">
           <span className="font-semibold text-gray-700">Nome</span>
           <input
@@ -146,6 +150,7 @@ export default function EditarPerfilEstabelecimento() {
           />
         </label>
 
+        {/* Email */}
         <label className="block mb-4">
           <span className="font-semibold text-gray-700">Email</span>
           <input
@@ -158,6 +163,7 @@ export default function EditarPerfilEstabelecimento() {
           />
         </label>
 
+        {/* Celular */}
         <label className="block mb-4">
           <span className="font-semibold text-gray-700">Celular</span>
           <input
@@ -170,6 +176,7 @@ export default function EditarPerfilEstabelecimento() {
           />
         </label>
 
+        {/* Endereço */}
         <label className="block mb-4">
           <span className="font-semibold text-gray-700">Endereço</span>
           <input
@@ -181,6 +188,7 @@ export default function EditarPerfilEstabelecimento() {
           />
         </label>
 
+        {/* Descrição */}
         <label className="block mb-4">
           <span className="font-semibold text-gray-700">Descrição</span>
           <textarea
@@ -192,6 +200,7 @@ export default function EditarPerfilEstabelecimento() {
           />
         </label>
 
+        {/* Upload de Foto */}
         <div className="mb-4">
           <label className="block text-orange-700 font-medium mb-1">Foto do Estabelecimento</label>
           <input
@@ -213,15 +222,15 @@ export default function EditarPerfilEstabelecimento() {
           )}
         </div>
 
+        {/* Ações */}
         <div className="flex justify-between items-center">
           <button
             type="button"
-            onClick={() => navigate('/painel-estabelecimento')}
+            onClick={() => navigate('/painelestabelecimento')}
             className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 transition"
           >
             Cancelar
           </button>
-
           <button
             type="submit"
             disabled={salvando}
