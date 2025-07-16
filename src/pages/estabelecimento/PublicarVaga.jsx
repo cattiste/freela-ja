@@ -1,6 +1,6 @@
 // src/pages/estabelecimento/PublicarVaga.jsx
 import React, { useEffect, useState } from 'react'
-import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
+import { collection, addDoc, updateDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 import DatePicker from 'react-multi-date-picker'
 import { toast } from 'react-hot-toast'
@@ -67,42 +67,48 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
 
     setEnviando(true)
     try {
-      const datasParaFirestore = form.datas.map(d =>
-        Timestamp.fromDate(d.toDate())
-      )
+      // converte datas para Timestamp
+      const datasParaFirestore = form.datas.map(d => {
+        const jsDate = d.toDate ? d.toDate() : d  // DatePicker object or Date
+        return Timestamp.fromDate(jsDate)
+      })
 
       const payload = {
         titulo: form.titulo,
         descricao: form.descricao,
         cidade: form.cidade,
-        endereco: form.endereco,
+        endereco: form.endereco || '',
         funcao: form.funcao,
         tipo: form.tipo,
-        valorDiaria: form.valorDiaria || null,
+        valorDiaria: form.valorDiaria ? Number(form.valorDiaria) : null,
         datas: datasParaFirestore,
         urgente: form.urgente,
         criadoEm: serverTimestamp(),
         estabelecimentoUid: estabelecimento.uid,
         estabelecimentoNome: estabelecimento.nome
       }
+      console.log('[PublicarVaga] Payload ->', payload)
 
       if (vaga && vaga.id) {
-         const ref = doc(db, 'vagas', vaga.id)
-         await updateDoc(ref, payload)
-         toast.success('Vaga atualizada com sucesso.')
+        console.log(`[PublicarVaga] Atualizando vaga ${vaga.id}`)
+        const ref = doc(db, 'vagas', vaga.id)
+        await updateDoc(ref, payload)
+        toast.success('Vaga atualizada com sucesso.')
       } else {
-         const ref = collection(db, 'vagas')
-         await addDoc(ref, payload)
-         toast.success('Vaga publicada com sucesso.')
+        console.log('[PublicarVaga] Criando nova vaga')
+        const ref = collection(db, 'vagas')
+        await addDoc(ref, payload)
+        toast.success('Vaga publicada com sucesso.')
       }
 
-  onSucesso?.()
-} catch (err) {
-  console.error(err)
-  toast.error(`Falha ao salvar vaga: ${err.message}`)
-} finally {
-  setEnviando(false)
-}
+      onSucesso?.()
+    } catch (err) {
+      console.error('[PublicarVaga] Erro ao salvar vaga:', err)
+      toast.error(`Falha ao salvar vaga: ${err.message}`)
+    } finally {
+      setEnviando(false)
+    }
+  }
 
   return (
     <form
