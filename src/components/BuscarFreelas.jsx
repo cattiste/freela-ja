@@ -22,11 +22,6 @@ function FreelaCard({ freela, onChamar, chamando, chamadaAtiva }) {
               ? freela.especialidades.join(', ')
               : freela.especialidades}
           </p>
-        )}</p>
-        )}
-        {/* Especialidades adicionadas abaixo */}
-        {freela.especialidades && freela.especialidades.length > 0 && (
-          <p className="text-sm text-gray-600 text-center">{freela.especialidades.join(', ')}</p>
         )}
         <p className="text-sm text-gray-600 text-center">{freela.funcao}</p>
         <div className="flex items-center gap-2 mt-1">
@@ -94,7 +89,10 @@ export default function BuscarFreelas({ estabelecimento }) {
       })
 
       const docSnap = await getDoc(doc(db, 'chamadas', chamadaRef.id))
-      setChamadasAtivas(prev => ({ ...prev, [freela.id]: { id: chamadaRef.id, ...docSnap.data() } }))
+      setChamadasAtivas(prev => ({
+        ...prev,
+        [freela.id]: { id: chamadaRef.id, ...docSnap.data() }
+      }))
 
       alert(`Freelancer ${freela.nome} foi chamado com sucesso.`)
     } catch (err) {
