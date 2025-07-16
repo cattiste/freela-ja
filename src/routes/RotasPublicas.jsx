@@ -12,8 +12,8 @@ import Oportunidades from '@/pages/gerais/Oportunidades'
 import PublicarEvento from '@/pages/gerais/PublicarEvento'
 
 // Páginas de perfil
-import PerfilFreela from '@/pages/PerfilFreela'
-import PerfilEstabelecimento from '@/pages/PerfilEstabelecimento'
+import PerfilFreela from '@/pages/freela/PerfilFreela'
+import PerfilEstabelecimento from '@/pages/estabelecimento/PerfilEstabelecimento'
 
 export function RotasPublicas() {
   return (
