@@ -1,6 +1,5 @@
 // src/pages/estabelecimento/PainelEstabelecimento.jsx
 import React, { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { onSnapshot, query, collection, where, doc as docRef } from 'firebase/firestore'
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
@@ -11,16 +10,15 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
 import BuscarFreelas from '@/components/BuscarFreelas'
 import AgendasContratadas from '@/components/AgendasContratadas'
-import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompleto'
+import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
 import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
 
 export default function PainelEstabelecimento() {
-  const navigate = useNavigate()
-  const { rota } = useParams()
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
+  const [aba, setAba] = useState('buscar')
 
   // Status online/offline
   const { online } = useOnlineStatus(estabelecimento?.uid)
@@ -98,10 +96,10 @@ export default function PainelEstabelecimento() {
     }
     await signOut(auth)
     localStorage.removeItem('usuarioLogado')
-    navigate('/login')
+    window.location.href = '/login'
   }
 
-  // Carregando e acesso
+  // Estado de carregamento e acesso
   if (carregando) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -117,8 +115,7 @@ export default function PainelEstabelecimento() {
     )
   }
 
-  // Escolha de aba
-  const aba = rota || 'buscar'
+  // Renderiza conteúdo de acordo com aba interna
   const renderConteudo = () => {
     switch (aba) {
       case 'buscar':
@@ -131,10 +128,10 @@ export default function PainelEstabelecimento() {
         return <AvaliacaoFreela estabelecimento={estabelecimento} />
       case 'historico':
         return <HistoricoChamadasEstabelecimento estabelecimento={estabelecimento} />
-      case 'config-pagamento':
+      case 'configuracoes':
         return <ConfigPagamentoEstabelecimento usuario={estabelecimento} />
       default:
-        return <BuscarFreelas estabelecimento={estabelecimento} />
+        return null
     }
   }
 
@@ -149,19 +146,20 @@ export default function PainelEstabelecimento() {
               ● {online ? 'Online' : 'Offline'}
             </span>
           </h1>
+          {/* Navegação interna sem roteamento */}
           <nav className="border-b border-orange-300 mb-6 overflow-x-auto">
             <ul className="flex space-x-2 whitespace-nowrap">
               {[
-                ['buscar', '🔍 Buscar Freelancers'],
+                ['buscar', '🔍 Buscar'],
                 ['agendas', '📅 Agendas'],
                 ['vagas', '💼 Vagas'],
                 ['avaliacao', '⭐ Avaliar'],
                 ['historico', '📜 Histórico'],
-                ['config-pagamento', '⚙️ Configurações & Pagamentos']
+                ['configuracoes', '⚙️ Configurações']
               ].map(([key, label]) => (
                 <li key={key}>
                   <button
-                    onClick={() => navigate(`/painelestabelecimento/${key}`)}
+                    onClick={() => setAba(key)}
                     className={`px-4 py-2 border-b-2 font-semibold transition ${
                       aba === key
                         ? 'border-orange-600 text-orange-600'
@@ -174,9 +172,10 @@ export default function PainelEstabelecimento() {
               ))}
             </ul>
           </nav>
+
         </div>
 
-        {/* Conteúdo */}
+        {/* Conteúdo da aba selecionada */}
         <section>{renderConteudo()}</section>
       </div>
       <Toaster position="top-center" reverseOrder={false} />
