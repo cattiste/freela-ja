@@ -22,6 +22,8 @@ import PerfilFreela from '@/pages/freela/PerfilFreela'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import Chat from '@/pages/Chat'
+import VagasDisponiveis from '@/pages/freela/VagasDisponiveis'
+import EventosDisponiveis from '@/pages/freela/EventosDisponiveis'
 
 export default function PainelFreela() {
   const navigate = useNavigate()
