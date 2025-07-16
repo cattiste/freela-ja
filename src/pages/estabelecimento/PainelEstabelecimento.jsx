@@ -17,23 +17,17 @@ import MinhasVagas from '@/components/MinhasVagas'
 import CandidaturasEstabelecimento from '@/components/CandidaturasEstabelecimento'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
 
-function estaOnline(ultimaAtividadeTimestamp) {
-  if (!ultimaAtividadeTimestamp) return false
-  const agora = Date.now()
-  const ultimaAtividade = ultimaAtividadeTimestamp.toMillis()
-  return agora - ultimaAtividade < 120000
-}
-
 export default function PainelEstabelecimento() {
   const navigate = useNavigate()
-  const { rota } = useParams()            // extrai /painelestabelecimento/:rota?
+  const { rota } = useParams()
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [vagaEditando, setVagaEditando] = useState(null)
 
-  const { online } = useOnlineStatus(estabelecimento?.ultimaAtividade)
+  // agora passa o UID, não o Timestamp
+  const { online } = useOnlineStatus(estabelecimento?.uid)
 
-  // auth + fetch perfil
+  // autenticação + fetch do perfil
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -61,15 +55,15 @@ export default function PainelEstabelecimento() {
     return () => unsubscribe()
   }, [])
 
-  // atualização periódica de última atividade
+  // keep-alive da última atividade
   useEffect(() => {
     if (!estabelecimento?.uid) return
-    const interval = setInterval(() => {
+    const iv = setInterval(() => {
       updateDoc(doc(db, 'usuarios', estabelecimento.uid), {
         ultimaAtividade: serverTimestamp()
       }).catch(console.error)
     }, 30000)
-    return () => clearInterval(interval)
+    return () => clearInterval(iv)
   }, [estabelecimento])
 
   // notificação de checkout do freela
@@ -112,19 +106,29 @@ export default function PainelEstabelecimento() {
     setVagaEditando(vaga)
     navigate('/painelestabelecimento/publicar')
   }
-
   const onSalvarSucesso = () => {
     setVagaEditando(null)
     navigate('/painelestabelecimento/minhas-vagas')
   }
 
-  const rotaFinal = rota || 'buscar'
+  if (carregando) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-orange-600 text-lg font-semibold">Carregando painel...</p>
+      </div>
+    )
+  }
+  if (!estabelecimento) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-600 text-lg font-semibold">Acesso não autorizado.</p>
+      </div>
+    )
+  }
 
+  const aba = rota || 'buscar'
   const renderConteudo = () => {
-    if (!estabelecimento) {
-      return <p className="text-center text-red-600 mt-10 font-semibold">Acesso não autorizado.</p>
-    }
-    switch (rotaFinal) {
+    switch (aba) {
       case 'buscar':
         return <BuscarFreelas estabelecimento={estabelecimento} vaga={vagaEditando} />
       case 'agendas':
@@ -146,22 +150,13 @@ export default function PainelEstabelecimento() {
       case 'candidaturas':
         return <CandidaturasEstabelecimento estabelecimentoUid={estabelecimento.uid} />
       default:
-        return <BuscarFreelas estabelecimento={estabelecimento} />
+        return <BuscarFreelas estabelecimento={estabelecimento} vaga={vagaEditando} />
     }
-  }
-
-  if (carregando) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-orange-600 text-lg font-semibold">Carregando painel...</p>
-      </div>
-    )
   }
 
   return (
     <div className="min-h-screen bg-orange-50 p-4">
       <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
-        {/* Cabeçalho */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <h1 className="text-3xl font-bold text-orange-700 flex items-center gap-3">
             📊 Painel do Estabelecimento
@@ -185,7 +180,6 @@ export default function PainelEstabelecimento() {
           </div>
         </div>
 
-        {/* Navegação de abas */}
         <nav className="border-b border-orange-300 mb-6 overflow-x-auto">
           <ul className="flex space-x-2 whitespace-nowrap">
             {[
@@ -204,7 +198,7 @@ export default function PainelEstabelecimento() {
                     navigate(`/painelestabelecimento/${key}`)
                   }}
                   className={`px-4 py-2 border-b-2 font-semibold transition ${
-                    rotaFinal === key
+                    aba === key
                       ? 'border-orange-600 text-orange-600'
                       : 'border-transparent text-orange-400 hover:text-orange-600 hover:border-orange-400'
                   }`}
@@ -216,11 +210,9 @@ export default function PainelEstabelecimento() {
           </ul>
         </nav>
 
-        {/* Conteúdo dinamicamente renderizado */}
         <section>{renderConteudo()}</section>
       </div>
 
-      {/* Toaster para notificações */}
       <Toaster position="top-center" reverseOrder={false} />
     </div>
   )
