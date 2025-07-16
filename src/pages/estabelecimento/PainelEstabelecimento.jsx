@@ -12,9 +12,7 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import BuscarFreelas from '@/components/BuscarFreelas'
 import AgendasContratadas from '@/components/AgendasContratadas'
 import AvaliacaoFreela from '@/components/AvaliacaoFreela'
-import PublicarVaga from '@/pages/estabelecimento/PublicarVaga'
-import MinhasVagas from '@/components/MinhasVagas'
-import CandidaturasEstabelecimento from '@/components/CandidaturasEstabelecimento'
+import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompleto'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
 import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
 
@@ -23,12 +21,11 @@ export default function PainelEstabelecimento() {
   const { rota } = useParams()
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
-  const [vagaEditando, setVagaEditando] = useState(null)
 
-  // Passa o UID corretamente para o hook
+  // Status online/offline
   const { online } = useOnlineStatus(estabelecimento?.uid)
 
-  // Autentica e busca dados do estabelecimento
+  // Autenticação e dados do estabelecimento
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -67,7 +64,7 @@ export default function PainelEstabelecimento() {
     return () => clearInterval(iv)
   }, [estabelecimento])
 
-  // Notifica checkout pendente
+  // Notificação de checkout pendente
   useEffect(() => {
     if (!estabelecimento?.uid) return
     const unsub = onSnapshot(
@@ -92,6 +89,7 @@ export default function PainelEstabelecimento() {
     return () => unsub()
   }, [estabelecimento])
 
+  // Logout
   const handleLogout = async () => {
     if (estabelecimento?.uid) {
       await updateDoc(docRef(db, 'usuarios', estabelecimento.uid), {
@@ -103,15 +101,7 @@ export default function PainelEstabelecimento() {
     navigate('/login')
   }
 
-  const abrirEdicao = (vaga) => {
-    setVagaEditando(vaga)
-    navigate('/painelestabelecimento/publicar')
-  }
-  const onSalvarSucesso = () => {
-    setVagaEditando(null)
-    navigate('/painelestabelecimento/minhas-vagas')
-  }
-
+  // Carregando e acesso
   if (carregando) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -127,33 +117,24 @@ export default function PainelEstabelecimento() {
     )
   }
 
+  // Escolha de aba
   const aba = rota || 'buscar'
   const renderConteudo = () => {
     switch (aba) {
       case 'buscar':
-        return <BuscarFreelas estabelecimento={estabelecimento} vaga={vagaEditando} />
+        return <BuscarFreelas estabelecimento={estabelecimento} />
       case 'agendas':
         return <AgendasContratadas estabelecimento={estabelecimento} />
-      case 'historico':
-        return <HistoricoChamadasEstabelecimento estabelecimento={estabelecimento} />
+      case 'vagas':
+        return <VagasEstabelecimentoCompleto estabelecimento={estabelecimento} />
       case 'avaliacao':
         return <AvaliacaoFreela estabelecimento={estabelecimento} />
-      case 'publicar':
-        return (
-          <PublicarVaga
-            estabelecimento={estabelecimento}
-            vaga={vagaEditando}
-            onSucesso={onSalvarSucesso}
-          />
-        )
-      case 'minhas-vagas':
-        return <MinhasVagas estabelecimento={estabelecimento} onEditar={abrirEdicao} />
-      case 'candidaturas':
-        return <CandidaturasEstabelecimento estabelecimentoUid={estabelecimento.uid} />
+      case 'historico':
+        return <HistoricoChamadasEstabelecimento estabelecimento={estabelecimento} />
       case 'config-pagamento':
         return <ConfigPagamentoEstabelecimento usuario={estabelecimento} />
       default:
-        return <BuscarFreelas estabelecimento={estabelecimento} vaga={vagaEditando} />
+        return <BuscarFreelas estabelecimento={estabelecimento} />
     }
   }
 
@@ -164,11 +145,7 @@ export default function PainelEstabelecimento() {
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <h1 className="text-3xl font-bold text-orange-700 flex items-center gap-3">
             📊 Painel do Estabelecimento
-            <span
-              className={`text-sm font-semibold ${
-                online ? 'text-green-600' : 'text-gray-400'
-              }`}
-            >
+            <span className={`text-sm font-semibold ${online ? 'text-green-600' : 'text-gray-400'}`}>
               ● {online ? 'Online' : 'Offline'}
             </span>
           </h1>
@@ -177,19 +154,14 @@ export default function PainelEstabelecimento() {
               {[
                 ['buscar', '🔍 Buscar Freelancers'],
                 ['agendas', '📅 Agendas'],
+                ['vagas', '💼 Vagas'],
                 ['avaliacao', '⭐ Avaliar'],
-                ['publicar', '📢 Publicar Vaga'],
-                ['minhas-vagas', '📋 Minhas Vagas'],
-                ['candidaturas', '📄 Candidaturas'],
                 ['historico', '📜 Histórico'],
                 ['config-pagamento', '⚙️ Configurações & Pagamentos']
               ].map(([key, label]) => (
                 <li key={key}>
                   <button
-                    onClick={() => {
-                      setVagaEditando(null)
-                      navigate(`/painelestabelecimento/${key}`)
-                    }}
+                    onClick={() => navigate(`/painelestabelecimento/${key}`)}
                     className={`px-4 py-2 border-b-2 font-semibold transition ${
                       aba === key
                         ? 'border-orange-600 text-orange-600'
@@ -204,10 +176,9 @@ export default function PainelEstabelecimento() {
           </nav>
         </div>
 
-        {/* Conteúdo dinâmico */}
+        {/* Conteúdo */}
         <section>{renderConteudo()}</section>
       </div>
-
       <Toaster position="top-center" reverseOrder={false} />
     </div>
   )
