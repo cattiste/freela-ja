@@ -1,61 +1,76 @@
-// src/pages/estabelecimento/ConfigPagamentoEstabelecimento.jsx
+// src/pages/estabelecimento/ConfiguracoesEstabelecimento.jsx
 import React, { useState, useEffect } from 'react'
-import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
-import { toast } from 'react-hot-toast'
 
-import { db } from '@/firebase'
-import ConfiguracoesEstabelecimento from '@/pages/estabelecimento/ConfiguracoesEstabelecimento'  // caminho absoluto
-
-export default function ConfigPagamentoEstabelecimento({ usuario }) {
-  const [config, setConfig] = useState(null)
-  const [carregando, setCarregando] = useState(true)
+export default function ConfiguracoesEstabelecimento({ usuario, config, onSalvar }) {
+  const [pix, setPix] = useState('')
+  const [banco, setBanco] = useState('')
+  const [agencia, setAgencia] = useState('')
+  const [conta, setConta] = useState('')
 
   useEffect(() => {
-    if (!usuario?.uid) return
-    const load = async () => {
-      try {
-        const snap = await getDoc(doc(db, 'configuracoes', usuario.uid))
-        if (snap.exists()) setConfig(snap.data())
-      } catch (err) {
-        console.error(err)
-        toast.error('Erro ao carregar configurações')
-      } finally {
-        setCarregando(false)
-      }
+    if (config) {
+      setPix(config.pix || '')
+      setBanco(config.banco || '')
+      setAgencia(config.agencia || '')
+      setConta(config.conta || '')
     }
-    load()
-  }, [usuario])
+  }, [config])
 
-  const handleSalvar = async (novasConfig) => {
-    try {
-      await updateDoc(doc(db, 'configuracoes', usuario.uid), {
-        ...novasConfig,
-        atualizadoEm: serverTimestamp(),
-      })
-      toast.success('Configurações salvas com sucesso')
-      setConfig(novasConfig)
-    } catch (err) {
-      console.error(err)
-      toast.error('Erro ao salvar configurações')
-    }
-  }
-
-  if (carregando) {
-    return (
-      <div className="p-6">
-        <p className="text-gray-500">Carregando configurações...</p>
-      </div>
-    )
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    onSalvar({ pix, banco, agencia, conta })
   }
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow">
-      <h2 className="text-2xl font-semibold mb-4">Configurações & Pagamentos</h2>
-      <ConfiguracoesEstabelecimento
-        usuario={usuario}
-        config={config}
-        onSalvar={handleSalvar}
-      />
-    </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium">Chave PIX</label>
+        <input
+          type="text"
+          value={pix}
+          onChange={(e) => setPix(e.target.value)}
+          className="mt-1 block w-full border rounded p-2"
+          placeholder="00000000-00"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">Banco</label>
+        <input
+          type="text"
+          value={banco}
+          onChange={(e) => setBanco(e.target.value)}
+          className="mt-1 block w-full border rounded p-2"
+          placeholder="Nome do banco"
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium">Agência</label>
+          <input
+            type="text"
+            value={agencia}
+            onChange={(e) => setAgencia(e.target.value)}
+            className="mt-1 block w-full border rounded p-2"
+            placeholder="0000"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Conta</label>
+          <input
+            type="text"
+            value={conta}
+            onChange={(e) => setConta(e.target.value)}
+            className="mt-1 block w-full border rounded p-2"
+            placeholder="00000-0"
+          />
+        </div>
+      </div>
+      <button
+        type="submit"
+        className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700"
+      >
+        Salvar
+      </button>
+    </form>
   )
 }
