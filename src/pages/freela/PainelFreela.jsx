@@ -7,6 +7,7 @@ import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, 
 import { toast } from 'react-hot-toast'
 
 import HistoricoChamadasFreela from '@/pages/freela/HistoricoChamadasFreela'
+import HistoricoChamadasFreela from '@/pages/Chamadas'
 import AvaliacoesRecebidasFreela from '@/pages/freela/AvaliacoesRecebidasFreela'
 import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
 import PerfilFreela from '@/pages/freela/PerfilFreela'
@@ -66,6 +67,9 @@ export default function PainelFreela() {
     switch (rotaFinal) {
       case 'perfil':
         return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
+
+      case 'chamadas':
+        return <Chamadas freelaUid={usuario.uid} />  
 
       case 'agendas':
         return (
