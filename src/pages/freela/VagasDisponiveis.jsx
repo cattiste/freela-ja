@@ -33,7 +33,6 @@ export default function VagasDisponiveis({ freela }) {
   const [candidaturas, setCandidaturas] = useState([])
   const [vagasExcluidas, setVagasExcluidas] = useState(new Set())
 
-  // Protege acesso
   if (!freela?.uid) {
     return (
       <div className="text-center text-red-600 mt-10">
@@ -48,15 +47,24 @@ export default function VagasDisponiveis({ freela }) {
       setErro(null)
       setSucesso(null)
       try {
-        // Listar apenas vagas abertas
-        const q = query(
+        // Primeiro tenta apenas vagas com status 'aberta'
+        const qStatus = query(
           collection(db, 'vagas'),
           where('status', '==', 'aberta')
         )
-        const snapshot = await getDocs(q)
-        const listaVagas = snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
+        const snapStatus = await getDocs(qStatus)
+        let listaVagas = snapStatus.docs.map(d => ({ id: d.id, ...d.data() }))
+        console.log('[VagasDisponiveis] vagas com status aberta:', listaVagas)
 
-        // Buscar candidaturas do usuário
+        // Se não encontrar, traz todas as vagas para debug
+        if (listaVagas.length === 0) {
+          console.warn('[VagasDisponiveis] nenhuma vaga aberta. Buscando todas sem filtro de status.')
+          const allSnap = await getDocs(collection(db, 'vagas'))
+          listaVagas = allSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+          console.log('[VagasDisponiveis] todas as vagas:', listaVagas)
+        }
+
+        // Candidaturas do freela
         const qCand = query(
           collection(db, 'candidaturas'),
           where('freelaUid', '==', freela.uid)
@@ -67,7 +75,7 @@ export default function VagasDisponiveis({ freela }) {
         setVagas(listaVagas)
         setCandidaturas(listaCandidaturas)
       } catch (err) {
-        console.error('Erro ao carregar vagas:', err)
+        console.error('[VagasDisponiveis] Erro ao carregar vagas:', err)
         setErro('Erro ao carregar vagas. Tente novamente.')
       } finally {
         setLoading(false)
@@ -76,7 +84,7 @@ export default function VagasDisponiveis({ freela }) {
     carregarVagas()
   }, [freela.uid])
 
-  async function handleCandidatar(vaga) {
+  const handleCandidatar = async (vaga) => {
     if (!freela.uid) {
       setErro('Você precisa estar logado para se candidatar.')
       return
@@ -95,18 +103,14 @@ export default function VagasDisponiveis({ freela }) {
       })
       setSucesso(`Candidatura enviada para vaga: ${vaga.titulo}`)
       setCandidaturas(prev => [...prev, { vagaId: vaga.id, status: 'pendente' }])
-      setVagasExcluidas(prev => {
-        const copy = new Set(prev)
-        copy.add(vaga.id)
-        return copy
-      })
+      setVagasExcluidas(prev => new Set(prev).add(vaga.id))
     } catch (err) {
-      console.error('Erro ao candidatar:', err)
+      console.error('[VagasDisponiveis] Erro ao candidatar:', err)
       setErro('Erro ao enviar candidatura. Tente novamente.')
     }
   }
 
-  async function handleExcluirCandidatura(id, vagaId) {
+  const handleExcluirCandidatura = async (id, vagaId) => {
     if (!window.confirm('Tem certeza que deseja excluir esta candidatura?')) return
     try {
       await deleteDoc(doc(db, 'candidaturas', id))
@@ -114,15 +118,13 @@ export default function VagasDisponiveis({ freela }) {
       setVagasExcluidas(prev => new Set(prev).add(vagaId))
       setSucesso('Candidatura excluída com sucesso!')
       setErro(null)
-    } catch {
+    } catch (err) {
+      console.error('[VagasDisponiveis] Erro ao excluir candidatura:', err)
       setErro('Erro ao excluir candidatura. Tente novamente.')
-      setSucesso(null)
     }
   }
 
-  function getCandidaturaDaVaga(vagaId) {
-    return candidaturas.find(c => c.vagaId === vagaId)
-  }
+  const getCandidaturaDaVaga = (vagaId) => candidaturas.find(c => c.vagaId === vagaId)
 
   if (loading) {
     return (
@@ -132,24 +134,23 @@ export default function VagasDisponiveis({ freela }) {
     )
   }
 
+  if (erro) {
+    return <div className="text-red-600 p-4">{erro}</div>
+  }
+
   return (
     <div className="max-w-full p-4 bg-white rounded-xl shadow">
       <h2 className="text-2xl font-bold text-orange-700 mb-6 text-center">
         🎯 Vagas Disponíveis
       </h2>
-
-      {erro && <div className="mb-4 p-3 rounded bg-red-100 text-red-700 relative">{erro}</div>}
-      {sucesso && <div className="mb-4 p-3 rounded bg-green-100 text-green-700 relative">{sucesso}</div>}
-
       {vagas.length === 0 ? (
-        <p className="text-center text-gray-600">Nenhuma vaga disponível no momento.</p>
+        <p className="text-center text-gray-600">Nenhuma vaga disponível.</p>
       ) : (
         <div className="space-y-6">
           {vagas.map(vaga => {
             const candidatura = getCandidaturaDaVaga(vaga.id)
             const isExcluida = vagasExcluidas.has(vaga.id)
             const isUrgente = vaga.urgente
-
             return (
               <div
                 key={vaga.id}
@@ -160,39 +161,28 @@ export default function VagasDisponiveis({ freela }) {
                 <h3 className="text-xl font-semibold text-orange-700 mb-2">
                   {vaga.titulo || vaga.funcao}
                 </h3>
-
                 {isExcluida ? (
-                  <p className="text-red-600 font-semibold mt-2">
-                    Candidatura excluída - Você não pode se candidatar novamente.
+                  <p className="text-red-600 font-semibold">
+                    Candidatura excluída.
                   </p>
                 ) : (
                   <>
-                    <p><strong>Tipo:</strong> {vaga.tipo === 'clt' ? 'CLT (Fixa)' : 'Freela (Diária)'}</p>
+                    <p><strong>Tipo:</strong> {vaga.tipo === 'clt' ? 'CLT' : 'Freela'}</p>
                     {vaga.tipo === 'freela' && vaga.valorDiaria != null && (
-                      <p>
-                        <strong>Valor da diária:</strong> R$ {Number(vaga.valorDiaria).toFixed(2).replace('.', ',')}
-                      </p>
+                      <p><strong>Valor diária:</strong> R$ {Number(vaga.valorDiaria).toFixed(2).replace('.', ',')}</p>
                     )}
-                    {vaga.tipo === 'clt' && vaga.salario != null && (
-                      <p>
-                        <strong>Salário:</strong> R$ {Number(vaga.salario).toFixed(2).replace('.', ',')}
-                      </p>
-                    )}
-                    <p><strong>Data da publicação:</strong> {formatarData(vaga.dataPublicacao)}</p>
-                    {vaga.descricao && <p className="mt-2 text-gray-700"><strong>Descrição:</strong> {vaga.descricao}</p>}
-                    {vaga.urgente && <p className="text-red-600 font-semibold mt-3 uppercase tracking-wide">URGENTE</p>}
-
-                    {candidatura ? (
-                      <p className="mt-4 font-semibold">
-                        Status: <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded">{candidatura.status.toUpperCase()}</span>
-                      </p>
-                    ) : (
+                    <p><strong>Publicado em:</strong> {formatarData(vaga.dataPublicacao)}</p>
+                    {vaga.urgente && <p className="text-red-600 font-semibold">URGENTE!</p>}
+                    <p className="mt-2 text-gray-700">{vaga.descricao}</p>
+                    {!candidatura ? (
                       <button
                         onClick={() => handleCandidatar(vaga)}
-                        className="mt-4 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded transition"
+                        className="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
                       >
                         Candidatar-se
                       </button>
+                    ) : (
+                      <p className="mt-4 font-semibold">Você já se candidatou ({candidatura.status})</p>
                     )}
                   </>
                 )}
