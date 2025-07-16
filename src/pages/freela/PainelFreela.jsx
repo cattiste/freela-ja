@@ -3,26 +3,36 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { auth, db } from '@/firebase'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
-import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  doc,
+  updateDoc,
+  serverTimestamp,
+  getDoc
+} from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
 
 import HistoricoChamadasFreela from '@/pages/freela/HistoricoChamadasFreela'
-import HistoricoChamadasFreela from '@/pages/Chamadas'
 import AvaliacoesRecebidasFreela from '@/pages/freela/AvaliacoesRecebidasFreela'
 import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
 import PerfilFreela from '@/pages/freela/PerfilFreela'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 import Chat from '@/pages/Chat'
+
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import VagasDisponiveis from '@/pages/freela/VagasDisponiveis'
 import EventosDisponiveis from '@/pages/freela/EventosDisponiveis'
+import Chamadas from '@/pages/freela/Chamadas'
 
 export default function PainelFreela() {
   const navigate = useNavigate()
   const { rota } = useParams()
   const [usuario, setUsuario] = useState(null)
   const [carregando, setCarregando] = useState(true)
-  const [chamadas, setChamadas] = useState([])
+  const [chamadasLista, setChamadasLista] = useState([])
   const [agendaAba, setAgendaAba] = useState('agenda')
 
   useEffect(() => {
@@ -35,8 +45,11 @@ export default function PainelFreela() {
       const data = { uid: user.uid, ...snap.data() }
       setUsuario(data)
       unsubChamadas = onSnapshot(
-        query(collection(db, 'chamadas'), where('freelaUid', '==', user.uid)),
-        snap => setChamadas(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+        query(
+          collection(db, 'chamadas'),
+          where('freelaUid', '==', user.uid)
+        ),
+        snap => setChamadasLista(snap.docs.map(d => ({ id: d.id, ...d.data() })))
       )
       await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
       setCarregando(false)
@@ -68,9 +81,6 @@ export default function PainelFreela() {
       case 'perfil':
         return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
 
-      case 'chamadas':
-        return <Chamadas freelaUid={usuario.uid} />  
-
       case 'agendas':
         return (
           <>
@@ -79,7 +89,8 @@ export default function PainelFreela() {
                 {[
                   ['agenda', '📅 Agenda'],
                   ['vagas', '📋 Vagas Disponíveis'],
-                  ['eventos', '🎉 Eventos Disponíveis']
+                  ['eventos', '🎉 Eventos Disponíveis'],
+                  ['chamadas', '📞 Chamadas']
                 ].map(([key, label]) => (
                   <li key={key}>
                     <button
@@ -97,8 +108,9 @@ export default function PainelFreela() {
               </ul>
             </nav>
             {agendaAba === 'agenda' && <AgendaCompleta freela={usuario} />}
-            {agendaAba === 'vagas' && <VagasDisponiveis freela={usuario} />}
-            {agendaAba === 'eventos' && <EventosDisponiveis freela={usuario} />}
+            {agendaAba === 'vagas'   && <VagasDisponiveis freela={usuario} />}
+            {agendaAba === 'eventos'  && <EventosDisponiveis freela={usuario} />}
+            {agendaAba === 'chamadas' && <Chamadas />}
           </>
         )
 
@@ -109,20 +121,15 @@ export default function PainelFreela() {
       case 'recebimentos':
         return <RecebimentosFreela freela={usuario} />
       case 'chat': {
-        const ativa = chamadas.find(c => c.status === 'aceita')
+        const ativa = chamadasLista.find(c => c.status === 'aceita')
         return ativa ? <Chat chamadaId={ativa.id} /> : <p className="text-center text-gray-500 mt-4">Nenhuma chamada ativa.</p>
       }
       case 'configuracoes':
         return <ConfiguracoesFreela freela={usuario} />
       case 'avaliar-estabelecimento': {
-        const pend = chamadas.find(c => c.checkOutFreela && !c.avaliacaoFreelaFeita)
+        const pend = chamadasLista.find(c => c.checkOutFreela && !c.avaliacaoFreelaFeita)
         if (!pend) return <p className="text-center text-gray-600 mt-4">Nenhuma avaliação pendente.</p>
-        return (
-          <div className="p-4 border rounded">
-            <h3 className="text-lg font-semibold mb-2">📝 Avalie o estabelecimento</h3>
-            {/* formulário de avaliação */}
-          </div>
-        )
+        return <div className="p-4 border rounded"><h3 className="text-lg font-semibold mb-2">📝 Avalie o estabelecimento</h3></div>
       }
       default:
         return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
@@ -160,7 +167,7 @@ export default function PainelFreela() {
               ['avaliar-estabelecimento', '📝 Avaliar Estabelecimento']
             ].map(([key, label]) => (
               <li key={key}>
-                <button onClick={() => navigate(`/painelfreela/${key}`)} className={`px-4 py-2 border-b-2 font-semibold transition ${ (rota || 'perfil') === key ? 'border-orange-600 text-orange-600' : 'border-transparent text-gray-400 hover:text-orange-600 hover:border-orange-400'}`}>
+                <button onClick={() => navigate(`/painelfreela/${key}`)} className={`px-4 py-2 border-b-2 font-semibold transition ${( (rota || 'perfil') === key ) ? 'border-orange-600 text-orange-600' : 'border-transparent text-gray-400 hover:text-orange-600 hover:border-orange-400'}`}>
                   {label}
                 </button>
               </li>
