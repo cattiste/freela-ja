@@ -20,7 +20,6 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
   })
   const [enviando, setEnviando] = useState(false)
 
-  // Pré-preenche quando for edição
   useEffect(() => {
     if (vaga) {
       setForm({
@@ -30,9 +29,9 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
         endereco: vaga.endereco || '',
         funcao: vaga.funcao || '',
         tipo: vaga.tipo || 'freela',
-        valorDiaria: vaga.valorDiaria || '',
+        valorDiaria: vaga.valorDiaria ?? '',
         datas: vaga.datas || [],
-        urgente: vaga.urgente || false
+        urgente: vaga.urgente ?? false
       })
     }
   }, [vaga])
@@ -48,7 +47,7 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    // Validações básicas
+    // Validações
     if (!form.titulo || !form.descricao || !form.cidade || !form.funcao) {
       return toast.error('Preencha todos os campos obrigatórios.')
     }
@@ -67,9 +66,9 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
 
     setEnviando(true)
     try {
-      // converte datas para Timestamp
+      // Converte datas para Timestamp
       const datasParaFirestore = form.datas.map(d => {
-        const jsDate = d.toDate ? d.toDate() : d  // DatePicker object or Date
+        const jsDate = d.toDate ? d.toDate() : d
         return Timestamp.fromDate(jsDate)
       })
 
@@ -87,15 +86,12 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
         estabelecimentoUid: estabelecimento.uid,
         estabelecimentoNome: estabelecimento.nome
       }
-      console.log('[PublicarVaga] Payload ->', payload)
 
       if (vaga && vaga.id) {
-        console.log(`[PublicarVaga] Atualizando vaga ${vaga.id}`)
         const ref = doc(db, 'vagas', vaga.id)
         await updateDoc(ref, payload)
         toast.success('Vaga atualizada com sucesso.')
       } else {
-        console.log('[PublicarVaga] Criando nova vaga')
         const ref = collection(db, 'vagas')
         await addDoc(ref, payload)
         toast.success('Vaga publicada com sucesso.')
@@ -103,7 +99,7 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
 
       onSucesso?.()
     } catch (err) {
-      console.error('[PublicarVaga] Erro ao salvar vaga:', err)
+      console.error('Erro ao salvar vaga:', err)
       toast.error(`Falha ao salvar vaga: ${err.message}`)
     } finally {
       setEnviando(false)
