@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
-import { onSnapshot, query, collection, where } from 'firebase/firestore'
+import { onSnapshot, query, collection, where, doc as docRef } from 'firebase/firestore'
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { toast, Toaster } from 'react-hot-toast'
 
@@ -24,10 +24,10 @@ export default function PainelEstabelecimento() {
   const [carregando, setCarregando] = useState(true)
   const [vagaEditando, setVagaEditando] = useState(null)
 
-  // agora passa o UID, não o Timestamp
+  // Passa o UID corretamente para o hook
   const { online } = useOnlineStatus(estabelecimento?.uid)
 
-  // autenticação + fetch do perfil
+  // Autentica e busca dados do estabelecimento
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -55,18 +55,18 @@ export default function PainelEstabelecimento() {
     return () => unsubscribe()
   }, [])
 
-  // keep-alive da última atividade
+  // Atualiza última atividade a cada 30s
   useEffect(() => {
     if (!estabelecimento?.uid) return
     const iv = setInterval(() => {
-      updateDoc(doc(db, 'usuarios', estabelecimento.uid), {
+      updateDoc(docRef(db, 'usuarios', estabelecimento.uid), {
         ultimaAtividade: serverTimestamp()
       }).catch(console.error)
     }, 30000)
     return () => clearInterval(iv)
   }, [estabelecimento])
 
-  // notificação de checkout do freela
+  // Notifica checkout pendente
   useEffect(() => {
     if (!estabelecimento?.uid) return
     const unsub = onSnapshot(
@@ -93,7 +93,7 @@ export default function PainelEstabelecimento() {
 
   const handleLogout = async () => {
     if (estabelecimento?.uid) {
-      await updateDoc(doc(db, 'usuarios', estabelecimento.uid), {
+      await updateDoc(docRef(db, 'usuarios', estabelecimento.uid), {
         ultimaAtividade: serverTimestamp()
       })
     }
@@ -157,6 +157,7 @@ export default function PainelEstabelecimento() {
   return (
     <div className="min-h-screen bg-orange-50 p-4">
       <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+        {/* Cabeçalho */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <h1 className="text-3xl font-bold text-orange-700 flex items-center gap-3">
             📊 Painel do Estabelecimento
@@ -165,9 +166,10 @@ export default function PainelEstabelecimento() {
             </span>
           </h1>
           <div className="flex gap-4">
+            {/* Botão de editar perfil com UID */}
             <button
-              onClick={() => navigate('/editarperfilestabelecimento')}
-              className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700"
+              onClick={() => navigate(`/editarperfilestabelecimento/${estabelecimento.uid}`)}
+              className="px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
             >
               ✏️ Editar Perfil
             </button>
@@ -180,6 +182,7 @@ export default function PainelEstabelecimento() {
           </div>
         </div>
 
+        {/* Navegação de abas */}
         <nav className="border-b border-orange-300 mb-6 overflow-x-auto">
           <ul className="flex space-x-2 whitespace-nowrap">
             {[
@@ -200,7 +203,7 @@ export default function PainelEstabelecimento() {
                   className={`px-4 py-2 border-b-2 font-semibold transition ${
                     aba === key
                       ? 'border-orange-600 text-orange-600'
-                      : 'border-transparent text-orange-400 hover:text-orange-600 hover:border-orange-400'
+                      : 'border-transparent text-gray-400 hover:text-orange-600 hover:border-orange-400'
                   }`}
                 >
                   {label}
@@ -210,6 +213,7 @@ export default function PainelEstabelecimento() {
           </ul>
         </nav>
 
+        {/* Conteúdo dinâmico */}
         <section>{renderConteudo()}</section>
       </div>
 
