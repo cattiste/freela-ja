@@ -25,6 +25,7 @@ import PainelEstabelecimento from '@/pages/estabelecimento/PainelEstabelecimento
 import CadastroEstabelecimento from '@/pages/estabelecimento/CadastroEstabelecimento'
 import EditarPerfilEstabelecimento from '@/pages/estabelecimento/EditarPerfilEstabelecimento'
 import PublicarVaga from '@/pages/estabelecimento/PublicarVaga'
+import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
 
 export default function App() {
   const [usuario, setUsuario] = useState(null)
@@ -85,6 +86,10 @@ export default function App() {
         <Route path="/painelestabelecimento/:rota?" element={<PainelEstabelecimento usuario={usuario} />} />
         <Route path="/editarperfilestabelecimento/:uid" element={<EditarPerfilEstabelecimento />} />
         <Route path="/publicarvaga" element={<PublicarVaga />} />
+        <Route
+          path="/painelestabelecimento/config-pagamento"
+          element={<ConfigPagamentoEstabelecimento usuario={usuario} />}
+        />
       </Routes>
     </BrowserRouter>
   )
