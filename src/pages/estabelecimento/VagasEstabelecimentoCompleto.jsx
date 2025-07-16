@@ -71,5 +71,5 @@ export default function VagasEstabelecimentoCompleto({ estabelecimento }) {
         )}
       </div>
     </div>
-)
+  )
 }
