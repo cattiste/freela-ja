@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { auth, db } from '@/firebase'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import {
@@ -15,20 +15,17 @@ import {
 } from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
 
-import HistoricoChamadasFreela from '@/pages/freela//HistoricoChamadasFreela'
-import AvaliacoesRecebidasFreela from '@/pages/freela//AvaliacoesRecebidasFreela'
-import ConfiguracoesFreela from '@/pages/freela//ConfiguracoesFreela'
-import PerfilFreela from '@/pages/freela//PerfilFreela'
-import RecebimentosFreela from '@/pages/freela//RecebimentosFreela'
-import AgendaCompleta from '@/pages/freela//AgendaCompleta'
-import VagasDisponiveis from '@/pages/freela/VagasDisponiveis'
-import EventosDisponiveis from '@/pages/freela/EventosDisponiveis'
-import Chat from './Chat'
-
+import HistoricoChamadasFreela from '@/pages/freela/HistoricoChamadasFreela'
+import AvaliacoesRecebidasFreela from '@/pages/freela/AvaliacoesRecebidasFreela'
+import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
+import PerfilFreela from '@/pages/freela/PerfilFreela'
+import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
+import AgendaCompleta from '@/pages/freela/AgendaCompleta'
+import Chat from '@/pages/Chat'
 
 export default function PainelFreela() {
   const navigate = useNavigate()
-  const location = useLocation()
+  const { rota } = useParams()
   const [usuario, setUsuario] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [chamadas, setChamadas] = useState([])
@@ -38,17 +35,17 @@ export default function PainelFreela() {
   useEffect(() => {
     let unsubscribeChamadas = null
 
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const docRef = doc(db, 'usuarios', user.uid)
+    const unsubscribeAuth = onAuthStateChanged(auth, async (usuario) => {
+      if (usuario) {
+        const docRef = doc(db, 'usuarios', usuario.uid)
         try {
           const snap = await getDoc(docRef)
           if (snap.exists() && snap.data().tipo === 'freela') {
-            const userData = { uid: user.uid, ...snap.data() }
-            setUsuario(userData)
+            const usuarioData = { uid: usuario.uid, ...snap.data() }
+            setUsuario(usuarioData)
 
             unsubscribeChamadas = onSnapshot(
-              query(collection(db, 'chamadas'), where('freelaUid', '==', user.uid)),
+              query(collection(db, 'chamadas'), where('freelaUid', '==', usuario.uid)),
               (snapshot) => {
                 setChamadas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
               }
@@ -94,44 +91,10 @@ export default function PainelFreela() {
     navigate('/login')
   }
 
-  const rota = location.pathname.split('/')[2] || 'perfil'
-
-  const fazerCheckin = async () => {
-    const chamada = chamadas.find(c => c.status === 'aceita' && !c.checkInFreela)
-    if (!chamada) return toast.error('Nada para check-in.')
-    setLoadingCheckin(true)
-    try {
-      await updateDoc(doc(db, 'chamadas', chamada.id), {
-        checkInFreela: true,
-        checkInHora: serverTimestamp()
-      })
-      toast.success('Check-in realizado!')
-    } catch (err) {
-      console.error(err)
-      toast.error('Erro no check-in.')
-    }
-    setLoadingCheckin(false)
-  }
-
-  const fazerCheckout = async () => {
-    const chamada = chamadas.find(c => c.status === 'aceita' && c.checkInFreela && !c.checkOutFreela)
-    if (!chamada) return toast.error('Nada para check-out.')
-    setLoadingCheckout(true)
-    try {
-      await updateDoc(doc(db, 'chamadas', chamada.id), {
-        checkOutFreela: true,
-        checkOutHora: serverTimestamp()
-      })
-      toast.success('Check-out realizado! Aguarde a avaliação.')
-    } catch (err) {
-      console.error(err)
-      toast.error('Erro no check-out.')
-    }
-    setLoadingCheckout(false)
-  }
-
   const renderConteudo = () => {
-    switch (rota) {
+    const rotaFinal = rota || 'perfil'
+
+    switch (rotaFinal) {
       case 'perfil':
         return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
       case 'agenda':
@@ -141,7 +104,7 @@ export default function PainelFreela() {
       case 'historico':
         return <HistoricoChamadasFreela freelaUid={usuario.uid} />
       case 'recebimentos':
-        return <RecebimentosFreela />
+        return <RecebimentosFreela freela={usuario} />
       case 'chat': {
         const chamadaAtiva = chamadas.find(c => c.status === 'aceita')
         return chamadaAtiva ? (
@@ -151,7 +114,7 @@ export default function PainelFreela() {
         )
       }
       case 'configuracoes':
-        return <ConfiguracoesFreela />
+        return <ConfiguracoesFreela freela={usuario} />
       case 'avaliar-estabelecimento': {
         const chamadaParaAvaliar = chamadas.find(
           c => c.checkOutFreela && !c.avaliacaoFreelaFeita
@@ -264,7 +227,7 @@ export default function PainelFreela() {
                 <button
                   onClick={() => navigate(`/painelfreela/${key}`)}
                   className={`px-4 py-2 border-b-2 font-semibold transition ${
-                    rota === key
+                    (rota || 'perfil') === key
                       ? 'border-orange-600 text-orange-600'
                       : 'border-transparent text-orange-400 hover:text-orange-600 hover:border-orange-400'
                   }`}
