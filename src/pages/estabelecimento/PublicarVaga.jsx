@@ -67,42 +67,42 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
 
     setEnviando(true)
     try {
-      const payload = {
-        titulo: form.titulo,
-        descricao: form.descricao,
-        cidade: form.cidade,
-        endereco: form.endereco,
-        funcao: form.funcao,
-        tipo: form.tipo,
-        valorDiaria: form.valorDiaria || null,
-        datas: form.datas,
-        urgente: form.urgente,
-        criadoEm: serverTimestamp(),
-        estabelecimentoUid: estabelecimento.uid,
-        estabelecimentoNome: estabelecimento.nome
-      }
-      console.log('[PublicarVaga] Payload ->', payload)
+  const datasParaFirestore = form.datas.map(d =>
+    Timestamp.fromDate(d.toDate())
+  )
 
-      if (vaga && vaga.id) {
-        console.log(`[PublicarVaga] Atualizando vaga ${vaga.id}`)
-        const ref = doc(db, 'vagas', vaga.id)
-        await updateDoc(ref, payload)
-        toast.success('Vaga atualizada com sucesso.')
-      } else {
-        console.log('[PublicarVaga] Criando nova vaga')
-        const ref = collection(db, 'vagas')
-        await addDoc(ref, payload)
-        toast.success('Vaga publicada com sucesso.')
-      }
-
-      onSucesso?.()
-    } catch (err) {
-      console.error('[PublicarVaga] Erro ao salvar vaga:', err)
-      toast.error(`Falha ao salvar vaga: ${err.message}`)
-    } finally {
-      setEnviando(false)
-    }
+  const payload = {
+    titulo: form.titulo,
+    descricao: form.descricao,
+    cidade: form.cidade,
+    endereco: form.endereco,
+    funcao: form.funcao,
+    tipo: form.tipo,
+    valorDiaria: form.valorDiaria || null,
+    datas: datasParaFirestore,
+    urgente: form.urgente,
+    criadoEm: serverTimestamp(),
+    estabelecimentoUid: estabelecimento.uid,
+    estabelecimentoNome: estabelecimento.nome
   }
+
+  if (vaga && vaga.id) {
+    const ref = doc(db, 'vagas', vaga.id)
+    await updateDoc(ref, payload)
+    toast.success('Vaga atualizada com sucesso.')
+  } else {
+    const ref = collection(db, 'vagas')
+    await addDoc(ref, payload)
+    toast.success('Vaga publicada com sucesso.')
+  }
+
+  onSucesso?.()
+} catch (err) {
+  console.error(err)
+  toast.error(`Falha ao salvar vaga: ${err.message}`)
+} finally {
+  setEnviando(false)
+}
 
   return (
     <form
