@@ -20,12 +20,19 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
   })
   const [enviando, setEnviando] = useState(false)
 
-  // Se vier pra editar, pré-preenche o form
+  // Pré-preenche quando for edição
   useEffect(() => {
     if (vaga) {
       setForm({
-        ...vaga,
-        datas: vaga.datas || []
+        titulo: vaga.titulo || '',
+        descricao: vaga.descricao || '',
+        cidade: vaga.cidade || '',
+        endereco: vaga.endereco || '',
+        funcao: vaga.funcao || '',
+        tipo: vaga.tipo || 'freela',
+        valorDiaria: vaga.valorDiaria || '',
+        datas: vaga.datas || [],
+        urgente: vaga.urgente || false
       })
     }
   }, [vaga])
@@ -59,18 +66,24 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
     }
 
     setEnviando(true)
-
     try {
-      // Só aqui dentro pra pegar qualquer erro, inclusive de payload
       const payload = {
-        ...form,
+        titulo: form.titulo,
+        descricao: form.descricao,
+        cidade: form.cidade,
+        endereco: form.endereco,
+        funcao: form.funcao,
+        tipo: form.tipo,
+        valorDiaria: form.valorDiaria || null,
+        datas: form.datas,
+        urgente: form.urgente,
         criadoEm: serverTimestamp(),
         estabelecimentoUid: estabelecimento.uid,
         estabelecimentoNome: estabelecimento.nome
       }
       console.log('[PublicarVaga] Payload ->', payload)
 
-      if (vaga) {
+      if (vaga && vaga.id) {
         console.log(`[PublicarVaga] Atualizando vaga ${vaga.id}`)
         const ref = doc(db, 'vagas', vaga.id)
         await updateDoc(ref, payload)
@@ -92,13 +105,141 @@ export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl bg-white p-6 rounded-xl shadow-md">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4 max-w-2xl bg-white p-6 rounded-xl shadow-md"
+    >
       <h2 className="text-2xl font-bold text-orange-600">
         {vaga ? '✏️ Editar Vaga' : '📢 Publicar Nova Vaga'}
       </h2>
 
-      {/* …seu markup permanece igual… */}
+      {/* Título e Função */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block font-medium text-sm mb-1">Título *</label>
+          <input
+            type="text"
+            name="titulo"
+            value={form.titulo}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+            required
+          />
+        </div>
+        <div>
+          <label className="block font-medium text-sm mb-1">Função *</label>
+          <input
+            type="text"
+            name="funcao"
+            value={form.funcao}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+            required
+          />
+        </div>
+      </div>
 
+      {/* Cidade e Endereço (CLT) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block font-medium text-sm mb-1">Cidade *</label>
+          <input
+            type="text"
+            name="cidade"
+            value={form.cidade}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+            required
+          />
+        </div>
+        {form.tipo === 'clt' && (
+          <div>
+            <label className="block font-medium text-sm mb-1">Endereço *</label>
+            <input
+              type="text"
+              name="endereco"
+              value={form.endereco}
+              onChange={handleChange}
+              className="w-full border px-3 py-2 rounded"
+              required
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Tipo e Valor/Diária */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block font-medium text-sm mb-1">Tipo da Vaga *</label>
+          <select
+            name="tipo"
+            value={form.tipo}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+          >
+            <option value="freela">Freela</option>
+            <option value="clt">CLT</option>
+          </select>
+        </div>
+        {form.tipo === 'freela' && (
+          <div>
+            <label className="block font-medium text-sm mb-1">
+              Valor da diária (R$) *
+            </label>
+            <input
+              type="number"
+              name="valorDiaria"
+              value={form.valorDiaria}
+              onChange={handleChange}
+              className="w-full border px-3 py-2 rounded"
+              required
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Datas (Freela) */}
+      {form.tipo === 'freela' && (
+        <div>
+          <label className="block font-medium text-sm mb-1">
+            Datas agendadas *
+          </label>
+          <DatePicker
+            multiple
+            value={form.datas}
+            onChange={(datas) => setForm(prev => ({ ...prev, datas }))}
+            format="DD/MM/YYYY"
+            className="orange"
+            placeholder="Selecione datas"
+          />
+        </div>
+      )}
+
+      {/* Urgente */}
+      <div className="flex items-center gap-2 mt-2">
+        <input
+          type="checkbox"
+          name="urgente"
+          checked={form.urgente}
+          onChange={handleChange}
+        />
+        <label className="text-sm">Vaga urgente</label>
+      </div>
+
+      {/* Descrição */}
+      <div>
+        <label className="block font-medium text-sm mb-1">Descrição *</label>
+        <textarea
+          name="descricao"
+          value={form.descricao}
+          onChange={handleChange}
+          rows={4}
+          className="w-full border px-3 py-2 rounded"
+          required
+        />
+      </div>
+
+      {/* Botão de envio */}
       <button
         type="submit"
         disabled={enviando}
