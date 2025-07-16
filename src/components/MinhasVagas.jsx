@@ -1,3 +1,4 @@
+// src/components/MinhasVagas.jsx
 import React, { useEffect, useState } from 'react'
 import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -8,11 +9,14 @@ export default function MinhasVagas({ estabelecimento, onEditar }) {
 
   useEffect(() => {
     const buscarVagas = async () => {
-      if (!estabelecimento?.email) return
+      if (!estabelecimento?.uid) return
       try {
-        const q = query(collection(db, 'vagas'), where('estabelecimentoUid', '==', estabelecimento.uid))
+        const q = query(
+          collection(db, 'vagas'),
+          where('estabelecimentoUid', '==', estabelecimento.uid)
+        )
         const snapshot = await getDocs(q)
-        const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        const lista = snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
         setVagas(lista)
       } catch (error) {
         console.error('Erro ao buscar vagas:', error)
@@ -20,26 +24,25 @@ export default function MinhasVagas({ estabelecimento, onEditar }) {
         setCarregando(false)
       }
     }
-
     buscarVagas()
-  }, [estabelecimento?.email])
+  }, [estabelecimento?.uid])
 
   const excluirVaga = async (id) => {
-    if (window.confirm('Tem certeza que deseja excluir esta vaga?')) {
-      try {
-        await deleteDoc(doc(db, 'vagas', id))
-        setVagas(prev => prev.filter(vaga => vaga.id !== id))
-      } catch (error) {
-        console.error('Erro ao excluir vaga:', error)
-      }
+    if (!window.confirm('Tem certeza que deseja excluir esta vaga?')) return
+    try {
+      await deleteDoc(doc(db, 'vagas', id))
+      setVagas(prev => prev.filter(vaga => vaga.id !== id))
+    } catch (error) {
+      console.error('Erro ao excluir vaga:', error)
     }
   }
 
   return (
     <div className="max-w-4xl mx-auto p-6 mt-6 bg-white rounded-xl shadow-md">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-orange-600">📋 Minhas Vagas Publicadas</h2>
-        {/* Botão "+ Nova Vaga" removido */}
+        <h2 className="text-2xl font-bold text-orange-600">
+          📋 Minhas Vagas Publicadas
+        </h2>
       </div>
 
       {carregando ? (
@@ -49,12 +52,22 @@ export default function MinhasVagas({ estabelecimento, onEditar }) {
       ) : (
         <div className="space-y-4">
           {vagas.map(vaga => (
-            <div key={vaga.id} className="p-4 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
-              <h3 className="text-lg font-semibold text-orange-700">{vaga.titulo || 'Sem título'}</h3>
-              <p><strong>Tipo:</strong> {vaga.tipo || 'Não informado'}</p>
-              <p><strong>Cidade:</strong> {vaga.cidade || 'Não informado'}</p>
-              <p><strong>Salário:</strong> {vaga.salario ? `R$ ${Number(vaga.salario).toFixed(2).replace('.', ',')}` : 'Não informado'}</p>
-              <p className="text-sm text-gray-600 mt-2">{vaga.descricao || 'Sem descrição'}</p>
+            <div
+              key={vaga.id}
+              className="p-4 border border-gray-200 rounded-lg shadow-sm bg-gray-50"
+            >
+              <h3 className="text-lg font-semibold text-orange-700">
+                {vaga.titulo || vaga.funcao || 'Sem título'}
+              </h3>
+              <p><strong>Tipo:</strong> {vaga.tipo === 'clt' ? 'CLT' : 'Freela'}</p>
+              <p><strong>Cidade:</strong> {vaga.cidade}</p>
+              {vaga.tipo === 'freela' && vaga.valorDiaria != null && (
+                <p>
+                  <strong>Valor da diária:</strong> R${' '}
+                  {Number(vaga.valorDiaria).toFixed(2).replace('.', ',')}
+                </p>
+              )}
+              <p className="text-sm text-gray-600 mt-2">{vaga.descricao}</p>
 
               <div className="mt-4 flex gap-2">
                 <button
