@@ -3,16 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { auth, db } from '@/firebase'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  doc,
-  updateDoc,
-  serverTimestamp,
-  getDoc
-} from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
 
 import PerfilFreela from '@/pages/freela/PerfilFreela'
@@ -24,7 +15,7 @@ import HistoricoChamadasFreela from '@/pages/freela/HistoricoChamadasFreela'
 import AvaliacoesRecebidasFreela from '@/pages/freela/AvaliacoesRecebidasFreela'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
-import Chat from '@/pages/Chat.jsx'
+import Chat from '@/pages/Chat'
 
 export default function PainelFreela() {
   const navigate = useNavigate()
@@ -35,7 +26,7 @@ export default function PainelFreela() {
   const [agendaAba, setAgendaAba] = useState('agenda')
   const [chamadaAlertaTocada, setChamadaAlertaTocada] = useState(false)
 
-  // autenticação e carga inicial
+  // Autenticação e carga inicial
   useEffect(() => {
     let unsubChamadas = null
     const unsubAuth = onAuthStateChanged(auth, async user => {
@@ -46,10 +37,7 @@ export default function PainelFreela() {
       const data = { uid: user.uid, ...snap.data() }
       setUsuario(data)
       unsubChamadas = onSnapshot(
-        query(
-          collection(db, 'chamadas'),
-          where('freelaUid', '==', user.uid)
-        ),
+        query(collection(db, 'chamadas'), where('freelaUid', '==', user.uid)),
         snap => setChamadasLista(snap.docs.map(d => ({ id: d.id, ...d.data() })))
       )
       await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
@@ -61,19 +49,22 @@ export default function PainelFreela() {
     }
   }, [navigate])
 
-  // alerta imediato de nova chamada pendente apenas na aba Perfil
+  // Alerta imediato de nova chamada pendente na aba Perfil
   useEffect(() => {
-    if (!usuario?.uid || rota !== 'perfil') return
-    const pendQuery = query(
+    if (!usuario?.uid) return
+    const rotaFinal = rota || 'perfil'
+    if (rotaFinal !== 'perfil') return
+
+    const pendQ = query(
       collection(db, 'chamadas'),
       where('freelaUid', '==', usuario.uid),
       where('status', '==', 'pendente')
     )
-    const unsubAlerta = onSnapshot(pendQuery, snapshot => {
+    const unsub = onSnapshot(pendQ, snapshot => {
       snapshot.docChanges().forEach(({ type, doc }) => {
         if (type === 'added' && !chamadaAlertaTocada) {
           new Audio('/sons/chamada.mp3').play().catch(() => {})
-          toast.custom((t) => (
+          toast.custom(t => (
             <div className="bg-white p-4 rounded shadow flex items-center gap-4">
               🔔 <span className="font-semibold">Nova chamada de {doc.data().estabelecimentoNome}</span>
               <button
@@ -91,10 +82,10 @@ export default function PainelFreela() {
         }
       })
     })
-    return () => unsubAlerta()
+    return () => unsub()
   }, [usuario, rota, chamadaAlertaTocada, navigate])
 
-  // mantém presença online
+  // Mantém presença online
   useEffect(() => {
     if (!usuario?.uid) return
     const interval = setInterval(() => {
@@ -134,8 +125,9 @@ export default function PainelFreela() {
                         agendaAba === key
                           ? 'border-orange-600 text-orange-600'
                           : 'border-transparent text-gray-400 hover:text-orange-600 hover:border-orange-400'
-                      }`}
-                    >{label}</button>
+                      }`}>
+                      {label}
+                    </button>
                   </li>
                 ))}
               </ul>
