@@ -7,10 +7,10 @@ import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, 
 import { toast } from 'react-hot-toast'
 
 import PerfilFreela from '@/pages/freela/PerfilFreela'
+import Chamadas from '@/pages/freela/Chamadas'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import VagasDisponiveis from '@/pages/freela/VagasDisponiveis'
 import EventosDisponiveis from '@/pages/freela/EventosDisponiveis'
-import Chamadas from '@/pages/freela/Chamadas'
 import HistoricoChamadasFreela from '@/pages/freela/HistoricoChamadasFreela'
 import AvaliacoesRecebidasFreela from '@/pages/freela/AvaliacoesRecebidasFreela'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
@@ -145,10 +145,10 @@ export default function PainelFreela() {
                 ))}
               </ul>
             </nav>
+            {agendaAba === 'chamadas' && <Chamadas />}
             {agendaAba === 'agenda' && <AgendaCompleta freela={usuario} />}
             {agendaAba === 'vagas' && <VagasDisponiveis freela={usuario} />}
-            {agendaAba === 'eventos' && <EventosDisponiveis freela={usuario} />}
-            {agendaAba === 'chamadas' && <Chamadas />}
+            {agendaAba === 'eventos' && <EventosDisponiveis freela={usuario} />}            
           </>
         )
       case 'historico':
