@@ -125,10 +125,10 @@ export default function PainelFreela() {
             <nav className="border-b border-orange-300 mt-4 mb-6 overflow-x-auto">
               <ul className="flex space-x-2 whitespace-nowrap">
                 {[
+                  ['chamadas', '📞 Chamadas'],
                   ['agenda', '📅 Agenda'],
                   ['vagas', '📋 Vagas Disponíveis'],
-                  ['eventos', '🎉 Eventos Disponíveis'],
-                  ['chamadas', '📞 Chamadas']
+                  ['eventos', '🎉 Eventos Disponíveis']                  
                 ].map(([key, label]) => (
                   <li key={key}>
                     <button
