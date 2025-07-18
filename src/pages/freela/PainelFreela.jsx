@@ -17,6 +17,8 @@ import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
 import Chat from '@/pages/Chat'
 
+// ... (importações iguais às anteriores)
+
 export default function PainelFreela() {
   const navigate = useNavigate()
   const { rota } = useParams()
@@ -25,6 +27,16 @@ export default function PainelFreela() {
   const [chamadasLista, setChamadasLista] = useState([])
   const [agendaAba, setAgendaAba] = useState('agenda')
   const [chamadaAlertaTocada, setChamadaAlertaTocada] = useState(false)
+
+  // ⚠️ Libera o som ao primeiro clique do usuário
+  useEffect(() => {
+    const preloadSom = () => {
+      const audio = new Audio('/sons/chamada.mp3')
+      audio.load()
+    }
+    document.body.addEventListener('click', preloadSom, { once: true })
+    return () => document.body.removeEventListener('click', preloadSom)
+  }, [])
 
   // Autenticação e carga inicial
   useEffect(() => {
@@ -49,7 +61,7 @@ export default function PainelFreela() {
     }
   }, [navigate])
 
-  // Alerta de nova chamada
+  // Alerta sonoro e visual de nova chamada pendente
   useEffect(() => {
     if (!usuario?.uid) return
     const pendQ = query(
@@ -60,7 +72,10 @@ export default function PainelFreela() {
     const unsub = onSnapshot(pendQ, snapshot => {
       snapshot.docChanges().forEach(({ type, doc }) => {
         if (type === 'added' && !chamadaAlertaTocada) {
-          new Audio('/sons/chamada.mp3').play().catch(() => {})
+          const som = new Audio('/sons/chamada.mp3')
+          som.volume = 1.0
+          som.play().catch(err => console.warn('Erro ao tocar som:', err))
+
           toast.custom(t => (
             <div className="bg-white p-4 rounded shadow flex items-center gap-4">
               🔔 <span className="font-semibold">Nova chamada de {doc.data().estabelecimentoNome}</span>
@@ -74,6 +89,7 @@ export default function PainelFreela() {
               >Ver Chamadas</button>
             </div>
           ), { duration: 8000 })
+
           setChamadaAlertaTocada(true)
           setTimeout(() => setChamadaAlertaTocada(false), 15000)
         }
@@ -82,7 +98,7 @@ export default function PainelFreela() {
     return () => unsub()
   }, [usuario, chamadaAlertaTocada, navigate])
 
-  // Presença online
+  // Atualiza presença online
   useEffect(() => {
     if (!usuario?.uid) return
     const interval = setInterval(() => {
