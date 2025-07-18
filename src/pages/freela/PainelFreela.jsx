@@ -49,12 +49,9 @@ export default function PainelFreela() {
     }
   }, [navigate])
 
-  // Alerta imediato de nova chamada pendente na aba Perfil
+  // Alerta de nova chamada
   useEffect(() => {
     if (!usuario?.uid) return
-    const rotaFinal = rota || 'perfil'
-    if (rotaFinal !== 'perfil') return
-
     const pendQ = query(
       collection(db, 'chamadas'),
       where('freelaUid', '==', usuario.uid),
@@ -72,20 +69,20 @@ export default function PainelFreela() {
                   navigate('/painelfreela/agendas')
                   setAgendaAba('chamadas')
                   toast.dismiss(t.id)
-                  setChamadaAlertaTocada(false)
                 }}
                 className="ml-auto bg-orange-600 text-white px-3 py-1 rounded"
               >Ver Chamadas</button>
             </div>
           ), { duration: 8000 })
           setChamadaAlertaTocada(true)
+          setTimeout(() => setChamadaAlertaTocada(false), 15000)
         }
       })
     })
     return () => unsub()
-  }, [usuario, rota, chamadaAlertaTocada, navigate])
+  }, [usuario, chamadaAlertaTocada, navigate])
 
-  // Mantém presença online
+  // Presença online
   useEffect(() => {
     if (!usuario?.uid) return
     const interval = setInterval(() => {
@@ -106,7 +103,6 @@ export default function PainelFreela() {
     switch (rotaFinal) {
       case 'perfil':
         return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
-
       case 'agendas':
         return (
           <>
@@ -125,7 +121,8 @@ export default function PainelFreela() {
                         agendaAba === key
                           ? 'border-orange-600 text-orange-600'
                           : 'border-transparent text-gray-400 hover:text-orange-600 hover:border-orange-400'
-                      }`}>
+                      }`}
+                    >
                       {label}
                     </button>
                   </li>
@@ -138,7 +135,6 @@ export default function PainelFreela() {
             {agendaAba === 'chamadas' && <Chamadas />}
           </>
         )
-
       case 'historico':
         return <HistoricoChamadasFreela freelaUid={usuario.uid} />
       case 'avaliacoes':
@@ -160,6 +156,9 @@ export default function PainelFreela() {
         return <PerfilFreela freelaUidProp={usuario.uid} mostrarBotaoVoltar={false} />
     }
   }
+
+  const temChamadaPendente = chamadasLista.some(c => c.status === 'pendente')
+  const rotaAtual = rota || 'perfil'
 
   if (carregando || !usuario) {
     return <div className="min-h-screen flex items-center justify-center text-orange-600 text-lg">Carregando painel...</div>
@@ -192,7 +191,14 @@ export default function PainelFreela() {
               ['avaliar-estabelecimento', '📝 Avaliar Estabelecimento']
             ].map(([key, label]) => (
               <li key={key}>
-                <button onClick={() => navigate(`/painelfreela/${key}`)} className={`px-4 py-2 border-b-2 font-semibold transition ${( (rota || 'perfil') === key ) ? 'border-orange-600 text-orange-600' : 'border-transparent text-gray-400 hover:text-orange-600 hover:border-orange-400'}`}>
+                <button
+                  onClick={() => navigate(`/painelfreela/${key}`)}
+                  className={`px-4 py-2 border-b-2 font-semibold transition ${
+                    rotaAtual === key
+                      ? 'border-orange-600 text-orange-600'
+                      : 'border-transparent text-gray-400 hover:text-orange-600 hover:border-orange-400'
+                  }`}
+                >
                   {label}
                 </button>
               </li>
@@ -201,6 +207,21 @@ export default function PainelFreela() {
         </nav>
 
         <section>{renderConteudo()}</section>
+
+        {/* Botão flutuante de chamada pendente */}
+        {temChamadaPendente && rotaAtual === 'perfil' && (
+          <div className="fixed bottom-6 right-6 z-50">
+            <button
+              onClick={() => {
+                navigate('/painelfreela/agendas')
+                setAgendaAba('chamadas')
+              }}
+              className="animate-bounce bg-orange-600 text-white px-4 py-3 rounded-full shadow-lg font-bold"
+            >
+              📞 Nova chamada!
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
