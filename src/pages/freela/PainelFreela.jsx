@@ -1,6 +1,4 @@
 // src/pages/freela/PainelFreela.jsx
-import { collection, query, where, onSnapshot } from 'firebase/firestore'
-import { toast } from 'react-hot-toast'
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { auth, db } from '@/firebase'
@@ -37,6 +35,7 @@ export default function PainelFreela() {
   const [agendaAba, setAgendaAba] = useState('agenda')
   const [chamadaAlertaTocada, setChamadaAlertaTocada] = useState(false)
 
+  // autenticação e carga inicial
   useEffect(() => {
     let unsubChamadas = null
     const unsubAuth = onAuthStateChanged(auth, async user => {
@@ -62,43 +61,40 @@ export default function PainelFreela() {
     }
   }, [navigate])
 
+  // alerta imediato de nova chamada pendente apenas na aba Perfil
   useEffect(() => {
-  if (!usuario?.uid) return
-  // só notificamos se ainda não tocamos para essa sessão
-  const qPendentes = query(
-    collection(db, 'chamadas'),
-    where('freelaUid', '==', usuario.uid),
-    where('status', '==', 'pendente')
-  )
-  const unsubAlerta = onSnapshot(qPendentes, snapshot => {
-    snapshot.docChanges().forEach(({ type, doc }) => {
-      if (type === 'added' && !chamadaAlertaTocada) {
-        // toca som
-        new Audio('/sons/chamada.mp3').play().catch(() => {})
-        // alerta visual
-        toast.custom((t) => (
-          <div className="bg-white p-4 rounded shadow flex items-center gap-4">
-            🔔 <span className="font-semibold">Nova chamada de {doc.data().estabelecimentoNome}</span>
-            <button
-              onClick={() => {
-                // leva pra aba Agendas → Chamadas
-                navigate('/painelfreela/agendas')
-                setAgendaAba('chamadas')
-                toast.dismiss(t.id)
-              }}
-              className="ml-auto bg-orange-600 text-white px-3 py-1 rounded"
-            >
-              Ver Chamadas
-            </button>
-          </div>
-        ),{ duration: 8000 })
-        setChamadaAlertaTocada(true)
-      }
+    if (!usuario?.uid || rota !== 'perfil') return
+    const pendQuery = query(
+      collection(db, 'chamadas'),
+      where('freelaUid', '==', usuario.uid),
+      where('status', '==', 'pendente')
+    )
+    const unsubAlerta = onSnapshot(pendQuery, snapshot => {
+      snapshot.docChanges().forEach(({ type, doc }) => {
+        if (type === 'added' && !chamadaAlertaTocada) {
+          new Audio('/sons/chamada.mp3').play().catch(() => {})
+          toast.custom((t) => (
+            <div className="bg-white p-4 rounded shadow flex items-center gap-4">
+              🔔 <span className="font-semibold">Nova chamada de {doc.data().estabelecimentoNome}</span>
+              <button
+                onClick={() => {
+                  navigate('/painelfreela/agendas')
+                  setAgendaAba('chamadas')
+                  toast.dismiss(t.id)
+                  setChamadaAlertaTocada(false)
+                }}
+                className="ml-auto bg-orange-600 text-white px-3 py-1 rounded"
+              >Ver Chamadas</button>
+            </div>
+          ), { duration: 8000 })
+          setChamadaAlertaTocada(true)
+        }
+      })
     })
-  })
-  return () => unsubAlerta()
-}, [usuario, chamadaAlertaTocada])
+    return () => unsubAlerta()
+  }, [usuario, rota, chamadaAlertaTocada, navigate])
 
+  // mantém presença online
   useEffect(() => {
     if (!usuario?.uid) return
     const interval = setInterval(() => {
@@ -139,16 +135,14 @@ export default function PainelFreela() {
                           ? 'border-orange-600 text-orange-600'
                           : 'border-transparent text-gray-400 hover:text-orange-600 hover:border-orange-400'
                       }`}
-                    >
-                      {label}
-                    </button>
+                    >{label}</button>
                   </li>
                 ))}
               </ul>
             </nav>
             {agendaAba === 'agenda' && <AgendaCompleta freela={usuario} />}
-            {agendaAba === 'vagas'   && <VagasDisponiveis freela={usuario} />}
-            {agendaAba === 'eventos'  && <EventosDisponiveis freela={usuario} />}
+            {agendaAba === 'vagas' && <VagasDisponiveis freela={usuario} />}
+            {agendaAba === 'eventos' && <EventosDisponiveis freela={usuario} />}
             {agendaAba === 'chamadas' && <Chamadas />}
           </>
         )
