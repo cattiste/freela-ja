@@ -17,13 +17,13 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
   useEffect(() => {
     if (!estabelecimento?.uid) return
 
-    const q = query(
-      collection(db, 'chamadas'),
-      where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', 'in', ['checkin_freela', 'checkin_confirmado', 'checkout_freela'])
-    )
+   const q = query(
+     collection(db, 'chamadas'),
+     where('estabelecimentoUid', '==', estabelecimento.uid),
+     where('status', 'in', ['chamado', 'checkin_freela', 'checkin_confirmado', 'checkout_freela', 'checkout_confirmado'])
+   )
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+   const unsubscribe = onSnapshot(q, (snapshot) => {
       const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
       setChamadas(lista)
     })

@@ -17,7 +17,19 @@ import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
 import Chat from '@/pages/Chat'
 
-// ... (importações iguais às anteriores)
+export async function aceitarChamada(chamadaId) {
+  try {
+    const chamadaRef = doc(db, 'chamadas', chamadaId)
+    await updateDoc(chamadaRef, {
+      status: 'chamado',
+      atualizadoEm: serverTimestamp()
+    })
+    toast.success('Chamada aceita!')
+  } catch (err) {
+    console.error('Erro ao aceitar chamada:', err)
+    toast.error('Erro ao aceitar chamada.')
+  }
+}
 
 export default function PainelFreela() {
   const navigate = useNavigate()
