@@ -184,12 +184,62 @@ export default function Chamadas() {
             </div>
           </div>
 
+          {/* Chat aberto */}
           {chatAbertoId === chamada.id && (
             <div className="w-full mt-2 border-t pt-2">
               <Chat chamadaId={chamada.id} />
             </div>
           )}
 
+          {/* Duplo Check */}
+          {chamada.status === 'aceita' && (
+            <div className="border-t pt-2 mt-2 space-y-1 text-sm">
+
+              {!chamada.checkInFreela && (
+                <button
+                  onClick={async () => {
+                    await updateDoc(doc(db, 'chamadas', chamada.id), {
+                      checkInFreela: true,
+                      checkInHora: serverTimestamp()
+                    })
+                    toast.success('Check-in realizado! Aguardando confirmação do estabelecimento.')
+                  }}
+                  className="bg-orange-600 text-white px-3 py-1 rounded hover:bg-orange-700"
+                >
+                  Fazer Check-in
+                </button>
+              )}
+
+              {chamada.checkInFreela && !chamada.checkInEstabelecimento && (
+                <p className="text-yellow-600">⏳ Aguardando confirmação do estabelecimento (Check-in)</p>
+              )}
+
+              {chamada.checkInFreela && chamada.checkInEstabelecimento && !chamada.checkOutFreela && (
+                <button
+                  onClick={async () => {
+                    await updateDoc(doc(db, 'chamadas', chamada.id), {
+                      checkOutFreela: true,
+                      checkOutHora: serverTimestamp()
+                    })
+                    toast.success('Check-out realizado! Aguardando confirmação do estabelecimento.')
+                  }}
+                  className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                >
+                  Fazer Check-out
+                </button>
+              )}
+
+              {chamada.checkOutFreela && !chamada.checkOutEstabelecimento && (
+                <p className="text-yellow-600">⏳ Aguardando confirmação do estabelecimento (Check-out)</p>
+              )}
+
+              {chamada.checkOutFreela && chamada.checkOutEstabelecimento && (
+                <p className="text-green-600 font-semibold">✅ Presença finalizada e confirmada.</p>
+              )}
+            </div>
+          )}
+
+          {/* Avaliação */}
           {chamada.checkOutHora && chamada.status === 'finalizado' && !chamada.avaliacaoFreelaFeita && (
             <div className="mt-2 border-t pt-2">
               <h3 className="text-sm font-semibold mb-1">📝 Avalie o estabelecimento</h3>
@@ -199,9 +249,6 @@ export default function Chamadas() {
                   const comentario = e.target.comentario.value || ''
                   const avaliacaoAtual = avaliacoes[chamada.id]
                   const notaSelecionada = avaliacaoAtual?.nota
-
-                  console.log('Nota selecionada:', notaSelecionada)
-                  console.log('Comentário:', comentario)
 
                   if (!notaSelecionada) {
                     toast.error('Por favor, selecione uma nota.')
