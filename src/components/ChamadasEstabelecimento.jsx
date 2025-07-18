@@ -1,3 +1,4 @@
+// src/components/ChamadasEstabelecimento.jsx
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -5,12 +6,9 @@ import {
   where,
   onSnapshot,
   updateDoc,
-  doc,
-  addDoc,
-  serverTimestamp
+  doc
 } from 'firebase/firestore'
 import { db } from '@/firebase'
-import { toast } from 'react-hot-toast'
 
 export default function ChamadasEstabelecimento({ estabelecimento }) {
   const [chamadas, setChamadas] = useState([])
@@ -22,7 +20,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
     const q = query(
       collection(db, 'chamadas'),
       where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', 'in', ['aceita', 'checkin', 'checkout'])
+      where('status', 'in', ['checkin_freela', 'checkin_confirmado', 'checkout_freela'])
     )
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -38,15 +36,17 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
     const chamadaRef = doc(db, 'chamadas', chamada.id)
     try {
       if (etapa === 'checkin') {
-        await updateDoc(chamadaRef, { checkInEstabelecimentoConfirmado: true })
+        await updateDoc(chamadaRef, {
+          checkInEstabelecimento: true,
+          status: 'checkin_confirmado'
+        })
       }
 
       if (etapa === 'checkout') {
-        await updateDoc(chamadaRef, { checkOutEstabelecimentoConfirmado: true })
-
-        if (chamada.checkOutFreela) {
-          await updateDoc(chamadaRef, { status: 'finalizado' })
-        }
+        await updateDoc(chamadaRef, {
+          checkOutEstabelecimento: true,
+          status: 'finalizado'
+        })
       }
     } catch (err) {
       console.error(`Erro ao confirmar ${etapa}:`, err)
@@ -91,7 +91,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
           </div>
 
           <div className="flex flex-col items-end space-y-2">
-            {chamada.checkInFreela && !chamada.checkInEstabelecimentoConfirmado && (
+            {chamada.checkInFreela && !chamada.checkInEstabelecimento && (
               <button
                 onClick={() => confirmarEtapa(chamada, 'checkin')}
                 disabled={loadingId === chamada.id}
@@ -102,7 +102,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
               </button>
             )}
 
-            {chamada.checkOutFreela && !chamada.checkOutEstabelecimentoConfirmado && (
+            {chamada.checkOutFreela && !chamada.checkOutEstabelecimento && (
               <button
                 onClick={() => confirmarEtapa(chamada, 'checkout')}
                 disabled={loadingId === chamada.id}
