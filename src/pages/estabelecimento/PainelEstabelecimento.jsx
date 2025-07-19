@@ -21,10 +21,8 @@ export default function PainelEstabelecimento() {
   const [carregando, setCarregando] = useState(true)
   const [aba, setAba] = useState('buscar')
 
-  // Status online/offline
   const { online } = useOnlineStatus(estabelecimento?.uid)
 
-  // Autenticação e dados do estabelecimento
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -52,7 +50,6 @@ export default function PainelEstabelecimento() {
     return () => unsubscribe()
   }, [])
 
-  // Atualiza última atividade a cada 30s
   useEffect(() => {
     if (!estabelecimento?.uid) return
     const iv = setInterval(() => {
@@ -63,7 +60,6 @@ export default function PainelEstabelecimento() {
     return () => clearInterval(iv)
   }, [estabelecimento])
 
-  // Notificação de checkout pendente
   useEffect(() => {
     if (!estabelecimento?.uid) return
     const unsub = onSnapshot(
@@ -88,7 +84,6 @@ export default function PainelEstabelecimento() {
     return () => unsub()
   }, [estabelecimento])
 
-  // Logout
   const handleLogout = async () => {
     if (estabelecimento?.uid) {
       await updateDoc(docRef(db, 'usuarios', estabelecimento.uid), {
@@ -100,7 +95,6 @@ export default function PainelEstabelecimento() {
     window.location.href = '/login'
   }
 
-  // Estado de carregamento e acesso
   if (carregando) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -116,13 +110,17 @@ export default function PainelEstabelecimento() {
     )
   }
 
-  // Renderiza conteúdo de acordo com aba interna
   const renderConteudo = () => {
     switch (aba) {
       case 'buscar':
         return <BuscarFreelas estabelecimento={estabelecimento} />
       case 'agendas':
-        return <AgendasContratadas estabelecimento={estabelecimento} />
+        return (
+          <div className="flex flex-col gap-6">
+            <AgendasContratadas estabelecimento={estabelecimento} />
+            <ChamadaInline usuario={estabelecimento} tipo="estabelecimento" />
+          </div>
+        )
       case 'vagas':
         return <VagasEstabelecimentoCompleto estabelecimento={estabelecimento} />
       case 'avaliacao':
@@ -139,7 +137,6 @@ export default function PainelEstabelecimento() {
   return (
     <div className="min-h-screen bg-orange-50 p-4">
       <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
-        {/* Cabeçalho */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <h1 className="text-3xl font-bold text-orange-700 flex items-center gap-3">
             📊 Painel do Estabelecimento
@@ -147,7 +144,6 @@ export default function PainelEstabelecimento() {
               ● {online ? 'Online' : 'Offline'}
             </span>
           </h1>
-          {/* Navegação interna sem roteamento */}
           <nav className="border-b border-orange-300 mb-6 overflow-x-auto">
             <ul className="flex space-x-2 whitespace-nowrap">
               {[
@@ -173,10 +169,7 @@ export default function PainelEstabelecimento() {
               ))}
             </ul>
           </nav>
-
         </div>
-        <ChamadaInline usuario={estabelecimento} tipo="estabelecimento" />
-        {/* Conteúdo da aba selecionada */}
         <section>{renderConteudo()}</section>
       </div>
       <Toaster position="top-center" reverseOrder={false} />
