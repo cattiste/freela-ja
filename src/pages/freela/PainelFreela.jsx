@@ -7,7 +7,6 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { toast, Toaster } from 'react-hot-toast'
 
 // Importando os componentes das sub-abas
-import ChamadasFreela from './ChamadasFreela'
 import AgendaFreela from './AgendaFreela'
 import EventosDisponiveis from './EventosDisponiveis'
 import PainelFreelaVagas from './PainelFreelaVagas'
