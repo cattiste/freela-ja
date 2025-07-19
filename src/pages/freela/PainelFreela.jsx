@@ -6,7 +6,7 @@ import { auth, db } from '@/firebase'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { toast, Toaster } from 'react-hot-toast'
 
-import VagasDisponiveis from '@/components/VagasDisponiveis'
+import VagasDisponiveis from './VagasDisponiveis';
 import MinhasAgendasFreela from '@/components/MinhasAgendasFreela'
 import HistoricoChamadasFreela from '@/components/HistoricoChamadasFreela'
 import ChamadaInline from '@/components/ChamadaInline'
