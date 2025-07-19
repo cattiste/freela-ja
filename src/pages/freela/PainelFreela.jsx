@@ -17,7 +17,7 @@ import ConfiguracoesFreela from './ConfiguracoesFreela'
 import RecebimentosFreela from './RecebimentosFreela'
 import ChamadaInline from '@/components/ChamadaInline'
 import PerfilFreela from './PerfilFreela'
-import AvaliacoesFreela from '@components/AvaliacaoFreela'
+import AvaliacaoFreela from '@components/AvaliacaoFreela' // ✅ Corrigido aqui
 
 export default function PainelFreela() {
   const [freela, setFreela] = useState(null)
@@ -92,7 +92,7 @@ export default function PainelFreela() {
       case 'perfil':
         return <PerfilFreela freela={freela} />
       case 'avaliacoes':
-        return <AvaliacoesFreela freela={freela} />
+        return <AvaliacaoFreela freela={freela} /> // ✅ Corrigido aqui
       case 'agenda':
         switch (subAba) {
           case 'chamadas': return <div className="text-orange-600">Chamadas inline ativas...</div>
