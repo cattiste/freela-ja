@@ -1,23 +1,30 @@
 // src/pages/freela/PainelFreela.jsx
 import React, { useEffect, useState, useRef } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
-import { collection, onSnapshot, query, where, doc as docRef, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, onSnapshot, query, where, doc as docRef, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { toast, Toaster } from 'react-hot-toast'
 
-import VagasDisponiveis from './VagasDisponiveis';
-import MinhasAgendasFreela from '@/components/MinhasAgendasFreela'
-import HistoricoChamadasFreela from '@/components/HistoricoChamadasFreela'
+// Importando os componentes das sub-abas
+import ChamadasFreela from './ChamadasFreela'
+import AgendaFreela from './AgendaFreela'
+import EventosDisponiveis from './EventosDisponiveis'
+import PainelFreelaVagas from './PainelFreelaVagas'
+import HistoricoTrabalhosFreela from './HistoricoTrabalhosFreela'
+import EditarFreela from './EditarFreela'
+import CadastroFreela from './CadastroFreela'
+import ConfiguracoesFreela from './ConfiguracoesFreela'
+import RecebimentosFreela from './RecebimentosFreela'
 import ChamadaInline from '@/components/ChamadaInline'
 
 export default function PainelFreela() {
   const [freela, setFreela] = useState(null)
   const [carregando, setCarregando] = useState(true)
-  const [aba, setAba] = useState('vagas')
+  const [aba, setAba] = useState('agenda')
+  const [subAba, setSubAba] = useState('vagas')
   const audioRef = useRef(null)
   const [chamadaAtiva, setChamadaAtiva] = useState(null)
-
   const { online } = useOnlineStatus(freela?.uid)
 
   useEffect(() => {
@@ -29,8 +36,8 @@ export default function PainelFreela() {
       }
       try {
         const ref = docRef(db, 'usuarios', user.uid)
-        const snap = await ref.get()
-        if (snap.exists && snap.data().tipo === 'freela') {
+        const snap = await getDoc(ref)
+        if (snap.exists() && snap.data().tipo === 'freela') {
           const data = snap.data()
           setFreela({ uid: user.uid, ...data })
           await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
@@ -47,7 +54,6 @@ export default function PainelFreela() {
     return () => unsubscribe()
   }, [])
 
-  // Atualiza última atividade a cada 30s
   useEffect(() => {
     if (!freela?.uid) return
     const iv = setInterval(() => {
@@ -58,10 +64,8 @@ export default function PainelFreela() {
     return () => clearInterval(iv)
   }, [freela])
 
-  // Detecta chamadas em tempo real
   useEffect(() => {
     if (!freela?.uid) return
-
     const unsub = onSnapshot(
       query(
         collection(db, 'chamadas'),
@@ -82,79 +86,83 @@ export default function PainelFreela() {
     return () => unsub()
   }, [freela])
 
-  const handleLogout = async () => {
-    if (freela?.uid) {
-      await updateDoc(docRef(db, 'usuarios', freela.uid), {
-        ultimaAtividade: serverTimestamp()
-      })
-    }
-    await signOut(auth)
-    localStorage.removeItem('usuarioLogado')
-    window.location.href = '/login'
-  }
-
-  const renderConteudo = () => {
+  const renderSubAba = () => {
     switch (aba) {
-      case 'vagas':
-        return <VagasDisponiveis freela={freela} />
-      case 'agendas':
-        return <MinhasAgendasFreela freela={freela} />
+      case 'agenda':
+        switch (subAba) {
+          case 'chamadas': return <ChamadasFreela freela={freela} />
+          case 'agendas': return <AgendaFreela freela={freela} />
+          case 'eventos': return <EventosDisponiveis freela={freela} />
+          case 'vagas': return <PainelFreelaVagas freela={freela} />
+          default: return null
+        }
       case 'historico':
-        return <HistoricoChamadasFreela freela={freela} />
+        return <HistoricoTrabalhosFreela freela={freela} />
+      case 'configuracoes':
+        switch (subAba) {
+          case 'editar': return <EditarFreela freela={freela} />
+          case 'cadastro': return <CadastroFreela freela={freela} />
+          case 'ajustes': return <ConfiguracoesFreela freela={freela} />
+          default: return null
+        }
+      case 'recebimentos':
+        return <RecebimentosFreela freela={freela} />
       default:
         return null
     }
   }
 
-  if (carregando) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-orange-600 text-lg font-semibold">Carregando painel...</p>
-      </div>
-    )
-  }
-  if (!freela) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-600 text-lg font-semibold">Acesso não autorizado.</p>
-      </div>
-    )
-  }
+  if (carregando) return <div className="min-h-screen flex items-center justify-center text-orange-600">Carregando...</div>
+  if (!freela) return <div className="min-h-screen flex items-center justify-center text-red-600">Acesso negado.</div>
 
   return (
     <div className="min-h-screen bg-orange-50 p-4">
       <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-          <h1 className="text-3xl font-bold text-orange-700 flex items-center gap-3">
-            👤 Painel do Freela
-            <span className={`text-sm font-semibold ${online ? 'text-green-600' : 'text-gray-400'}`}>
-              ● {online ? 'Online' : 'Offline'}
-            </span>
-          </h1>
-          <nav className="border-b border-orange-300 mb-6 overflow-x-auto">
-            <ul className="flex space-x-2 whitespace-nowrap">
-              {[ ['vagas', '💼 Vagas'], ['agendas', '📅 Agendas'], ['historico', '📜 Histórico'] ].map(([key, label]) => (
+          <h1 className="text-3xl font-bold text-orange-700">👤 Painel do Freela <span className={`text-sm ml-3 font-semibold ${online ? 'text-green-600' : 'text-gray-400'}`}>● {online ? 'Online' : 'Offline'}</span></h1>
+        </div>
+
+        <nav className="mb-4 border-b">
+          <ul className="flex flex-wrap gap-4">
+            {[['agenda', '📅 Agenda'], ['historico', '📜 Histórico'], ['configuracoes', '⚙️ Configurações'], ['recebimentos', '💰 Recebimentos']].map(([key, label]) => (
+              <li key={key}>
+                <button onClick={() => setAba(key)} className={`px-4 py-2 font-semibold ${aba === key ? 'text-orange-600 border-b-2 border-orange-600' : 'text-gray-400 hover:text-orange-600'}`}>{label}</button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {['agenda', 'configuracoes'].includes(aba) && (
+          <nav className="mb-4 border-b">
+            <ul className="flex flex-wrap gap-2">
+              {aba === 'agenda' && [
+                ['chamadas', '🚨 Chamadas'],
+                ['agendas', '📅 Agendas'],
+                ['eventos', '🎉 Eventos'],
+                ['vagas', '💼 Vagas']
+              ].map(([key, label]) => (
                 <li key={key}>
-                  <button
-                    onClick={() => setAba(key)}
-                    className={`px-4 py-2 border-b-2 font-semibold transition ${aba === key ? 'border-orange-600 text-orange-600' : 'border-transparent text-gray-400 hover:text-orange-600 hover:border-orange-400'}`}
-                  >
-                    {label}
-                  </button>
+                  <button onClick={() => setSubAba(key)} className={`px-3 py-1 text-sm font-semibold ${subAba === key ? 'text-orange-600 border-b-2 border-orange-600' : 'text-gray-400 hover:text-orange-600'}`}>{label}</button>
+                </li>
+              ))}
+              {aba === 'configuracoes' && [
+                ['editar', '✏️ Editar Perfil'],
+                ['cadastro', '📝 Cadastro'],
+                ['ajustes', '⚙️ Ajustes Gerais']
+              ].map(([key, label]) => (
+                <li key={key}>
+                  <button onClick={() => setSubAba(key)} className={`px-3 py-1 text-sm font-semibold ${subAba === key ? 'text-orange-600 border-b-2 border-orange-600' : 'text-gray-400 hover:text-orange-600'}`}>{label}</button>
                 </li>
               ))}
             </ul>
           </nav>
-        </div>
+        )}
 
-        <section>{renderConteudo()}</section>
+        <section>{renderSubAba()}</section>
 
         {chamadaAtiva && (
           <div className="fixed bottom-5 right-5 z-50 animate-bounce">
-            <button
-              onClick={() => setAba('agendas')}
-              className="bg-orange-600 text-white px-4 py-3 rounded-full shadow-lg hover:bg-orange-700"
-            >
+            <button onClick={() => { setAba('agenda'); setSubAba('chamadas') }} className="bg-orange-600 text-white px-4 py-3 rounded-full shadow-lg hover:bg-orange-700">
               🚨 Nova Chamada!
             </button>
           </div>
