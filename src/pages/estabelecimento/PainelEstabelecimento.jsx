@@ -14,6 +14,7 @@ import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompl
 import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
 import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
+import ChamadaInline from '@/components/ChamadaInline'
 
 export default function PainelEstabelecimento() {
   const [estabelecimento, setEstabelecimento] = useState(null)
@@ -174,7 +175,7 @@ export default function PainelEstabelecimento() {
           </nav>
 
         </div>
-
+        <ChamadaInline usuario={estabelecimento} tipo="estabelecimento" />
         {/* Conteúdo da aba selecionada */}
         <section>{renderConteudo()}</section>
       </div>
