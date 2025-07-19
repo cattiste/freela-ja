@@ -17,7 +17,7 @@ import ConfiguracoesFreela from './ConfiguracoesFreela'
 import RecebimentosFreela from './RecebimentosFreela'
 import ChamadaInline from '@/components/ChamadaInline'
 import PerfilFreela from './PerfilFreela'
-import AvaliacaoFreela from '@components/AvaliacaoFreela' // ✅ Corrigido aqui
+import AvaliacaoFreela from '@/components/AvaliacaoFreela' // ✅ Corrigido aqui
 
 export default function PainelFreela() {
   const [freela, setFreela] = useState(null)
