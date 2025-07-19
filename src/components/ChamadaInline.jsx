@@ -1,11 +1,13 @@
 // src/components/ChamadaInline.jsx
-import React, { useEffect, useState } from 'react'
-import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import React, { useState } from 'react'
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
 
 export default function ChamadaInline({ chamada, usuario, tipo }) {
   const [loading, setLoading] = useState(false)
+
+  if (!chamada?.id) return null  // proteção contra erro de dados inválidos
 
   const aceitarChamada = async () => {
     setLoading(true)
@@ -97,11 +99,13 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
 
   const renderBotoes = () => {
     if (!chamada.status || chamada.status === 'pendente') {
-      if (tipo === 'freela') return (
-        <button onClick={aceitarChamada} className="btn" disabled={loading}>
-          ✅ Aceitar chamada
-        </button>
-      )
+      if (tipo === 'freela') {
+        return (
+          <button onClick={aceitarChamada} className="btn" disabled={loading}>
+            ✅ Aceitar chamada
+          </button>
+        )
+      }
     }
 
     if (chamada.status === 'aceita') {
@@ -147,10 +151,12 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
 
   return (
     <div className="border p-4 rounded-xl shadow bg-white mb-4">
-      <h2 className="font-bold text-lg text-orange-600">Chamada #{chamada.id.slice(-5)}</h2>
-      <p><strong>Freela:</strong> {chamada.freelaNome}</p>
-      <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
-      <p><strong>Status:</strong> {chamada.status}</p>
+      <h2 className="font-bold text-lg text-orange-600">
+        Chamada #{chamada?.id?.slice(-5) || 'sem ID'}
+      </h2>
+      <p><strong>Freela:</strong> {chamada.freelaNome || '---'}</p>
+      <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome || '---'}</p>
+      <p><strong>Status:</strong> {chamada.status || '---'}</p>
       <div className="mt-4 space-x-2">
         {renderBotoes()}
       </div>

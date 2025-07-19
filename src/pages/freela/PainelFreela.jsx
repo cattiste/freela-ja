@@ -89,7 +89,7 @@ export default function PainelFreela() {
     switch (aba) {
       case 'agenda':
         switch (subAba) {
-          case 'chamadas': return <ChamadasFreela freela={freela} />
+          case 'chamadas': return <div className="text-orange-600">Chamadas inline ativas...</div>
           case 'agendas': return <AgendaFreela freela={freela} />
           case 'eventos': return <EventosDisponiveis freela={freela} />
           case 'vagas': return <PainelFreelaVagas freela={freela} />
@@ -118,7 +118,9 @@ export default function PainelFreela() {
     <div className="min-h-screen bg-orange-50 p-4">
       <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-          <h1 className="text-3xl font-bold text-orange-700">👤 Painel do Freela <span className={`text-sm ml-3 font-semibold ${online ? 'text-green-600' : 'text-gray-400'}`}>● {online ? 'Online' : 'Offline'}</span></h1>
+          <h1 className="text-3xl font-bold text-orange-700">
+            👤 Painel do Freela <span className={`text-sm ml-3 font-semibold ${online ? 'text-green-600' : 'text-gray-400'}`}>● {online ? 'Online' : 'Offline'}</span>
+          </h1>
         </div>
 
         <nav className="mb-4 border-b">
