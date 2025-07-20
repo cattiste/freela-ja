@@ -1,4 +1,4 @@
-// PainelFreela.jsx refatorado com layout em blocos e menu inferior
+// src/pages/freela/PainelFreela.jsx
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -9,27 +9,23 @@ import MenuInferiorFreela from "@/components/MenuInferiorFreela";
 const PainelFreela = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [freelaId, setFreelaId] = useState(null);
 
   useEffect(() => {
-    if (user && user.tipo === "freela") {
-      setFreelaId(user.uid);
-    } else {
+    if (!user || user.tipo !== "freela") {
       navigate("/login");
     }
   }, [user, navigate]);
 
-  if (!freelaId) return null;
+  if (!user) {
+    return <p className="text-center text-gray-500 mt-10">Carregando painel...</p>;
+  }
 
   return (
     <div className="p-4 flex flex-col gap-4">
-      {/* Card + Agenda lado a lado */}
       <div className="grid md:grid-cols-2 gap-4">
-        <PerfilFreela freelaId={freelaId} />
-        <AgendaFreela freelaId={freelaId} />
+        <PerfilFreela freelaId={user.uid} />
+        <AgendaFreela freela={user} />
       </div>
-
-      {/* Menu inferior com ícones */}
       <MenuInferiorFreela />
     </div>
   );

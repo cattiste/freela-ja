@@ -1,9 +1,11 @@
-// src/App.jsx
 import React, { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth, db } from './firebase'
 import { doc, getDoc } from 'firebase/firestore'
+
+// Contexto e proteção de rotas
+import PrivateRoute from './components/PrivateRoute'
 
 // Páginas gerais
 import Home from '@/pages/gerais/Home'
@@ -68,8 +70,6 @@ export default function App() {
         <Route path="/esquecisenha" element={<EsqueciSenha />} />
         <Route path="/oportunidades" element={<Oportunidades />} />
         <Route path="/publicarevento" element={<PublicarEvento />} />
-
-        {/* Avaliação compartilhada */}
         <Route path="/avaliar/:tipo/:id" element={<Avaliacao />} />
 
         {/* Freela */}
@@ -77,18 +77,33 @@ export default function App() {
         <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
         <Route
           path="/painelfreela/:rota?"
-          element={<PainelFreela freela={usuario} />}
+          element={
+            <PrivateRoute>
+              <PainelFreela freela={usuario} />
+            </PrivateRoute>
+          }
         />
 
         {/* Estabelecimento */}
         <Route path="/cadastroestabelecimento" element={<CadastroEstabelecimento />} />
         <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
-        <Route path="/painelestabelecimento/:rota?" element={<PainelEstabelecimento usuario={usuario} />} />
+        <Route
+          path="/painelestabelecimento/:rota?"
+          element={
+            <PrivateRoute>
+              <PainelEstabelecimento usuario={usuario} />
+            </PrivateRoute>
+          }
+        />
         <Route path="/editarperfilestabelecimento/:uid" element={<EditarPerfilEstabelecimento />} />
         <Route path="/publicarvaga" element={<PublicarVaga />} />
         <Route
           path="/painelestabelecimento/config-pagamento"
-          element={<ConfigPagamentoEstabelecimento usuario={usuario} />}
+          element={
+            <PrivateRoute>
+              <ConfigPagamentoEstabelecimento usuario={usuario} />
+            </PrivateRoute>
+          }
         />
       </Routes>
     </BrowserRouter>
