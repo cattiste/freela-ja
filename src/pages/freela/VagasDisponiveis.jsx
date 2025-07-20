@@ -17,6 +17,7 @@ function formatarData(timestamp) {
 }
 
 export default function VagasDisponiveis({ freela }) {
+  const { usuario } = useAuth()
   const [vagas, setVagas] = useState([])
   const [loading, setLoading] = useState(true)
   const [erro, setErro] = useState(null)
