@@ -137,18 +137,24 @@ export default function ConfiguracoesFreela() {
       </div>
 
       {/* Ações */}
-      <div className="flex gap-4 mt-4">
-        <button
-          onClick={salvar}
-          disabled={salvando}
-          className="bg-orange-600 text-white px-4 py-2 rounded"
-        >
-          {salvando ? 'Salvando...' : 'Salvar alterações'}
-        </button>
-        <button onClick={sair} className="bg-gray-300 text-gray-800 px-4 py-2 rounded">
-          Sair
-        </button>
-      </div>
-    </div>
-  )
-}
+      <div className="flex flex-wrap gap-4 mt-4">
+  <button
+    onClick={() => navigate('/freela/editarperfil')}
+    className="bg-blue-600 text-white px-4 py-2 rounded"
+  >
+    ✏️ Editar Perfil
+  </button>
+  <button
+    onClick={salvar}
+    disabled={salvando}
+    className="bg-orange-600 text-white px-4 py-2 rounded"
+  >
+    {salvando ? 'Salvando...' : 'Salvar alterações'}
+  </button>
+  <button
+    onClick={sair}
+    className="bg-gray-300 text-gray-800 px-4 py-2 rounded"
+  >
+    Sair
+  </button>
+</div>
