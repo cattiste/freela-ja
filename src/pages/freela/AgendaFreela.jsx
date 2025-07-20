@@ -1,9 +1,8 @@
-// src/pages/freela/AgendaFreela.jsx
 import React, { useEffect, useState } from 'react'
 import Calendar from 'react-calendar'
 import '@/styles/calendar.css'
 import { db } from '@/firebase'
-import { collection, onSnapshot, doc, deleteDoc, setDoc } from 'firebase/firestore'
+import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore'
 
 export default function AgendaFreela({ freela }) {
   const [datasOcupadas, setDatasOcupadas] = useState({})
@@ -13,20 +12,29 @@ export default function AgendaFreela({ freela }) {
 
   useEffect(() => {
     if (!freela?.uid) return
+
     const ref = collection(db, 'usuarios', freela.uid, 'agenda')
-    const unsub = onSnapshot(ref, snapshot => {
+    const unsubscribe = onSnapshot(ref, snapshot => {
       const datas = {}
-      snapshot.docs.forEach(d => { datas[d.id] = d.data() })
+      snapshot.docs.forEach(doc => {
+        datas[doc.id] = doc.data()
+      })
       setDatasOcupadas(datas)
     })
-    return () => unsub()
-  }, [freela.uid])
 
-  const handleClickDia = date => {
+    return () => unsubscribe()
+  }, [freela])
+
+  const handleClickDia = (date) => {
     const dia = date.toISOString().split('T')[0]
+
     if (datasOcupadas[dia]) {
-      const conf = window.confirm(`Liberar ${dia}?`)
-      if (conf) deleteDoc(doc(db, 'usuarios', freela.uid, 'agenda', dia))
+      const confirm = window.confirm(
+        `A data ${dia} está marcada como ocupada. Deseja liberar essa data?`
+      )
+      if (confirm) {
+        liberarData(dia)
+      }
     } else {
       setDataSelecionada(dia)
       setNota('')
@@ -36,44 +44,82 @@ export default function AgendaFreela({ freela }) {
 
   const marcarData = async () => {
     if (!dataSelecionada) return
-    await setDoc(doc(db, 'usuarios', freela.uid, 'agenda', dataSelecionada), {
-      ocupado: true,
-      nota: nota.trim() || null
-    })
-    setModoEdicao(false)
-    setDataSelecionada(null)
-    setNota('')
+    try {
+      const ref = doc(db, 'usuarios', freela.uid, 'agenda', dataSelecionada)
+      await setDoc(ref, { ocupado: true, nota: nota.trim() || null })
+      setModoEdicao(false)
+      setDataSelecionada(null)
+      setNota('')
+    } catch (err) {
+      alert('Erro ao marcar data. Veja o console.')
+      console.error(err)
+    }
+  }
+
+  const liberarData = async (dia) => {
+    try {
+      const ref = doc(db, 'usuarios', freela.uid, 'agenda', dia)
+      await deleteDoc(ref)
+    } catch (err) {
+      alert('Erro ao liberar data. Veja o console.')
+      console.error(err)
+    }
   }
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow space-y-4">
-      <h2 className="text-xl font-semibold text-blue-700">📆 Minha Agenda</h2>
+    <div className="bg-white p-6 rounded-xl shadow">
+      <h2 className="text-xl font-semibold mb-4 text-blue-700">📆 Minha Agenda</h2>
       <Calendar
         onClickDay={handleClickDia}
         tileContent={({ date }) => {
           const dia = date.toISOString().split('T')[0]
           if (datasOcupadas[dia]) {
-            return <div className="text-xs text-red-600">📌 {datasOcupadas[dia].nota || 'Ocupado'}</div>
+            return (
+              <div className="text-xs text-red-600 font-bold mt-1">
+                📌 {datasOcupadas[dia].nota || 'Ocupado'}
+              </div>
+            )
           }
           return null
         }}
       />
+
       {modoEdicao && (
-        <div className="p-4 border rounded bg-yellow-50 space-y-2">
-          <p>Marcando: <strong>{dataSelecionada}</strong></p>
+        <div className="mt-4 p-4 border rounded bg-yellow-50">
+          <p>
+            Marcando data: <strong>{dataSelecionada}</strong>
+          </p>
           <textarea
+            placeholder="Adicione uma nota (opcional)"
             value={nota}
             onChange={e => setNota(e.target.value)}
-            placeholder="Nota (opcional)"
-            className="w-full border rounded p-2"
+            className="w-full p-2 border rounded mt-2"
             rows={3}
           />
-          <div className="flex gap-2">
-            <button onClick={marcarData} className="bg-green-600 text-white px-4 py-2 rounded">Salvar</button>
-            <button onClick={() => setModoEdicao(false)} className="bg-gray-400 text-white px-4 py-2 rounded">Cancelar</button>
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={marcarData}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              Salvar
+            </button>
+            <button
+              onClick={() => {
+                setModoEdicao(false)
+                setDataSelecionada(null)
+                setNota('')
+              }}
+              className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+            >
+              Cancelar
+            </button>
           </div>
         </div>
       )}
+
+      <p className="text-sm text-gray-500 mt-4">
+        Clique em uma data para marcar como ocupada. Para liberar uma data ocupada, clique nela e confirme.
+      </p>
     </div>
   )
 }
