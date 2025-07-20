@@ -6,10 +6,10 @@ import {
   Calendar,
   Star,
   PhoneCall,
-  Briefcase,
-  Settings,
-  Wallet
+  Wallet,
+  Settings
 } from 'lucide-react'
+import '@/styles/menu-inferior.css' // Importa seus estilos customizados
 
 const botoes = [
   { id: 'perfil', label: 'Perfil', icon: <UserCircle size={20} /> },
@@ -20,27 +20,30 @@ const botoes = [
   { id: 'config', label: 'Config', icon: <Settings size={20} /> }
 ]
 
-export default function MenuInferiorFreela({ onSelect, abaAtiva }) {
+export default function MenuInferiorFreela({ onSelect, abaAtiva, alertas = {} }) {
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-inner flex justify-around py-2 z-50">
-      {botoes.map(({ id, label, icon }) => (
-        <button
-          key={id}
-          onClick={() => onSelect(id)}
-          className={`flex flex-col items-center text-xs font-medium transition ${
-            abaAtiva === id ? 'text-orange-600' : 'text-gray-500'
-          }`}
-        >
-          <div
-            className={`w-10 h-10 flex items-center justify-center rounded-full ${
-              abaAtiva === id ? 'bg-orange-100' : 'bg-gray-100'
+      {botoes.map(({ id, label, icon }) => {
+        const alertaAtivo = alertas[id]
+        return (
+          <button
+            key={id}
+            onClick={() => onSelect(id)}
+            className={`flex flex-col items-center text-xs font-medium transition ${
+              abaAtiva === id ? 'text-orange-600' : 'text-gray-500'
             }`}
           >
-            {icon}
-          </div>
-          {label}
-        </button>
-      ))}
+            <div
+              className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-300 ${
+                abaAtiva === id ? 'bg-orange-100' : 'bg-gray-100'
+              } ${alertaAtivo ? 'alerta-icone' : ''}`}
+            >
+              {icon}
+            </div>
+            {label}
+          </button>
+        )
+      })}
     </nav>
   )
 }
