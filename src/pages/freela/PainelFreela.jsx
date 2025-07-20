@@ -1,4 +1,6 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import MenuInferiorFreela from '@/components/MenuInferiorFreela'
 import PerfilFreela from '@/pages/freela/PerfilFreela'
