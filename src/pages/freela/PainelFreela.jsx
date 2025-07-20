@@ -50,9 +50,7 @@ export default function PainelFreela() {
       case 'config':
         return <ConfiguracoesFreela freelaId={freelaId} />
       case 'historico':
-        return <HistoricoFreela freelaId={freelaId} />
-      case 'avaliacoes':
-        return <AvaliacoesRecebidasFreela /> 
+        return <HistoricoFreela freelaId={freelaId} />      
       case 'recebimentos':
         return <RecebimentosFreela freelaId={freelaId} />
       default:
