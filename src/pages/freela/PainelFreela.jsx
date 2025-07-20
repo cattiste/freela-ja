@@ -51,3 +51,10 @@ export default function PainelFreela() {
       return null
   }
 }
+ return (
+    <div>
+      {renderConteudo()}
+      <MenuInferiorFreela onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
+    </div>
+  )
+}
