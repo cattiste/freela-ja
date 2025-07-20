@@ -1,14 +1,14 @@
 import React, { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import MenuInferiorFreela from '@/components/MenuInferiorFreela'
-import PerfilFreela from './PerfilFreela'
-import AgendaFreela from './AgendaFreela'
-import AvaliacoesRecebidasFreela from './AvaliacoesRecebidasFreela'
-import Chamadas from './Chamadas'
-import Eventos from './Eventos'
-import Vagas from './Vagas'
-import ConfiguracoesFreela from './ConfiguracoesFreela'
-import HistoricoFreela from './HistoricoFreela'
+import PerfilFreela from '@/pages/freela/PerfilFreela'
+import AgendaFreela from '@/pages/freela/AgendaFreela'
+import AvaliacoesRecebidasFreela from '@/pages/freela/AvaliacoesRecebidasFreela'
+import Chamadas from '@/pages/freela/Chamadas'
+import Eventos from '@/pages/freela/Eventos'
+import Vagas from '@/pages/freela/Vagas'
+import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
+import HistoricoFreela from '@/pages/freela/HistoricoFreela'
 
 export default function PainelFreela() {
   const { usuario } = useAuth()
