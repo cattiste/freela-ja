@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import Calendar from 'react-calendar'
 import '@/styles/calendar.css'
 import { db } from '@/firebase'
-import { collection, onSnapshot, doc, deleteDoc } from 'firebase/firestore'
++import { collection, onSnapshot, doc, deleteDoc, setDoc } from 'firebase/firestore'
 
 export default function AgendaFreela({ freela }) {
   const [datasOcupadas, setDatasOcupadas] = useState({})
