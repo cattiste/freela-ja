@@ -1,177 +1,53 @@
-import React, { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { doc, getDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore'
-import { db } from '@/firebase'
-import { useAuth } from '@/context/AuthContext'
+import React from 'react';
+import Agenda from '../../components/Agenda';
+import { FaPhone, FaCalendarAlt, FaStar, FaHistory } from 'react-icons/fa';
 
-export default function PerfilFreela({ freelaUidProp, mostrarBotaoVoltar = true }) {
-  const params = useParams()
-  const navigate = useNavigate()
-  const { usuario } = useAuth()
-  const [freela, setFreela] = useState(null)
-  const [avaliacoes, setAvaliacoes] = useState([])
-  const [carregando, setCarregando] = useState(true)
-  const [erro, setErro] = useState(null)
-
-  const uid = freelaUidProp || params.uid
-
-  useEffect(() => {
-    async function carregarFreela() {
-      try {
-        if (!uid) {
-          setErro('ID do freelancer não informado.')
-          setCarregando(false)
-          return
-        }
-
-        const freelaRef = doc(db, 'usuarios', uid)
-        const freelaSnap = await getDoc(freelaRef)
-
-        if (!freelaSnap.exists()) {
-          setErro('Freelancer não encontrado.')
-          setCarregando(false)
-          return
-        }
-
-        setFreela(freelaSnap.data())
-
-        const q = query(
-          collection(db, 'avaliacoesFreelas'),
-          where('freelaUid', '==', uid),
-          orderBy('dataCriacao', 'desc')
-        )
-        const snapshot = await getDocs(q)
-        const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-        setAvaliacoes(lista)
-
-        // Calcula média
-        if (lista.length > 0) {
-          const soma = lista.reduce((total, av) => total + av.nota, 0)
-          const media = soma / lista.length
-          setFreela((prev) => ({ ...prev, mediaAvaliacao: media }))
-        }
-
-      } catch (e) {
-        console.error(e)
-        setErro('Erro ao carregar dados do freelancer.')
-      } finally {
-        setCarregando(false)
-      }
-    }
-
-    carregarFreela()
-  }, [uid])
-
-  const renderEstrelas = nota => {
-    const estrelasCheias = Math.floor(nota)
-    const meiaEstrela = nota % 1 >= 0.5
-    const estrelasVazias = 5 - estrelasCheias - (meiaEstrela ? 1 : 0)
-
-    return (
-      <div className="flex text-yellow-500 text-lg">
-        {'★'.repeat(estrelasCheias)}
-        {meiaEstrela && '☆'}
-        {'☆'.repeat(estrelasVazias)}
-      </div>
-    )
-  }
-
-  const formatarValor = valor => {
-    if (!valor) return null
-    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-  }
-
-  const formatarData = data => {
-    try {
-      return data?.toDate().toLocaleDateString('pt-BR') || '—'
-    } catch {
-      return '—'
-    }
-  }
-
-  if (carregando) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-600 font-semibold text-xl">
-        Carregando perfil...
-      </div>
-    )
-  }
-
-  if (erro) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-red-600 font-bold text-xl">
-        {erro}
-      </div>
-    )
-  }
-
+const PerfilFreela = () => {
   return (
-    <div className="min-h-screen bg-blue-50 flex items-center justify-center p-6">
-      <div className="bg-white rounded-3xl shadow-lg max-w-md w-full p-6 text-center">
-        <img
-          src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'}
-          alt={freela.nome}
-          className="mx-auto w-32 h-32 rounded-full object-cover border-2 border-blue-400 shadow mb-4"
-        />
-        <h1 className="text-2xl font-bold text-blue-700 mb-1">{freela.nome}</h1>
-        <p className="text-blue-600 text-base mb-1">{freela.funcao || freela.especialidades}</p>
-        <p className="text-gray-600 text-sm mb-2">{freela.endereco}</p>
-        {freela.celular && <p className="text-gray-600 text-sm mb-2">📱 {freela.celular}</p>}
+    <div className="p-4 space-y-4">
+      {/* Card com perfil e agenda lado a lado */}
+      <div className="flex flex-col md:flex-row md:space-x-4">
+        {/* Card do freela */}
+        <div className="bg-white rounded-2xl shadow-md p-4 flex flex-col items-center w-full md:w-1/2">
+          <img
+            src="https://placehold.co/120x120"
+            alt="Foto do Freela"
+            className="rounded-full w-28 h-28 object-cover mb-4"
+          />
+          <h2 className="text-xl font-bold">Nome do Freela</h2>
+          <p className="text-sm text-gray-500">Função: Garçom</p>
+          <p className="text-sm text-gray-500">Telefone: (11) 99999-9999</p>
+          <p className="text-sm text-gray-500">Email: freela@email.com</p>
+        </div>
 
-        {freela.mediaAvaliacao && (
-          <>
-            {renderEstrelas(freela.mediaAvaliacao)}
-            <p className="text-gray-600 text-sm mb-2">
-              Avaliação média: {freela.mediaAvaliacao.toFixed(1)} / 5
-            </p>
-          </>
-        )}
+        {/* Agenda */}
+        <div className="bg-white rounded-2xl shadow-md p-4 w-full md:w-1/2">
+          <h2 className="text-lg font-semibold mb-2">Agenda</h2>
+          <Agenda />
+        </div>
+      </div>
 
-        {freela.descricao && (
-          <p className="text-gray-700 text-sm mb-3 italic">{freela.descricao}</p>
-        )}
-
-        {freela.valorDiaria && (
-          <p className="text-green-700 font-semibold mb-4">
-            💰 Valor da diária: {formatarValor(freela.valorDiaria)}
-          </p>
-        )}
-
-        {avaliacoes.length > 0 && (
-          <div className="mt-6 text-left">
-            <h3 className="text-sm font-bold text-blue-700 mb-2">⭐ Avaliações Recebidas</h3>
-            <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
-              {avaliacoes.map((av) => (
-                <div key={av.id} className="bg-gray-50 p-2 rounded border border-gray-200">
-                  {renderEstrelas(av.nota)}
-                  <p className="text-gray-700 text-sm">{av.comentario || 'Sem comentário'}</p>
-                  <p className="text-xs text-gray-500 italic mt-1">
-                    {av.estabelecimentoNome || 'Estabelecimento'} — {formatarData(av.dataCriacao)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {usuario && usuario.tipo === 'estabelecimento' && usuario.uid !== uid && (
-          <button
-            onClick={() => navigate(`/avaliacao/freela/${uid}`)}
-            className="mt-4 px-4 py-2 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 transition"
-          >
-            Avaliar este Freela
-          </button>
-        )}
-
-        {mostrarBotaoVoltar && (
-          <button
-            onClick={() => navigate(-1)}
-            className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition"
-          >
-            ← Voltar
-          </button>
-        )}
+      {/* Menu inferior de ícones */}
+      <div className="grid grid-cols-4 gap-2 text-center">
+        <div className="flex flex-col items-center">
+          <FaPhone className="text-xl text-blue-600" />
+          <span className="text-sm">Chamadas</span>
+        </div>
+        <div className="flex flex-col items-center">
+          <FaCalendarAlt className="text-xl text-green-600" />
+          <span className="text-sm">Eventos</span>
+        </div>
+        <div className="flex flex-col items-center">
+          <FaStar className="text-xl text-yellow-500" />
+          <span className="text-sm">Avaliações</span>
+        </div>
+        <div className="flex flex-col items-center">
+          <FaHistory className="text-xl text-gray-600" />
+          <span className="text-sm">Histórico</span>
+        </div>
       </div>
     </div>
-  )
-}
+  );
+};
+
+export default PerfilFreela;
