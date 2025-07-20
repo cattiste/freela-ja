@@ -40,6 +40,11 @@ export default function MenuInferiorFreela({ onSelect, abaAtiva }) {
           </div>
           {label}
         </button>
+        <button onClick={() => onSelect('agenda')}>
+          {/* ícone bonitão */}
+          <span>Agenda</span>
+        </button>
+
       ))}
     </nav>
   )
