@@ -156,7 +156,7 @@ export default function PerfilFreela({ freelaUidProp, mostrarBotaoVoltar = true 
 
         {usuario && usuario.tipo === 'estabelecimento' && usuario.uid !== uid && (
           <button
-            onClick={() => navigate(/avaliacao/freela/${uid})}
+            onClick={() => navigate(`/avaliacao/freela/${uid}`)}
             className="mt-4 px-4 py-2 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 transition"
           >
             Avaliar este Freela
