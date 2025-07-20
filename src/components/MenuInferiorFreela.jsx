@@ -16,7 +16,6 @@ const botoes = [
   { id: 'agenda', label: 'Agenda', icon: <Calendar size={20} /> },
   { id: 'avaliacoes', label: 'Avaliações', icon: <Star size={20} /> },
   { id: 'chamadas', label: 'Chamadas', icon: <PhoneCall size={20} /> },
-  { id: 'vagas', label: 'Vagas', icon: <Briefcase size={20} /> },
   { id: 'recebimentos', label: 'Recebimentos', icon: <Wallet size={20} /> },
   { id: 'config', label: 'Config', icon: <Settings size={20} /> }
 ]
