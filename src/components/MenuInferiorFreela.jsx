@@ -22,6 +22,10 @@ const MenuInferiorFreela = ({ onSelect, abaAtiva }) => {
         <FaHistory className="text-xl" />
         <span className="text-xs">Histórico</span>
       </button>
+      <button onClick={() => onSelect("historico")} className={iconeClasse("historico")}>
+        <FaHistory className="text-xl" />
+        <span className="text-xs">Histórico</span>
+      </button>
     </div>
   );
 };

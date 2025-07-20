@@ -31,6 +31,7 @@ const PainelFreela = () => {
           <div className="grid md:grid-cols-2 gap-4">
             <PerfilFreela freelaId={freelaId} />
             <AgendaFreela freelaId={freelaId} />
+             <AvaliacoesFreela freelaId={freelaId} />
           </div>
         );
       case "avaliacoes":
