@@ -9,7 +9,7 @@ import {
   Wallet,
   Settings
 } from 'lucide-react'
-import '@/styles/menu-inferior.css' // Importa seus estilos customizados
+import '@/styles/menuinferior.css' // Importa seus estilos customizados
 
 const botoes = [
   { id: 'perfil', label: 'Perfil', icon: <UserCircle size={20} /> },
