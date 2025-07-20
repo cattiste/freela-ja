@@ -1,7 +1,16 @@
 import React, { useEffect, useState } from 'react'
-import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore'
-import { useAuth } from '@/context/AuthContext'
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  deleteDoc,
+  doc,
+  serverTimestamp
+} from 'firebase/firestore'
 import { db } from '@/firebase'
+import { useAuth } from '@/context/AuthContext'
 
 export default function AvaliacoesRecebidasFreela({ freelaUid }) {
   const [avaliacoes, setAvaliacoes] = useState([])
