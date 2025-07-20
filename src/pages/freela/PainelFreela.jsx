@@ -1,56 +1,55 @@
-// PainelFreela.jsx
-import React, { useEffect, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { useNavigate } from "react-router-dom";
-import PerfilFreela from "./PerfilFreela";
-import AgendaFreela from "./AgendaFreela";
-import AvaliacoesFreela from "./AvaliacoesFreela";
-import HistoricoFreela from "./HistoricoFreela";
-import MenuInferiorFreela from "@/components/MenuInferiorFreela";
+import React, { useState } from 'react'
+import { useAuth } from '@/context/AuthContext'
+import MenuInferiorFreela from '@/components/MenuInferiorFreela'
+import PerfilFreela from '@/components/freela/PerfilFreela'
+import AgendaFreela from '@/components/freela/AgendaFreela'
+import AvaliacoesRecebidasFreela from '@/components/freela/AvaliacoesRecebidasFreela'
+import Chamadas from '@/components/freela/Chamadas'
+import Eventos from '@/components/freela/Eventos'
+import Vagas from '@/components/freela/Vagas'
+import ConfiguracoesFreela from '@/components/freela/ConfiguracoesFreela'
+import HistoricoFreela from '@/components/freela/HistoricoFreela'
 
-const PainelFreela = () => {
-  const { usuario } = useAuth();
-  const navigate = useNavigate();
-  const [freelaId, setFreelaId] = useState(null);
-  const [abaAtiva, setAbaAtiva] = useState("perfil");
+export default function PainelFreela() {
+  const { usuario } = useAuth()
+  const [abaSelecionada, setAbaSelecionada] = useState('perfil')
 
-  useEffect(() => {
-    if (usuario && usuario.tipo === "freela") {
-      setFreelaId(usuario.uid);
-    } else {
-      navigate("/login");
-    }
-  }, [usuario, navigate]);
+  if (!usuario) {
+    return <div className="text-center mt-10">Carregando dados do usuário...</div>
+  }
 
-  if (!freelaId) return null;
+  const freelaId = usuario.uid
 
   const renderConteudo = () => {
-    switch (abaAtiva) {
-      case "perfil":
+    switch (abaSelecionada) {
+      case 'perfil':
         return (
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-3 gap-4 mt-4">
             <PerfilFreela freelaId={freelaId} />
             <AgendaFreela freelaId={freelaId} />
-             <AvaliacoesFreela freelaId={freelaId} />
+            <AvaliacoesRecebidasFreela freelaUid={freelaId} />
           </div>
-        );
-      case "avaliacoes":
-        return <AvaliacoesFreela freelaId={freelaId} />;
-      case "historico":
-        return <HistoricoFreela freelaId={freelaId} />;
+        )
+      case 'chamadas':
+        return <Chamadas freelaId={freelaId} />
+      case 'eventos':
+        return <Eventos freelaId={freelaId} />
+      case 'vagas':
+        return <Vagas freelaId={freelaId} />
+      case 'config':
+        return <ConfiguracoesFreela freelaId={freelaId} />
+      case 'historico':
+        return <HistoricoFreela freelaId={freelaId} />
       default:
-        return null;
+        return null
     }
-  };
+  }
 
   return (
-    <div className="p-4 pb-20"> {/* espaço inferior pro menu fixo */}
+    <div className="p-4">
+      <h1 className="text-xl font-semibold text-center">Painel do Freela</h1>
       {renderConteudo()}
-      <div className="fixed bottom-0 left-0 right-0 z-50">
-        <MenuInferiorFreela onSelect={setAbaAtiva} abaAtiva={abaAtiva} />
-      </div>
+      <MenuInferiorFreela onSelect={setAbaSelecionada} />
     </div>
-  );
-};
-
-export default PainelFreela;
+  )
+}
