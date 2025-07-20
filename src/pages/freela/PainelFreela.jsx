@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import PerfilFreela from "@/components/PerfilFreela";
-import AgendaFreela from "@/components/AgendaFreela";
+import PerfilFreela from "./PerfilFreela";
+import AgendaFreela from "./AgendaFreela";
 import MenuInferiorFreela from "@/components/MenuInferiorFreela";
 
 const PainelFreela = () => {
