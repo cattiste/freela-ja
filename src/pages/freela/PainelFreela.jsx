@@ -1,3 +1,4 @@
+// ✅ src/pages/freela/PainelFreela.jsx atualizado
 import React, { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import MenuInferiorFreela from '@/components/MenuInferiorFreela'
@@ -10,6 +11,7 @@ import Vagas from '@/pages/freela/VagasDisponiveis'
 import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
 import HistoricoFreela from '@/pages/freela/HistoricoTrabalhosFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
+import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 
 export default function PainelFreela() {
   const { usuario, carregando } = useAuth()
@@ -47,13 +49,15 @@ export default function PainelFreela() {
         return <ConfiguracoesFreela freelaId={freelaId} />
       case 'historico':
         return <HistoricoFreela freelaId={freelaId} />
+      case 'recebimentos':
+        return <RecebimentosFreela freelaId={freelaId} />
       default:
         return null
     }
-  } // 👈 ESSA CHAVE estava faltando!
+  }
 
   return (
-    <div>
+    <div className="p-4 pb-20">
       {renderConteudo()}
       <MenuInferiorFreela onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
     </div>
