@@ -158,6 +158,6 @@ export default function ConfiguracoesFreela() {
           Sair
         </button>
       </div>
-    </div> //
+    </div> 
   )
 }
