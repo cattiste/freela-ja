@@ -5,10 +5,12 @@ import PerfilFreela from '@/pages/freela/PerfilFreela'
 import AgendaFreela from '@/pages/freela/AgendaFreela'
 import AvaliacoesRecebidasFreela from '@/pages/freela/AvaliacoesRecebidasFreela'
 import Chamadas from '@/components/ChamadaInline'
-import Eventos from '@/pages/freela/Eventos'
-import Vagas from '@/pages/freela/Vagas'
+import Eventos from '@/pages/freela/EventosDisponiveis'
+import Vagas from '@/pages/freela/VagasDisponiveis'
 import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
-import HistoricoFreela from '@/pages/freela/HistoricoFreela'
+import HistoricoFreela from '@/pages/freela/HistoricoChamadasFreela'
+import HistoricoFreela from '@/pages/freela/HistoricoTrabalhosFreela'
+import HistoricoFreela from '@/pages/freela/RecebimentosFreela'
 
 export default function PainelFreela() {
   const { usuario } = useAuth()
