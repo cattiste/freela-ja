@@ -9,6 +9,7 @@ import Eventos from '@/pages/freela/EventosDisponiveis'
 import Vagas from '@/pages/freela/VagasDisponiveis'
 import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
 import HistoricoFreela from '@/pages/freela/HistoricoTrabalhosFreela'
+import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 
 export default function PainelFreela() {
   const { usuario, carregando } = useAuth()
@@ -46,6 +47,8 @@ export default function PainelFreela() {
         return <HistoricoFreela freelaId={freelaId} />
       default:
         return null
+      case 'agenda':
+        return <AgendaCompleta freelaId={freelaId} />  
     }
   }
 
