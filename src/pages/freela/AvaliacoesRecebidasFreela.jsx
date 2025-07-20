@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from 'react'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
+import { useAuth } from '@/context/AuthContext'
 
 export default function AvaliacoesRecebidasFreela({ freelaUid }) {
+  const { usuario } = useAuth()
+  const uid = freelaUid || usuario?.uid
   const [avaliacoes, setAvaliacoes] = useState([])
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    if (!freelaUid) return
+    if (!uid) return
 
     const q = query(
       collection(db, 'avaliacoesFreelas'),
-      where('freelaUid', '==', freelaUid)
+      where('freelaUid', '==', uid)
     )
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -24,9 +27,9 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
     })
 
     return () => unsubscribe()
-  }, [freelaUid])
+  }, [uid])
 
-  if (!freelaUid) {
+  if (!uid) {
     return (
       <div className="text-center text-red-600 mt-10">
         ⚠️ Acesso não autorizado. Faça login novamente.
