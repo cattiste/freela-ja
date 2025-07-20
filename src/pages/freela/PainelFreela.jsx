@@ -26,37 +26,28 @@ export default function PainelFreela() {
   const freelaId = usuario.uid
 
   const renderConteudo = () => {
-    switch (abaSelecionada) {
-      case 'perfil':
-        return (
-          <div className="grid md:grid-cols-3 gap-4 mt-4">
-            <PerfilFreelaCard freelaId={freelaId} />
-            <AgendaFreela freelaId={freelaId} />
-            <AvaliacoesRecebidasFreela freelaUid={freelaId} />
-          </div>
-        )
-      case 'chamadas':
-        return <Chamadas freelaId={freelaId} />
-      case 'eventos':
-        return <Eventos freelaId={freelaId} />
-      case 'vagas':
-        return <Vagas freelaId={freelaId} />
-      case 'config':
-        return <ConfiguracoesFreela freelaId={freelaId} />
-      case 'historico':
-        return <HistoricoFreela freelaId={freelaId} />
-      default:
-        return null
-      case 'agenda':
-        return <AgendaCompleta freelaId={freelaId} />  
-    }
+  switch (abaSelecionada) {
+    case 'perfil':
+      return (
+        <div className="grid md:grid-cols-3 gap-4 mt-4">
+          <PerfilFreelaCard freelaId={freelaId} />
+          <AgendaFreela freelaId={freelaId} />
+          <AvaliacoesRecebidasFreela freelaUid={freelaId} />
+        </div>
+      )
+    case 'agenda':
+      return <AgendaCompleta freelaId={freelaId} /> // 👈 adiciona isso
+    case 'chamadas':
+      return <Chamadas freelaId={freelaId} />
+    case 'eventos':
+      return <Eventos freelaId={freelaId} />
+    case 'vagas':
+      return <Vagas freelaId={freelaId} />
+    case 'config':
+      return <ConfiguracoesFreela freelaId={freelaId} />
+    case 'historico':
+      return <HistoricoFreela freelaId={freelaId} />
+    default:
+      return null
   }
-
-  return (
-    <div className="p-4 pb-20">
-      <h1 className="text-xl font-semibold text-center">Painel do Freela</h1>
-      {renderConteudo()}
-      <MenuInferiorFreela onSelect={setAbaSelecionada} />
-    </div>
-  )
 }
