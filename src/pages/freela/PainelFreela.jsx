@@ -43,6 +43,8 @@ export default function PainelFreela() {
         return <AgendaCompleta freelaId={freelaId} />
       case 'chamadas':
         return <ChamadasFreela />
+      case 'avaliacoes':
+        return <AvaliacoesRecebidasFreela />
       case 'eventos':
         return <Eventos freelaId={freelaId} />
       case 'vagas':
