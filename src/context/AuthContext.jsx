@@ -13,11 +13,17 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
       if (usuario) {
-        const docRef = doc(db, 'usuarios', usuario.uid)
-        const docSnap = await getDoc(docRef)
-        if (docSnap.exists()) {
-          setUsuario({ uid: usuario.uid, ...docSnap.data() })
-        } else {
+        try {
+          await usuario.getIdToken(true) // força renovação
+          const docRef = doc(db, 'usuarios', usuario.uid)
+          const docSnap = await getDoc(docRef)
+          if (docSnap.exists()) {
+            setUsuario({ uid: usuario.uid, ...docSnap.data() })
+          } else {
+            setUsuario({ uid: usuario.uid, email: usuario.email })
+          }
+        } catch (erro) {
+          console.error('Erro ao buscar dados do usuário:', erro)
           setUsuario({ uid: usuario.uid, email: usuario.email })
         }
       } else {
@@ -29,8 +35,18 @@ export function AuthProvider({ children }) {
     return () => unsubscribe()
   }, [])
 
+  const atualizarUsuario = async () => {
+    const user = auth.currentUser
+    if (user) {
+      const docSnap = await getDoc(doc(db, 'usuarios', user.uid))
+      if (docSnap.exists()) {
+        setUsuario({ uid: user.uid, ...docSnap.data() })
+      }
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ usuario, carregando }}>
+    <AuthContext.Provider value={{ usuario, carregando, atualizarUsuario }}>
       {children}
     </AuthContext.Provider>
   )
