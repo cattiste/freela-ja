@@ -30,23 +30,23 @@ export default function PainelFreela() {
       case 'perfil':
         return (
           <div className="grid md:grid-cols-3 gap-4 mt-4">
-            <PerfilFreelaCard freelaId={freela.uid} />
-            <AgendaFreela freelaId={freela.uid} />
+            <PerfilFreelaCard freelaId={freelaId} />
+            <AgendaFreela freelaId={freelaId} />
             <AvaliacoesRecebidasFreela freelaUid={freelaId} />
           </div>
         )
       case 'agenda':
-        return <AgendaCompleta freelaId={freela.uid} />
+        return <AgendaCompleta freelaId={freelaId} />
       case 'chamadas':
-        return <Chamadas freelaId={freela.uid} />
+        return <Chamadas freelaId={freelaId} />
       case 'eventos':
-        return <Eventos freelaId={freela.uid} />
+        return <Eventos freelaId={freelaId} />
       case 'vagas':
-        return <Vagas freelaId={freela.uid} />
+        return <Vagas freelaId={freelaId} />
       case 'config':
-        return <ConfiguracoesFreela freelaId={freela.uid} />
+        return <ConfiguracoesFreela freelaId={freelaId} />
       case 'historico':
-        return <HistoricoFreela freelaId={freela.uid} />
+        return <HistoricoFreela freelaId={freelaId} />
       default:
         return null
     }
