@@ -1,5 +1,5 @@
 import React from 'react';
-import Agenda from '../../components/Agenda';
+import Agenda from './AgendaFreela';
 import { FaPhone, FaCalendarAlt, FaStar, FaHistory } from 'react-icons/fa';
 
 const PerfilFreela = () => {
