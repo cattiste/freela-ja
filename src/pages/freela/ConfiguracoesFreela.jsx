@@ -157,6 +157,7 @@ export default function ConfiguracoesFreela() {
         >
           Sair
         </button>
-      </div>  {/* ← esse fechamento aqui deve existir e ser único */}
+      </div>
+    </div> // ← fecha o container principal do return
   )
-}    
+}
