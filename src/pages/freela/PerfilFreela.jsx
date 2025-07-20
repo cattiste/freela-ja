@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { Mail, Phone, Briefcase, UserCircle2 } from 'lucide-react';
+import { auth } from '@/firebase';
 
 const PerfilFreela = ({ freelaId, onEditar }) => {
   const [freela, setFreela] = useState(null);
@@ -12,11 +13,19 @@ const PerfilFreela = ({ freelaId, onEditar }) => {
       try {
         const docRef = doc(db, 'usuarios', freelaId);
         const docSnap = await getDoc(docRef);
+
         if (docSnap.exists()) {
-          setFreela(docSnap.data());
+          const data = docSnap.data();
+          setFreela({
+            ...data,
+            email: data.email || auth.currentUser?.email || 'Email não informado',
+          });
+        } else {
+          setFreela(null);
         }
       } catch (error) {
         console.error('Erro ao buscar dados do freela:', error);
+        setFreela(null);
       } finally {
         setLoading(false);
       }
@@ -28,12 +37,14 @@ const PerfilFreela = ({ freelaId, onEditar }) => {
   if (loading) return <p className="text-center">Carregando perfil...</p>;
   if (!freela) return <p className="text-center text-red-600">Freela não encontrado.</p>;
 
+  const foto = freela.fotoURL || freela.foto || freela.fotoUrl || '';
+
   return (
     <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col items-center w-full max-w-md mx-auto border">
       <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-orange-500 shadow mb-4">
-        {freela.fotoURL ? (
+        {foto ? (
           <img
-            src={freela.fotoURL}
+            src={foto}
             alt="Foto do Freela"
             className="w-full h-full object-cover"
           />
@@ -42,7 +53,9 @@ const PerfilFreela = ({ freelaId, onEditar }) => {
         )}
       </div>
 
-      <h2 className="text-xl font-bold text-gray-800 text-center">{freela.nome?.toUpperCase() || 'NOME'}</h2>
+      <h2 className="text-xl font-bold text-gray-800 text-center">
+        {freela.nome?.toUpperCase() || 'NOME'}
+      </h2>
 
       <div className="mt-2 space-y-1 text-sm text-gray-600 w-full">
         <div className="flex items-center gap-2">
@@ -55,7 +68,7 @@ const PerfilFreela = ({ freelaId, onEditar }) => {
         </div>
         <div className="flex items-center gap-2">
           <Mail size={16} />
-          <span>{freela.email || 'Email não informado'}</span>
+          <span>{freela.email}</span>
         </div>
       </div>
 
