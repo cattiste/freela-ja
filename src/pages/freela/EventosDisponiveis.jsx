@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, getDocs, addDoc, Timestamp } from 'firebase/firestore'
+import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore'
+import { useAuth } from '@/context/AuthContext'
 import { db } from '@/firebase'
 
 export default function EventosDisponiveis({ freela }) {
+  const { usuario } = useAuth()
   const [eventos, setEventos] = useState([])
   const [candidaturas, setCandidaturas] = useState([])
   const [carregando, setCarregando] = useState(true)
@@ -19,11 +21,13 @@ export default function EventosDisponiveis({ freela }) {
         }))
         setEventos(listaEventos)
 
-        if (freela?.uid) {
+        const uid = freela?.uid || usuario?.uid
+
+        if (uid) {
           const candidaturasRef = collection(db, 'candidaturasEventos')
           const qCandidaturas = query(
             candidaturasRef,
-            where('freelaUid', '==', freela.uid)
+            where('freelaUid', '==', uid)
           )
           const snapshotCandidaturas = await getDocs(qCandidaturas)
           const eventosCandidatados = snapshotCandidaturas.docs.map(doc => doc.data().eventoId)
@@ -37,14 +41,17 @@ export default function EventosDisponiveis({ freela }) {
     }
 
     buscarDados()
-  }, [freela])
+  }, [freela, usuario])
 
   const candidatar = async (evento) => {
+    const uid = freela?.uid || usuario?.uid
+    if (!uid) return alert("Usuário não autenticado.")
+
     try {
       const ref = collection(db, 'candidaturasEventos')
       await addDoc(ref, {
         eventoId: evento.id,
-        freelaUid: freela.uid,
+        freelaUid: uid,
         dataCandidatura: Timestamp.now(),
         status: 'pendente',
       })
@@ -55,16 +62,14 @@ export default function EventosDisponiveis({ freela }) {
     }
   }
 
-  // ✅ VERIFICAÇÃO ANTES DO RENDER
-  if (!freela || !freela.uid) {
+  if (carregando) return <p className="text-center text-orange-600 mt-10">🔄 Carregando eventos...</p>
+  if (!freela?.uid && !usuario?.uid) {
     return (
       <p className="text-center text-red-600 mt-10">
         ⚠️ Acesso não autorizado. Faça login novamente.
       </p>
     )
   }
-
-  if (carregando) return <p className="text-center text-orange-600 mt-10">🔄 Carregando eventos...</p>
 
   return (
     <div className="max-w-full p-4 bg-white rounded-xl shadow">

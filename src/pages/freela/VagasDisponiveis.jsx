@@ -1,14 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  addDoc,
-  deleteDoc,
-  doc,
-  serverTimestamp
-} from 'firebase/firestore'
+import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore'
+import { useAuth } from '@/context/AuthContext'
 import { db } from '@/firebase'
 
 function formatarData(timestamp) {
