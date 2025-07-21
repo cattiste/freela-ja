@@ -16,7 +16,7 @@ export default function Oportunidades() {
   useEffect(() => {
     async function carregarVagas() {
       try {
-        const q = query(collection(db, 'vagas'), where('status', '==', 'ativo'))
+        const q = query(collection(db, 'vagas'), where('tipo', '==', 'clt'))
         const snapshot = await getDocs(q)
         const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
         setVagas(lista)
