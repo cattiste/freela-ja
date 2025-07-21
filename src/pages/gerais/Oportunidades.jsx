@@ -72,7 +72,10 @@ export default function Oportunidades() {
                   <div
                     key={vaga.id}
                     className="bg-white p-5 rounded-xl shadow hover:shadow-xl cursor-pointer transition border-l-4 border-blue-500"
-                    onClick={() => navigate(`/vaga/${vaga.id}`)}
+                    onClick={() => {
+                      alert('Para se candidatar a essa vaga, cadastre-se como freelancer!')
+                      navigate('/cadastrofreela')
+                    }}
                   >
                     <div className="flex justify-between items-center mb-2">
                       <h2 className="text-xl font-bold text-blue-700">{vaga.titulo}</h2>
