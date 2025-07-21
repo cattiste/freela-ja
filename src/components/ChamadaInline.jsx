@@ -1,4 +1,3 @@
-// src/components/ChamadaInline.jsx
 import React, { useState } from 'react'
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -7,7 +6,7 @@ import { toast } from 'react-hot-toast'
 export default function ChamadaInline({ chamada, usuario, tipo }) {
   const [loading, setLoading] = useState(false)
 
-  if (!chamada?.id) return null  // proteção contra erro de dados inválidos
+  if (!chamada?.id) return null
 
   const aceitarChamada = async () => {
     setLoading(true)
@@ -50,7 +49,8 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       const ref = doc(db, 'chamadas', chamada.id)
       await updateDoc(ref, {
         checkInEstabelecimento: true,
-        checkInEstabelecimentoHora: serverTimestamp()
+        checkInEstabelecimentoHora: serverTimestamp(),
+        status: 'em_andamento'
       })
       toast.success('Check-in confirmado!')
     } catch (err) {
@@ -86,7 +86,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       await updateDoc(ref, {
         checkOutEstabelecimento: true,
         checkOutEstabelecimentoHora: serverTimestamp(),
-        status: 'finalizada'
+        status: 'concluido'
       })
       toast.success('Checkout confirmado!')
     } catch (err) {
@@ -98,7 +98,9 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
   }
 
   const renderBotoes = () => {
-    if (!chamada.status || chamada.status === 'pendente') {
+    const status = chamada.status
+
+    if (!status || status === 'pendente') {
       if (tipo === 'freela') {
         return (
           <button onClick={aceitarChamada} className="btn" disabled={loading}>
@@ -108,7 +110,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       }
     }
 
-    if (chamada.status === 'aceita') {
+    if (status === 'aceita') {
       if (tipo === 'freela' && !chamada.checkInFreela) {
         return (
           <button onClick={checkInFreela} className="btn" disabled={loading}>
@@ -116,7 +118,10 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
           </button>
         )
       }
-      if (tipo === 'estabelecimento' && chamada.checkInFreela && !chamada.checkInEstabelecimento) {
+    }
+
+    if (status === 'checkin_freela') {
+      if (tipo === 'estabelecimento' && !chamada.checkInEstabelecimento) {
         return (
           <button onClick={checkInEstabelecimento} className="btn" disabled={loading}>
             ✅ Confirmar check-in
@@ -125,7 +130,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       }
     }
 
-    if (chamada.status === 'checkin_freela') {
+    if (status === 'em_andamento') {
       if (tipo === 'freela' && !chamada.checkOutFreela) {
         return (
           <button onClick={checkOutFreela} className="btn" disabled={loading}>
@@ -133,7 +138,10 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
           </button>
         )
       }
-      if (tipo === 'estabelecimento' && chamada.checkOutFreela && !chamada.checkOutEstabelecimento) {
+    }
+
+    if (status === 'checkout_freela') {
+      if (tipo === 'estabelecimento' && !chamada.checkOutEstabelecimento) {
         return (
           <button onClick={checkOutEstabelecimento} className="btn" disabled={loading}>
             ✅ Confirmar checkout
@@ -142,7 +150,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       }
     }
 
-    if (chamada.status === 'finalizada') {
+    if (status === 'concluido' || status === 'finalizada') {
       return <span className="text-green-600 font-bold">✅ Finalizada</span>
     }
 
@@ -152,7 +160,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
   return (
     <div className="border p-4 rounded-xl shadow bg-white mb-4">
       <h2 className="font-bold text-lg text-orange-600">
-        Chamada #{chamada?.id?.slice(-5) || 'sem ID'}
+        Chamada #{chamada?.id?.slice(-5) || '---'}
       </h2>
       <p><strong>Freela:</strong> {chamada.freelaNome || '---'}</p>
       <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome || '---'}</p>
