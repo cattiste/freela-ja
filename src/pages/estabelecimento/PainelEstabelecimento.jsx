@@ -122,7 +122,7 @@ export default function PainelEstabelecimento() {
     <div
       className="min-h-screen bg-cover bg-center p-4 pb-20"
       style={{
-        backgroundImage: `url('/img/bg-restaurante-hero.jpg')`,
+        backgroundImage: `url('/img/fundo-login.jpg')`,
         backgroundAttachment: 'fixed',
         backgroundRepeat: 'no-repeat',
         backgroundSize: 'cover',
