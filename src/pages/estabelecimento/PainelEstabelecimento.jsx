@@ -13,6 +13,8 @@ import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
 import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
 import ChamadaInline from '@/components/ChamadaInline'
+import ChamadasEstabelecimento from '@/components/ChamadasEstabelecimento'
+
 
 export default function PainelEstabelecimento() {
   const [estabelecimento, setEstabelecimento] = useState(null)
@@ -105,6 +107,8 @@ export default function PainelEstabelecimento() {
         return <HistoricoChamadasEstabelecimento estabelecimento={estabelecimento} />
       case 'configuracoes':
         return <ConfigPagamentoEstabelecimento usuario={estabelecimento} />
+      case 'chamadas':
+        return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
       default:
         return null
     }
