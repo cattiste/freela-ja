@@ -4,6 +4,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useNavigate } from 'react-router-dom'
 import Input from '@/components/ui/Input'
+import { toast } from 'react-hot-toast'
 
 export default function Oportunidades() {
   const [vagas, setVagas] = useState([])
@@ -73,8 +74,8 @@ export default function Oportunidades() {
                     key={vaga.id}
                     className="bg-white p-5 rounded-xl shadow hover:shadow-xl cursor-pointer transition border-l-4 border-blue-500"
                     onClick={() => {
-                      alert('Para se candidatar a essa vaga, cadastre-se como freelancer!')
-                      navigate('/cadastrofreela')
+                      toast('Cadastre-se para se candidatar às vagas!')
+                      setTimeout(() => navigate('/cadastrofreela'), 1500)
                     }}
                   >
                     <div className="flex justify-between items-center mb-2">
