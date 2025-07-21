@@ -35,7 +35,7 @@ export default function HistoricoChamadasEstabelecimento({ estabelecimento }) {
     <div className="overflow-x-auto">
       <h2 className="text-2xl font-semibold mb-4">📜 Histórico de Chamadas Finalizadas</h2>
       {chamadas.length === 0 ? (
-        <p className="text-gray-500">Nenhum serviço finalizado até o momento.</p>
+        <p className="text-white-500">Nenhum serviço finalizado até o momento.</p>
       ) : (
         <table className="min-w-full border border-orange-200 rounded-xl overflow-hidden">
           <thead className="bg-orange-100 text-orange-800">
