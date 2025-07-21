@@ -106,6 +106,7 @@ export default function BuscarFreelas({ estabelecimento }) {
 
   const chamarFreela = async (freela) => {
     if (!estabelecimento?.uid) return
+
     if (chamadasAtivas[freela.id]) {
       alert(`Você já chamou ${freela.nome}. Aguarde ele aceitar ou encerrar a chamada.`)
       return
@@ -132,7 +133,7 @@ export default function BuscarFreelas({ estabelecimento }) {
 
       alert(`Freelancer ${freela.nome} foi chamado com sucesso.`)
     } catch (err) {
-      console.error('Erro ao chamar freela:', err)
+      console.error('Erro ao chamar freelancer:', err)
       alert('Erro ao chamar freelancer.')
     }
 
@@ -151,8 +152,8 @@ export default function BuscarFreelas({ estabelecimento }) {
     return funcaoOK && espOK
   }
 
-  if (carregando) return <p>Carregando freelancers...</p>
-  if (freelas.length === 0) return <p>Nenhum freelancer encontrado.</p>
+  if (carregando) return <p className="text-center text-gray-600">Carregando freelancers...</p>
+  if (freelas.length === 0) return <p className="text-center text-gray-600">Nenhum freelancer encontrado.</p>
 
   return (
     <div
