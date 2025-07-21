@@ -14,18 +14,7 @@ function FreelaCard({ freela, onChamar, chamando, chamadaAtiva }) {
           src={freela.foto || 'https://via.placeholder.com/80'}
           alt={freela.nome}
           className="w-20 h-20 rounded-full object-cover border-2 border-orange-400"
-        />
-        
-      <div
-        className="min-h-screen bg-cover bg-center p-4 pb-20"
-        style={{
-          backgroundImage: `url('/img/fundo-login.jpg')`,
-          backgroundAttachment: 'fixed',
-          backgroundRepeat: 'no-repeat',
-          backgroundSize: 'cover',
-        }}
-      >
-
+        />      
         <h3 className="mt-2 text-lg font-bold text-orange-700 text-center">{freela.nome}</h3>
         {/* Função acima das especialidades */}
         <p className="text-sm text-gray-600 text-center">{freela.funcao}</p>
@@ -119,6 +108,16 @@ export default function BuscarFreelas({ estabelecimento }) {
   if (freelas.length === 0) return <p>Nenhum freelancer encontrado.</p>
 
   return (
+    <div
+      className="min-h-screen bg-cover bg-center p-4 pb-20"
+      style={{
+        backgroundImage: `url('/img/fundo-login.jpg')`,
+        backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+       }}
+    >
+
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
       {freelas.map(freela => (
         <FreelaCard
