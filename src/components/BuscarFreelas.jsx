@@ -14,9 +14,8 @@ function FreelaCard({ freela, onChamar, chamando, chamadaAtiva }) {
           src={freela.foto || 'https://via.placeholder.com/80'}
           alt={freela.nome}
           className="w-20 h-20 rounded-full object-cover border-2 border-orange-400"
-        />      
+        />
         <h3 className="mt-2 text-lg font-bold text-orange-700 text-center">{freela.nome}</h3>
-        {/* Função acima das especialidades */}
         <p className="text-sm text-gray-600 text-center">{freela.funcao}</p>
         {freela.especialidades && (
           <p className="text-sm text-gray-500 text-center">
@@ -55,6 +54,8 @@ export default function BuscarFreelas({ estabelecimento }) {
   const [carregando, setCarregando] = useState(true)
   const [chamando, setChamando] = useState(null)
   const [chamadasAtivas, setChamadasAtivas] = useState({})
+  const [filtroFuncao, setFiltroFuncao] = useState('')
+  const [filtroEspecialidade, setFiltroEspecialidade] = useState('')
 
   useEffect(() => {
     const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
@@ -104,10 +105,16 @@ export default function BuscarFreelas({ estabelecimento }) {
     setChamando(null)
   }
 
+  const filtrarFreelas = (freela) => {
+    const funcaoOK = filtroFuncao === '' || freela.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
+    const espOK = filtroEspecialidade === '' || freela.especialidades?.toLowerCase().includes(filtroEspecialidade.toLowerCase())
+    return funcaoOK && espOK
+  }
+
   if (carregando) return <p>Carregando freelancers...</p>
   if (freelas.length === 0) return <p>Nenhum freelancer encontrado.</p>
 
-    return (
+  return (
     <div
       className="min-h-screen bg-cover bg-center p-4 pb-20"
       style={{
@@ -117,8 +124,26 @@ export default function BuscarFreelas({ estabelecimento }) {
         backgroundSize: 'cover',
       }}
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-        {freelas.map(freela => (
+      {/* 🔎 Filtros */}
+      <div className="max-w-6xl mx-auto mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <input
+          type="text"
+          placeholder="🔍 Buscar por função (ex: Cozinheiro)"
+          className="p-3 rounded-xl border border-orange-300 focus:ring-2 focus:ring-orange-500 outline-none"
+          value={filtroFuncao}
+          onChange={e => setFiltroFuncao(e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="🎯 Filtrar por especialidade (ex: Feijoada, Drinks)"
+          className="p-3 rounded-xl border border-orange-300 focus:ring-2 focus:ring-orange-500 outline-none"
+          value={filtroEspecialidade}
+          onChange={e => setFiltroEspecialidade(e.target.value)}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
+        {freelas.filter(filtrarFreelas).map(freela => (
           <FreelaCard
             key={freela.id}
             freela={freela}
@@ -129,5 +154,5 @@ export default function BuscarFreelas({ estabelecimento }) {
         ))}
       </div>
     </div>
-  ) // ✅ Aqui está o fechamento correto do return
+  )
 }

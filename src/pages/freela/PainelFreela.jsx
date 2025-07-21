@@ -1,6 +1,8 @@
-// ✅ src/pages/freela/PainelFreela.jsx completo com alertas visuais
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
+import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
+import { db } from '@/firebase'
+
 import MenuInferiorFreela from '@/components/MenuInferiorFreela'
 import PerfilFreelaCard from '@/pages/freela/PerfilFreela'
 import AgendaFreela from '@/pages/freela/AgendaFreela'
@@ -12,28 +14,37 @@ import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
 import HistoricoFreela from '@/pages/freela/HistoricoTrabalhosFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
-import EditarFreela from '@/pages/freela/EditarFreela'
-import { collection, query, where, onSnapshot } from 'firebase/firestore'
-import { db } from '@/firebase'
 
 export default function PainelFreela() {
   const { usuario, carregando } = useAuth()
   const [abaSelecionada, setAbaSelecionada] = useState('perfil')
-  const [alertas, setAlertas] = useState({ chamadas: false, agenda: false, avaliacoes: false, recebimentos: false })
+  const [alertas, setAlertas] = useState({
+    chamadas: false,
+    agenda: false,
+    avaliacoes: false,
+    recebimentos: false
+  })
 
   const freelaId = usuario?.uid
 
+  // ✅ Atualiza o campo ultimaAtividade a cada minuto
   useEffect(() => {
-  if (!usuario?.uid) return
+    if (!freelaId) return
 
-  const interval = setInterval(() => {
-    const ref = doc(db, 'usuarios', usuario.uid)
+    const interval = setInterval(() => {
+      const ref = doc(db, 'usuarios', freelaId)
+      updateDoc(ref, { ultimaAtividade: serverTimestamp() }).catch(console.error)
+    }, 60 * 1000)
+
+    // Atualiza logo ao entrar
+    const ref = doc(db, 'usuarios', freelaId)
     updateDoc(ref, { ultimaAtividade: serverTimestamp() }).catch(console.error)
-  }, 60 * 100) //
 
-  return () => clearInterval(interval)
-}, [usuario?.uid])
+    return () => clearInterval(interval)
+  }, [freelaId])
 
+  useEffect(() => {
+    if (!freelaId) return
 
     const unsubChamadas = onSnapshot(
       query(collection(db, 'chamadas'), where('freelaUid', '==', freelaId), where('status', '==', 'pendente')),
