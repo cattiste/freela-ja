@@ -69,7 +69,7 @@ export default function PainelFreela() {
         return (
           <div className="grid md:grid-cols-3 gap-4 mt-4">
             <PerfilFreelaCard freelaId={freelaId} />
-            <AgendaFreela freelaId={freelaId} />
+            <AgendaFreela freela={usuario} />
             <AvaliacoesRecebidasFreela freelaUid={freelaId} />
           </div>
         )

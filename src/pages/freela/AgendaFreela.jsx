@@ -7,6 +7,8 @@ import { useAuth } from '@/context/AuthContext'
 
 export default function AgendaFreela({ freela }) {
   const { usuario } = useAuth()
+  const freelaReal = freela || usuario
+
   const [eventos, setEventos] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [datasOcupadas, setDatasOcupadas] = useState({})
@@ -15,9 +17,9 @@ export default function AgendaFreela({ freela }) {
   const [modoEdicao, setModoEdicao] = useState(false)
 
   useEffect(() => {
-    if (!freela?.uid) return
+    if (!freelaReal?.uid) return
 
-    const ref = collection(db, 'usuarios', freela.uid, 'agenda')
+    const ref = collection(db, 'usuarios', freelaReal.uid, 'agenda')
     const unsubscribe = onSnapshot(ref, snapshot => {
       const datas = {}
       snapshot.docs.forEach(doc => {
@@ -27,7 +29,7 @@ export default function AgendaFreela({ freela }) {
     })
 
     return () => unsubscribe()
-  }, [freela])
+  }, [freelaReal])
 
   const handleClickDia = (date) => {
     const dia = date.toISOString().split('T')[0]
@@ -47,26 +49,27 @@ export default function AgendaFreela({ freela }) {
   }
 
   const marcarData = async () => {
-  if (!dataSelecionada || !freela?.uid) {
-    alert('Usuário não definido ou data inválida.')
-    return
-  }
+    if (!dataSelecionada || !freelaReal?.uid) {
+      alert('Usuário não definido ou data inválida.')
+      return
+    }
 
-  try {
-    const ref = doc(db, 'usuarios', freela.uid, 'agenda', dataSelecionada)
-    await setDoc(ref, { ocupado: true, nota: nota.trim() || null })
-    setModoEdicao(false)
-    setDataSelecionada(null)
-    setNota('')
-  } catch (err) {
-    alert('Erro ao marcar data. Veja o console.')
-    console.error(err)
+    try {
+      const ref = doc(db, 'usuarios', freelaReal.uid, 'agenda', dataSelecionada)
+      await setDoc(ref, { ocupado: true, nota: nota.trim() || null })
+      setModoEdicao(false)
+      setDataSelecionada(null)
+      setNota('')
+    } catch (err) {
+      alert('Erro ao marcar data. Veja o console.')
+      console.error(err)
+    }
   }
-}
 
   const liberarData = async (dia) => {
+    if (!freelaReal?.uid) return
     try {
-      const ref = doc(db, 'usuarios', freela.uid, 'agenda', dia)
+      const ref = doc(db, 'usuarios', freelaReal.uid, 'agenda', dia)
       await deleteDoc(ref)
     } catch (err) {
       alert('Erro ao liberar data. Veja o console.')
