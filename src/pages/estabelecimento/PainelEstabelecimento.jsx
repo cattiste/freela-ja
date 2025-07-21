@@ -1,5 +1,6 @@
+// 📄 src/pages/estabelecimento/PainelEstabelecimento.jsx
 import React, { useEffect, useState } from 'react'
-import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, onSnapshot } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
@@ -68,6 +69,23 @@ export default function PainelEstabelecimento() {
     return () => unsub()
   }, [estabelecimento])
 
+  const renderTopo = () => (
+    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow p-4 flex items-center gap-4 mb-4 sticky top-0 z-40">
+      {estabelecimento?.foto && (
+        <img
+          src={estabelecimento.foto}
+          alt="Logo"
+          className="w-16 h-16 rounded-full border border-orange-300 object-cover"
+        />
+      )}
+      <div>
+        <h2 className="text-xl font-bold text-orange-700">{estabelecimento?.nome}</h2>
+        <p className="text-sm text-gray-600">{estabelecimento?.endereco}</p>
+        <p className="text-sm text-gray-600">📞 {estabelecimento?.celular}</p>
+      </div>
+    </div>
+  )
+
   const renderConteudo = () => {
     switch (abaSelecionada) {
       case 'buscar':
@@ -101,27 +119,17 @@ export default function PainelEstabelecimento() {
   }
 
   return (
-    <div className="p-4 pb-20">
-      {/* 🔒 Cabeçalho fixo com dados do estabelecimento */}
-      <div className="bg-white rounded-2xl shadow p-4 flex items-center gap-4 mb-4 sticky top-0 z-40">
-        {estabelecimento.foto && (
-          <img
-            src={estabelecimento.foto}
-            alt="Logo"
-            className="w-16 h-16 rounded-full border border-orange-300 object-cover"
-          />
-        )}
-        <div>
-          <h2 className="text-xl font-bold text-orange-700">{estabelecimento.nome}</h2>
-          <p className="text-sm text-gray-600">{estabelecimento.endereco}</p>
-          <p className="text-sm text-gray-600">📞 {estabelecimento.celular}</p>
-        </div>
-      </div>
-
-      {/* Conteúdo da aba selecionada */}
+    <div
+      className="min-h-screen bg-cover bg-center p-4 pb-20"
+      style={{
+        backgroundImage: `url('/img/bg-restaurante-hero.jpg')`,
+        backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+      }}
+    >
+      {renderTopo()}
       {renderConteudo()}
-
-      {/* Menu Inferior com ícones */}
       <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
     </div>
   )
