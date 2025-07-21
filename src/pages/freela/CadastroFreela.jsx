@@ -97,40 +97,51 @@ export default function CadastroFreela() {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-16 p-6 bg-white rounded-2xl shadow-xl">
-      <h1 className="text-2xl font-bold mb-6 text-center text-orange-600">Cadastro Freelancer</h1>
+    <div
+      className="min-h-screen bg-cover bg-center bg-no-repeat relative"
+      style={{ backgroundImage: "url('/img/fundo-login.jpg')" }}
+    >
+      <div className="absolute inset-0 bg-black bg-opacity-50 z-0" />
 
-      <form onSubmit={handleCadastro} className="flex flex-col gap-4" noValidate>
-        <input type="text" placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} className="input-field" required />
-        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" required />
-        <input type="password" placeholder="Senha" value={senha} onChange={e => setSenha(e.target.value)} className="input-field" required />
+      <div className="relative z-10 flex items-center justify-center min-h-screen p-6">
+        <div className="max-w-md w-full bg-white bg-opacity-90 backdrop-blur-md p-6 rounded-2xl shadow-xl">
+          <h1 className="text-2xl font-bold mb-6 text-center text-orange-600">
+            Cadastro Freelancer
+          </h1>
 
-        <InputMask mask="(99) 99999-9999" value={celular} onChange={e => setCelular(e.target.value)}>
-          {(inputProps) => <input {...inputProps} type="tel" placeholder="Celular" className="input-field" required />}
-        </InputMask>
+          <form onSubmit={handleCadastro} className="flex flex-col gap-4" noValidate>
+            <input type="text" placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} className="input-field" required />
+            <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" required />
+            <input type="password" placeholder="Senha" value={senha} onChange={e => setSenha(e.target.value)} className="input-field" required />
 
-        <InputMask mask="999.999.999-99" value={cpf} onChange={e => setCpf(e.target.value)}>
-          {(inputProps) => <input {...inputProps} type="text" placeholder="CPF" className="input-field" required />}
-        </InputMask>
+            <InputMask mask="(99) 99999-9999" value={celular} onChange={e => setCelular(e.target.value)}>
+              {(inputProps) => <input {...inputProps} type="tel" placeholder="Celular" className="input-field" required />}
+            </InputMask>
 
-        <input type="text" placeholder="Endereço" value={endereco} onChange={e => setEndereco(e.target.value)} className="input-field" required />
-        <input type="text" placeholder="Função" value={funcao} onChange={e => setFuncao(e.target.value)} className="input-field" required />
-        <input type="text" placeholder="Especialidades" value={especialidades} onChange={e => setEspecialidades(e.target.value)} className="input-field" required />
-        <input type="number" placeholder="Valor da diária" value={valorDiaria} onChange={e => setValorDiaria(e.target.value)} className="input-field" required />
+            <InputMask mask="999.999.999-99" value={cpf} onChange={e => setCpf(e.target.value)}>
+              {(inputProps) => <input {...inputProps} type="text" placeholder="CPF" className="input-field" required />}
+            </InputMask>
 
-        <input type="file" accept="image/*" onChange={e => {
-          const file = e.target.files[0]
-          setFoto(file)
-          setFotoPreview(URL.createObjectURL(file))
-        }} />
+            <input type="text" placeholder="Endereço" value={endereco} onChange={e => setEndereco(e.target.value)} className="input-field" required />
+            <input type="text" placeholder="Função" value={funcao} onChange={e => setFuncao(e.target.value)} className="input-field" required />
+            <input type="text" placeholder="Especialidades" value={especialidades} onChange={e => setEspecialidades(e.target.value)} className="input-field" required />
+            <input type="number" placeholder="Valor da diária" value={valorDiaria} onChange={e => setValorDiaria(e.target.value)} className="input-field" required />
 
-        {fotoPreview && <img src={fotoPreview} alt="Preview" className="w-32 h-32 rounded-lg object-cover" />}
-        {error && <p className="text-red-600 text-center">{error}</p>}
+            <input type="file" accept="image/*" onChange={e => {
+              const file = e.target.files[0]
+              setFoto(file)
+              setFotoPreview(URL.createObjectURL(file))
+            }} />
 
-        <button type="submit" disabled={loading} className="btn-primary">
-          {loading ? 'Cadastrando...' : 'Cadastrar'}
-        </button>
-      </form>
+            {fotoPreview && <img src={fotoPreview} alt="Preview" className="w-32 h-32 rounded-lg object-cover mx-auto" />}
+            {error && <p className="text-red-600 text-center">{error}</p>}
+
+            <button type="submit" disabled={loading} className="btn-primary">
+              {loading ? 'Cadastrando...' : 'Cadastrar'}
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   )
 }
