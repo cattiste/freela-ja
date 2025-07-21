@@ -1,13 +1,10 @@
-// ✅ src/pages/estabelecimento/PainelEstabelecimento.jsx atualizado com melhorias visuais e MenuInferiorEstabelecimento
 import React, { useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
-import { onSnapshot, query, collection, where, doc as docRef } from 'firebase/firestore'
-import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
-import { toast, Toaster } from 'react-hot-toast'
-
+import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, onSnapshot } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
-import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
 
+// Subcomponentes do painel
 import BuscarFreelas from '@/components/BuscarFreelas'
 import AgendasContratadas from '@/components/AgendasContratadas'
 import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompleto'
@@ -15,14 +12,11 @@ import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
 import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
 import ChamadaInline from '@/components/ChamadaInline'
-import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
 
 export default function PainelEstabelecimento() {
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
-  const [aba, setAba] = useState('buscar')
-
-  const { online } = useOnlineStatus(estabelecimento?.uid)
+  const [abaSelecionada, setAbaSelecionada] = useState('buscar')
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -31,38 +25,28 @@ export default function PainelEstabelecimento() {
         setCarregando(false)
         return
       }
+
       try {
         const ref = doc(db, 'usuarios', user.uid)
         const snap = await getDoc(ref)
+
         if (snap.exists() && snap.data().tipo === 'estabelecimento') {
-          const data = snap.data()
-          setEstabelecimento({ uid: user.uid, ...data })
+          setEstabelecimento({ uid: user.uid, ...snap.data() })
           await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
-        } else {
-          setEstabelecimento(null)
         }
       } catch (err) {
         console.error('Erro ao buscar dados:', err)
-        setEstabelecimento(null)
       } finally {
         setCarregando(false)
       }
     })
+
     return () => unsubscribe()
   }, [])
 
   useEffect(() => {
     if (!estabelecimento?.uid) return
-    const iv = setInterval(() => {
-      updateDoc(docRef(db, 'usuarios', estabelecimento.uid), {
-        ultimaAtividade: serverTimestamp()
-      }).catch(console.error)
-    }, 30000)
-    return () => clearInterval(iv)
-  }, [estabelecimento])
 
-  useEffect(() => {
-    if (!estabelecimento?.uid) return
     const unsub = onSnapshot(
       query(
         collection(db, 'chamadas'),
@@ -75,44 +59,17 @@ export default function PainelEstabelecimento() {
           if (type === 'added') {
             const data = d.data()
             new Audio('/sons/checkout.mp3').play().catch(() => {})
-            toast.success(
-              `O freela ${data.freelaNome} finalizou o serviço. Confirme o checkout.`
-            )
+            alert(`⚠️ O freela ${data.freelaNome} finalizou o serviço. Confirme o checkout.`)
           }
         })
       }
     )
+
     return () => unsub()
   }, [estabelecimento])
 
-  const handleLogout = async () => {
-    if (estabelecimento?.uid) {
-      await updateDoc(docRef(db, 'usuarios', estabelecimento.uid), {
-        ultimaAtividade: serverTimestamp()
-      })
-    }
-    await signOut(auth)
-    localStorage.removeItem('usuarioLogado')
-    window.location.href = '/login'
-  }
-
-  if (carregando) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-orange-600 text-lg font-semibold">Carregando painel...</p>
-      </div>
-    )
-  }
-  if (!estabelecimento) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-600 text-lg font-semibold">Acesso não autorizado.</p>
-      </div>
-    )
-  }
-
   const renderConteudo = () => {
-    switch (aba) {
+    switch (abaSelecionada) {
       case 'buscar':
         return <BuscarFreelas estabelecimento={estabelecimento} />
       case 'agendas':
@@ -135,22 +92,18 @@ export default function PainelEstabelecimento() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-orange-50 pb-20 p-4">
-      <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex items-center gap-4 mb-6">
-          <h1 className="text-3xl font-bold text-orange-700 flex items-center gap-2">
-            📊 Painel do Estabelecimento
-            <span className={`text-sm font-semibold ${online ? 'text-green-600' : 'text-gray-400'}`}>
-              ● {online ? 'Online' : 'Offline'}
-            </span>
-          </h1>
-        </div>
+  if (carregando) {
+    return <div className="text-center text-orange-600 mt-8">Carregando painel...</div>
+  }
 
-        <section>{renderConteudo()}</section>
-      </div>
-      <MenuInferiorEstabelecimento onSelect={setAba} abaAtiva={aba} />
-      <Toaster position="top-center" reverseOrder={false} />
+  if (!estabelecimento) {
+    return <div className="text-center text-red-600 mt-8">Acesso não autorizado.</div>
+  }
+
+  return (
+    <div className="p-4 pb-20">
+      {renderConteudo()}
+      <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
     </div>
   )
 }
