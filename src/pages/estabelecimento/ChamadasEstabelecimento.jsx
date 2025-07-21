@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
-import ChamadaInline from './ChamadaInline'
+import ChamadaInline from '@/components/ChamadaInline'
 
 export default function ChamadasEstabelecimento({ estabelecimento }) {
   const [chamadas, setChamadas] = useState([])
