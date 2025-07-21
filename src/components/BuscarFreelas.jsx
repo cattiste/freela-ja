@@ -117,6 +117,15 @@ export default function BuscarFreelas({ estabelecimento }) {
           chamando={chamando}
           chamadaAtiva={chamadasAtivas[freela.id]}
         />
+        <div
+      className="min-h-screen bg-cover bg-center p-4 pb-20"
+      style={{
+        backgroundImage: `url('/img/fundo-login.jpg')`,
+        backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+      }}
+      >
       ))}
     </div>
   )
