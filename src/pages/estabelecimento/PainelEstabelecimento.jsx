@@ -20,10 +20,12 @@ export default function PainelEstabelecimento() {
   const [abaSelecionada, setAbaSelecionada] = useState('buscar')
   const [chamadaAtiva, setChamadaAtiva] = useState(null)
 
-  // Autenticação e dados do estabelecimento
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('[Auth] onAuthStateChanged', user)
+
       if (!user) {
+        console.log('[Auth] Usuário não autenticado')
         setEstabelecimento(null)
         setCarregando(false)
         return
@@ -34,11 +36,14 @@ export default function PainelEstabelecimento() {
         const snap = await getDoc(ref)
 
         if (snap.exists() && snap.data().tipo === 'estabelecimento') {
+          console.log('[Auth] Estabelecimento identificado:', snap.data())
           setEstabelecimento({ uid: user.uid, ...snap.data() })
           await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
+        } else {
+          console.warn('[Auth] Documento não encontrado ou não é um estabelecimento')
         }
       } catch (err) {
-        console.error('Erro ao buscar dados:', err)
+        console.error('[Auth] Erro ao buscar dados do estabelecimento:', err)
       } finally {
         setCarregando(false)
       }
@@ -47,7 +52,6 @@ export default function PainelEstabelecimento() {
     return () => unsubscribe()
   }, [])
 
-  // Escuta check-out pendente (som)
   useEffect(() => {
     if (!estabelecimento?.uid) return
 
@@ -62,6 +66,7 @@ export default function PainelEstabelecimento() {
         snap.docChanges().forEach(({ doc: d, type }) => {
           if (type === 'added') {
             const data = d.data()
+            console.log('[Checkout] Alerta de checkout pendente:', data)
             new Audio('/sons/checkout.mp3').play().catch(() => {})
             alert(`⚠️ O freela ${data.freelaNome} finalizou o serviço. Confirme o checkout.`)
           }
@@ -72,7 +77,6 @@ export default function PainelEstabelecimento() {
     return () => unsub()
   }, [estabelecimento])
 
-  // Escuta chamada ativa em andamento
   useEffect(() => {
     if (!estabelecimento?.uid) return
 
@@ -84,13 +88,13 @@ export default function PainelEstabelecimento() {
 
     const unsubscribe = onSnapshot(q, (snap) => {
       const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      console.log('[Chamada Ativa] Detectadas:', docs)
       setChamadaAtiva(docs[0] || null)
     })
 
     return () => unsubscribe()
   }, [estabelecimento])
 
-  // Topo com dados do estabelecimento
   const renderTopo = () => (
     <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow p-4 flex items-center gap-4 mb-4 sticky top-0 z-40">
       {estabelecimento?.foto && (
@@ -119,15 +123,13 @@ export default function PainelEstabelecimento() {
   }
 
   const renderConteudo = () => {
+    console.log('[Render] Aba selecionada:', abaSelecionada)
+
     switch (abaSelecionada) {
       case 'buscar':
         return <BuscarFreelas estabelecimento={estabelecimento} />
       case 'agendas':
-        return (
-          <div className="flex flex-col gap-6">
-            <AgendasContratadas estabelecimento={estabelecimento} />
-          </div>
-        )
+        return <AgendasContratadas estabelecimento={estabelecimento} />
       case 'vagas':
         return <VagasEstabelecimentoCompleto estabelecimento={estabelecimento} />
       case 'avaliacao':
@@ -144,12 +146,16 @@ export default function PainelEstabelecimento() {
   }
 
   if (carregando) {
+    console.log('[Render] Carregando...')
     return <div className="text-center text-orange-600 mt-8">Carregando painel...</div>
   }
 
   if (!estabelecimento) {
+    console.log('[Render] Estabelecimento nulo. Acesso negado.')
     return <div className="text-center text-red-600 mt-8">Acesso não autorizado.</div>
   }
+
+  console.log('[Render] Painel carregado com sucesso')
 
   return (
     <div
