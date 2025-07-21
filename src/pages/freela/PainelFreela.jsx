@@ -29,14 +29,14 @@ export default function PainelFreela() {
 
   const freelaId = usuario?.uid
 
-  // Atualiza ultimaAtividade a cada 30s
+  
   useEffect(() => {
     if (!freelaId) return
 
     const interval = setInterval(() => {
       const ref = doc(db, 'usuarios', freelaId)
       updateDoc(ref, { ultimaAtividade: serverTimestamp() }).catch(console.error)
-    }, 30 * 1000)
+    }, 10 * 1000)
 
     // Atualiza imediatamente
     updateDoc(doc(db, 'usuarios', freelaId), { ultimaAtividade: serverTimestamp() }).catch(console.error)
