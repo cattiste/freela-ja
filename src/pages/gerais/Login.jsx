@@ -6,7 +6,6 @@ import { doc, getDoc, setDoc } from 'firebase/firestore'
 
 export default function Login() {
   const navigate = useNavigate()
-
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [loading, setLoading] = useState(false)
@@ -28,7 +27,6 @@ export default function Login() {
       if (docSnap.exists()) {
         dadosUsuario = docSnap.data()
       } else {
-        // Cria um novo perfil padrão como freela
         dadosUsuario = {
           nome: usuario.displayName || '',
           tipo: 'freela',
@@ -41,10 +39,7 @@ export default function Login() {
           criadoEm: new Date()
         }
         await setDoc(docRef, dadosUsuario)
-        console.warn('⚠️ Perfil criado automaticamente no Firestore.')
       }
-
-      console.log('🧠 Dados do usuário carregado:', dadosUsuario)
 
       const usuarioLocal = {
         uid: usuario.uid,
@@ -58,18 +53,16 @@ export default function Login() {
 
       localStorage.setItem('usuarioLogado', JSON.stringify(usuarioLocal))
 
-      // Se for freela com perfil incompleto, direciona para edição
       const perfilIncompleto = !dadosUsuario.nome || !dadosUsuario.funcao
       if (dadosUsuario.tipo === 'freela' && perfilIncompleto) {
-        navigate('/editarperfilfreela', { replace: true }) // ✅ redirecionamento limpo
+        navigate('/editarperfilfreela')
         return
       }
 
-      // Redireciona de acordo com o tipo
       if (dadosUsuario.tipo === 'freela') {
-        navigate('/painelfreela', { replace: true }) // ✅
+        navigate('/painelfreela')
       } else if (dadosUsuario.tipo === 'estabelecimento') {
-        navigate('/painelestabelecimento', { replace: true }) // ✅
+        navigate('/painelestabelecimento')
       } else {
         throw new Error('Tipo de usuário não reconhecido.')
       }
@@ -83,28 +76,18 @@ export default function Login() {
   }
 
   return (
-    <>
-      <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 flex justify-between max-w-md w-full px-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded px-4 py-2 shadow"
-        >
-          ← Voltar
-        </button>
-        <button
-          onClick={() => navigate('/')}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded px-4 py-2 shadow"
-        >
-          🏠 Home
-        </button>
-      </div>
+    <div
+      className="min-h-screen bg-cover bg-center bg-no-repeat relative"
+      style={{ backgroundImage: "url('/img/fundo-login.jpg')" }}
+    >
+      <div className="absolute inset-0 bg-black bg-opacity-50 z-0" />
 
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-orange-100 to-orange-200 text-gray-800 p-6">
-        <h2 className="text-3xl font-bold text-orange-600 mb-6">Entrar na Plataforma</h2>
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-6">
+        <h2 className="text-3xl font-bold text-white mb-6 drop-shadow">Entrar na Plataforma</h2>
 
         <form
           onSubmit={handleLogin}
-          className="w-full max-w-md space-y-4 bg-white p-6 rounded-2xl shadow-lg"
+          className="w-full max-w-md bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg space-y-4"
         >
           <input
             type="email"
@@ -134,12 +117,12 @@ export default function Login() {
           )}
         </form>
 
-        <p className="text-center mt-4 text-sm">
-          <a href="/esquecisenha" className="text-blue-600 hover:underline">
+        <p className="text-center mt-4 text-sm text-white">
+          <a href="/esquecisenha" className="text-blue-200 hover:underline">
             Esqueci minha senha
           </a>
         </p>
       </div>
-    </>
+    </div>
   )
 }

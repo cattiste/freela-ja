@@ -1,4 +1,3 @@
-// 📄 src/pages/Cadastro.jsx
 import React, { useState } from 'react'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { collection, addDoc } from 'firebase/firestore'
@@ -41,47 +40,56 @@ export default function Cadastro() {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-12 p-6 bg-white rounded-xl shadow-lg">
-      <h2 className="text-2xl font-bold mb-6 text-center text-orange-600">Cadastro</h2>
+    <div
+      className="min-h-screen bg-cover bg-center bg-no-repeat relative"
+      style={{ backgroundImage: "url('/img/fundo-login.jpg')" }}
+    >
+      <div className="absolute inset-0 bg-black bg-opacity-50 z-0" />
 
-      <form onSubmit={handleCadastro} className="flex flex-col gap-4">
-        <input
-          type="text"
-          placeholder="Nome"
-          value={nome}
-          onChange={e => setNome(e.target.value)}
-          required
-          className="input-field"
-        />
+      <div className="relative z-10 flex items-center justify-center min-h-screen p-6">
+        <div className="max-w-md w-full bg-white bg-opacity-90 backdrop-blur-md rounded-2xl shadow-lg p-6">
+          <h2 className="text-2xl font-bold mb-6 text-center text-orange-600">Cadastro</h2>
 
-        <input
-          type="email"
-          placeholder="E-mail"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-          className="input-field"
-        />
+          <form onSubmit={handleCadastro} className="flex flex-col gap-4">
+            <input
+              type="text"
+              placeholder="Nome"
+              value={nome}
+              onChange={e => setNome(e.target.value)}
+              required
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
 
-        <input
-          type="password"
-          placeholder="Senha"
-          value={senha}
-          onChange={e => setSenha(e.target.value)}
-          required
-          className="input-field"
-        />
+            <input
+              type="email"
+              placeholder="E-mail"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="btn-primary"
-        >
-          {loading ? 'Cadastrando...' : 'Cadastrar'}
-        </button>
-      </form>
+            <input
+              type="password"
+              placeholder="Senha"
+              value={senha}
+              onChange={e => setSenha(e.target.value)}
+              required
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
 
-      {error && <p className="text-red-600 mt-4 text-center">{error}</p>}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 rounded transition"
+            >
+              {loading ? 'Cadastrando...' : 'Cadastrar'}
+            </button>
+          </form>
+
+          {error && <p className="text-red-600 mt-4 text-center">{error}</p>}
+        </div>
+      </div>
     </div>
   )
 }
