@@ -1,8 +1,3 @@
-// 📁 src/hooks/useOnlineStatus.js
-import { useEffect, useState } from 'react'
-import { doc, onSnapshot } from 'firebase/firestore'
-import { db } from '@/firebase'
-
 export function useOnlineStatus(uid) {
   const [online, setOnline] = useState(false)
   const [ultimaAtividade, setUltimaAtividade] = useState(null)
@@ -20,7 +15,6 @@ export function useOnlineStatus(uid) {
 
       const data = snap.data()
       const ts = data.ultimaAtividade
-
       setUltimaAtividade(ts)
 
       if (!ts) {
@@ -31,7 +25,7 @@ export function useOnlineStatus(uid) {
       const agora = Date.now()
       const ultima = ts.toMillis()
 
-      setOnline(agora - ultima < 15 * 1000) 
+      setOnline(agora - ultima < 15 * 1000)
     })
 
     return () => unsub()
