@@ -1,4 +1,3 @@
-// src/pages/gerais/Login.jsx
 import React, { useState } from 'react'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
@@ -62,15 +61,15 @@ export default function Login() {
       // Se for freela com perfil incompleto, direciona para edição
       const perfilIncompleto = !dadosUsuario.nome || !dadosUsuario.funcao
       if (dadosUsuario.tipo === 'freela' && perfilIncompleto) {
-        navigate('/editarperfilfreela')
+        navigate('/editarperfilfreela', { replace: true }) // ✅ redirecionamento limpo
         return
       }
 
       // Redireciona de acordo com o tipo
       if (dadosUsuario.tipo === 'freela') {
-        navigate('/painelfreela')
+        navigate('/painelfreela', { replace: true }) // ✅
       } else if (dadosUsuario.tipo === 'estabelecimento') {
-        navigate('/painelestabelecimento')
+        navigate('/painelestabelecimento', { replace: true }) // ✅
       } else {
         throw new Error('Tipo de usuário não reconhecido.')
       }

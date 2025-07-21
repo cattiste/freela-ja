@@ -1,4 +1,3 @@
-// 📁 src/context/AuthContext.jsx
 import { createContext, useContext, useEffect, useState } from 'react'
 import { auth, db } from '../firebase'
 import { onAuthStateChanged } from 'firebase/auth'
@@ -17,17 +16,23 @@ export function AuthProvider({ children }) {
           await usuario.getIdToken(true) // força renovação
           const docRef = doc(db, 'usuarios', usuario.uid)
           const docSnap = await getDoc(docRef)
-          if (docSnap.exists()) {
-            setUsuario({ uid: usuario.uid, ...docSnap.data() })
-          } else {
-            setUsuario({ uid: usuario.uid, email: usuario.email })
-          }
+
+          const dados = docSnap.exists()
+            ? { uid: usuario.uid, ...docSnap.data() }
+            : { uid: usuario.uid, email: usuario.email }
+
+          setUsuario(dados)
+          localStorage.setItem('usuarioLogado', JSON.stringify(dados)) // ✅ salva no localStorage
+
         } catch (erro) {
           console.error('Erro ao buscar dados do usuário:', erro)
-          setUsuario({ uid: usuario.uid, email: usuario.email })
+          const fallback = { uid: usuario.uid, email: usuario.email }
+          setUsuario(fallback)
+          localStorage.setItem('usuarioLogado', JSON.stringify(fallback)) // ✅ fallback
         }
       } else {
         setUsuario(null)
+        localStorage.removeItem('usuarioLogado') // ✅ remove ao deslogar
       }
       setCarregando(false)
     })
@@ -40,7 +45,9 @@ export function AuthProvider({ children }) {
     if (user) {
       const docSnap = await getDoc(doc(db, 'usuarios', user.uid))
       if (docSnap.exists()) {
-        setUsuario({ uid: user.uid, ...docSnap.data() })
+        const dados = { uid: user.uid, ...docSnap.data() }
+        setUsuario(dados)
+        localStorage.setItem('usuarioLogado', JSON.stringify(dados))
       }
     }
   }
