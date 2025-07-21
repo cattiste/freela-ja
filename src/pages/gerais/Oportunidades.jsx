@@ -44,7 +44,16 @@ export default function Oportunidades() {
         <meta name="description" content="Veja as vagas mais recentes e oportunidades de trabalho como freelancer perto de você." />
       </Helmet>
 
-      <div className="min-h-screen bg-blue-50 p-6">
+      <div
+        className="min-h-screen bg-cover bg-center p-6"
+        style={{
+          backgroundImage: `url('/img/bg-restaurante-hero.jpg')`,
+          backgroundAttachment: 'fixed',
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: 'cover'
+        }}
+      >
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 max-w-7xl mx-auto shadow-xl">
         <div className="max-w-7x2 mx-auto">
           <h1 className="text-3xl font-bold mb-6 text-blue-800">🚀 Oportunidades em Alta</h1>
 

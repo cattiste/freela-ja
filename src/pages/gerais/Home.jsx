@@ -42,11 +42,12 @@ export default function Home() {
           </Link>
 
           <Link
-            to="/painelvagas"
-            className="px-6 py-3 rounded-lg font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200 shadow"
+            to="/oportunidades"
+            className="px-6 py-3 rounded-lg text-white font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200"
           >
-            Painel de Vagas
+            Oportunidades
           </Link>
+
 
           <Link
             to="/sobre"
