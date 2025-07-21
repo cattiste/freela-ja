@@ -47,18 +47,22 @@ export default function AgendaFreela({ freela }) {
   }
 
   const marcarData = async () => {
-    if (!dataSelecionada) return
-    try {
-      const ref = doc(db, 'usuarios', freela.uid, 'agenda', dataSelecionada)
-      await setDoc(ref, { ocupado: true, nota: nota.trim() || null })
-      setModoEdicao(false)
-      setDataSelecionada(null)
-      setNota('')
-    } catch (err) {
-      alert('Erro ao marcar data. Veja o console.')
-      console.error(err)
-    }
+  if (!dataSelecionada || !freela?.uid) {
+    alert('Usuário não definido ou data inválida.')
+    return
   }
+
+  try {
+    const ref = doc(db, 'usuarios', freela.uid, 'agenda', dataSelecionada)
+    await setDoc(ref, { ocupado: true, nota: nota.trim() || null })
+    setModoEdicao(false)
+    setDataSelecionada(null)
+    setNota('')
+  } catch (err) {
+    alert('Erro ao marcar data. Veja o console.')
+    console.error(err)
+  }
+}
 
   const liberarData = async (dia) => {
     try {
