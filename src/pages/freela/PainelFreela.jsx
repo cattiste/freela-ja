@@ -14,6 +14,7 @@ import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
 import HistoricoFreela from '@/pages/freela/HistoricoTrabalhosFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
+import ChamadaInline from '@/components/ChamadaInline'
 
 export default function PainelFreela() {
   const { usuario, carregando } = useAuth()
@@ -24,25 +25,26 @@ export default function PainelFreela() {
     avaliacoes: false,
     recebimentos: false
   })
+  const [chamadaAtiva, setChamadaAtiva] = useState(null)
 
   const freelaId = usuario?.uid
 
-  // ✅ Atualiza o campo ultimaAtividade a cada minuto
+  // Atualiza ultimaAtividade a cada 30s
   useEffect(() => {
     if (!freelaId) return
 
     const interval = setInterval(() => {
       const ref = doc(db, 'usuarios', freelaId)
       updateDoc(ref, { ultimaAtividade: serverTimestamp() }).catch(console.error)
-    }, 60 * 1000)
+    }, 30 * 1000)
 
-    // Atualiza logo ao entrar
-    const ref = doc(db, 'usuarios', freelaId)
-    updateDoc(ref, { ultimaAtividade: serverTimestamp() }).catch(console.error)
+    // Atualiza imediatamente
+    updateDoc(doc(db, 'usuarios', freelaId), { ultimaAtividade: serverTimestamp() }).catch(console.error)
 
     return () => clearInterval(interval)
   }, [freelaId])
 
+  // Verifica alertas
   useEffect(() => {
     if (!freelaId) return
 
@@ -80,6 +82,24 @@ export default function PainelFreela() {
     }
   }, [freelaId])
 
+  // Monitora chamada ativa
+  useEffect(() => {
+    if (!freelaId) return
+
+    const q = query(
+      collection(db, 'chamadas'),
+      where('freelaUid', '==', freelaId),
+      where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'checkout_freela'])
+    )
+
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      setChamadaAtiva(docs[0] || null)
+    })
+
+    return () => unsubscribe()
+  }, [freelaId])
+
   if (carregando) return <div className="text-center mt-10">Verificando autenticação...</div>
   if (!usuario) return <div className="text-center mt-10">Usuário não autenticado.</div>
 
@@ -91,6 +111,11 @@ export default function PainelFreela() {
             <PerfilFreelaCard freelaId={freelaId} />
             <AgendaFreela freela={usuario} />
             <AvaliacoesRecebidasFreela freelaUid={freelaId} />
+            {chamadaAtiva && (
+              <div className="md:col-span-3">
+                <ChamadaInline chamada={chamadaAtiva} tipo="freela" usuario={usuario} />
+              </div>
+            )}
           </div>
         )
       case 'agenda':

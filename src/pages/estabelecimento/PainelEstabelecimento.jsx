@@ -1,4 +1,3 @@
-// 📄 src/pages/estabelecimento/PainelEstabelecimento.jsx
 import React, { useEffect, useState } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, onSnapshot } from 'firebase/firestore'
@@ -12,15 +11,16 @@ import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompl
 import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
 import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
-import ChamadaInline from '@/components/ChamadaInline'
 import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
-
+import ChamadaInline from '@/components/ChamadaInline'
 
 export default function PainelEstabelecimento() {
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [abaSelecionada, setAbaSelecionada] = useState('buscar')
+  const [chamadaAtiva, setChamadaAtiva] = useState(null)
 
+  // Autenticação e dados do estabelecimento
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -47,6 +47,7 @@ export default function PainelEstabelecimento() {
     return () => unsubscribe()
   }, [])
 
+  // Escuta check-out pendente (som)
   useEffect(() => {
     if (!estabelecimento?.uid) return
 
@@ -71,6 +72,25 @@ export default function PainelEstabelecimento() {
     return () => unsub()
   }, [estabelecimento])
 
+  // Escuta chamada ativa em andamento
+  useEffect(() => {
+    if (!estabelecimento?.uid) return
+
+    const q = query(
+      collection(db, 'chamadas'),
+      where('estabelecimentoUid', '==', estabelecimento.uid),
+      where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'checkout_freela'])
+    )
+
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      setChamadaAtiva(docs[0] || null)
+    })
+
+    return () => unsubscribe()
+  }, [estabelecimento])
+
+  // Topo com dados do estabelecimento
   const renderTopo = () => (
     <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow p-4 flex items-center gap-4 mb-4 sticky top-0 z-40">
       {estabelecimento?.foto && (
@@ -88,6 +108,16 @@ export default function PainelEstabelecimento() {
     </div>
   )
 
+  const renderChamadaAtiva = () => {
+    if (!chamadaAtiva) return null
+
+    return (
+      <div className="mb-4">
+        <ChamadaInline chamada={chamadaAtiva} tipo="estabelecimento" usuario={estabelecimento} />
+      </div>
+    )
+  }
+
   const renderConteudo = () => {
     switch (abaSelecionada) {
       case 'buscar':
@@ -96,7 +126,6 @@ export default function PainelEstabelecimento() {
         return (
           <div className="flex flex-col gap-6">
             <AgendasContratadas estabelecimento={estabelecimento} />
-            <ChamadaInline usuario={estabelecimento} tipo="estabelecimento" />
           </div>
         )
       case 'vagas':
@@ -133,6 +162,7 @@ export default function PainelEstabelecimento() {
       }}
     >
       {renderTopo()}
+      {renderChamadaAtiva()}
       {renderConteudo()}
       <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
     </div>
