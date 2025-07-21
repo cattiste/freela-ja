@@ -18,6 +18,7 @@ import Avaliacao from '@/pages/gerais/Avaliacao'
 import CadastroFreela from '@/pages/freela/CadastroFreela'
 import PerfilFreela from '@/pages/freela/PerfilFreela'
 import PainelFreela from '@/pages/freela/PainelFreela'
+import EditarFreela from '@/pages/freela/EditarFreela'
 
 // Páginas de estabelecimento
 import PerfilEstabelecimento from '@/pages/estabelecimento/PerfilEstabelecimento'
@@ -48,6 +49,7 @@ export default function App() {
           <Route path="/cadastrofreela" element={<CadastroFreela />} />
           <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
           <Route path="/painelfreela/:rota?" element={<PainelFreela />} />
+          <Route path="/freela/editarfreela" element={<EditarFreela />} />
 
           {/* Estabelecimento */}
           <Route path="/cadastroestabelecimento" element={<CadastroEstabelecimento />} />
