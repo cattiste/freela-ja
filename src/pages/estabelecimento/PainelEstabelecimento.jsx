@@ -13,7 +13,7 @@ import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
 import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
 import ChamadaInline from '@/components/ChamadaInline'
-import ChamadasEstabelecimento from '@/components/ChamadasEstabelecimento'
+import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
 
 
 export default function PainelEstabelecimento() {
