@@ -4,7 +4,7 @@ import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, onSn
 import { auth, db } from '@/firebase'
 import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
 
-// Subcomponentes do painel
+// Subcomponentes
 import BuscarFreelas from '@/components/BuscarFreelas'
 import AgendasContratadas from '@/components/AgendasContratadas'
 import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompleto'
@@ -68,22 +68,6 @@ export default function PainelEstabelecimento() {
     return () => unsub()
   }, [estabelecimento])
 
-    <div className="bg-white rounded-2xl shadow p-4 flex items-center gap-4 mb-4 sticky top-0 z-40">
-  {estabelecimento.foto && (
-    <img
-      src={estabelecimento.foto}
-      alt="Logo"
-      className="w-16 h-16 rounded-full border border-orange-300 object-cover"
-    />
-  )}
-  <div>
-    <h2 className="text-xl font-bold text-orange-700">{estabelecimento.nome}</h2>
-    <p className="text-sm text-gray-600">{estabelecimento.endereco}</p>
-    <p className="text-sm text-gray-600">📞 {estabelecimento.celular}</p>
-  </div>
-</div>
-
-
   const renderConteudo = () => {
     switch (abaSelecionada) {
       case 'buscar':
@@ -118,7 +102,26 @@ export default function PainelEstabelecimento() {
 
   return (
     <div className="p-4 pb-20">
+      {/* 🔒 Cabeçalho fixo com dados do estabelecimento */}
+      <div className="bg-white rounded-2xl shadow p-4 flex items-center gap-4 mb-4 sticky top-0 z-40">
+        {estabelecimento.foto && (
+          <img
+            src={estabelecimento.foto}
+            alt="Logo"
+            className="w-16 h-16 rounded-full border border-orange-300 object-cover"
+          />
+        )}
+        <div>
+          <h2 className="text-xl font-bold text-orange-700">{estabelecimento.nome}</h2>
+          <p className="text-sm text-gray-600">{estabelecimento.endereco}</p>
+          <p className="text-sm text-gray-600">📞 {estabelecimento.celular}</p>
+        </div>
+      </div>
+
+      {/* Conteúdo da aba selecionada */}
       {renderConteudo()}
+
+      {/* Menu Inferior com ícones */}
       <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
     </div>
   )
