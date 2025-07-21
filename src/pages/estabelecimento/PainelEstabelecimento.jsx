@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
+import React, { useState, useEffect } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
-import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, onSnapshot } from 'firebase/firestore'
+import {
+  doc, getDoc, updateDoc, serverTimestamp,
+  collection, query, where, onSnapshot
+} from 'firebase/firestore'
 import { auth, db } from '@/firebase'
-import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
 
-// Subcomponentes
+// Componentes
+import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
 import BuscarFreelas from '@/components/BuscarFreelas'
 import AgendasContratadas from '@/components/AgendasContratadas'
 import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompleto'
@@ -20,12 +23,13 @@ export default function PainelEstabelecimento() {
   const [abaSelecionada, setAbaSelecionada] = useState('buscar')
   const [chamadaAtiva, setChamadaAtiva] = useState(null)
 
+  // Autenticação e carregamento de dados do estabelecimento
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('[Auth] onAuthStateChanged', user)
+      console.log('[Auth] onAuthStateChanged:', user)
 
       if (!user) {
-        console.log('[Auth] Usuário não autenticado')
+        console.warn('[Auth] Usuário não autenticado')
         setEstabelecimento(null)
         setCarregando(false)
         return
@@ -36,8 +40,9 @@ export default function PainelEstabelecimento() {
         const snap = await getDoc(ref)
 
         if (snap.exists() && snap.data().tipo === 'estabelecimento') {
-          console.log('[Auth] Estabelecimento identificado:', snap.data())
-          setEstabelecimento({ uid: user.uid, ...snap.data() })
+          const dados = snap.data()
+          console.log('[Auth] Estabelecimento identificado:', dados)
+          setEstabelecimento({ uid: user.uid, ...dados })
           await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
         } else {
           console.warn('[Auth] Documento não encontrado ou não é um estabelecimento')
@@ -52,6 +57,7 @@ export default function PainelEstabelecimento() {
     return () => unsubscribe()
   }, [])
 
+  // Alerta sonoro e visual para checkout pendente
   useEffect(() => {
     if (!estabelecimento?.uid) return
 
@@ -66,7 +72,7 @@ export default function PainelEstabelecimento() {
         snap.docChanges().forEach(({ doc: d, type }) => {
           if (type === 'added') {
             const data = d.data()
-            console.log('[Checkout] Alerta de checkout pendente:', data)
+            console.warn('[Checkout] Freela finalizou. Confirmação pendente:', data)
             new Audio('/sons/checkout.mp3').play().catch(() => {})
             alert(`⚠️ O freela ${data.freelaNome} finalizou o serviço. Confirme o checkout.`)
           }
@@ -77,6 +83,7 @@ export default function PainelEstabelecimento() {
     return () => unsub()
   }, [estabelecimento])
 
+  // Verificação contínua de chamadas ativas
   useEffect(() => {
     if (!estabelecimento?.uid) return
 
@@ -88,13 +95,14 @@ export default function PainelEstabelecimento() {
 
     const unsubscribe = onSnapshot(q, (snap) => {
       const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      console.log('[Chamada Ativa] Detectadas:', docs)
+      console.log('[Chamada Ativa] Chamadas detectadas:', docs)
       setChamadaAtiva(docs[0] || null)
     })
 
     return () => unsubscribe()
   }, [estabelecimento])
 
+  // Topo com dados do estabelecimento
   const renderTopo = () => (
     <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow p-4 flex items-center gap-4 mb-4 sticky top-0 z-40">
       {estabelecimento?.foto && (
@@ -112,16 +120,16 @@ export default function PainelEstabelecimento() {
     </div>
   )
 
-  const renderChamadaAtiva = () => {
-    if (!chamadaAtiva) return null
-
-    return (
+  // Chamada ativa, se houver
+  const renderChamadaAtiva = () => (
+    chamadaAtiva ? (
       <div className="mb-4">
         <ChamadaInline chamada={chamadaAtiva} tipo="estabelecimento" usuario={estabelecimento} />
       </div>
-    )
-  }
+    ) : null
+  )
 
+  // Conteúdo da aba selecionada
   const renderConteudo = () => {
     console.log('[Render] Aba selecionada:', abaSelecionada)
 
@@ -145,13 +153,14 @@ export default function PainelEstabelecimento() {
     }
   }
 
+  // Renderização final
   if (carregando) {
-    console.log('[Render] Carregando...')
+    console.log('[Render] Estado: carregando...')
     return <div className="text-center text-orange-600 mt-8">Carregando painel...</div>
   }
 
   if (!estabelecimento) {
-    console.log('[Render] Estabelecimento nulo. Acesso negado.')
+    console.error('[Render] Estabelecimento nulo. Acesso negado.')
     return <div className="text-center text-red-600 mt-8">Acesso não autorizado.</div>
   }
 
