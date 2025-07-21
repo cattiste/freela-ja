@@ -36,7 +36,7 @@ export default function PainelFreela() {
     const interval = setInterval(() => {
       const ref = doc(db, 'usuarios', freelaId)
       updateDoc(ref, { ultimaAtividade: serverTimestamp() }).catch(console.error)
-    }, 10 * 1000)
+    }, 15 * 1000)
 
     // Atualiza imediatamente
     updateDoc(doc(db, 'usuarios', freelaId), { ultimaAtividade: serverTimestamp() }).catch(console.error)
