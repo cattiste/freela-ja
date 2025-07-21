@@ -1,4 +1,3 @@
-// src/pages/estabelecimento/PainelEstabelecimento.jsx
 import React, { useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { onSnapshot, query, collection, where, doc as docRef } from 'firebase/firestore'
@@ -15,11 +14,16 @@ import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
 import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
 import ChamadaInline from '@/components/ChamadaInline'
+import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
 
 export default function PainelEstabelecimento() {
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [aba, setAba] = useState('buscar')
+  const [alertas, setAlertas] = useState({
+    buscar: false,
+    avaliacao: false
+  })
 
   const { online } = useOnlineStatus(estabelecimento?.uid)
 
@@ -52,6 +56,7 @@ export default function PainelEstabelecimento() {
 
   useEffect(() => {
     if (!estabelecimento?.uid) return
+
     const iv = setInterval(() => {
       updateDoc(docRef(db, 'usuarios', estabelecimento.uid), {
         ultimaAtividade: serverTimestamp()
@@ -62,7 +67,8 @@ export default function PainelEstabelecimento() {
 
   useEffect(() => {
     if (!estabelecimento?.uid) return
-    const unsub = onSnapshot(
+
+    const unsubCheckout = onSnapshot(
       query(
         collection(db, 'chamadas'),
         where('estabelecimentoUid', '==', estabelecimento.uid),
@@ -81,7 +87,34 @@ export default function PainelEstabelecimento() {
         })
       }
     )
-    return () => unsub()
+
+    // 🔔 Alertas Visuais
+    const unsubChamadas = onSnapshot(
+      query(
+        collection(db, 'chamadas'),
+        where('estabelecimentoUid', '==', estabelecimento.uid),
+        where('status', '==', 'pendente')
+      ),
+      (snap) => {
+        setAlertas(prev => ({ ...prev, buscar: snap.size > 0 }))
+      }
+    )
+
+    const unsubAvaliacoes = onSnapshot(
+      query(
+        collection(db, 'avaliacoesEstabelecimentos'),
+        where('estabelecimentoUid', '==', estabelecimento.uid)
+      ),
+      (snap) => {
+        setAlertas(prev => ({ ...prev, avaliacao: snap.size > 0 }))
+      }
+    )
+
+    return () => {
+      unsubCheckout()
+      unsubChamadas()
+      unsubAvaliacoes()
+    }
   }, [estabelecimento])
 
   const handleLogout = async () => {
@@ -134,8 +167,13 @@ export default function PainelEstabelecimento() {
     }
   }
 
+  const getLabel = (key, label) =>
+    alertas[key]
+      ? <span className="animate-pulse text-red-600">{label}</span>
+      : label
+
   return (
-    <div className="min-h-screen bg-orange-50 p-4">
+    <div className="min-h-screen bg-orange-50 p-4 pb-24">
       <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <h1 className="text-3xl font-bold text-orange-700 flex items-center gap-3">
@@ -163,7 +201,7 @@ export default function PainelEstabelecimento() {
                         : 'border-transparent text-gray-400 hover:text-orange-600 hover:border-orange-400'
                     }`}
                   >
-                    {label}
+                    {getLabel(key, label)}
                   </button>
                 </li>
               ))}
@@ -172,6 +210,7 @@ export default function PainelEstabelecimento() {
         </div>
         <section>{renderConteudo()}</section>
       </div>
+      <MenuInferiorEstabelecimento onSelect={setAba} abaAtiva={aba} alertas={alertas} />
       <Toaster position="top-center" reverseOrder={false} />
     </div>
   )
