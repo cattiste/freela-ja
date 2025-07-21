@@ -122,7 +122,7 @@ export default function RecebimentosFreela() {
         <input name="cpf" value={form.cpf} onChange={handleChange} placeholder="CPF (somente números)" className="w-full border rounded px-3 py-2" />
         <input name="banco" value={form.banco} onChange={handleChange} placeholder="Banco (ex: 001 - Banco do Brasil)" className="w-full border rounded px-3 py-2" />
         <div className="flex gap-2">
-          <input name="agencia" value={form.agencia} onChange={handleChange} placeholder="Agência" className="flex-1 border rounded px-3 py-2" />
+          <input name="agencia" value={form.agencia} onChange={handleChange} placeholder="Agência" className="w-32 border rounded px-3 py-2" />
           <input name="conta" value={form.conta} onChange={handleChange} placeholder="Conta" className="flex-1 border rounded px-3 py-2" />
         </div>
         <input name="tipoConta" value={form.tipoConta} onChange={handleChange} placeholder="Tipo de Conta (corrente/poupança)" className="w-full border rounded px-3 py-2" />
