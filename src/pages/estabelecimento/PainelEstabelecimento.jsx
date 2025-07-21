@@ -1,161 +1,159 @@
 import React, { useEffect, useState } from 'react'
-import { onAuthStateChanged } from 'firebase/auth'
-import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, onSnapshot } from 'firebase/firestore'
-import { auth, db } from '@/firebase'
-import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  addDoc,
+  serverTimestamp,
+  doc,
+  getDoc,
+} from 'firebase/firestore'
+import { db } from '@/firebase'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+import ChamadaInline from './ChamadaInline'
 
-// Subcomponentes
-import BuscarFreelas from '@/components/BuscarFreelas'
-import AgendasContratadas from '@/components/AgendasContratadas'
-import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompleto'
-import AvaliacaoFreela from '@/components/AvaliacaoFreela'
-import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
-import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
-import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
-import ChamadaInline from '@/components/ChamadaInline'
+function FreelaCard({ freela, onChamar, chamando, chamadaAtiva }) {
+  const { online, ultimaAtividade } = useOnlineStatus(freela.id)
 
-export default function PainelEstabelecimento() {
-  const [estabelecimento, setEstabelecimento] = useState(null)
+  const ultimaHora = ultimaAtividade
+    ? ultimaAtividade.toDate().toLocaleTimeString('pt-BR')
+    : '...'
+
+  return (
+    <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100 hover:shadow-xl transition">
+      <div className="flex flex-col items-center mb-3">
+        <img
+          src={freela.foto || 'https://via.placeholder.com/80'}
+          alt={freela.nome}
+          className="w-20 h-20 rounded-full object-cover border-2 border-orange-400"
+        />
+        <h3 className="mt-2 text-lg font-bold text-orange-700 text-center">{freela.nome}</h3>
+        <p className="text-sm text-gray-600 text-center">{freela.funcao}</p>
+        {freela.especialidades && (
+          <p className="text-sm text-gray-500 text-center">
+            {Array.isArray(freela.especialidades)
+              ? freela.especialidades.join(', ')
+              : freela.especialidades}
+          </p>
+        )}
+        <div className="flex items-center gap-2 mt-1">
+          <div className="relative w-3 h-3">
+            {online && (
+              <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping"></span>
+            )}
+            <span
+              className={`relative inline-flex rounded-full h-3 w-3 ${
+                online ? 'bg-green-600' : 'bg-gray-400'
+              }`}
+            ></span>
+          </div>
+          <span className={`text-xs ${online ? 'text-green-700' : 'text-gray-500'}`}>
+            {online ? 'Online agora' : `Offline desde ${ultimaHora}`}
+          </span>
+        </div>
+        <p className="text-xs italic text-gray-500 mt-1">
+          {online ? 'Disponível para chamada' : 'Aguardando conexão'}
+        </p>
+      </div>
+
+      <button
+        onClick={() => onChamar(freela)}
+        disabled={!online || chamando === freela.id}
+        className={`w-full py-2 px-4 rounded-lg font-semibold transition ${
+          online
+            ? 'bg-orange-500 hover:bg-orange-600 text-white'
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+        }`}
+      >
+        {chamando === freela.id ? 'Chamando...' : '📞 Chamar'}
+      </button>
+
+      {chamadaAtiva && <ChamadaInline chamada={chamadaAtiva} />}
+    </div>
+  )
+}
+
+export default function BuscarFreelas({ estabelecimento }) {
+  const [freelas, setFreelas] = useState([])
   const [carregando, setCarregando] = useState(true)
-  const [abaSelecionada, setAbaSelecionada] = useState('buscar')
-  const [chamadaAtiva, setChamadaAtiva] = useState(null)
+  const [chamando, setChamando] = useState(null)
+  const [chamadasAtivas, setChamadasAtivas] = useState({})
+  const [filtroFuncao, setFiltroFuncao] = useState('')
+  const [filtroEspecialidade, setFiltroEspecialidade] = useState('')
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('[Auth] onAuthStateChanged', user)
+    const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
 
-      if (!user) {
-        console.log('[Auth] Usuário não autenticado')
-        setEstabelecimento(null)
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const lista = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        setFreelas(lista)
         setCarregando(false)
-        return
-      }
-
-      try {
-        const ref = doc(db, 'usuarios', user.uid)
-        const snap = await getDoc(ref)
-
-        if (snap.exists() && snap.data().tipo === 'estabelecimento') {
-          console.log('[Auth] Estabelecimento identificado:', snap.data())
-          setEstabelecimento({ uid: user.uid, ...snap.data() })
-          await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
-        } else {
-          console.warn('[Auth] Documento não encontrado ou não é um estabelecimento')
-        }
-      } catch (err) {
-        console.error('[Auth] Erro ao buscar dados do estabelecimento:', err)
-      } finally {
+      },
+      (error) => {
+        console.error('Erro ao buscar freelancers:', error)
         setCarregando(false)
       }
-    })
+    )
 
     return () => unsubscribe()
   }, [])
 
-  useEffect(() => {
+  const chamarFreela = async (freela) => {
     if (!estabelecimento?.uid) return
 
-    const unsub = onSnapshot(
-      query(
-        collection(db, 'chamadas'),
-        where('estabelecimentoUid', '==', estabelecimento.uid),
-        where('status', '==', 'checkout_freela'),
-        where('checkOutEstabelecimento', '==', false)
-      ),
-      (snap) => {
-        snap.docChanges().forEach(({ doc: d, type }) => {
-          if (type === 'added') {
-            const data = d.data()
-            console.log('[Checkout] Alerta de checkout pendente:', data)
-            new Audio('/sons/checkout.mp3').play().catch(() => {})
-            alert(`⚠️ O freela ${data.freelaNome} finalizou o serviço. Confirme o checkout.`)
-          }
-        })
-      }
-    )
-
-    return () => unsub()
-  }, [estabelecimento])
-
-  useEffect(() => {
-    if (!estabelecimento?.uid) return
-
-    const q = query(
-      collection(db, 'chamadas'),
-      where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'checkout_freela'])
-    )
-
-    const unsubscribe = onSnapshot(q, (snap) => {
-      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      console.log('[Chamada Ativa] Detectadas:', docs)
-      setChamadaAtiva(docs[0] || null)
-    })
-
-    return () => unsubscribe()
-  }, [estabelecimento])
-
-  const renderTopo = () => (
-    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow p-4 flex items-center gap-4 mb-4 sticky top-0 z-40">
-      {estabelecimento?.foto && (
-        <img
-          src={estabelecimento.foto}
-          alt="Logo"
-          className="w-16 h-16 rounded-full border border-orange-300 object-cover"
-        />
-      )}
-      <div>
-        <h2 className="text-xl font-bold text-orange-700">{estabelecimento?.nome}</h2>
-        <p className="text-sm text-gray-600">{estabelecimento?.endereco}</p>
-        <p className="text-sm text-gray-600">📞 {estabelecimento?.celular}</p>
-      </div>
-    </div>
-  )
-
-  const renderChamadaAtiva = () => {
-    if (!chamadaAtiva) return null
-
-    return (
-      <div className="mb-4">
-        <ChamadaInline chamada={chamadaAtiva} tipo="estabelecimento" usuario={estabelecimento} />
-      </div>
-    )
-  }
-
-  const renderConteudo = () => {
-    console.log('[Render] Aba selecionada:', abaSelecionada)
-
-    switch (abaSelecionada) {
-      case 'buscar':
-        return <BuscarFreelas estabelecimento={estabelecimento} />
-      case 'agendas':
-        return <AgendasContratadas estabelecimento={estabelecimento} />
-      case 'vagas':
-        return <VagasEstabelecimentoCompleto estabelecimento={estabelecimento} />
-      case 'avaliacao':
-        return <AvaliacaoFreela estabelecimento={estabelecimento} />
-      case 'historico':
-        return <HistoricoChamadasEstabelecimento estabelecimento={estabelecimento} />
-      case 'configuracoes':
-        return <ConfigPagamentoEstabelecimento usuario={estabelecimento} />
-      case 'chamadas':
-        return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
-      default:
-        return null
+    if (chamadasAtivas[freela.id]) {
+      alert(`Você já chamou ${freela.nome}. Aguarde ele aceitar ou encerrar a chamada.`)
+      return
     }
+
+    setChamando(freela.id)
+
+    try {
+      const chamadaRef = await addDoc(collection(db, 'chamadas'), {
+        freelaUid: freela.id,
+        freelaNome: freela.nome,
+        estabelecimentoUid: estabelecimento.uid,
+        estabelecimentoNome: estabelecimento.nome,
+        vagaTitulo: 'Serviço direto',
+        status: 'pendente',
+        criadoEm: serverTimestamp(),
+      })
+
+      const docSnap = await getDoc(doc(db, 'chamadas', chamadaRef.id))
+      setChamadasAtivas((prev) => ({
+        ...prev,
+        [freela.id]: { id: chamadaRef.id, ...docSnap.data() },
+      }))
+
+      alert(`Freelancer ${freela.nome} foi chamado com sucesso.`)
+    } catch (err) {
+      console.error('Erro ao chamar freelancer:', err)
+      alert('Erro ao chamar freelancer.')
+    }
+
+    setChamando(null)
   }
 
-  if (carregando) {
-    console.log('[Render] Carregando...')
-    return <div className="text-center text-orange-600 mt-8">Carregando painel...</div>
+  const filtrarFreelas = (freela) => {
+    const funcaoOK =
+      filtroFuncao === '' ||
+      freela.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
+    const espOK =
+      filtroEspecialidade === '' ||
+      (Array.isArray(freela.especialidades)
+        ? freela.especialidades.join(', ').toLowerCase().includes(filtroEspecialidade.toLowerCase())
+        : freela.especialidades?.toLowerCase().includes(filtroEspecialidade.toLowerCase()))
+    return funcaoOK && espOK
   }
 
-  if (!estabelecimento) {
-    console.log('[Render] Estabelecimento nulo. Acesso negado.')
-    return <div className="text-center text-red-600 mt-8">Acesso não autorizado.</div>
-  }
-
-  console.log('[Render] Painel carregado com sucesso')
+  if (carregando) return <p className="text-center text-gray-600">Carregando freelancers...</p>
+  if (freelas.length === 0) return <p className="text-center text-gray-600">Nenhum freelancer encontrado.</p>
 
   return (
     <div
@@ -167,10 +165,35 @@ export default function PainelEstabelecimento() {
         backgroundSize: 'cover',
       }}
     >
-      {renderTopo()}
-      {renderChamadaAtiva()}
-      {renderConteudo()}
-      <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
+      {/* 🔎 Filtros */}
+      <div className="max-w-6xl mx-auto mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <input
+          type="text"
+          placeholder="🔍 Buscar por função (ex: Cozinheiro)"
+          className="p-3 rounded-xl border border-orange-300 focus:ring-2 focus:ring-orange-500 outline-none"
+          value={filtroFuncao}
+          onChange={(e) => setFiltroFuncao(e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="🎯 Filtrar por especialidade (ex: Feijoada, Drinks)"
+          className="p-3 rounded-xl border border-orange-300 focus:ring-2 focus:ring-orange-500 outline-none"
+          value={filtroEspecialidade}
+          onChange={(e) => setFiltroEspecialidade(e.target.value)}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
+        {freelas.filter(filtrarFreelas).map((freela) => (
+          <FreelaCard
+            key={freela.id}
+            freela={freela}
+            onChamar={chamarFreela}
+            chamando={chamando}
+            chamadaAtiva={chamadasAtivas[freela.id]}
+          />
+        ))}
+      </div>
     </div>
   )
 }
