@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
-import ChamadaInline from './ChamadaInline'
+import ChamadaInline from '@/components/ChamadaInline'
 
 function FreelaCard({ freela, onChamar, chamando, chamadaAtiva }) {
   const { online, ultimaAtividade } = useOnlineStatus(freela.id)
