@@ -24,7 +24,16 @@ export default function PainelFreela() {
   const freelaId = usuario?.uid
 
   useEffect(() => {
-    if (!freelaId) return
+  if (!usuario?.uid) return
+
+  const interval = setInterval(() => {
+    const ref = doc(db, 'usuarios', usuario.uid)
+    updateDoc(ref, { ultimaAtividade: serverTimestamp() }).catch(console.error)
+  }, 60 * 100) //
+
+  return () => clearInterval(interval)
+}, [usuario?.uid])
+
 
     const unsubChamadas = onSnapshot(
       query(collection(db, 'chamadas'), where('freelaUid', '==', freelaId), where('status', '==', 'pendente')),
