@@ -15,6 +15,17 @@ function FreelaCard({ freela, onChamar, chamando, chamadaAtiva }) {
           alt={freela.nome}
           className="w-20 h-20 rounded-full object-cover border-2 border-orange-400"
         />
+        
+      <div
+        className="min-h-screen bg-cover bg-center p-4 pb-20"
+        style={{
+          backgroundImage: `url('/img/fundo-login.jpg')`,
+          backgroundAttachment: 'fixed',
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: 'cover',
+        }}
+      >
+
         <h3 className="mt-2 text-lg font-bold text-orange-700 text-center">{freela.nome}</h3>
         {/* Função acima das especialidades */}
         <p className="text-sm text-gray-600 text-center">{freela.funcao}</p>
@@ -117,15 +128,7 @@ export default function BuscarFreelas({ estabelecimento }) {
           chamando={chamando}
           chamadaAtiva={chamadasAtivas[freela.id]}
         />
-        <div
-      className="min-h-screen bg-cover bg-center p-4 pb-20"
-      style={{
-        backgroundImage: `url('/img/fundo-login.jpg')`,
-        backgroundAttachment: 'fixed',
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: 'cover',
-      }}
-      >
+        
       ))}
     </div>
   )
