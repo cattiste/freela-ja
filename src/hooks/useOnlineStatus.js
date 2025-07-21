@@ -34,7 +34,7 @@ export function useOnlineStatus(uid) {
       } else {
         const agora = Date.now()
         const ultima = ts.toMillis()
-        setOnline(agora - ultima < 15 * 1000) // 15 segundos
+        setOnline(agora - ultima < 10 * 1000) // 10 segundos
       }
 
       setLoading(false)
