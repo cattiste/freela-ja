@@ -15,6 +15,7 @@ import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEsta
 import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
 import ChamadaInline from '@/components/ChamadaInline'
 import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
+import PerfilEstabelecimentoCard from '@/pages/estabelecimento/PerfilEstabelecimentoCard'
 
 export default function PainelEstabelecimento() {
   const [estabelecimento, setEstabelecimento] = useState(null)
@@ -146,7 +147,12 @@ export default function PainelEstabelecimento() {
   const renderConteudo = () => {
     switch (aba) {
       case 'buscar':
-        return <BuscarFreelas estabelecimento={estabelecimento} />
+        return (
+          <>
+            <PerfilEstabelecimentoCard estabelecimento={estabelecimento} />
+            <BuscarFreelas estabelecimento={estabelecimento} />
+          </>
+        )
       case 'agendas':
         return (
           <div className="flex flex-col gap-6">
