@@ -1,3 +1,4 @@
+// ✅ src/pages/estabelecimento/PainelEstabelecimento.jsx atualizado com melhorias visuais e MenuInferiorEstabelecimento
 import React, { useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { onSnapshot, query, collection, where, doc as docRef } from 'firebase/firestore'
@@ -15,16 +16,11 @@ import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEsta
 import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
 import ChamadaInline from '@/components/ChamadaInline'
 import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
-import PerfilEstabelecimentoCard from '@/pages/estabelecimento/PerfilEstabelecimentoCard'
 
 export default function PainelEstabelecimento() {
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [aba, setAba] = useState('buscar')
-  const [alertas, setAlertas] = useState({
-    buscar: false,
-    avaliacao: false
-  })
 
   const { online } = useOnlineStatus(estabelecimento?.uid)
 
@@ -57,7 +53,6 @@ export default function PainelEstabelecimento() {
 
   useEffect(() => {
     if (!estabelecimento?.uid) return
-
     const iv = setInterval(() => {
       updateDoc(docRef(db, 'usuarios', estabelecimento.uid), {
         ultimaAtividade: serverTimestamp()
@@ -68,8 +63,7 @@ export default function PainelEstabelecimento() {
 
   useEffect(() => {
     if (!estabelecimento?.uid) return
-
-    const unsubCheckout = onSnapshot(
+    const unsub = onSnapshot(
       query(
         collection(db, 'chamadas'),
         where('estabelecimentoUid', '==', estabelecimento.uid),
@@ -88,34 +82,7 @@ export default function PainelEstabelecimento() {
         })
       }
     )
-
-    // 🔔 Alertas Visuais
-    const unsubChamadas = onSnapshot(
-      query(
-        collection(db, 'chamadas'),
-        where('estabelecimentoUid', '==', estabelecimento.uid),
-        where('status', '==', 'pendente')
-      ),
-      (snap) => {
-        setAlertas(prev => ({ ...prev, buscar: snap.size > 0 }))
-      }
-    )
-
-    const unsubAvaliacoes = onSnapshot(
-      query(
-        collection(db, 'avaliacoesEstabelecimentos'),
-        where('estabelecimentoUid', '==', estabelecimento.uid)
-      ),
-      (snap) => {
-        setAlertas(prev => ({ ...prev, avaliacao: snap.size > 0 }))
-      }
-    )
-
-    return () => {
-      unsubCheckout()
-      unsubChamadas()
-      unsubAvaliacoes()
-    }
+    return () => unsub()
   }, [estabelecimento])
 
   const handleLogout = async () => {
@@ -147,12 +114,7 @@ export default function PainelEstabelecimento() {
   const renderConteudo = () => {
     switch (aba) {
       case 'buscar':
-        return (
-          <>
-            <PerfilEstabelecimentoCard estabelecimento={estabelecimento} />
-            <BuscarFreelas estabelecimento={estabelecimento} />
-          </>
-        )
+        return <BuscarFreelas estabelecimento={estabelecimento} />
       case 'agendas':
         return (
           <div className="flex flex-col gap-6">
@@ -173,50 +135,21 @@ export default function PainelEstabelecimento() {
     }
   }
 
-  const getLabel = (key, label) =>
-    alertas[key]
-      ? <span className="animate-pulse text-red-600">{label}</span>
-      : label
-
   return (
-    <div className="min-h-screen bg-orange-50 p-4 pb-24">
+    <div className="min-h-screen bg-orange-50 pb-20 p-4">
       <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-          <h1 className="text-3xl font-bold text-orange-700 flex items-center gap-3">
+        <div className="flex items-center gap-4 mb-6">
+          <h1 className="text-3xl font-bold text-orange-700 flex items-center gap-2">
             📊 Painel do Estabelecimento
             <span className={`text-sm font-semibold ${online ? 'text-green-600' : 'text-gray-400'}`}>
               ● {online ? 'Online' : 'Offline'}
             </span>
           </h1>
-          <nav className="border-b border-orange-300 mb-6 overflow-x-auto">
-            <ul className="flex space-x-2 whitespace-nowrap">
-              {[
-                ['buscar', '🔍 Buscar'],
-                ['agendas', '📅 Agendas'],
-                ['vagas', '💼 Vagas'],
-                ['avaliacao', '⭐ Avaliar'],
-                ['historico', '📜 Histórico'],
-                ['configuracoes', '⚙️ Configurações']
-              ].map(([key, label]) => (
-                <li key={key}>
-                  <button
-                    onClick={() => setAba(key)}
-                    className={`px-4 py-2 border-b-2 font-semibold transition ${
-                      aba === key
-                        ? 'border-orange-600 text-orange-600'
-                        : 'border-transparent text-gray-400 hover:text-orange-600 hover:border-orange-400'
-                    }`}
-                  >
-                    {getLabel(key, label)}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </nav>
         </div>
+
         <section>{renderConteudo()}</section>
       </div>
-      <MenuInferiorEstabelecimento onSelect={setAba} abaAtiva={aba} alertas={alertas} />
+      <MenuInferiorEstabelecimento onSelect={setAba} abaAtiva={aba} />
       <Toaster position="top-center" reverseOrder={false} />
     </div>
   )
