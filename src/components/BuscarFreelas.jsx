@@ -108,16 +108,15 @@ export default function BuscarFreelas({ estabelecimento }) {
   if (freelas.length === 0) return <p>Nenhum freelancer encontrado.</p>
 
   return (
-    <div
-      className="min-h-screen bg-cover bg-center p-4 pb-20"
-      style={{
-        backgroundImage: `url('/img/fundo-login.jpg')`,
-        backgroundAttachment: 'fixed',
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: 'cover',
-       }}
-    >
-
+  <div
+    className="min-h-screen bg-cover bg-center p-4 pb-20"
+    style={{
+      backgroundImage: `url('/img/fundo-login.jpg')`,
+      backgroundAttachment: 'fixed',
+      backgroundRepeat: 'no-repeat',
+      backgroundSize: 'cover',
+    }}
+  >
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
       {freelas.map(freela => (
         <FreelaCard
@@ -127,7 +126,6 @@ export default function BuscarFreelas({ estabelecimento }) {
           chamando={chamando}
           chamadaAtiva={chamadasAtivas[freela.id]}
         />
-        
       ))}
     </div>
   </div> // ✅ Aqui fecha o container principal
