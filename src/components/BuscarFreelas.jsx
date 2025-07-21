@@ -130,5 +130,5 @@ export default function BuscarFreelas({ estabelecimento }) {
         
       ))}
     </div>
-  )
-}
+  </div> // ✅ Aqui fecha o container principal
+)
