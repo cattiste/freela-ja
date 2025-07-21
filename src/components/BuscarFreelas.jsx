@@ -107,26 +107,27 @@ export default function BuscarFreelas({ estabelecimento }) {
   if (carregando) return <p>Carregando freelancers...</p>
   if (freelas.length === 0) return <p>Nenhum freelancer encontrado.</p>
 
-  return (
-  <div
-    className="min-h-screen bg-cover bg-center p-4 pb-20"
-    style={{
-      backgroundImage: `url('/img/fundo-login.jpg')`,
-      backgroundAttachment: 'fixed',
-      backgroundRepeat: 'no-repeat',
-      backgroundSize: 'cover',
-    }}
-  >
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-      {freelas.map(freela => (
-        <FreelaCard
-          key={freela.id}
-          freela={freela}
-          onChamar={chamarFreela}
-          chamando={chamando}
-          chamadaAtiva={chamadasAtivas[freela.id]}
-        />
-      ))}
+    return (
+    <div
+      className="min-h-screen bg-cover bg-center p-4 pb-20"
+      style={{
+        backgroundImage: `url('/img/fundo-login.jpg')`,
+        backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+      }}
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+        {freelas.map(freela => (
+          <FreelaCard
+            key={freela.id}
+            freela={freela}
+            onChamar={chamarFreela}
+            chamando={chamando}
+            chamadaAtiva={chamadasAtivas[freela.id]}
+          />
+        ))}
+      </div>
     </div>
-  </div> // ✅ Aqui fecha o container principal
-)
+  ) // ✅ Aqui está o fechamento correto do return
+}
