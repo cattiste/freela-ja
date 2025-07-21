@@ -68,6 +68,22 @@ export default function PainelEstabelecimento() {
     return () => unsub()
   }, [estabelecimento])
 
+    <div className="bg-white rounded-2xl shadow p-4 flex items-center gap-4 mb-4 sticky top-0 z-40">
+  {estabelecimento.foto && (
+    <img
+      src={estabelecimento.foto}
+      alt="Logo"
+      className="w-16 h-16 rounded-full border border-orange-300 object-cover"
+    />
+  )}
+  <div>
+    <h2 className="text-xl font-bold text-orange-700">{estabelecimento.nome}</h2>
+    <p className="text-sm text-gray-600">{estabelecimento.endereco}</p>
+    <p className="text-sm text-gray-600">📞 {estabelecimento.celular}</p>
+  </div>
+</div>
+
+
   const renderConteudo = () => {
     switch (abaSelecionada) {
       case 'buscar':
