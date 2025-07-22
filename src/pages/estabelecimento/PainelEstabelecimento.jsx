@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import MenuInferior from './MenuInferiorEstabelecimento';
-import PerfilEstabelecimento from './estabelecimento/PerfilEstabelecimento';
-import ChamadasEstabelecimento from './estabelecimento/ChamadasEstabelecimento';
-import AvaliacoesEstabelecimento from './estabelecimento/AvaliacoesEstabelecimento';
-import AgendaEstabelecimento from './estabelecimento/AgendaEstabelecimento';
-import RecebimentosEstabelecimento from './estabelecimento/RecebimentosEstabelecimento';
+import BuscarFreelas from '@/components/BuscarFreelas'
+import AgendasContratadas from '@/components/AgendasContratadas'
+import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompleto'
+import AvaliacaoFreela from '@/components/AvaliacaoFreela'
+import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
+import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
+import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
+import ChamadaInline from '@/components/ChamadaInline'
 
 const PainelEstabelecimento = () => {
   const [usuario, setUsuario] = useState(null);
