@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
@@ -29,7 +30,6 @@ export default function PainelFreela() {
 
   const freelaId = usuario?.uid
 
-  
   useEffect(() => {
     if (!freelaId) return
 
@@ -38,13 +38,11 @@ export default function PainelFreela() {
       updateDoc(ref, { ultimaAtividade: serverTimestamp() }).catch(console.error)
     }, 15 * 1000)
 
-    // Atualiza imediatamente
     updateDoc(doc(db, 'usuarios', freelaId), { ultimaAtividade: serverTimestamp() }).catch(console.error)
 
     return () => clearInterval(interval)
   }, [freelaId])
 
-  // Verifica alertas
   useEffect(() => {
     if (!freelaId) return
 
@@ -82,7 +80,6 @@ export default function PainelFreela() {
     }
   }, [freelaId])
 
-  // Monitora chamada ativa
   useEffect(() => {
     if (!freelaId) return
 

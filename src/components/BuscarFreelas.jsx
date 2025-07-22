@@ -5,7 +5,11 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import ChamadaInline from './ChamadaInline'
 
 function FreelaCard({ freela, onChamar, chamando, chamadaAtiva }) {
-  const { online } = useOnlineStatus(freela.id)
+  const { online, ultimaAtividade } = useOnlineStatus(freela.id)
+
+  const ultimaHora = ultimaAtividade
+    ? ultimaAtividade.toDate().toLocaleTimeString('pt-BR')
+    : '...'
 
   return (
     <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100 hover:shadow-xl transition">
@@ -17,6 +21,7 @@ function FreelaCard({ freela, onChamar, chamando, chamadaAtiva }) {
         />
         <h3 className="mt-2 text-lg font-bold text-orange-700 text-center">{freela.nome}</h3>
         <p className="text-sm text-gray-600 text-center">{freela.funcao}</p>
+
         {freela.especialidades && (
           <p className="text-sm text-gray-500 text-center">
             {Array.isArray(freela.especialidades)
@@ -24,10 +29,11 @@ function FreelaCard({ freela, onChamar, chamando, chamadaAtiva }) {
               : freela.especialidades}
           </p>
         )}
+
         <div className="flex items-center gap-2 mt-1">
           <span className={`w-2 h-2 rounded-full ${online ? 'bg-green-500' : 'bg-gray-400'}`} />
           <span className={`text-xs ${online ? 'text-green-700' : 'text-gray-500'}`}>
-            {online ? 'Online' : 'Offline'}
+            {online ? '🟢 Online agora' : `🔴 Offline (última: ${ultimaHora})`}
           </span>
         </div>
       </div>
