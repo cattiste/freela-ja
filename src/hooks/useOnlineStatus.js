@@ -1,45 +1,47 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export function useOnlineStatus(uid) {
   const [online, setOnline] = useState(false)
   const [ultimaAtividade, setUltimaAtividade] = useState(null)
-  const [diferencaSegundos, setDiferencaSegundos] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!uid) return
+    if (!uid) {
+      setOnline(false)
+      setUltimaAtividade(null)
+      setLoading(false)
+      return
+    }
 
     const docRef = doc(db, 'usuarios', uid)
 
-    const unsub = onSnapshot(docRef, (snap) => {
-      if (!snap.exists()) {
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (!docSnap.exists()) {
         setOnline(false)
-        setDiferencaSegundos(null)
+        setUltimaAtividade(null)
+        setLoading(false)
         return
       }
-
-      const data = snap.data()
+      const data = docSnap.data()
       const ts = data.ultimaAtividade
 
-      if (!ts || typeof ts.toMillis !== 'function') {
-        console.warn(`[Status] Timestamp inválido para ${uid}:`, ts)
+      setUltimaAtividade(ts)
+
+      if (!ts) {
         setOnline(false)
-        setDiferencaSegundos(null)
-        return
+      } else {
+        const agora = Date.now()
+        const ultima = ts.toMillis()
+        setOnline(agora - ultima < 2 * 60 * 1000) // online se última atividade for até 2 minutos atrás
       }
 
-      const agora = Date.now()
-      const ultima = ts.toMillis()
-      const diff = Math.floor((agora - ultima) / 1000)
-
-      setUltimaAtividade(ts)
-      setDiferencaSegundos(diff)
-      setOnline(diff < 30) // menos de 30s = online
+      setLoading(false)
     })
 
-    return () => unsub()
+    return () => unsubscribe()
   }, [uid])
 
-  return { online, ultimaAtividade, diferencaSegundos }
+  return { online, ultimaAtividade, loading }
 }
