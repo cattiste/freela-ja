@@ -16,7 +16,6 @@ function FreelaCard({ freela, onChamar, chamando, chamadaAtiva }) {
           className="w-20 h-20 rounded-full object-cover border-2 border-orange-400"
         />
         <h3 className="mt-2 text-lg font-bold text-orange-700 text-center">{freela.nome}</h3>
-        {/* Função acima das especialidades */}
         <p className="text-sm text-gray-600 text-center">{freela.funcao}</p>
         {freela.especialidades && (
           <p className="text-sm text-gray-500 text-center">
@@ -28,7 +27,7 @@ function FreelaCard({ freela, onChamar, chamando, chamadaAtiva }) {
         <div className="flex items-center gap-2 mt-1">
           <span className={`w-2 h-2 rounded-full ${online ? 'bg-green-500' : 'bg-gray-400'}`} />
           <span className={`text-xs ${online ? 'text-green-700' : 'text-gray-500'}`}>
-            {online ? 'Online' : 'Offline'}
+            {online ? '🟢 Online agora' : '🔴 Offline'}
           </span>
         </div>
       </div>
@@ -55,6 +54,9 @@ export default function BuscarFreelas({ estabelecimento }) {
   const [carregando, setCarregando] = useState(true)
   const [chamando, setChamando] = useState(null)
   const [chamadasAtivas, setChamadasAtivas] = useState({})
+
+  const [filtroFuncao, setFiltroFuncao] = useState('')
+  const [filtroEspecialidade, setFiltroEspecialidade] = useState('')
 
   useEffect(() => {
     const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
@@ -104,20 +106,60 @@ export default function BuscarFreelas({ estabelecimento }) {
     setChamando(null)
   }
 
+  const filtrarFreelas = (freela) => {
+    const funcaoOK = filtroFuncao === '' || freela.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
+    const espOK =
+      filtroEspecialidade === '' ||
+      (Array.isArray(freela.especialidades)
+        ? freela.especialidades.join(', ').toLowerCase().includes(filtroEspecialidade.toLowerCase())
+        : freela.especialidades?.toLowerCase().includes(filtroEspecialidade.toLowerCase()))
+
+    return funcaoOK && espOK
+  }
+
   if (carregando) return <p>Carregando freelancers...</p>
   if (freelas.length === 0) return <p>Nenhum freelancer encontrado.</p>
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-      {freelas.map(freela => (
-        <FreelaCard
-          key={freela.id}
-          freela={freela}
-          onChamar={chamarFreela}
-          chamando={chamando}
-          chamadaAtiva={chamadasAtivas[freela.id]}
+    <div
+      className="min-h-screen bg-cover bg-center p-4 pb-20"
+      style={{
+        backgroundImage: `url('/img/fundo-login.jpg')`,
+        backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+      }}
+    >
+      {/* 🔎 Filtros */}
+      <div className="max-w-6xl mx-auto mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <input
+          type="text"
+          placeholder="🔍 Buscar por função (ex: Cozinheiro)"
+          className="p-3 rounded-xl border border-orange-300 focus:ring-2 focus:ring-orange-500 outline-none"
+          value={filtroFuncao}
+          onChange={e => setFiltroFuncao(e.target.value)}
         />
-      ))}
+        <input
+          type="text"
+          placeholder="🎯 Filtrar por especialidade (ex: Feijoada, Drinks)"
+          className="p-3 rounded-xl border border-orange-300 focus:ring-2 focus:ring-orange-500 outline-none"
+          value={filtroEspecialidade}
+          onChange={e => setFiltroEspecialidade(e.target.value)}
+        />
+      </div>
+
+      {/* Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
+        {freelas.filter(filtrarFreelas).map(freela => (
+          <FreelaCard
+            key={freela.id}
+            freela={freela}
+            onChamar={chamarFreela}
+            chamando={chamando}
+            chamadaAtiva={chamadasAtivas[freela.id]}
+          />
+        ))}
+      </div>
     </div>
   )
 }
