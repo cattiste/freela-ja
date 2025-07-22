@@ -1,11 +1,23 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  addDoc,
+  serverTimestamp,
+  doc,
+  getDoc
+} from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
-import ChamadaInline from './ChamadaInline'
 
-function FreelaCard({ freela, onChamar, chamando, chamadaAtiva }) {
-  const { online } = useOnlineStatus(freela.id)
+function FreelaCard({ freela, onChamar, chamando }) {
+  const { online, ultimaAtividade } = useOnlineStatus(freela.id)
+
+  const ultimaHora = ultimaAtividade
+    ? ultimaAtividade.toDate().toLocaleTimeString('pt-BR')
+    : '...'
 
   return (
     <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100 hover:shadow-xl transition">
@@ -27,7 +39,7 @@ function FreelaCard({ freela, onChamar, chamando, chamadaAtiva }) {
         <div className="flex items-center gap-2 mt-1">
           <span className={`w-2 h-2 rounded-full ${online ? 'bg-green-500' : 'bg-gray-400'}`} />
           <span className={`text-xs ${online ? 'text-green-700' : 'text-gray-500'}`}>
-            {online ? '🟢 Online agora' : '🔴 Offline'}
+            {online ? '🟢 Online agora' : `🔴 Offline (última: ${ultimaHora})`}
           </span>
         </div>
       </div>
@@ -43,8 +55,6 @@ function FreelaCard({ freela, onChamar, chamando, chamadaAtiva }) {
       >
         {chamando === freela.id ? 'Chamando...' : '📞 Chamar'}
       </button>
-
-      {chamadaAtiva && <ChamadaInline chamada={chamadaAtiva} />}
     </div>
   )
 }
@@ -53,11 +63,11 @@ export default function BuscarFreelas({ estabelecimento }) {
   const [freelas, setFreelas] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [chamando, setChamando] = useState(null)
-  const [chamadasAtivas, setChamadasAtivas] = useState({})
-
+  const [chamadosIds, setChamadosIds] = useState([])
   const [filtroFuncao, setFiltroFuncao] = useState('')
   const [filtroEspecialidade, setFiltroEspecialidade] = useState('')
 
+  // Busca freelas
   useEffect(() => {
     const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
 
@@ -76,12 +86,30 @@ export default function BuscarFreelas({ estabelecimento }) {
     return () => unsubscribe()
   }, [])
 
+  // Monitora chamadas ativas
+  useEffect(() => {
+    if (!estabelecimento?.uid) return
+
+    const q = query(
+      collection(db, 'chamadas'),
+      where('estabelecimentoUid', '==', estabelecimento.uid),
+      where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'checkout_freela'])
+    )
+
+    const unsub = onSnapshot(q, (snap) => {
+      const ativos = snap.docs.map(doc => doc.data().freelaUid)
+      setChamadosIds(ativos)
+    })
+
+    return () => unsub()
+  }, [estabelecimento])
+
   const chamarFreela = async (freela) => {
     if (!estabelecimento?.uid) return
     setChamando(freela.id)
 
     try {
-      const chamadaRef = await addDoc(collection(db, 'chamadas'), {
+      await addDoc(collection(db, 'chamadas'), {
         freelaUid: freela.id,
         freelaNome: freela.nome,
         estabelecimentoUid: estabelecimento.uid,
@@ -90,13 +118,6 @@ export default function BuscarFreelas({ estabelecimento }) {
         status: 'pendente',
         criadoEm: serverTimestamp()
       })
-
-      const docSnap = await getDoc(doc(db, 'chamadas', chamadaRef.id))
-      setChamadasAtivas(prev => ({
-        ...prev,
-        [freela.id]: { id: chamadaRef.id, ...docSnap.data() }
-      }))
-
       alert(`Freelancer ${freela.nome} foi chamado com sucesso.`)
     } catch (err) {
       console.error('Erro ao chamar freela:', err)
@@ -108,13 +129,9 @@ export default function BuscarFreelas({ estabelecimento }) {
 
   const filtrarFreelas = (freela) => {
     const funcaoOK = filtroFuncao === '' || freela.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
-    const espOK =
-      filtroEspecialidade === '' ||
-      (Array.isArray(freela.especialidades)
-        ? freela.especialidades.join(', ').toLowerCase().includes(filtroEspecialidade.toLowerCase())
-        : freela.especialidades?.toLowerCase().includes(filtroEspecialidade.toLowerCase()))
-
-    return funcaoOK && espOK
+    const espOK = filtroEspecialidade === '' || (freela.especialidades || '').toLowerCase().includes(filtroEspecialidade.toLowerCase())
+    const naoChamado = !chamadosIds.includes(freela.id)
+    return funcaoOK && espOK && naoChamado
   }
 
   if (carregando) return <p>Carregando freelancers...</p>
@@ -148,7 +165,6 @@ export default function BuscarFreelas({ estabelecimento }) {
         />
       </div>
 
-      {/* Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
         {freelas.filter(filtrarFreelas).map(freela => (
           <FreelaCard
@@ -156,7 +172,6 @@ export default function BuscarFreelas({ estabelecimento }) {
             freela={freela}
             onChamar={chamarFreela}
             chamando={chamando}
-            chamadaAtiva={chamadasAtivas[freela.id]}
           />
         ))}
       </div>
