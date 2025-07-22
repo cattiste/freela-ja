@@ -28,7 +28,7 @@ export function useOnlineStatus(uid) {
 
       const agora = Date.now();
       const ultima = ts.toMillis();
-      setOnline(agora - ultima < 15 * 1000);
+      setOnline(agora - ultima < 30 * 1000);
     });
 
     return () => unsub();
