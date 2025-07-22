@@ -1,35 +1,38 @@
+import { useState, useEffect } from 'react';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '@/firebase';
+
 export function useOnlineStatus(uid) {
-  const [online, setOnline] = useState(false)
-  const [ultimaAtividade, setUltimaAtividade] = useState(null)
+  const [online, setOnline] = useState(false);
+  const [ultimaAtividade, setUltimaAtividade] = useState(null);
 
   useEffect(() => {
-    if (!uid) return
+    if (!uid) return;
 
-    const docRef = doc(db, 'usuarios', uid)
+    const docRef = doc(db, 'usuarios', uid);
 
     const unsub = onSnapshot(docRef, (snap) => {
       if (!snap.exists()) {
-        setOnline(false)
-        return
+        setOnline(false);
+        return;
       }
 
-      const data = snap.data()
-      const ts = data.ultimaAtividade
-      setUltimaAtividade(ts)
+      const data = snap.data();
+      const ts = data.ultimaAtividade;
+      setUltimaAtividade(ts);
 
       if (!ts) {
-        setOnline(false)
-        return
+        setOnline(false);
+        return;
       }
 
-      const agora = Date.now()
-      const ultima = ts.toMillis()
+      const agora = Date.now();
+      const ultima = ts.toMillis();
+      setOnline(agora - ultima < 15 * 1000);
+    });
 
-      setOnline(agora - ultima < 15 * 1000)
-    })
+    return () => unsub();
+  }, [uid]);
 
-    return () => unsub()
-  }, [uid])
-
-  return { online, ultimaAtividade }
+  return { online, ultimaAtividade };
 }
