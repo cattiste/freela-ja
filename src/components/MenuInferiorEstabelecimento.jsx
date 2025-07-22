@@ -6,12 +6,14 @@ import {
   Briefcase,
   Star,
   ScrollText,
-  Settings
+  Settings,
+  Signal
 } from 'lucide-react'
 import '@/styles/menuInferior.css'
 
 const botoes = [
   { id: 'buscar', label: 'Buscar', icon: <Search size={20} /> },
+  { id: 'ativas', label: 'Ativas', icon: <Signal size={20} /> }, // ✅ NOVA ABA
   { id: 'agendas', label: 'Agendas', icon: <CalendarDays size={20} /> },
   { id: 'vagas', label: 'Vagas', icon: <Briefcase size={20} /> },
   { id: 'avaliacao', label: 'Avaliar', icon: <Star size={20} /> },
