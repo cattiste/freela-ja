@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -16,8 +17,18 @@ export default function ChamadasAtivas({ estabelecimento }) {
     )
 
     const unsub = onSnapshot(q, (snap) => {
-      const docs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      setChamadas(docs)
+      const todasChamadas = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+
+      // Elimina chamadas duplicadas pelo freelaUid, mantendo a mais recente
+      const unicas = {}
+      todasChamadas.forEach((chamada) => {
+        const existente = unicas[chamada.freelaUid]
+        if (!existente || chamada.criadoEm?.toMillis() > existente.criadoEm?.toMillis()) {
+          unicas[chamada.freelaUid] = chamada
+        }
+      })
+
+      setChamadas(Object.values(unicas))
     })
 
     return () => unsub()
