@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
+import { usePresence } from '@/hooks/usePresence'
 
 import MenuInferiorFreela from '@/components/MenuInferiorFreela'
 import PerfilFreelaCard from '@/pages/freela/PerfilFreela'
@@ -30,19 +31,8 @@ export default function PainelFreela() {
 
   const freelaId = usuario?.uid
 
-  useEffect(() => {
-    if (!freelaId) return
-
-    const interval = setInterval(() => {
-      const ref = doc(db, 'usuarios', freelaId)
-      updateDoc(ref, { ultimaAtividade: serverTimestamp() }).catch(console.error)
-    }, 15 * 1000)
-
-    updateDoc(doc(db, 'usuarios', freelaId), { ultimaAtividade: serverTimestamp() }).catch(console.error)
-
-    return () => clearInterval(interval)
-  }, [freelaId])
-
+  usePresence(freelaId)
+  
   useEffect(() => {
     if (!freelaId) return
 

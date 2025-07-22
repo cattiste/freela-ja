@@ -8,37 +8,42 @@ export function useOnlineStatus(uid) {
   const [diferencaSegundos, setDiferencaSegundos] = useState(null);
 
   useEffect(() => {
-    if (!uid) return;
+  if (!uid) return;
 
-    const docRef = doc(db, 'usuarios', uid);
+  const docRef = doc(db, 'usuarios', uid);
 
-    const unsub = onSnapshot(docRef, (snap) => {
-      if (!snap.exists()) {
-        setOnline(false);
-        setDiferencaSegundos(null);
-        return;
-      }
+  const unsub = onSnapshot(docRef, (snap) => {
+    if (!snap.exists()) {
+      console.warn(`[Status] Usuário ${uid} não encontrado`);
+      setOnline(false);
+      setDiferencaSegundos(null);
+      return;
+    }
 
-      const data = snap.data();
-      const ts = data.ultimaAtividade;
-      setUltimaAtividade(ts);
+    const data = snap.data();
+    const ts = data.ultimaAtividade;
+    console.log(`[Status] ${uid} - Timestamp bruto:`, ts);
 
-      if (!ts) {
-        setOnline(false);
-        setDiferencaSegundos(null);
-        return;
-      }
+    setUltimaAtividade(ts);
 
-      const agora = Date.now();
-      const ultima = ts.toMillis();
-      const diff = Math.floor((agora - ultima) / 1000);
+    if (!ts) {
+      setOnline(false);
+      setDiferencaSegundos(null);
+      return;
+    }
 
-      setOnline(diff < 30);
-      setDiferencaSegundos(diff);
-    });
+    const agora = Date.now();
+    const ultima = ts.toMillis();
+    const diff = Math.floor((agora - ultima) / 1000);
 
-    return () => unsub();
-  }, [uid]);
+    console.log(`[Status] ${uid} - Última atividade há ${diff}s`);
+
+    setOnline(diff < 30);
+    setDiferencaSegundos(diff);
+  });
+
+  return () => unsub();
+}, [uid]);
 
   return { online, ultimaAtividade, diferencaSegundos };
 }
