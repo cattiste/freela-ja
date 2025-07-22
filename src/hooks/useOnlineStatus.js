@@ -34,7 +34,7 @@ export function useOnlineStatus(uid) {
       } else {
         const agora = Date.now()
         const ultima = ts.toMillis()
-        setOnline(agora - ultima < 30 * 1000) // online se ativo nos últimos 30 segundos
+        setOnline(agora - ultima < 2 * 60 * 1000)
       }
 
       setLoading(false)
