@@ -1,49 +1,45 @@
-import { useState, useEffect } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { useState, useEffect } from 'react'
+import { doc, onSnapshot } from 'firebase/firestore'
+import { db } from '@/firebase'
 
 export function useOnlineStatus(uid) {
-  const [online, setOnline] = useState(false);
-  const [ultimaAtividade, setUltimaAtividade] = useState(null);
-  const [diferencaSegundos, setDiferencaSegundos] = useState(null);
+  const [online, setOnline] = useState(false)
+  const [ultimaAtividade, setUltimaAtividade] = useState(null)
+  const [diferencaSegundos, setDiferencaSegundos] = useState(null)
 
   useEffect(() => {
-  if (!uid) return;
+    if (!uid) return
 
-  const docRef = doc(db, 'usuarios', uid);
+    const docRef = doc(db, 'usuarios', uid)
 
-  const unsub = onSnapshot(docRef, (snap) => {
-    if (!snap.exists()) {
-      console.warn(`[Status] Usuário ${uid} não encontrado`);
-      setOnline(false);
-      setDiferencaSegundos(null);
-      return;
-    }
+    const unsub = onSnapshot(docRef, (snap) => {
+      if (!snap.exists()) {
+        setOnline(false)
+        setDiferencaSegundos(null)
+        return
+      }
 
-    const data = snap.data();
-    const ts = data.ultimaAtividade;
-    console.log(`[Status] ${uid} - Timestamp bruto:`, ts);
+      const data = snap.data()
+      const ts = data.ultimaAtividade
 
-    setUltimaAtividade(ts);
+      if (!ts || typeof ts.toMillis !== 'function') {
+        console.warn(`[Status] Timestamp inválido para ${uid}:`, ts)
+        setOnline(false)
+        setDiferencaSegundos(null)
+        return
+      }
 
-    if (!ts) {
-      setOnline(false);
-      setDiferencaSegundos(null);
-      return;
-    }
+      const agora = Date.now()
+      const ultima = ts.toMillis()
+      const diff = Math.floor((agora - ultima) / 1000)
 
-    const agora = Date.now();
-    const ultima = ts.toMillis();
-    const diff = Math.floor((agora - ultima) / 1000);
+      setUltimaAtividade(ts)
+      setDiferencaSegundos(diff)
+      setOnline(diff < 30) // menos de 30s = online
+    })
 
-    console.log(`[Status] ${uid} - Última atividade há ${diff}s`);
+    return () => unsub()
+  }, [uid])
 
-    setOnline(diff < 30);
-    setDiferencaSegundos(diff);
-  });
-
-  return () => unsub();
-}, [uid]);
-
-  return { online, ultimaAtividade, diferencaSegundos };
+  return { online, ultimaAtividade, diferencaSegundos }
 }
