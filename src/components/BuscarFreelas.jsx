@@ -5,9 +5,7 @@ import {
   where,
   onSnapshot,
   addDoc,
-  serverTimestamp,
-  doc,
-  getDoc
+  serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
@@ -67,7 +65,7 @@ export default function BuscarFreelas({ estabelecimento }) {
   const [filtroFuncao, setFiltroFuncao] = useState('')
   const [filtroEspecialidade, setFiltroEspecialidade] = useState('')
 
-  // Busca freelas
+  // 🔄 Busca freelas
   useEffect(() => {
     const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
 
@@ -86,7 +84,7 @@ export default function BuscarFreelas({ estabelecimento }) {
     return () => unsubscribe()
   }, [])
 
-  // Monitora chamadas ativas
+  // 📡 Monitora chamadas ativas do estabelecimento
   useEffect(() => {
     if (!estabelecimento?.uid) return
 
@@ -118,6 +116,7 @@ export default function BuscarFreelas({ estabelecimento }) {
         status: 'pendente',
         criadoEm: serverTimestamp()
       })
+
       alert(`Freelancer ${freela.nome} foi chamado com sucesso.`)
     } catch (err) {
       console.error('Erro ao chamar freela:', err)
