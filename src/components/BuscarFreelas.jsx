@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -18,25 +19,40 @@ function FreelaCard({ freela, onChamar, chamando }) {
     : '...'
 
   return (
-    <div className="p-3 bg-white rounded-xl shadow border border-orange-100 hover:shadow-md transition text-center">
-      <h3 className="text-sm font-bold text-orange-700">{freela.nome}</h3>
-      <p className="text-xs text-gray-600">{freela.funcao}</p>
-      <div className="flex justify-center items-center gap-2 mt-1 text-xs">
-        <span className={`w-2 h-2 rounded-full ${online ? 'bg-green-500' : 'bg-gray-400'}`} />
-        <span className={`${online ? 'text-green-700' : 'text-gray-500'}`}>
-          {online ? '🟢 Online' : `🔴 ${ultimaHora}`}
-        </span>
+    <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100 hover:shadow-xl transition">
+      <div className="flex flex-col items-center mb-3">
+        <img
+          src={freela.foto || 'https://via.placeholder.com/80'}
+          alt={freela.nome}
+          className="w-20 h-20 rounded-full object-cover border-2 border-orange-400"
+        />
+        <h3 className="mt-2 text-lg font-bold text-orange-700 text-center">{freela.nome}</h3>
+        <p className="text-sm text-gray-600 text-center">{freela.funcao}</p>
+        {freela.especialidades && (
+          <p className="text-sm text-gray-500 text-center">
+            {Array.isArray(freela.especialidades)
+              ? freela.especialidades.join(', ')
+              : freela.especialidades}
+          </p>
+        )}
+        <div className="flex items-center gap-2 mt-1">
+          <span className={`w-2 h-2 rounded-full ${online ? 'bg-green-500' : 'bg-gray-400'}`} />
+          <span className={`text-xs ${online ? 'text-green-700' : 'text-gray-500'}`}>
+            {online ? '🟢 Online agora' : `🔴 Offline (última: ${ultimaHora})`}
+          </span>
+        </div>
       </div>
+
       <button
         onClick={() => onChamar(freela)}
         disabled={!online || chamando === freela.id}
-        className={`mt-2 text-xs px-3 py-1 rounded-lg font-semibold transition ${
+        className={`w-full py-2 px-4 rounded-lg font-semibold transition ${
           online
             ? 'bg-orange-500 hover:bg-orange-600 text-white'
             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
         }`}
       >
-        {chamando === freela.id ? 'Chamando...' : 'Chamar'}
+        {chamando === freela.id ? 'Chamando...' : '📞 Chamar'}
       </button>
     </div>
   )
@@ -59,9 +75,6 @@ export default function BuscarFreelas({ estabelecimento }) {
         ...doc.data()
       }))
       setFreelas(lista)
-      setCarregando(false)
-    }, (error) => {
-      console.error('Erro ao buscar freelancers:', error)
       setCarregando(false)
     })
 
@@ -110,10 +123,7 @@ export default function BuscarFreelas({ estabelecimento }) {
 
   const filtrarFreelas = (freela) => {
     const funcaoOK = filtroFuncao === '' || freela.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
-    const esp = Array.isArray(freela.especialidades)
-      ? freela.especialidades.join(', ')
-      : (freela.especialidades || '')
-    const espOK = filtroEspecialidade === '' || esp.toLowerCase().includes(filtroEspecialidade.toLowerCase())
+    const espOK = filtroEspecialidade === '' || (freela.especialidades || '').toLowerCase().includes(filtroEspecialidade.toLowerCase())
     const naoChamado = !chamadosIds.includes(freela.id)
     return funcaoOK && espOK && naoChamado
   }
@@ -148,7 +158,7 @@ export default function BuscarFreelas({ estabelecimento }) {
         />
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
         {freelas.filter(filtrarFreelas).map(freela => (
           <FreelaCard
             key={freela.id}
