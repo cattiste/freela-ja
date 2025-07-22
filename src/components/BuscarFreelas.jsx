@@ -65,7 +65,7 @@ export default function BuscarFreelas({ estabelecimento }) {
   const [filtroFuncao, setFiltroFuncao] = useState('')
   const [filtroEspecialidade, setFiltroEspecialidade] = useState('')
 
-  // 🔄 Busca freelas
+  // Busca freelancers
   useEffect(() => {
     const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
 
@@ -76,15 +76,12 @@ export default function BuscarFreelas({ estabelecimento }) {
       }))
       setFreelas(lista)
       setCarregando(false)
-    }, (error) => {
-      console.error('Erro ao buscar freelancers:', error)
-      setCarregando(false)
     })
 
     return () => unsubscribe()
   }, [])
 
-  // 📡 Monitora chamadas ativas do estabelecimento
+  // Monitora chamadas ativas (para esconder do Buscar)
   useEffect(() => {
     if (!estabelecimento?.uid) return
 
