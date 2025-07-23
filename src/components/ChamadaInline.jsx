@@ -46,9 +46,9 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
     try {
       const ref = doc(db, 'chamadas', chamada.id)
       await updateDoc(ref, {
-        status: 'checkin_freela',
         checkInFreela: true,
-        checkInFreelaHora: serverTimestamp()
+        checkInFreelaHora: serverTimestamp(),
+        status: 'checkin_freela'
       })
       toast.success('Check-in realizado!')
     } catch {
@@ -80,9 +80,9 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
     try {
       const ref = doc(db, 'chamadas', chamada.id)
       await updateDoc(ref, {
-        status: 'checkout_freela',
         checkOutFreela: true,
-        checkOutFreelaHora: serverTimestamp()
+        checkOutFreelaHora: serverTimestamp(),
+        status: 'checkout_freela'
       })
       toast.success('Check-out realizado!')
     } catch {
@@ -127,44 +127,36 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       }
     }
 
-    if (status === 'aceita') {
-      if (tipo === 'freela' && !chamada.checkInFreela) {
-        return (
-          <button onClick={checkInFreela} className="btn" disabled={loading}>
-            📍 Fazer check-in
-          </button>
-        )
-      }
+    if (status === 'aceita' && tipo === 'freela' && !chamada.checkInFreela) {
+      return (
+        <button onClick={checkInFreela} className="btn" disabled={loading}>
+          📍 Fazer check-in
+        </button>
+      )
     }
 
-    if (status === 'checkin_freela') {
-      if (tipo === 'estabelecimento' && chamada.checkInFreela && !chamada.checkInEstabelecimento) {
-        return (
-          <button onClick={checkInEstabelecimento} className="btn" disabled={loading}>
-            ✅ Confirmar check-in
-          </button>
-        )
-      }
+    if (status === 'checkin_freela' && chamada.checkInFreela && tipo === 'estabelecimento' && !chamada.checkInEstabelecimento) {
+      return (
+        <button onClick={checkInEstabelecimento} className="btn" disabled={loading}>
+          ✅ Confirmar check-in
+        </button>
+      )
     }
 
-    if (status === 'em_andamento') {
-      if (tipo === 'freela' && !chamada.checkOutFreela) {
-        return (
-          <button onClick={checkOutFreela} className="btn" disabled={loading}>
-            ⏳ Fazer check-out
-          </button>
-        )
-      }
+    if (status === 'em_andamento' && tipo === 'freela' && !chamada.checkOutFreela) {
+      return (
+        <button onClick={checkOutFreela} className="btn" disabled={loading}>
+          ⏳ Fazer check-out
+        </button>
+      )
     }
 
-    if (status === 'checkout_freela') {
-      if (tipo === 'estabelecimento' && chamada.checkOutFreela && !chamada.checkOutEstabelecimento) {
-        return (
-          <button onClick={checkOutEstabelecimento} className="btn" disabled={loading}>
-            ✅ Confirmar checkout
-          </button>
-        )
-      }
+    if (status === 'checkout_freela' && chamada.checkOutFreela && tipo === 'estabelecimento' && !chamada.checkOutEstabelecimento) {
+      return (
+        <button onClick={checkOutEstabelecimento} className="btn" disabled={loading}>
+          ✅ Confirmar checkout
+        </button>
+      )
     }
 
     if (status === 'concluido' || status === 'finalizada') {
