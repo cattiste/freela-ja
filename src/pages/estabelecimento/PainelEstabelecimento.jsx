@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
 import {
@@ -15,9 +16,8 @@ import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
 import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
 import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
-import ChamadaInline from '@/components/ChamadaInline'
 import ChamadasAtivas from '@/pages/estabelecimento/ChamadasAtivas'
-
+import ChamadaInline from '@/components/ChamadaInline'
 
 export default function PainelEstabelecimento() {
   const [estabelecimento, setEstabelecimento] = useState(null)
@@ -25,13 +25,9 @@ export default function PainelEstabelecimento() {
   const [abaSelecionada, setAbaSelecionada] = useState('buscar')
   const [chamadaAtiva, setChamadaAtiva] = useState(null)
 
-  // Autenticação e carregamento de dados do estabelecimento
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('[Auth] onAuthStateChanged:', user)
-
       if (!user) {
-        console.warn('[Auth] Usuário não autenticado')
         setEstabelecimento(null)
         setCarregando(false)
         return
@@ -43,7 +39,6 @@ export default function PainelEstabelecimento() {
 
         if (snap.exists() && snap.data().tipo === 'estabelecimento') {
           const dados = snap.data()
-          console.log('[Auth] Estabelecimento identificado:', dados)
           setEstabelecimento({ uid: user.uid, ...dados })
           await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
         } else {
@@ -59,7 +54,6 @@ export default function PainelEstabelecimento() {
     return () => unsubscribe()
   }, [])
 
-  // Alerta sonoro e visual para checkout pendente
   useEffect(() => {
     if (!estabelecimento?.uid) return
 
@@ -74,7 +68,6 @@ export default function PainelEstabelecimento() {
         snap.docChanges().forEach(({ doc: d, type }) => {
           if (type === 'added') {
             const data = d.data()
-            console.warn('[Checkout] Freela finalizou. Confirmação pendente:', data)
             new Audio('/sons/checkout.mp3').play().catch(() => {})
             alert(`⚠️ O freela ${data.freelaNome} finalizou o serviço. Confirme o checkout.`)
           }
@@ -85,7 +78,6 @@ export default function PainelEstabelecimento() {
     return () => unsub()
   }, [estabelecimento])
 
-  // Verificação contínua de chamadas ativas
   useEffect(() => {
     if (!estabelecimento?.uid) return
 
@@ -97,14 +89,12 @@ export default function PainelEstabelecimento() {
 
     const unsubscribe = onSnapshot(q, (snap) => {
       const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      console.log('[Chamada Ativa] Chamadas detectadas:', docs)
       setChamadaAtiva(docs[0] || null)
     })
 
     return () => unsubscribe()
   }, [estabelecimento])
 
-  // Topo com dados do estabelecimento
   const renderTopo = () => (
     <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow p-4 flex items-center gap-4 mb-4 sticky top-0 z-40">
       {estabelecimento?.foto && (
@@ -122,7 +112,6 @@ export default function PainelEstabelecimento() {
     </div>
   )
 
-  // Chamada ativa, se houver
   const renderChamadaAtiva = () => (
     chamadaAtiva ? (
       <div className="mb-4">
@@ -131,10 +120,7 @@ export default function PainelEstabelecimento() {
     ) : null
   )
 
-  // Conteúdo da aba selecionada
   const renderConteudo = () => {
-    console.log('[Render] Aba selecionada:', abaSelecionada)
-
     switch (abaSelecionada) {
       case 'buscar':
         return <BuscarFreelas estabelecimento={estabelecimento} />
@@ -149,7 +135,7 @@ export default function PainelEstabelecimento() {
       case 'configuracoes':
         return <ConfigPagamentoEstabelecimento usuario={estabelecimento} />
       case 'ativas':
-        return <ChamadasAtivas estabelecimento={estabelecimento} />      
+        return <ChamadasAtivas estabelecimento={estabelecimento} />
       case 'chamadas':
         return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
       default:
@@ -157,18 +143,8 @@ export default function PainelEstabelecimento() {
     }
   }
 
-  // Renderização final
-  if (carregando) {
-    console.log('[Render] Estado: carregando...')
-    return <div className="text-center text-orange-600 mt-8">Carregando painel...</div>
-  }
-
-  if (!estabelecimento) {
-    console.error('[Render] Estabelecimento nulo. Acesso negado.')
-    return <div className="text-center text-red-600 mt-8">Acesso não autorizado.</div>
-  }
-
-  console.log('[Render] Painel carregado com sucesso')
+  if (carregando) return <div className="text-center text-orange-600 mt-8">Carregando painel...</div>
+  if (!estabelecimento) return <div className="text-center text-red-600 mt-8">Acesso não autorizado.</div>
 
   return (
     <div
@@ -179,9 +155,9 @@ export default function PainelEstabelecimento() {
         backgroundRepeat: 'no-repeat',
         backgroundSize: 'cover',
       }}
-    >      
+    >
       {renderTopo()}
-      {abaSelecionada !== 'buscar' && renderChamadaAtiva()}
+      {!['buscar', 'ativas'].includes(abaSelecionada) && renderChamadaAtiva()}
       {renderConteudo()}
       <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
     </div>
