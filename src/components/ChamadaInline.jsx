@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react'
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -18,7 +19,6 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       })
       toast.success('Chamada aceita!')
     } catch (err) {
-      console.error('Erro ao aceitar chamada:', err)
       toast.error('Erro ao aceitar chamada')
     } finally {
       setLoading(false)
@@ -36,7 +36,6 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       })
       toast.success('Check-in realizado!')
     } catch (err) {
-      console.error('Erro no check-in:', err)
       toast.error('Erro ao fazer check-in')
     } finally {
       setLoading(false)
@@ -54,7 +53,6 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       })
       toast.success('Check-in confirmado!')
     } catch (err) {
-      console.error('Erro ao confirmar check-in:', err)
       toast.error('Erro ao confirmar check-in')
     } finally {
       setLoading(false)
@@ -72,7 +70,6 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       })
       toast.success('Check-out realizado!')
     } catch (err) {
-      console.error('Erro no check-out:', err)
       toast.error('Erro ao fazer check-out')
     } finally {
       setLoading(false)
@@ -90,7 +87,6 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       })
       toast.success('Checkout confirmado!')
     } catch (err) {
-      console.error('Erro ao confirmar checkout:', err)
       toast.error('Erro ao confirmar checkout')
     } finally {
       setLoading(false)
@@ -110,44 +106,36 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       }
     }
 
-    if (status === 'aceita') {
-      if (tipo === 'freela' && !chamada.checkInFreela) {
-        return (
-          <button onClick={checkInFreela} className="btn" disabled={loading}>
-            📍 Fazer check-in
-          </button>
-        )
-      }
+    if (status === 'aceita' && tipo === 'freela' && !chamada.checkInFreela) {
+      return (
+        <button onClick={checkInFreela} className="btn" disabled={loading}>
+          📍 Fazer check-in
+        </button>
+      )
     }
 
-    if (status === 'checkin_freela') {
-      if (tipo === 'estabelecimento' && !chamada.checkInEstabelecimento) {
-        return (
-          <button onClick={checkInEstabelecimento} className="btn" disabled={loading}>
-            ✅ Confirmar check-in
-          </button>
-        )
-      }
+    if (status === 'checkin_freela' && tipo === 'estabelecimento' && !chamada.checkInEstabelecimento) {
+      return (
+        <button onClick={checkInEstabelecimento} className="btn" disabled={loading}>
+          ✅ Confirmar check-in
+        </button>
+      )
     }
 
-    if (status === 'em_andamento') {
-      if (tipo === 'freela' && !chamada.checkOutFreela) {
-        return (
-          <button onClick={checkOutFreela} className="btn" disabled={loading}>
-            ⏳ Fazer check-out
-          </button>
-        )
-      }
+    if ((status === 'checkin_freela' || status === 'em_andamento') && tipo === 'freela' && !chamada.checkOutFreela) {
+      return (
+        <button onClick={checkOutFreela} className="btn" disabled={loading}>
+          ⏳ Fazer check-out
+        </button>
+      )
     }
 
-    if (status === 'checkout_freela') {
-      if (tipo === 'estabelecimento' && !chamada.checkOutEstabelecimento) {
-        return (
-          <button onClick={checkOutEstabelecimento} className="btn" disabled={loading}>
-            ✅ Confirmar checkout
-          </button>
-        )
-      }
+    if (status === 'checkout_freela' && tipo === 'estabelecimento' && !chamada.checkOutEstabelecimento) {
+      return (
+        <button onClick={checkOutEstabelecimento} className="btn" disabled={loading}>
+          ✅ Confirmar checkout
+        </button>
+      )
     }
 
     if (status === 'concluido' || status === 'finalizada') {
