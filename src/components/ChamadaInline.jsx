@@ -127,51 +127,44 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       }
     }
 
-    if (status === 'aceita' && tipo === 'freela' && !chamada.checkInFreela) {
-      return (
-        <button onClick={checkInFreela} className="btn" disabled={loading}>
-          📍 Fazer check-in
-        </button>
-      )
+    if (status === 'aceita') {
+      if (tipo === 'freela' && !chamada.checkInFreela) {
+        return (
+          <button onClick={checkInFreela} className="btn" disabled={loading}>
+            📍 Fazer check-in
+          </button>
+        )
+      }
     }
 
-    if (
-      status === 'checkin_freela' &&
-      chamada.checkInFreela === true &&
-      !chamada.checkInEstabelecimento &&
-      tipo === 'estabelecimento'
-    ) {
-      return (
-        <button onClick={checkInEstabelecimento} className="btn" disabled={loading}>
-          ✅ Confirmar check-in
-        </button>
-      )
+    if (status === 'checkin_freela') {
+      if (tipo === 'estabelecimento' && chamada.checkInFreela && !chamada.checkInEstabelecimento) {
+        return (
+          <button onClick={checkInEstabelecimento} className="btn" disabled={loading}>
+            ✅ Confirmar check-in
+          </button>
+        )
+      }
     }
 
-    if (
-      status === 'checkin_freela' &&
-      chamada.checkInEstabelecimento === true &&
-      tipo === 'freela' &&
-      !chamada.checkOutFreela
-    ) {
-      return (
-        <button onClick={checkOutFreela} className="btn" disabled={loading}>
-          ⏳ Fazer check-out
-        </button>
-      )
+    if (status === 'em_andamento') {
+      if (tipo === 'freela' && !chamada.checkOutFreela) {
+        return (
+          <button onClick={checkOutFreela} className="btn" disabled={loading}>
+            ⏳ Fazer check-out
+          </button>
+        )
+      }
     }
 
-    if (
-      status === 'checkout_freela' &&
-      chamada.checkOutFreela === true &&
-      tipo === 'estabelecimento' &&
-      !chamada.checkOutEstabelecimento
-    ) {
-      return (
-        <button onClick={checkOutEstabelecimento} className="btn" disabled={loading}>
-          ✅ Confirmar checkout
-        </button>
-      )
+    if (status === 'checkout_freela') {
+      if (tipo === 'estabelecimento' && chamada.checkOutFreela && !chamada.checkOutEstabelecimento) {
+        return (
+          <button onClick={checkOutEstabelecimento} className="btn" disabled={loading}>
+            ✅ Confirmar checkout
+          </button>
+        )
+      }
     }
 
     if (status === 'concluido' || status === 'finalizada') {
