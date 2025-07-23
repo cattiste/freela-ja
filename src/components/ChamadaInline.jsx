@@ -17,7 +17,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
         aceitaEm: serverTimestamp()
       })
       toast.success('Chamada aceita!')
-    } catch (err) {
+    } catch {
       toast.error('Erro ao aceitar chamada')
     } finally {
       setLoading(false)
@@ -33,7 +33,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
         recusadaEm: serverTimestamp()
       })
       toast.success('Chamada recusada.')
-    } catch (err) {
+    } catch {
       toast.error('Erro ao recusar chamada')
     } finally {
       setLoading(false)
@@ -50,7 +50,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
         checkInFreelaHora: serverTimestamp()
       })
       toast.success('Check-in realizado!')
-    } catch (err) {
+    } catch {
       toast.error('Erro ao fazer check-in')
     } finally {
       setLoading(false)
@@ -67,7 +67,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
         status: 'em_andamento'
       })
       toast.success('Check-in confirmado!')
-    } catch (err) {
+    } catch {
       toast.error('Erro ao confirmar check-in')
     } finally {
       setLoading(false)
@@ -84,7 +84,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
         checkOutFreelaHora: serverTimestamp()
       })
       toast.success('Check-out realizado!')
-    } catch (err) {
+    } catch {
       toast.error('Erro ao fazer check-out')
     } finally {
       setLoading(false)
@@ -101,7 +101,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
         status: 'concluido'
       })
       toast.success('Checkout confirmado!')
-    } catch (err) {
+    } catch {
       toast.error('Erro ao confirmar checkout')
     } finally {
       setLoading(false)
@@ -134,7 +134,12 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       )
     }
 
-    if (status === 'checkin_freela' && tipo === 'estabelecimento' && !chamada.checkInEstabelecimento) {
+    if (
+      status === 'checkin_freela' &&
+      chamada.checkInFreela === true &&
+      tipo === 'estabelecimento' &&
+      !chamada.checkInEstabelecimento
+    ) {
       return (
         <button onClick={checkInEstabelecimento} className="btn" disabled={loading}>
           ✅ Confirmar check-in
@@ -142,7 +147,12 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       )
     }
 
-    if ((status === 'checkin_freela' || status === 'em_andamento') && tipo === 'freela' && !chamada.checkOutFreela) {
+    if (
+      status === 'checkin_freela' &&
+      chamada.checkInEstabelecimento === true &&
+      tipo === 'freela' &&
+      !chamada.checkOutFreela
+    ) {
       return (
         <button onClick={checkOutFreela} className="btn" disabled={loading}>
           ⏳ Fazer check-out
@@ -150,7 +160,12 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       )
     }
 
-    if (status === 'checkout_freela' && tipo === 'estabelecimento' && !chamada.checkOutEstabelecimento) {
+    if (
+      status === 'checkout_freela' &&
+      chamada.checkOutFreela === true &&
+      tipo === 'estabelecimento' &&
+      !chamada.checkOutEstabelecimento
+    ) {
       return (
         <button onClick={checkOutEstabelecimento} className="btn" disabled={loading}>
           ✅ Confirmar checkout

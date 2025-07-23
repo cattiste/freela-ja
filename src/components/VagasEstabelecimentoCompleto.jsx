@@ -21,7 +21,7 @@ export default function VagasEstabelecimentoCompleto({ estabelecimento }) {
           className={`px-4 py-2 font-semibold ${
             tab === 'publicar'
               ? 'border-b-2 border-orange-600 text-orange-600'
-              : 'text-gray-500 hover:text-orange-600'
+              : 'text-white-500 hover:text-orange-600'
           }`}
         >
           Publicar Vaga
@@ -31,7 +31,7 @@ export default function VagasEstabelecimentoCompleto({ estabelecimento }) {
           className={`px-4 py-2 font-semibold ${
             tab === 'minhas'
               ? 'border-b-2 border-orange-600 text-orange-600'
-              : 'text-gray-500 hover:text-orange-600'
+              : 'text-white-500 hover:text-orange-600'
           }`}
         >
           Minhas Vagas
@@ -41,7 +41,7 @@ export default function VagasEstabelecimentoCompleto({ estabelecimento }) {
           className={`px-4 py-2 font-semibold ${
             tab === 'candidaturas'
               ? 'border-b-2 border-orange-600 text-orange-600'
-              : 'text-gray-500 hover:text-orange-600'
+              : 'text-white-500 hover:text-orange-600'
           }`}
         >
           Candidaturas
