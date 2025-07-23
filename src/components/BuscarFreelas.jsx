@@ -87,7 +87,7 @@ export default function BuscarFreelas({ estabelecimento }) {
     const q = query(
       collection(db, 'chamadas'),
       where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'checkout_freela'])
+      where('status', 'in', ['aceita', 'checkin_freela', 'checkout_freela'])
     )
 
     const unsub = onSnapshot(q, (snap) => {
