@@ -27,9 +27,13 @@ export default function Sobre() {
           <p className="text-orange-600 font-semibold">
             Bem-vindo à nova era do trabalho sob demanda. 🚀
           </p>
+
+          {/* Assinatura visível */}
+          <p className="text-xs text-gray-500 mt-6">
+            Desenvolvido por <span className="font-semibold text-orange-600">Bruno Cattiste</span> & ChatGPT · FreelaJá original © 2025
+          </p>
         </div>
       </div>
     </div>
   )
 }
-<!-- Desenvolvido com Bruno Cattiste & ChatGPT, 2025. FreelaJá original. -->
