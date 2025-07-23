@@ -1,7 +1,7 @@
+
 import React, { useEffect, useState } from 'react'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
-import ChamadaInline from '@/components/ChamadaInline'
 
 export default function ChamadasEstabelecimento({ estabelecimento }) {
   const [chamadas, setChamadas] = useState([])
@@ -31,15 +31,16 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
   }, [estabelecimento])
 
   if (carregando) return <p className="text-center text-orange-600">🔄 Carregando chamadas...</p>
-
-  if (chamadas.length === 0) {
-    return <p className="text-center text-gray-600">📭 Nenhuma chamada registrada.</p>
-  }
+  if (chamadas.length === 0) return <p className="text-center text-gray-600">📭 Nenhuma chamada registrada.</p>
 
   return (
-    <div className="grid gap-4">
+    <div className="space-y-3">
       {chamadas.map(chamada => (
-        <ChamadaInline key={chamada.id} chamada={chamada} tipo="estabelecimento" />
+        <div key={chamada.id} className="p-3 bg-white rounded-xl shadow border border-orange-100">
+          <p className="text-orange-600 font-bold">Chamada #{chamada.codigo || chamada.id.slice(-5)}</p>
+          <p className="text-sm">👤 {chamada.freelaNome}</p>
+          <p className="text-sm">📌 Status: {chamada.status}</p>
+        </div>
       ))}
     </div>
   )
