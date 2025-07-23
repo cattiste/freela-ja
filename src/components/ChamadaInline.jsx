@@ -1,4 +1,3 @@
-// Novo ChamadaInline.jsx com fluxo completo e avaliação inline
 
 import React, { useEffect, useState } from 'react'
 import { doc, updateDoc } from 'firebase/firestore'
@@ -6,7 +5,7 @@ import { db } from '@/firebase'
 import Chat from '@/pages/Chat'
 import AvaliacaoEstabelecimento from './AvaliacaoEstabelecimento'
 
-export default function ChamadaInline({ chamada, onAtualizar }) {
+export default function ChamadaInline({ chamada, usuario, tipo }) {
   const [mostrarChat, setMostrarChat] = useState(false)
   const [loading, setLoading] = useState(false)
   const [statusLocal, setStatusLocal] = useState(chamada.status)
@@ -19,7 +18,6 @@ export default function ChamadaInline({ chamada, onAtualizar }) {
     setLoading(true)
     try {
       await updateDoc(doc(db, 'chamadas', chamada.id), dados)
-      onAtualizar?.()
     } catch (err) {
       console.error('Erro ao atualizar chamada:', err)
       alert('Erro ao atualizar chamada.')
@@ -41,6 +39,68 @@ export default function ChamadaInline({ chamada, onAtualizar }) {
 
   const handleConfirmarCheckOut = async () => {
     await atualizarChamada({ checkOutEstabelecimento: true, status: 'finalizado' })
+  }
+
+  const renderBotoes = () => {
+    const status = chamada.status
+
+    if (status === 'aceita') {
+      if (tipo === 'freela' && !chamada.checkInFreela) {
+        return (
+          <button
+            onClick={handleCheckIn}
+            disabled={loading}
+            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+          >
+            ✅ Check-In Freela
+          </button>
+        )
+      }
+    }
+
+    if (status === 'aguardando-checkin-estabelecimento') {
+      if (tipo === 'estabelecimento' && !chamada.checkInEstabelecimento) {
+        return (
+          <button
+            onClick={handleConfirmarCheckIn}
+            disabled={loading}
+            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+          >
+            ✅ Confirmar Check-In
+          </button>
+        )
+      }
+    }
+
+    if (status === 'em-trabalho') {
+      if (tipo === 'freela' && !chamada.checkOutFreela) {
+        return (
+          <button
+            onClick={handleCheckOut}
+            disabled={loading}
+            className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+          >
+            ⏳ Check-Out Freela
+          </button>
+        )
+      }
+    }
+
+    if (status === 'aguardando-checkout-estabelecimento') {
+      if (tipo === 'estabelecimento' && !chamada.checkOutEstabelecimento) {
+        return (
+          <button
+            onClick={handleConfirmarCheckOut}
+            disabled={loading}
+            className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+          >
+            ✅ Confirmar Check-Out
+          </button>
+        )
+      }
+    }
+
+    return null
   }
 
   return (
@@ -65,46 +125,7 @@ export default function ChamadaInline({ chamada, onAtualizar }) {
         </div>
       )}
 
-      {/* Ações conforme status */}
-      {statusLocal === 'aceita' && !chamada.checkInFreela && (
-        <button
-          onClick={handleCheckIn}
-          disabled={loading}
-          className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
-        >
-          ✅ Check-In Freela
-        </button>
-      )}
-
-      {statusLocal === 'aguardando-checkin-estabelecimento' && !chamada.checkInEstabelecimento && (
-        <button
-          onClick={handleConfirmarCheckIn}
-          disabled={loading}
-          className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
-        >
-          ✅ Confirmar Check-In
-        </button>
-      )}
-
-      {statusLocal === 'em-trabalho' && !chamada.checkOutFreela && (
-        <button
-          onClick={handleCheckOut}
-          disabled={loading}
-          className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-        >
-          ⏳ Check-Out Freela
-        </button>
-      )}
-
-      {statusLocal === 'aguardando-checkout-estabelecimento' && !chamada.checkOutEstabelecimento && (
-        <button
-          onClick={handleConfirmarCheckOut}
-          disabled={loading}
-          className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-        >
-          ✅ Confirmar Check-Out
-        </button>
-      )}
+      <div className="mt-3 space-y-2">{renderBotoes()}</div>
 
       {statusLocal === 'finalizado' && !chamada.avaliacaoEstabelecimentoFeita && (
         <div className="mt-3 border-t pt-2">
