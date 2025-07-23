@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react'
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -8,11 +9,10 @@ export default function HistoricoChamadasFreela({ freelaUid }) {
   useEffect(() => {
     if (!freelaUid) return
 
-    // Consulta para status finalizado ou recusada
     const q = query(
       collection(db, 'chamadas'),
       where('freelaUid', '==', freelaUid),
-      where('status', 'in', ['finalizado', 'recusada']),
+      where('status', 'in', ['concluido', 'finalizada', 'recusada']),
       orderBy('criadoEm', 'desc')
     )
 
@@ -24,9 +24,9 @@ export default function HistoricoChamadasFreela({ freelaUid }) {
     return () => unsubscribe()
   }, [freelaUid])
 
-  const formatarData = (data) => {
+  const formatarData = (timestamp) => {
     try {
-      return data?.toDate().toLocaleString('pt-BR') || '—'
+      return timestamp?.toDate().toLocaleString('pt-BR') || '—'
     } catch {
       return '—'
     }
@@ -34,11 +34,11 @@ export default function HistoricoChamadasFreela({ freelaUid }) {
 
   return (
     <div className="overflow-x-auto">
-      <h2 className="text-2xl font-semibold mb-4">📜 Histórico de Chamadas Finalizadas e Recusadas</h2>
+      <h2 className="text-2xl font-semibold mb-4 text-orange-700">📜 Histórico de Chamadas</h2>
       {chamadas.length === 0 ? (
         <p className="text-gray-500">Nenhum serviço finalizado ou recusado até o momento.</p>
       ) : (
-        <table className="min-w-full border border-orange-200 rounded-xl overflow-hidden">
+        <table className="min-w-full border border-orange-200 rounded-xl overflow-hidden bg-white shadow">
           <thead className="bg-orange-100 text-orange-800">
             <tr>
               <th className="text-left px-4 py-2">Vaga</th>
@@ -52,12 +52,12 @@ export default function HistoricoChamadasFreela({ freelaUid }) {
           <tbody>
             {chamadas.map((chamada) => (
               <tr key={chamada.id} className="border-t hover:bg-orange-50">
-                <td className="px-4 py-2">{chamada.vagaTitulo}</td>
-                <td className="px-4 py-2">{chamada.estabelecimentoNome}</td>
+                <td className="px-4 py-2">{chamada.vagaTitulo || '—'}</td>
+                <td className="px-4 py-2">{chamada.estabelecimentoNome || '—'}</td>
                 <td className="px-4 py-2">{formatarData(chamada.criadoEm)}</td>
-                <td className="px-4 py-2">{formatarData(chamada.checkInHora)}</td>
-                <td className="px-4 py-2">{formatarData(chamada.checkOutHora)}</td>
-                <td className="px-4 py-2 capitalize">{chamada.status}</td>
+                <td className="px-4 py-2">{formatarData(chamada.checkInFreelaHora)}</td>
+                <td className="px-4 py-2">{formatarData(chamada.checkOutFreelaHora)}</td>
+                <td className="px-4 py-2 capitalize">{chamada.status || '—'}</td>
               </tr>
             ))}
           </tbody>
