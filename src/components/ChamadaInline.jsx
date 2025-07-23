@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react'
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -20,6 +19,22 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       toast.success('Chamada aceita!')
     } catch (err) {
       toast.error('Erro ao aceitar chamada')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const recusarChamada = async () => {
+    setLoading(true)
+    try {
+      const ref = doc(db, 'chamadas', chamada.id)
+      await updateDoc(ref, {
+        status: 'recusada',
+        recusadaEm: serverTimestamp()
+      })
+      toast.success('Chamada recusada.')
+    } catch (err) {
+      toast.error('Erro ao recusar chamada')
     } finally {
       setLoading(false)
     }
@@ -99,9 +114,14 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
     if (!status || status === 'pendente') {
       if (tipo === 'freela') {
         return (
-          <button onClick={aceitarChamada} className="btn" disabled={loading}>
-            ✅ Aceitar chamada
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={aceitarChamada} className="btn bg-green-600 hover:bg-green-700 text-white" disabled={loading}>
+              ✅ Aceitar chamada
+            </button>
+            <button onClick={recusarChamada} className="btn bg-red-600 hover:bg-red-700 text-white" disabled={loading}>
+              ❌ Recusar chamada
+            </button>
+          </div>
         )
       }
     }
