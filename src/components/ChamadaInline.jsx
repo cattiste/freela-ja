@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react'
 import { doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -25,79 +24,39 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
     setLoading(false)
   }
 
-  const handleCheckIn = async () => {
-    await atualizarChamada({ checkInFreela: true, status: 'aguardando-checkin-estabelecimento' })
+  const handleCheckInDireto = async () => {
+    await atualizarChamada({ checkInFreela: true, status: 'em-trabalho' })
   }
 
-  const handleConfirmarCheckIn = async () => {
-    await atualizarChamada({ checkInEstabelecimento: true, status: 'em-trabalho' })
-  }
-
-  const handleCheckOut = async () => {
-    await atualizarChamada({ checkOutFreela: true, status: 'aguardando-checkout-estabelecimento' })
-  }
-
-  const handleConfirmarCheckOut = async () => {
-    await atualizarChamada({ checkOutEstabelecimento: true, status: 'finalizado' })
+  const handleCheckOutDireto = async () => {
+    await atualizarChamada({ checkOutFreela: true, status: 'finalizado' })
   }
 
   const renderBotoes = () => {
     const status = chamada.status
 
-    if (status === 'aceita') {
-      if (tipo === 'freela' && !chamada.checkInFreela) {
-        return (
-          <button
-            onClick={handleCheckIn}
-            disabled={loading}
-            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
-          >
-            ✅ Check-In Freela
-          </button>
-        )
-      }
+    if (status === 'aceita' && !chamada.checkInFreela) {
+      return (
+        <button
+          onClick={handleCheckInDireto}
+          disabled={loading}
+          className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+        >
+          ✅ Fazer Check-In
+        </button>
+      )
     }
 
-    if (status === 'aguardando-checkin-estabelecimento') {
-      if (tipo === 'estabelecimento' && !chamada.checkInEstabelecimento) {
-        return (
-          <button
-            onClick={handleConfirmarCheckIn}
-            disabled={loading}
-            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
-          >
-            ✅ Confirmar Check-In
-          </button>
-        )
-      }
-    }
-
-    if (status === 'em-trabalho') {
-      if (tipo === 'freela' && !chamada.checkOutFreela) {
-        return (
-          <button
-            onClick={handleCheckOut}
-            disabled={loading}
-            className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-          >
-            ⏳ Check-Out Freela
-          </button>
-        )
-      }
-    }
-
-    if (status === 'aguardando-checkout-estabelecimento') {
-      if (tipo === 'estabelecimento' && !chamada.checkOutEstabelecimento) {
-        return (
-          <button
-            onClick={handleConfirmarCheckOut}
-            disabled={loading}
-            className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-          >
-            ✅ Confirmar Check-Out
-          </button>
-        )
-      }
+    if (status === 'em-trabalho' && !chamada.checkOutFreela) {
+      return (
+        <button
+          onClick={handleCheckOutDireto}
+          disabled={loading}
+          className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+        >
+          ⏳ Fazer Check-Out
+        </button>
+      )
     }
 
     return null
