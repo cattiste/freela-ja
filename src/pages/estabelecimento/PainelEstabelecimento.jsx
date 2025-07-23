@@ -181,12 +181,12 @@ export default function PainelEstabelecimento() {
       }}
     >
       {abaSelecionada === 'buscar' && (
-        <div className=\"banner-container\">
-          <img src=\"/imgs/banner-chefja.png\" alt=\"Banner ChefJá\" className=\"banner-img\" />
+        <div className="banner-container">
+          <img src="/imgs/banner-chefja.png" alt="Banner ChefJá" className="banner-img" />
         </div>
       )}
       {renderTopo()}
-      {renderChamadaAtiva()}
+      {abaSelecionada !== 'buscar' && renderChamadaAtiva()}
       {renderConteudo()}
       <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
     </div>
