@@ -180,6 +180,11 @@ export default function PainelEstabelecimento() {
         backgroundSize: 'cover',
       }}
     >
+      {abaSelecionada === 'buscar' && (
+        <div className=\"banner-container\">
+          <img src=\"/imgs/banner-chefja.png\" alt=\"Banner ChefJá\" className=\"banner-img\" />
+        </div>
+      )}
       {renderTopo()}
       {renderChamadaAtiva()}
       {renderConteudo()}
