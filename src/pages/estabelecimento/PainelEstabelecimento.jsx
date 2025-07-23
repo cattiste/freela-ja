@@ -179,12 +179,7 @@ export default function PainelEstabelecimento() {
         backgroundRepeat: 'no-repeat',
         backgroundSize: 'cover',
       }}
-    >
-      {abaSelecionada === 'buscar' && (
-        <div className="banner-container">
-          <img src="/imgs/banner-chefja.png" alt="Banner ChefJá" className="banner-img" />
-        </div>
-      )}
+    >      
       {renderTopo()}
       {abaSelecionada !== 'buscar' && renderChamadaAtiva()}
       {renderConteudo()}
