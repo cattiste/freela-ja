@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, updateDoc, doc } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function ChamadasAtivas({ estabelecimento }) {
@@ -36,6 +36,22 @@ export default function ChamadasAtivas({ estabelecimento }) {
     return () => unsub()
   }, [estabelecimento])
 
+  const confirmarCheck = async (chamada, tipo) => {
+    try {
+      const ref = doc(db, 'chamadas', chamada.id)
+      if (tipo === 'checkin') {
+        await updateDoc(ref, { checkInEstabelecimento: true })
+        alert('✅ Check-in confirmado com sucesso.')
+      } else if (tipo === 'checkout') {
+        await updateDoc(ref, { checkOutEstabelecimento: true, status: 'concluido' })
+        alert('✅ Check-out confirmado e chamado finalizado.')
+      }
+    } catch (err) {
+      console.error('Erro ao confirmar:', err)
+      alert('Erro ao confirmar ação.')
+    }
+  }
+
   if (!chamadas.length) {
     return <div className="text-center mt-6 text-gray-500">Nenhuma chamada ativa no momento.</div>
   }
@@ -47,6 +63,24 @@ export default function ChamadasAtivas({ estabelecimento }) {
           <p className="text-orange-600 font-bold">Chamada #{chamada.codigo || chamada.id.slice(-5)}</p>
           <p className="text-sm">👤 {chamada.freelaNome}</p>
           <p className="text-sm">📌 Status: {chamada.status}</p>
+
+          {chamada.status === 'aceita' && chamada.checkInEstabelecimento !== true && (
+            <button
+              onClick={() => confirmarCheck(chamada, 'checkin')}
+              className="mt-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            >
+              ✅ Confirmar Check-in
+            </button>
+          )}
+
+          {chamada.status === 'checkout_freela' && chamada.checkOutEstabelecimento !== true && (
+            <button
+              onClick={() => confirmarCheck(chamada, 'checkout')}
+              className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >
+              📤 Confirmar Check-out
+            </button>
+          )}
         </div>
       ))}
     </div>
