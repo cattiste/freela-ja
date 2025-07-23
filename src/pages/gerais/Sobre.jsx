@@ -32,3 +32,4 @@ export default function Sobre() {
     </div>
   )
 }
+<!-- Desenvolvido com Bruno Cattiste & ChatGPT, 2025. FreelaJá original. -->

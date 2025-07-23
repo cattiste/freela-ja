@@ -41,3 +41,5 @@ if (import.meta.env.MODE === 'development') {
 
 // Exporta para usar nas outras partes do app
 export { app, auth, db, storage };
+// Projeto original FreelaJá - Código registrado e rastreável
+// Assinatura interna: 𝙁𝙅-𝟮𝟬𝟮𝟱-𝘽𝘾-𝘾𝙃𝘼𝙏𝙂𝙋𝙏
