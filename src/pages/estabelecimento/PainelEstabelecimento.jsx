@@ -157,7 +157,7 @@ export default function PainelEstabelecimento() {
       }}
     >
       {renderTopo()}
-      {/* {!['buscar', 'ativas'].includes(abaSelecionada) && renderChamadaAtiva()} */}
+      {!['buscar', 'ativas', 'historico'].includes(abaSelecionada) && renderChamadaAtiva()}
       {renderConteudo()}
       <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
     </div>
