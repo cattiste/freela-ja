@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react'
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -137,8 +138,8 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
     if (
       status === 'checkin_freela' &&
       chamada.checkInFreela === true &&
-      tipo === 'estabelecimento' &&
-      !chamada.checkInEstabelecimento
+      !chamada.checkInEstabelecimento &&
+      tipo === 'estabelecimento'
     ) {
       return (
         <button onClick={checkInEstabelecimento} className="btn" disabled={loading}>
