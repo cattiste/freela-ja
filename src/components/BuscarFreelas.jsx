@@ -34,6 +34,11 @@ function FreelaCard({ freela, onChamar, chamando }) {
               : freela.especialidades}
           </p>
         )}
+        {freela.valorDiaria && (
+          <p className="text-sm font-semibold text-orange-700 mt-1">
+            💰 R$ {freela.valorDiaria} / diária
+          </p>
+        )}
         <div className="flex items-center gap-2 mt-1">
           <span className={`w-2 h-2 rounded-full ${online ? 'bg-green-500' : 'bg-gray-400'}`} />
           <span className={`text-xs ${online ? 'text-green-700' : 'text-gray-500'}`}>
@@ -104,7 +109,8 @@ export default function BuscarFreelas({ estabelecimento }) {
   if (freelas.length === 0) return <p>Nenhum freelancer encontrado.</p>
 
   return (
-    <div className="min-h-screen bg-cover bg-center p-4 pb-20"
+    <div
+      className="min-h-screen bg-cover bg-center p-4 pb-20"
       style={{
         backgroundImage: `url('/img/fundo-login.jpg')`,
         backgroundAttachment: 'fixed',
