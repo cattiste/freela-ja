@@ -46,9 +46,9 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
     try {
       const ref = doc(db, 'chamadas', chamada.id)
       await updateDoc(ref, {
+        status: 'em_andamento',
         checkInEstabelecimento: true,
-        checkInEstabelecimentoHora: serverTimestamp(),
-        status: 'em_andamento'
+        checkInEstabelecimentoHora: serverTimestamp()
       })
       toast.success('Check-in confirmado!')
     } catch (err) {
@@ -80,9 +80,9 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
     try {
       const ref = doc(db, 'chamadas', chamada.id)
       await updateDoc(ref, {
+        status: 'concluido',
         checkOutEstabelecimento: true,
-        checkOutEstabelecimentoHora: serverTimestamp(),
-        status: 'concluido'
+        checkOutEstabelecimentoHora: serverTimestamp()
       })
       toast.success('Checkout confirmado!')
     } catch (err) {
@@ -95,6 +95,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
   const renderBotoes = () => {
     const status = chamada.status
 
+    // Freela aceita chamada pendente
     if (!status || status === 'pendente') {
       if (tipo === 'freela') {
         return (
@@ -109,6 +110,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       }
     }
 
+    // Freela faz check-in
     if ((status === 'aceita' || status === 'pendente') && tipo === 'freela' && !chamada.checkInFreela) {
       return (
         <button
@@ -121,9 +123,10 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       )
     }
 
+    // Estabelecimento confirma check-in (apenas em status checkin_freela)
     if (
       tipo === 'estabelecimento' &&
-      chamada.checkInFreela === true &&
+      status === 'checkin_freela' &&
       chamada.checkInEstabelecimento !== true
     ) {
       return (
@@ -137,6 +140,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       )
     }
 
+    // Freela faz check-out durante em_andamento ou após confirmar check-in
     if ((status === 'checkin_freela' || status === 'em_andamento') && tipo === 'freela' && !chamada.checkOutFreela) {
       return (
         <button
@@ -149,7 +153,12 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       )
     }
 
-    if (status === 'checkout_freela' && tipo === 'estabelecimento' && !chamada.checkOutEstabelecimento) {
+    // Estabelecimento confirma checkout (apenas em status checkout_freela)
+    if (
+      tipo === 'estabelecimento' &&
+      status === 'checkout_freela' &&
+      chamada.checkOutEstabelecimento !== true
+    ) {
       return (
         <button
           onClick={checkOutEstabelecimento}
@@ -161,6 +170,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       )
     }
 
+    // Chamadas finalizadas
     if (status === 'concluido' || status === 'finalizada') {
       return <span className="text-green-600 font-bold">✅ Finalizada</span>
     }
