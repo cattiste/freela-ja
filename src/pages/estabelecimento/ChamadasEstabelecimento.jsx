@@ -54,49 +54,61 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
 
   return (
     <div className="space-y-3">
-      {chamadas.map(chamada => (
-        <div key={chamada.id} className="p-3 bg-white rounded-xl shadow border border-orange-100 space-y-2">
-          <p className="text-orange-600 font-bold">Chamada #{chamada.codigo || chamada.id.slice(-5)}</p>
-          <p className="text-sm">👤 {chamada.freelaNome}</p>
-          <p className="text-sm">📌 Status: {chamada.status}</p>
+      {chamadas.map(chamada => {
+        const [podeConfirmarCheckIn, setPodeConfirmarCheckIn] = useState(false)
 
-          <pre className="text-xs text-gray-500">
-            checkInFreela: {chamada.checkInFreela?.toString()} | checkInEstabelecimento: {chamada.checkInEstabelecimento?.toString()} | status: {chamada.status}
-          </pre>
+        useEffect(() => {
+          if (chamada.checkInFreela === true && !chamada.checkInEstabelecimento) {
+            setPodeConfirmarCheckIn(true)
+          } else {
+            setPodeConfirmarCheckIn(false)
+          }
+        }, [chamada.checkInFreela, chamada.checkInEstabelecimento])
 
-          {/* ✅ Confirmar Check-in (debug forçado visível) */}
-          {(chamada.checkInFreela || chamada.status === 'checkin_freela') && (
-            <button
-              onClick={() => atualizarChamada(chamada.id, {
-                checkInEstabelecimento: true,
-                checkInEstabelecimentoHora: serverTimestamp(),
-                status: 'em_andamento'
-              })}
-              className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
-            >
-              ✅ Confirmar Check-in (debug)
-            </button>
-          )}
+        return (
+          <div key={chamada.id} className="p-3 bg-white rounded-xl shadow border border-orange-100 space-y-2">
+            <p className="text-orange-600 font-bold">Chamada #{chamada.codigo || chamada.id.slice(-5)}</p>
+            <p className="text-sm">👤 {chamada.freelaNome}</p>
+            <p className="text-sm">📌 Status: {chamada.status}</p>
 
-          {/* ✅ Confirmar Check-out */}
-          {chamada.checkOutFreela === true && chamada.checkOutEstabelecimento !== true && (
-            <button
-              onClick={() => atualizarChamada(chamada.id, {
-                checkOutEstabelecimento: true,
-                checkOutEstabelecimentoHora: serverTimestamp(),
-                status: 'concluido'
-              })}
-              className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-            >
-              📤 Confirmar Check-out
-            </button>
-          )}
+            <pre className="text-xs text-gray-500">
+              checkInFreela: {chamada.checkInFreela?.toString()} | checkInEstabelecimento: {chamada.checkInEstabelecimento?.toString()}
+            </pre>
 
-          {(chamada.status === 'concluido' || chamada.status === 'finalizada') && (
-            <span className="text-green-600 font-bold">✅ Finalizada</span>
-          )}
-        </div>
-      ))}
+            {/* ✅ Confirmar Check-in com verificação controlada */}
+            {podeConfirmarCheckIn && (
+              <button
+                onClick={() => atualizarChamada(chamada.id, {
+                  checkInEstabelecimento: true,
+                  checkInEstabelecimentoHora: serverTimestamp(),
+                  status: 'em_andamento'
+                })}
+                className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+              >
+                ✅ Confirmar Check-in
+              </button>
+            )}
+
+            {/* ✅ Confirmar Check-out */}
+            {chamada.checkOutFreela === true && chamada.checkOutEstabelecimento !== true && (
+              <button
+                onClick={() => atualizarChamada(chamada.id, {
+                  checkOutEstabelecimento: true,
+                  checkOutEstabelecimentoHora: serverTimestamp(),
+                  status: 'concluido'
+                })}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+              >
+                📤 Confirmar Check-out
+              </button>
+            )}
+
+            {(chamada.status === 'concluido' || chamada.status === 'finalizada') && (
+              <span className="text-green-600 font-bold">✅ Finalizada</span>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
