@@ -6,7 +6,6 @@ import {
   onSnapshot,
   updateDoc,
   doc,
-  addDoc,
   serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -14,105 +13,84 @@ import { toast } from 'react-hot-toast'
 
 export default function ChamadasEstabelecimento({ estabelecimento }) {
   const [chamadas, setChamadas] = useState([])
-  const [loadingId, setLoadingId] = useState(null)
+  const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
     if (!estabelecimento?.uid) return
 
     const q = query(
       collection(db, 'chamadas'),
-      where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', 'in', ['aceita', 'checkin', 'checkout'])
+      where('estabelecimentoUid', '==', estabelecimento.uid)
     )
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    const unsubscribe = onSnapshot(q, snapshot => {
+      const lista = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
       setChamadas(lista)
+      setCarregando(false)
+    }, err => {
+      console.error('Erro ao buscar chamadas:', err)
+      setCarregando(false)
     })
 
     return () => unsubscribe()
   }, [estabelecimento])
 
-  async function confirmarEtapa(chamada, etapa) {
-    setLoadingId(chamada.id)
-    const chamadaRef = doc(db, 'chamadas', chamada.id)
+  const atualizarChamada = async (id, dados) => {
     try {
-      if (etapa === 'checkin') {
-        await updateDoc(chamadaRef, { checkInEstabelecimentoConfirmado: true })
-      }
-
-      if (etapa === 'checkout') {
-        await updateDoc(chamadaRef, { checkOutEstabelecimentoConfirmado: true })
-
-        if (chamada.checkOutFreela) {
-          await updateDoc(chamadaRef, { status: 'finalizado' })
-        }
-      }
+      const ref = doc(db, 'chamadas', id)
+      await updateDoc(ref, dados)
+      toast.success('✅ Ação realizada com sucesso!')
     } catch (err) {
-      console.error(`Erro ao confirmar ${etapa}:`, err)
-      alert('Erro ao confirmar etapa.')
+      console.error('Erro ao atualizar chamada:', err)
+      toast.error('Erro ao atualizar chamada.')
     }
-    setLoadingId(null)
   }
 
-  const formatarData = (data) => {
-    try {
-      return data?.toDate().toLocaleString('pt-BR') || '—'
-    } catch {
-      return '—'
-    }
-  }
+  if (carregando) return <p className="text-center text-orange-600">🔄 Carregando chamadas...</p>
+  if (chamadas.length === 0) return <p className="text-center text-gray-600">📭 Nenhuma chamada registrada.</p>
 
   return (
-    <div className="flex flex-wrap gap-4 justify-center">
-      {chamadas.length === 0 && (
-        <p className="text-gray-600 text-center mt-6 w-full">Nenhuma chamada ativa no momento.</p>
-      )}
-
+    <div className="space-y-3">
       {chamadas.map(chamada => (
-        <div
-          key={chamada.id}
-          className="bg-white rounded-xl shadow-md border border-orange-100 p-4 hover:shadow-lg hover:border-orange-300 flex items-center justify-between space-x-4"
-          style={{ maxWidth: '400px', minWidth: '300px' }}
-        >
-          <div className="flex flex-col flex-grow overflow-hidden">
-            <p className="font-semibold text-orange-700 truncate" title={chamada.vagaTitulo}>
-              Vaga: {chamada.vagaTitulo}
-            </p>
-            <p className="text-gray-700 truncate" title={chamada.freelaNome}>
-              Freela: {chamada.freelaNome}
-            </p>
-            <p className="text-sm text-gray-500 mt-1 truncate" title={`Data da chamada: ${formatarData(chamada.criadoEm)}`}>
-              {formatarData(chamada.criadoEm)}
-            </p>
-            <p className="text-sm font-semibold text-orange-600 mt-1">
-              Status: {chamada.status}
-            </p>
-          </div>
+        <div key={chamada.id} className="p-3 bg-white rounded-xl shadow border border-orange-100 space-y-1">
+          <p className="text-orange-600 font-bold">Chamada #{chamada.codigo || chamada.id.slice(-5)}</p>
+          <p className="text-sm">👤 {chamada.freelaNome}</p>
+          <p className="text-sm">📌 Status: {chamada.status}</p>
 
-          <div className="flex flex-col items-end space-y-2">
-            {chamada.checkInFreela && !chamada.checkInEstabelecimentoConfirmado && (
-              <button
-                onClick={() => confirmarEtapa(chamada, 'checkin')}
-                disabled={loadingId === chamada.id}
-                className="bg-blue-600 text-white text-sm px-3 py-1 rounded hover:bg-blue-700"
-                title="Confirmar Check-in"
-              >
-                {loadingId === chamada.id ? '...' : '✔️ Check-in'}
-              </button>
-            )}
+          {/* ✅ Confirmar Check-in */}
+          {chamada.checkInFreela === true && chamada.checkInEstabelecimento !== true && (
+            <button
+              onClick={() => atualizarChamada(chamada.id, {
+                checkInEstabelecimento: true,
+                checkInEstabelecimentoHora: serverTimestamp(),
+                status: 'em_andamento'
+              })}
+              className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+            >
+              ✅ Confirmar Check-in
+            </button>
+          )}
 
-            {chamada.checkOutFreela && !chamada.checkOutEstabelecimentoConfirmado && (
-              <button
-                onClick={() => confirmarEtapa(chamada, 'checkout')}
-                disabled={loadingId === chamada.id}
-                className="bg-indigo-600 text-white text-sm px-3 py-1 rounded hover:bg-indigo-700"
-                title="Confirmar Check-out"
-              >
-                {loadingId === chamada.id ? '...' : '✔️ Check-out'}
-              </button>
-            )}
-          </div>
+          {/* ✅ Confirmar Check-out */}
+          {chamada.checkOutFreela === true && chamada.checkOutEstabelecimento !== true && (
+            <button
+              onClick={() => atualizarChamada(chamada.id, {
+                checkOutEstabelecimento: true,
+                checkOutEstabelecimentoHora: serverTimestamp(),
+                status: 'concluido'
+              })}
+              className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            >
+              📤 Confirmar Check-out
+            </button>
+          )}
+
+          {(chamada.status === 'concluido' || chamada.status === 'finalizada') && (
+            <span className="text-green-600 font-bold">✅ Finalizada</span>
+          )}
         </div>
       ))}
     </div>
