@@ -109,7 +109,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       }
     }
 
-    if (status === 'aceita' && tipo === 'freela' && !chamada.checkInFreela) {
+    if ((status === 'aceita' || status === 'pendente') && tipo === 'freela' && !chamada.checkInFreela) {
       return (
         <button
           onClick={checkInFreela}
