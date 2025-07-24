@@ -133,12 +133,12 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
         </button>
       )
     }
-    
+
     if (      
       tipo === 'estabelecimento' &&
       chamada.checkInFreela === true &&
       chamada.checkInEstabelecimento !== true
-    ) {      
+    )      
 
     if ((status === 'checkin_freela' || status === 'em_andamento') && tipo === 'freela' && !chamada.checkOutFreela) {
       return (
