@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -62,9 +61,6 @@ export default function BuscarFreelas({ estabelecimento }) {
   const [freelas, setFreelas] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [chamando, setChamando] = useState(null)
-  const [chamadosIds, setChamadosIds] = useState([])
-  const [filtroFuncao, setFiltroFuncao] = useState('')
-  const [filtroEspecialidade, setFiltroEspecialidade] = useState('')
 
   useEffect(() => {
     const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
@@ -80,23 +76,6 @@ export default function BuscarFreelas({ estabelecimento }) {
 
     return () => unsubscribe()
   }, [])
-
-  useEffect(() => {
-    if (!estabelecimento?.uid) return
-
-    const q = query(
-      collection(db, 'chamadas'),
-      where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', 'in', ['aceita', 'checkin_freela', 'checkout_freela'])
-    )
-
-    const unsub = onSnapshot(q, (snap) => {
-      const ativos = snap.docs.map(doc => doc.data().freelaUid)
-      setChamadosIds(ativos)
-    })
-
-    return () => unsub()
-  }, [estabelecimento])
 
   const chamarFreela = async (freela) => {
     if (!estabelecimento?.uid) return
@@ -121,19 +100,11 @@ export default function BuscarFreelas({ estabelecimento }) {
     setChamando(null)
   }
 
-  const filtrarFreelas = (freela) => {
-    const funcaoOK = filtroFuncao === '' || freela.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
-    const espOK = filtroEspecialidade === '' || (freela.especialidades || '').toLowerCase().includes(filtroEspecialidade.toLowerCase())
-    const naoChamado = !chamadosIds.includes(freela.id)
-    return funcaoOK && espOK && naoChamado
-  }
-
   if (carregando) return <p>Carregando freelancers...</p>
   if (freelas.length === 0) return <p>Nenhum freelancer encontrado.</p>
 
   return (
-    <div
-      className="min-h-screen bg-cover bg-center p-4 pb-20"
+    <div className="min-h-screen bg-cover bg-center p-4 pb-20"
       style={{
         backgroundImage: `url('/img/fundo-login.jpg')`,
         backgroundAttachment: 'fixed',
@@ -141,25 +112,8 @@ export default function BuscarFreelas({ estabelecimento }) {
         backgroundSize: 'cover',
       }}
     >
-      <div className="max-w-6xl mx-auto mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <input
-          type="text"
-          placeholder="🔍 Buscar por função (ex: Cozinheiro)"
-          className="p-3 rounded-xl border border-orange-300 focus:ring-2 focus:ring-orange-500 outline-none"
-          value={filtroFuncao}
-          onChange={e => setFiltroFuncao(e.target.value)}
-        />
-        <input
-          type="text"
-          placeholder="🎯 Filtrar por especialidade (ex: Feijoada, Drinks)"
-          className="p-3 rounded-xl border border-orange-300 focus:ring-2 focus:ring-orange-500 outline-none"
-          value={filtroEspecialidade}
-          onChange={e => setFiltroEspecialidade(e.target.value)}
-        />
-      </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
-        {freelas.filter(filtrarFreelas).map(freela => (
+        {freelas.map(freela => (
           <FreelaCard
             key={freela.id}
             freela={freela}

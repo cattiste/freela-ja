@@ -66,10 +66,7 @@ export default function ChamadasFreela() {
             <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
             <p><strong>Status:</strong> {chamada.status}</p>
 
-            <pre className="text-xs text-gray-500">
-              checkInFreela: {chamada.checkInFreela?.toString()} | checkOutFreela: {chamada.checkOutFreela?.toString()} | status: {chamada.status}
-            </pre>
-
+            {/* Aceitar chamada */}
             {!chamada.status || chamada.status === 'pendente' ? (
               <button
                 onClick={() => atualizarChamada(chamada.id, {
@@ -82,6 +79,7 @@ export default function ChamadasFreela() {
               </button>
             ) : null}
 
+            {/* Fazer check-in */}
             {chamada.status === 'aceita' && !chamada.checkInFreela && (
               <button
                 onClick={() => atualizarChamada(chamada.id, {
@@ -95,6 +93,7 @@ export default function ChamadasFreela() {
               </button>
             )}
 
+            {/* Fazer check-out */}
             {(chamada.status === 'checkin_freela' || chamada.status === 'em_andamento') && !chamada.checkOutFreela && (
               <button
                 onClick={() => atualizarChamada(chamada.id, {
@@ -108,6 +107,7 @@ export default function ChamadasFreela() {
               </button>
             )}
 
+            {/* Status final */}
             {(chamada.status === 'concluido' || chamada.status === 'finalizada') && (
               <span className="text-green-600 font-bold">✅ Finalizada</span>
             )}
