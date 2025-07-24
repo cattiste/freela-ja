@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
-import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { usePresence } from '@/hooks/usePresence'
 
@@ -17,7 +16,6 @@ import HistoricoFreela from '@/pages/freela/HistoricoTrabalhosFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 
-
 export default function PainelFreela() {
   const { usuario, carregando } = useAuth()
   const [abaSelecionada, setAbaSelecionada] = useState('perfil')
@@ -32,7 +30,7 @@ export default function PainelFreela() {
   const freelaId = usuario?.uid
 
   usePresence(freelaId)
-  
+
   useEffect(() => {
     if (!freelaId) return
 
@@ -98,11 +96,6 @@ export default function PainelFreela() {
             <PerfilFreelaCard freelaId={freelaId} />
             <AgendaFreela freela={usuario} />
             <AvaliacoesRecebidasFreela freelaUid={freelaId} />
-            {chamadaAtiva && (
-              <div className="md:col-span-3">
-                <ChamadaInline chamada={chamadaAtiva} tipo="freela" usuario={usuario} />
-              </div>
-            )}
           </div>
         )
       case 'agenda':
