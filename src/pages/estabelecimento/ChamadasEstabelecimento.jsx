@@ -68,8 +68,8 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
             status: {chamada.status}
           </pre>
 
-          {/* Confirmar Check-in */}
-          {chamada.checkInFreela === true && !chamada.checkInEstabelecimento && (
+          {/* Confirmar Check-in apenas quando status for checkin_freela */}
+          {chamada.status === 'checkin_freela' && !chamada.checkInEstabelecimento && (
             <button
               onClick={() => atualizarChamada(chamada.id, {
                 checkInEstabelecimento: true,
@@ -82,8 +82,8 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
             </button>
           )}
 
-          {/* Confirmar Check-out */}
-          {chamada.checkOutFreela === true && !chamada.checkOutEstabelecimento && (
+          {/* Confirmar Check-out apenas quando status for checkout_freela */}
+          {chamada.status === 'checkout_freela' && !chamada.checkOutEstabelecimento && (
             <button
               onClick={() => atualizarChamada(chamada.id, {
                 checkOutEstabelecimento: true,
