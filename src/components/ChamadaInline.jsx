@@ -24,6 +24,14 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
     setLoading(false)
   }
 
+  const handleAceitar = async () => {
+    await atualizarChamada({ status: 'aceita' })
+  }
+
+  const handleRecusar = async () => {
+    await atualizarChamada({ status: 'recusada' })
+  }
+
   const handleCheckIn = async () => {
     await atualizarChamada({ checkInFreela: true, status: 'checkin_freela' })
   }
@@ -42,6 +50,27 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
 
   const renderBotoes = () => {
     const status = chamada.status
+
+    if ((status === 'pendente' || !status) && tipo === 'freela') {
+      return (
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={handleAceitar}
+            disabled={loading}
+            className="w-full bg-green-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-green-700 transition"
+          >
+            ✅ Aceitar Chamada
+          </button>
+          <button
+            onClick={handleRecusar}
+            disabled={loading}
+            className="w-full bg-red-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-red-700 transition"
+          >
+            ❌ Recusar Chamada
+          </button>
+        </div>
+      )
+    }
 
     if (status === 'aceita' && tipo === 'freela' && !chamada.checkInFreela) {
       return (
