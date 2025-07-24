@@ -1,157 +1,120 @@
-import React, { useState, useEffect } from 'react'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc, serverTimestamp, GeoPoint } from 'firebase/firestore'
-import { useNavigate } from 'react-router-dom'
-import InputMask from 'react-input-mask'
-import { auth, db } from '@/firebase'
+import React, { useEffect, useState } from 'react'
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  updateDoc,
+  doc,
+  addDoc,
+  serverTimestamp
+} from 'firebase/firestore'
+import { db } from '@/firebase'
+import { toast } from 'react-hot-toast'
 
-const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dbemvuau3/image/upload'
-const UPLOAD_PRESET = 'preset-publico'
-
-function validateEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-}
-
-function validateCNPJ(cnpj) {
-  return /^\d{2}\.\d{3}\.\d{3}\/\d{4}\-\d{2}$/.test(cnpj)
-}
-
-export default function CadastroEstabelecimento() {
-  const [nome, setNome] = useState('')
-  const [email, setEmail] = useState('')
-  const [senha, setSenha] = useState('')
-  const [celular, setCelular] = useState('')
-  const [cnpj, setCnpj] = useState('')
-  const [endereco, setEndereco] = useState('')
-  const [latitude, setLatitude] = useState(null)
-  const [longitude, setLongitude] = useState(null)
-  const [foto, setFoto] = useState(null)
-  const [fotoPreview, setFotoPreview] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [localizacaoErro, setLocalizacaoErro] = useState(null)
-
-  const navigate = useNavigate()
+export default function ChamadasEstabelecimento({ estabelecimento }) {
+  const [chamadas, setChamadas] = useState([])
+  const [loadingId, setLoadingId] = useState(null)
 
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setLatitude(pos.coords.latitude)
-          setLongitude(pos.coords.longitude)
-        },
-        () => {
-          setLocalizacaoErro('Não foi possível obter a localização. Preencha manualmente.')
-        }
-      )
-    }
-  }, [])
+    if (!estabelecimento?.uid) return
 
-  const uploadImage = async (file) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('upload_preset', UPLOAD_PRESET)
+    const q = query(
+      collection(db, 'chamadas'),
+      where('estabelecimentoUid', '==', estabelecimento.uid),
+      where('status', 'in', ['aceita', 'checkin', 'checkout'])
+    )
 
-    const res = await fetch(CLOUDINARY_URL, {
-      method: 'POST',
-      body: formData
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      setChamadas(lista)
     })
-    const data = await res.json()
-    return data.secure_url
-  }
 
-  const handleCadastro = async (e) => {
-    e.preventDefault()
-    setError(null)
+    return () => unsubscribe()
+  }, [estabelecimento])
 
-    if (!nome || !email || !senha || !celular || !cnpj || !endereco || latitude === null || longitude === null) {
-      setError('Preencha todos os campos obrigatórios.')
-      return
-    }
-
-    if (!validateEmail(email)) {
-      setError('Email inválido.')
-      return
-    }
-
-    if (!validateCNPJ(cnpj)) {
-      setError('CNPJ inválido. Use o formato: 00.000.000/0000-00')
-      return
-    }
-
-    setLoading(true)
-
+  async function confirmarEtapa(chamada, etapa) {
+    setLoadingId(chamada.id)
+    const chamadaRef = doc(db, 'chamadas', chamada.id)
     try {
-      let fotoUrl = ''
-      if (foto) {
-        fotoUrl = await uploadImage(foto)
+      if (etapa === 'checkin') {
+        await updateDoc(chamadaRef, { checkInEstabelecimentoConfirmado: true })
       }
 
-      const userCredential = await createUserWithEmailAndPassword(auth, email, senha)
-      const user = userCredential.user
+      if (etapa === 'checkout') {
+        await updateDoc(chamadaRef, { checkOutEstabelecimentoConfirmado: true })
 
-      await setDoc(doc(db, 'usuarios', user.uid), {
-        uid: user.uid,
-        nome,
-        email,
-        celular,
-        cnpj,
-        endereco,
-        tipo: 'estabelecimento',
-        localizacao: new GeoPoint(latitude, longitude),
-        foto: fotoUrl,
-        criadoEm: serverTimestamp()
-      })
-
-      alert('Cadastro realizado com sucesso!')
-      navigate('/login')
+        if (chamada.checkOutFreela) {
+          await updateDoc(chamadaRef, { status: 'finalizado' })
+        }
+      }
     } catch (err) {
-      console.error('Erro no cadastro:', err)
-      setError(err.message)
-    } finally {
-      setLoading(false)
+      console.error(`Erro ao confirmar ${etapa}:`, err)
+      alert('Erro ao confirmar etapa.')
+    }
+    setLoadingId(null)
+  }
+
+  const formatarData = (data) => {
+    try {
+      return data?.toDate().toLocaleString('pt-BR') || '—'
+    } catch {
+      return '—'
     }
   }
 
   return (
-    <div className="max-w-md mx-auto mt-20 p-6 bg-white rounded-2xl shadow-xl">
-      <h1 className="text-2xl font-bold mb-6 text-center text-orange-600">Cadastro Estabelecimento</h1>
+    <div className="flex flex-wrap gap-4 justify-center">
+      {chamadas.length === 0 && (
+        <p className="text-gray-600 text-center mt-6 w-full">Nenhuma chamada ativa no momento.</p>
+      )}
 
-      <form onSubmit={handleCadastro} className="flex flex-col gap-4">
-        <input type="text" placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} required className="input" />
-        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required className="input" />
-        <input type="password" placeholder="Senha" value={senha} onChange={e => setSenha(e.target.value)} required className="input" />
+      {chamadas.map(chamada => (
+        <div
+          key={chamada.id}
+          className="bg-white rounded-xl shadow-md border border-orange-100 p-4 hover:shadow-lg hover:border-orange-300 flex items-center justify-between space-x-4"
+          style={{ maxWidth: '400px', minWidth: '300px' }}
+        >
+          <div className="flex flex-col flex-grow overflow-hidden">
+            <p className="font-semibold text-orange-700 truncate" title={chamada.vagaTitulo}>
+              Vaga: {chamada.vagaTitulo}
+            </p>
+            <p className="text-gray-700 truncate" title={chamada.freelaNome}>
+              Freela: {chamada.freelaNome}
+            </p>
+            <p className="text-sm text-gray-500 mt-1 truncate" title={`Data da chamada: ${formatarData(chamada.criadoEm)}`}>
+              {formatarData(chamada.criadoEm)}
+            </p>
+            <p className="text-sm font-semibold text-orange-600 mt-1">
+              Status: {chamada.status}
+            </p>
+          </div>
 
-        <InputMask mask="(99) 99999-9999" value={celular} onChange={e => setCelular(e.target.value)}>
-          {(inputProps) => <input {...inputProps} type="tel" placeholder="Celular" required className="input" />}
-        </InputMask>
+          <div className="flex flex-col items-end space-y-2">
+            {chamada.checkInFreela && !chamada.checkInEstabelecimentoConfirmado && (
+              <button
+                onClick={() => confirmarEtapa(chamada, 'checkin')}
+                disabled={loadingId === chamada.id}
+                className="bg-blue-600 text-white text-sm px-3 py-1 rounded hover:bg-blue-700"
+                title="Confirmar Check-in"
+              >
+                {loadingId === chamada.id ? '...' : '✔️ Check-in'}
+              </button>
+            )}
 
-        <InputMask mask="99.999.999/9999-99" value={cnpj} onChange={e => setCnpj(e.target.value)}>
-          {(inputProps) => <input {...inputProps} type="text" placeholder="CNPJ" required className="input" />}
-        </InputMask>
-
-        <input type="text" placeholder="Endereço" value={endereco} onChange={e => setEndereco(e.target.value)} required className="input" />
-
-        <input type="number" step="any" placeholder="Latitude" value={latitude || ''} onChange={e => setLatitude(parseFloat(e.target.value))} required className="input" />
-        <input type="number" step="any" placeholder="Longitude" value={longitude || ''} onChange={e => setLongitude(parseFloat(e.target.value))} required className="input" />
-
-        <input type="file" accept="image/*" onChange={(e) => {
-          const file = e.target.files[0]
-          setFoto(file)
-          setFotoPreview(URL.createObjectURL(file))
-        }} />
-
-        {fotoPreview && (
-          <img src={fotoPreview} alt="Prévia da Foto" className="w-32 h-32 object-cover rounded mt-2" />
-        )}
-
-        {localizacaoErro && <p className="text-yellow-600">{localizacaoErro}</p>}
-        {error && <p className="text-red-600">{error}</p>}
-
-        <button type="submit" disabled={loading} className="bg-orange-500 text-white font-bold py-3 rounded-xl hover:bg-orange-600">
-          {loading ? 'Cadastrando...' : 'Cadastrar'}
-        </button>
-      </form>
+            {chamada.checkOutFreela && !chamada.checkOutEstabelecimentoConfirmado && (
+              <button
+                onClick={() => confirmarEtapa(chamada, 'checkout')}
+                disabled={loadingId === chamada.id}
+                className="bg-indigo-600 text-white text-sm px-3 py-1 rounded hover:bg-indigo-700"
+                title="Confirmar Check-out"
+              >
+                {loadingId === chamada.id ? '...' : '✔️ Check-out'}
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
