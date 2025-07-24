@@ -1,14 +1,20 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
 
 export default function ChamadaInline({ chamada, usuario, tipo }) {
   const [loading, setLoading] = useState(false)
+  const [localStatus, setLocalStatus] = useState(chamada?.status || 'pendente')
+
+  useEffect(() => {
+    setLocalStatus(chamada?.status || 'pendente')
+  }, [chamada?.status])
 
   if (!chamada?.id) return null
 
   const aceitarChamada = async () => {
+    if (loading) return
     setLoading(true)
     try {
       const ref = doc(db, 'chamadas', chamada.id)
@@ -25,6 +31,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
   }
 
   const checkInFreela = async () => {
+    if (loading || chamada.checkInFreela) return
     setLoading(true)
     try {
       const ref = doc(db, 'chamadas', chamada.id)
@@ -42,6 +49,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
   }
 
   const checkInEstabelecimento = async () => {
+    if (loading) return
     setLoading(true)
     try {
       const ref = doc(db, 'chamadas', chamada.id)
@@ -59,6 +67,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
   }
 
   const checkOutFreela = async () => {
+    if (loading || chamada.checkOutFreela) return
     setLoading(true)
     try {
       const ref = doc(db, 'chamadas', chamada.id)
@@ -76,6 +85,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
   }
 
   const checkOutEstabelecimento = async () => {
+    if (loading) return
     setLoading(true)
     try {
       const ref = doc(db, 'chamadas', chamada.id)
@@ -93,42 +103,41 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
   }
 
   const renderBotoes = () => {
-    const status = chamada.status
+    const status = localStatus
 
     // Freela aceita chamada pendente
-    if (!status || status === 'pendente') {
-      if (tipo === 'freela') {
-        return (
-          <button
-            onClick={aceitarChamada}
-            className="w-full bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700 transition"
-            disabled={loading}
-          >
-            ✅ Aceitar chamada
-          </button>
-        )
-      }
-    }
-
-    // Freela faz check-in
-    if ((status === 'aceita' || status === 'pendente') && tipo === 'freela' && !chamada.checkInFreela) {
+    if ((!status || status === 'pendente') && tipo === 'freela') {
       return (
         <button
-          onClick={checkInFreela}
-          className="w-full bg-green-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-green-700 transition"
+          onClick={aceitarChamada}
+          className="w-full bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700 transition"
           disabled={loading}
         >
-          📍 Fazer check-in
+          ✅ Aceitar chamada
         </button>
       )
     }
 
-    // Estabelecimento confirma check-in (apenas em status checkin_freela)
-    if (
-      tipo === 'estabelecimento' &&
-      status === 'checkin_freela' &&
-      chamada.checkInEstabelecimento !== true
-    ) {
+    // Freela faz check-in
+    if ((status === 'aceita' || status === 'pendente' || status === 'checkin_freela') && 
+        tipo === 'freela' && 
+        !chamada.checkInFreela) {
+      return (
+        <button
+          onClick={checkInFreela}
+          className="w-full bg-green-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-green-700 transition"
+          disabled={loading || chamada.checkInFreela}
+        >
+          {chamada.checkInFreela ? 'Check-in realizado' : '📍 Fazer check-in'}
+        </button>
+      )
+    }
+
+    // Estabelecimento confirma check-in
+    if (tipo === 'estabelecimento' && 
+        (status === 'checkin_freela' || status === 'em_andamento') && 
+        chamada.checkInFreela && 
+        !chamada.checkInEstabelecimento) {
       return (
         <button
           onClick={checkInEstabelecimento}
@@ -140,25 +149,25 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       )
     }
 
-    // Freela faz check-out durante em_andamento ou após confirmar check-in
-    if ((status === 'checkin_freela' || status === 'em_andamento') && tipo === 'freela' && !chamada.checkOutFreela) {
+    // Freela faz check-out
+    if ((status === 'em_andamento' || status === 'checkout_freela') && 
+        tipo === 'freela' && 
+        !chamada.checkOutFreela) {
       return (
         <button
           onClick={checkOutFreela}
-          className="w-full bg-yellow-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-yellow-600 transition"
-          disabled={loading}
+          className="w-full bg-orange-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-orange-600 transition"
+          disabled={loading || chamada.checkOutFreela}
         >
-          ⏳ Fazer check-out
+          {chamada.checkOutFreela ? 'Check-out realizado' : '⏳ Fazer check-out'}
         </button>
       )
     }
 
-    // Estabelecimento confirma checkout (apenas em status checkout_freela)
-    if (
-      tipo === 'estabelecimento' &&
-      status === 'checkout_freela' &&
-      chamada.checkOutEstabelecimento !== true
-    ) {
+    // Estabelecimento confirma checkout
+    if (tipo === 'estabelecimento' && 
+        status === 'checkout_freela' && 
+        !chamada.checkOutEstabelecimento) {
       return (
         <button
           onClick={checkOutEstabelecimento}
@@ -185,8 +194,16 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       </h2>
       <p><strong>Freela:</strong> {chamada.freelaNome || '---'}</p>
       <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome || '---'}</p>
-      <p><strong>Status:</strong> {chamada.status || '---'}</p>
-      <div>{renderBotoes()}</div>
+      <p><strong>Status:</strong> {localStatus || '---'}</p>
+      
+      <div className="flex justify-between items-center">
+        {chamada.checkInFreela && !chamada.checkInEstabelecimento && tipo === 'freela' && (
+          <span className="text-sm text-gray-500">
+            Aguardando confirmação do estabelecimento...
+          </span>
+        )}
+        {renderBotoes()}
+      </div>
     </div>
   )
 }
