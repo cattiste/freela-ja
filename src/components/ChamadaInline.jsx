@@ -84,7 +84,12 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       )
     }
 
-    if (status === 'checkin_freela' && tipo === 'estabelecimento' && chamada.checkInFreela && !chamada.checkInEstabelecimento) {
+    if (
+      status === 'checkin_freela' &&
+      tipo === 'estabelecimento' &&
+      chamada.checkInFreela === true &&
+      chamada.checkInEstabelecimento !== true
+    ) {
       return (
         <button
           onClick={handleConfirmarCheckIn}
@@ -108,7 +113,12 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       )
     }
 
-    if (status === 'checkout_freela' && tipo === 'estabelecimento' && chamada.checkOutFreela && !chamada.checkOutEstabelecimento) {
+    if (
+      status === 'checkout_freela' &&
+      tipo === 'estabelecimento' &&
+      chamada.checkOutFreela &&
+      !chamada.checkOutEstabelecimento
+    ) {
       return (
         <button
           onClick={handleConfirmarCheckOut}
