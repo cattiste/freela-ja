@@ -120,23 +120,25 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
           📍 Fazer check-in
         </button>
       )
-    }
+    }    
 
-    if (      
-      tipo === 'estabelecimento' &&
-      chamada.checkInFreela === true &&
-      chamada.checkInEstabelecimento !== true
-    ) {
+    if (status === 'checkin_freela' && tipo === 'estabelecimento' && !chamada.checkInEstabelecimento) {
       return (
         <button
           onClick={checkInEstabelecimento}
-          className="w-full bg-green-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-green-700 transition"
+          className="w-full bg-yellow-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-yellow-600 transition"
           disabled={loading}
         >
           ✅ Confirmar check-in
         </button>
       )
     }
+    
+    if (      
+      tipo === 'estabelecimento' &&
+      chamada.checkInFreela === true &&
+      chamada.checkInEstabelecimento !== true
+    ) {      
 
     if ((status === 'checkin_freela' || status === 'em_andamento') && tipo === 'freela' && !chamada.checkOutFreela) {
       return (
