@@ -60,6 +60,14 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
           <p className="text-sm">👤 Freela: {chamada.freelaNome}</p>
           <p className="text-sm">📌 Status: {chamada.status}</p>
 
+          <pre className="text-xs text-gray-500 bg-gray-50 p-2 rounded border border-gray-200">
+            checkInFreela: {chamada.checkInFreela?.toString()} |
+            checkInEstabelecimento: {chamada.checkInEstabelecimento?.toString()} |
+            checkOutFreela: {chamada.checkOutFreela?.toString()} |
+            checkOutEstabelecimento: {chamada.checkOutEstabelecimento?.toString()} |
+            status: {chamada.status}
+          </pre>
+
           {/* Confirmar Check-in */}
           {chamada.checkInFreela === true && !chamada.checkInEstabelecimento && (
             <button
