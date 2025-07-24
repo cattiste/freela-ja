@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react'
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -99,7 +98,11 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
     if (!status || status === 'pendente') {
       if (tipo === 'freela') {
         return (
-          <button onClick={aceitarChamada} className="btn" disabled={loading}>
+          <button
+            onClick={aceitarChamada}
+            className="w-full bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700 transition"
+            disabled={loading}
+          >
             ✅ Aceitar chamada
           </button>
         )
@@ -108,15 +111,28 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
 
     if (status === 'aceita' && tipo === 'freela' && !chamada.checkInFreela) {
       return (
-        <button onClick={checkInFreela} className="btn" disabled={loading}>
+        <button
+          onClick={checkInFreela}
+          className="w-full bg-green-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-green-700 transition"
+          disabled={loading}
+        >
           📍 Fazer check-in
         </button>
       )
     }
 
-    if (status === 'checkin_freela' && tipo === 'estabelecimento' && !chamada.checkInEstabelecimento) {
+    if (
+      status === 'checkin_freela' &&
+      tipo === 'estabelecimento' &&
+      chamada.checkInFreela &&
+      !chamada.checkInEstabelecimento
+    ) {
       return (
-        <button onClick={checkInEstabelecimento} className="btn" disabled={loading}>
+        <button
+          onClick={checkInEstabelecimento}
+          className="w-full bg-green-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-green-700 transition"
+          disabled={loading}
+        >
           ✅ Confirmar check-in
         </button>
       )
@@ -124,7 +140,11 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
 
     if ((status === 'checkin_freela' || status === 'em_andamento') && tipo === 'freela' && !chamada.checkOutFreela) {
       return (
-        <button onClick={checkOutFreela} className="btn" disabled={loading}>
+        <button
+          onClick={checkOutFreela}
+          className="w-full bg-yellow-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-yellow-600 transition"
+          disabled={loading}
+        >
           ⏳ Fazer check-out
         </button>
       )
@@ -132,7 +152,11 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
 
     if (status === 'checkout_freela' && tipo === 'estabelecimento' && !chamada.checkOutEstabelecimento) {
       return (
-        <button onClick={checkOutEstabelecimento} className="btn" disabled={loading}>
+        <button
+          onClick={checkOutEstabelecimento}
+          className="w-full bg-yellow-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-yellow-600 transition"
+          disabled={loading}
+        >
           ✅ Confirmar checkout
         </button>
       )
@@ -146,16 +170,14 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
   }
 
   return (
-    <div className="border p-4 rounded-xl shadow bg-white mb-4">
+    <div className="border p-4 rounded-xl shadow bg-white mb-4 space-y-3">
       <h2 className="font-bold text-lg text-orange-600">
         Chamada #{chamada?.id?.slice(-5) || '---'}
       </h2>
       <p><strong>Freela:</strong> {chamada.freelaNome || '---'}</p>
       <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome || '---'}</p>
       <p><strong>Status:</strong> {chamada.status || '---'}</p>
-      <div className="mt-4 space-x-2">
-        {renderBotoes()}
-      </div>
+      <div>{renderBotoes()}</div>
     </div>
   )
 }
