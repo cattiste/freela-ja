@@ -121,12 +121,7 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
       )
     }
 
-    if (
-      status === 'checkin_freela' &&
-      tipo === 'estabelecimento' &&
-      chamada.checkInFreela &&
-      !chamada.checkInEstabelecimento
-    ) {
+    
       return (
         <button
           onClick={checkInEstabelecimento}
