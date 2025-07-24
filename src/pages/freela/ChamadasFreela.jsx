@@ -66,7 +66,10 @@ export default function ChamadasFreela() {
             <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
             <p><strong>Status:</strong> {chamada.status}</p>
 
-            {/* BOTÕES AÇÕES */}
+            <pre className="text-xs text-gray-500">
+              checkInFreela: {chamada.checkInFreela?.toString()} | checkOutFreela: {chamada.checkOutFreela?.toString()} | status: {chamada.status}
+            </pre>
+
             {!chamada.status || chamada.status === 'pendente' ? (
               <button
                 onClick={() => atualizarChamada(chamada.id, {

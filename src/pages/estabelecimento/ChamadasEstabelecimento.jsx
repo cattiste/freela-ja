@@ -55,13 +55,17 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
   return (
     <div className="space-y-3">
       {chamadas.map(chamada => (
-        <div key={chamada.id} className="p-3 bg-white rounded-xl shadow border border-orange-100 space-y-1">
+        <div key={chamada.id} className="p-3 bg-white rounded-xl shadow border border-orange-100 space-y-2">
           <p className="text-orange-600 font-bold">Chamada #{chamada.codigo || chamada.id.slice(-5)}</p>
           <p className="text-sm">👤 {chamada.freelaNome}</p>
           <p className="text-sm">📌 Status: {chamada.status}</p>
 
-          {/* ✅ Confirmar Check-in */}
-          {chamada.checkInFreela === true && chamada.checkInEstabelecimento !== true && (
+          <pre className="text-xs text-gray-500">
+            checkInFreela: {chamada.checkInFreela?.toString()} | checkInEstabelecimento: {chamada.checkInEstabelecimento?.toString()} | status: {chamada.status}
+          </pre>
+
+          {/* ✅ Confirmar Check-in (debug forçado visível) */}
+          {(chamada.checkInFreela || chamada.status === 'checkin_freela') && (
             <button
               onClick={() => atualizarChamada(chamada.id, {
                 checkInEstabelecimento: true,
@@ -70,7 +74,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
               })}
               className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
             >
-              ✅ Confirmar Check-in
+              ✅ Confirmar Check-in (debug)
             </button>
           )}
 
