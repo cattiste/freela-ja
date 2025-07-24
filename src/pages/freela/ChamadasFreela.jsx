@@ -1,116 +1,130 @@
 import React, { useEffect, useState } from 'react'
+import { auth, db } from '@/firebase'
 import {
   collection,
   query,
   where,
   onSnapshot,
   updateDoc,
-  doc,
-  serverTimestamp
+  doc
 } from 'firebase/firestore'
-import { db } from '@/firebase'
-import { useAuth } from '@/context/AuthContext'
-import { toast } from 'react-hot-toast'
 
-export default function ChamadasFreela() {
-  const { usuario } = useAuth()
+import Chat from '@/pages/Chat' // Importa o componente Chat
+
+export default function Chamadas() {
   const [chamadas, setChamadas] = useState([])
   const [loading, setLoading] = useState(true)
+  const [chatAbertoId, setChatAbertoId] = useState(null)
+  const user = auth.currentUser
 
   useEffect(() => {
-    if (!usuario?.uid) return
+    if (!user) return
 
+    // Busca chamadas do freela com status pendente ou aceito
     const q = query(
       collection(db, 'chamadas'),
-      where('freelaUid', '==', usuario.uid)
+      where('freelaUid', '==', user.uid),
+      where('status', 'in', ['pendente', 'aceito'])
     )
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, snapshot => {
       const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
       setChamadas(lista)
       setLoading(false)
     })
 
     return () => unsubscribe()
-  }, [usuario])
+  }, [user])
 
-  const atualizarChamada = async (id, dados) => {
+  // Aceitar chamada e abrir chat automaticamente
+  async function aceitar(id) {
     try {
-      const ref = doc(db, 'chamadas', id)
-      await updateDoc(ref, dados)
-      toast.success('✅ Ação realizada com sucesso!')
+      await updateDoc(doc(db, 'chamadas', id), { status: 'aceito' })
+      setChatAbertoId(id)
     } catch (err) {
-      console.error('Erro ao atualizar chamada:', err)
-      toast.error('Erro ao atualizar chamada.')
+      console.error('Erro ao aceitar chamada:', err)
     }
   }
 
-  if (!usuario?.uid) {
-    return <div className="text-center text-red-600 mt-10">⚠️ Acesso não autorizado. Faça login novamente.</div>
+  // Rejeitar chamada e fechar chat se estiver aberto
+  async function rejeitar(id) {
+    try {
+      await updateDoc(doc(db, 'chamadas', id), { status: 'rejeitado' })
+      if (chatAbertoId === id) setChatAbertoId(null)
+    } catch (err) {
+      console.error('Erro ao rejeitar chamada:', err)
+    }
   }
 
   if (loading) {
-    return <div className="text-center text-orange-600 mt-10">🔄 Carregando chamadas...</div>
+    return <p className="text-center text-orange-600 mt-6">Carregando chamadas...</p>
+  }
+
+  if (chamadas.length === 0) {
+    return <p className="text-center text-gray-600 mt-6">Nenhuma chamada disponível.</p>
   }
 
   return (
-    <div className="p-4 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold text-orange-700 text-center mb-4">📞 Chamadas Recentes</h1>
+    <div className="max-w-4xl mx-auto mt-6 space-y-6">
+      <h2 className="text-2xl font-semibold text-orange-700 mb-4">📞 Minhas Chamadas</h2>
 
-      {chamadas.length === 0 ? (
-        <p className="text-center text-gray-600">Nenhuma chamada encontrada.</p>
-      ) : (
-        chamadas.map((chamada) => (
-          <div key={chamada.id} className="bg-white shadow p-4 rounded-xl mb-4 border border-orange-200 space-y-2">
-            <h2 className="font-semibold text-orange-600 text-lg">Chamada #{chamada?.id?.slice(-5)}</h2>
-            <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
-            <p><strong>Status:</strong> {chamada.status}</p>
+      {chamadas.map(chamada => (
+        <div key={chamada.id} className="bg-white p-4 rounded-lg shadow">
+          <div className="flex justify-between items-center mb-3">
+            <div>
+              <p><strong>Vaga:</strong> {chamada.vagaTitulo || 'Título não informado'}</p>
+              <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome || 'Nome não informado'}</p>
+              <p>
+                <strong>Status:</strong>{' '}
+                <span
+                  className={`font-semibold ${
+                    chamada.status === 'aceito'
+                      ? 'text-green-600'
+                      : chamada.status === 'pendente'
+                      ? 'text-yellow-600'
+                      : 'text-red-600'
+                  }`}
+                >
+                  {chamada.status.toUpperCase()}
+                </span>
+              </p>
+            </div>
 
-            {/* BOTÕES AÇÕES */}
-            {!chamada.status || chamada.status === 'pendente' ? (
-              <button
-                onClick={() => atualizarChamada(chamada.id, {
-                  status: 'aceita',
-                  aceitaEm: serverTimestamp()
-                })}
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition"
-              >
-                ✅ Aceitar chamada
-              </button>
-            ) : null}
+            <div className="flex gap-2">
+              {chamada.status === 'pendente' && (
+                <>
+                  <button
+                    onClick={() => aceitar(chamada.id)}
+                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                  >
+                    ✅ Aceitar
+                  </button>
+                  <button
+                    onClick={() => rejeitar(chamada.id)}
+                    className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                  >
+                    ❌ Rejeitar
+                  </button>
+                </>
+              )}
 
-            {chamada.status === 'aceita' && !chamada.checkInFreela && (
-              <button
-                onClick={() => atualizarChamada(chamada.id, {
-                  status: 'checkin_freela',
-                  checkInFreela: true,
-                  checkInFreelaHora: serverTimestamp()
-                })}
-                className="w-full bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition"
-              >
-                📍 Fazer check-in
-              </button>
-            )}
-
-            {(chamada.status === 'checkin_freela' || chamada.status === 'em_andamento') && !chamada.checkOutFreela && (
-              <button
-                onClick={() => atualizarChamada(chamada.id, {
-                  status: 'checkout_freela',
-                  checkOutFreela: true,
-                  checkOutFreelaHora: serverTimestamp()
-                })}
-                className="w-full bg-yellow-500 text-white px-4 py-2 rounded-xl hover:bg-yellow-600 transition"
-              >
-                ⏳ Fazer check-out
-              </button>
-            )}
-
-            {(chamada.status === 'concluido' || chamada.status === 'finalizada') && (
-              <span className="text-green-600 font-bold">✅ Finalizada</span>
-            )}
+              {chamada.status === 'aceito' && (
+                <button
+                  onClick={() =>
+                    setChatAbertoId(chatAbertoId === chamada.id ? null : chamada.id)
+                  }
+                  className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  {chatAbertoId === chamada.id ? 'Fechar Chat' : 'Abrir Chat'}
+                </button>
+              )}
+            </div>
           </div>
-        ))
-      )}
+
+          {/* Exibe o chat se estiver aberto para essa chamada */}
+          {chatAbertoId === chamada.id && <Chat chamadaId={chamada.id} />}
+        </div>
+      ))}
     </div>
   )
 }
