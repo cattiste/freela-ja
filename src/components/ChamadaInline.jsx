@@ -122,10 +122,9 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
     }
 
     if (
-      status === 'checkin_freela' &&
       tipo === 'estabelecimento' &&
-      chamada.checkInFreela &&
-      !chamada.checkInEstabelecimento
+      chamada.checkInFreela === true &&
+      chamada.checkInEstabelecimento !== true
     ) {
       return (
         <button
