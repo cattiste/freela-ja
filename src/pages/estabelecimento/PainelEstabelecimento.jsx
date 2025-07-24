@@ -17,7 +17,7 @@ import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEsta
 import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
 import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
 import ChamadasAtivas from '@/pages/estabelecimento/ChamadasAtivas'
-import ChamadaInline from '@/components/ChamadaInline'
+
 
 export default function PainelEstabelecimento() {
   const [estabelecimento, setEstabelecimento] = useState(null)

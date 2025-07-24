@@ -16,7 +16,7 @@ import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
 import HistoricoFreela from '@/pages/freela/HistoricoTrabalhosFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
-import ChamadaInline from '@/components/ChamadaInline'
+
 
 export default function PainelFreela() {
   const { usuario, carregando } = useAuth()
