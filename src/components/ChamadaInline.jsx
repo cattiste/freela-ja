@@ -102,48 +102,29 @@ export default function ChamadaInline({ chamada, usuario, tipo }) {
     }
   }
 
-  const renderBotoes = () => {
-    const status = localStatus
-
+   const renderBotoes = () => {
     // Freela aceita chamada pendente
-    if ((!status || status === 'pendente') && tipo === 'freela') {
+    if ((!localStatus || localStatus === 'pendente') && tipo === 'freela') {
       return (
-        <button
-          onClick={aceitarChamada}
-          className="w-full bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700 transition"
-          disabled={loading}
-        >
+        <button onClick={aceitarChamada} disabled={loading}>
           ✅ Aceitar chamada
         </button>
       )
     }
 
     // Freela faz check-in
-    if ((status === 'aceita' || status === 'pendente' || status === 'checkin_freela') && 
-        tipo === 'freela' && 
-        !chamada.checkInFreela) {
+    if (tipo === 'freela' && !chamada.checkInFreela) {
       return (
-        <button
-          onClick={checkInFreela}
-          className="w-full bg-green-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-green-700 transition"
-          disabled={loading || chamada.checkInFreela}
-        >
-          {chamada.checkInFreela ? 'Check-in realizado' : '📍 Fazer check-in'}
+        <button onClick={checkInFreela} disabled={loading || chamada.checkInFreela}>
+          📍 Fazer check-in
         </button>
       )
     }
 
-    // Estabelecimento confirma check-in
-    if (tipo === 'estabelecimento' && 
-        (status === 'checkin_freela' || status === 'em_andamento') && 
-        chamada.checkInFreela && 
-        !chamada.checkInEstabelecimento) {
+    // Estabelecimento confirma check-in - VERSÃO CORRIGIDA
+    if (tipo === 'estabelecimento' && chamada.checkInFreela && !chamada.checkInEstabelecimento) {
       return (
-        <button
-          onClick={checkInEstabelecimento}
-          className="w-full bg-yellow-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-yellow-600 transition"
-          disabled={loading}
-        >
+        <button onClick={checkInEstabelecimento} disabled={loading}>
           ✅ Confirmar check-in
         </button>
       )
