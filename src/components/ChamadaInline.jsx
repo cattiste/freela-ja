@@ -1,173 +1,137 @@
-import React, { useState } from 'react'
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
+
+import React, { useEffect, useState } from 'react'
+import { doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
-import { toast } from 'react-hot-toast'
+import Chat from '@/pages/Chat'
+import AvaliacaoEstabelecimento from './AvaliacaoEstabelecimento'
 
 export default function ChamadaInline({ chamada, usuario, tipo }) {
+  const [mostrarChat, setMostrarChat] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [statusLocal, setStatusLocal] = useState(chamada.status)
 
-  if (!chamada?.id) return null
+  useEffect(() => {
+    setStatusLocal(chamada.status)
+  }, [chamada.status])
 
-  const aceitarChamada = async () => {
+  const atualizarChamada = async (dados) => {
     setLoading(true)
     try {
-      const ref = doc(db, 'chamadas', chamada.id)
-      await updateDoc(ref, {
-        status: 'aceita',
-        aceitaEm: serverTimestamp()
-      })
-      toast.success('Chamada aceita!')
+      await updateDoc(doc(db, 'chamadas', chamada.id), dados)
     } catch (err) {
-      console.error('Erro ao aceitar chamada:', err)
-      toast.error('Erro ao aceitar chamada')
-    } finally {
-      setLoading(false)
+      console.error('Erro ao atualizar chamada:', err)
+      alert('Erro ao atualizar chamada.')
     }
+    setLoading(false)
   }
 
-  const checkInFreela = async () => {
-    setLoading(true)
-    try {
-      const ref = doc(db, 'chamadas', chamada.id)
-      await updateDoc(ref, {
-        status: 'checkin_freela',
-        checkInFreela: true,
-        checkInFreelaHora: serverTimestamp()
-      })
-      toast.success('Check-in realizado!')
-    } catch (err) {
-      console.error('Erro no check-in:', err)
-      toast.error('Erro ao fazer check-in')
-    } finally {
-      setLoading(false)
-    }
+  const handleCheckIn = async () => {
+    await atualizarChamada({ checkInFreela: true, status: 'aguardando-checkin-estabelecimento' })
   }
 
-  const checkInEstabelecimento = async () => {
-    setLoading(true)
-    try {
-      const ref = doc(db, 'chamadas', chamada.id)
-      await updateDoc(ref, {
-        checkInEstabelecimento: true,
-        checkInEstabelecimentoHora: serverTimestamp(),
-        status: 'em_andamento'
-      })
-      toast.success('Check-in confirmado!')
-    } catch (err) {
-      console.error('Erro ao confirmar check-in:', err)
-      toast.error('Erro ao confirmar check-in')
-    } finally {
-      setLoading(false)
-    }
+  const handleConfirmarCheckIn = async () => {
+    await atualizarChamada({ checkInEstabelecimento: true, status: 'em-trabalho' })
   }
 
-  const checkOutFreela = async () => {
-    setLoading(true)
-    try {
-      const ref = doc(db, 'chamadas', chamada.id)
-      await updateDoc(ref, {
-        status: 'checkout_freela',
-        checkOutFreela: true,
-        checkOutFreelaHora: serverTimestamp()
-      })
-      toast.success('Check-out realizado!')
-    } catch (err) {
-      console.error('Erro no check-out:', err)
-      toast.error('Erro ao fazer check-out')
-    } finally {
-      setLoading(false)
-    }
+  const handleCheckOut = async () => {
+    await atualizarChamada({ checkOutFreela: true, status: 'aguardando-checkout-estabelecimento' })
   }
 
-  const checkOutEstabelecimento = async () => {
-    setLoading(true)
-    try {
-      const ref = doc(db, 'chamadas', chamada.id)
-      await updateDoc(ref, {
-        checkOutEstabelecimento: true,
-        checkOutEstabelecimentoHora: serverTimestamp(),
-        status: 'concluido'
-      })
-      toast.success('Checkout confirmado!')
-    } catch (err) {
-      console.error('Erro ao confirmar checkout:', err)
-      toast.error('Erro ao confirmar checkout')
-    } finally {
-      setLoading(false)
-    }
+  const handleConfirmarCheckOut = async () => {
+    await atualizarChamada({ checkOutEstabelecimento: true, status: 'finalizado' })
   }
 
   const renderBotoes = () => {
     const status = chamada.status
 
-    if (!status || status === 'pendente') {
-      if (tipo === 'freela') {
-        return (
-          <button onClick={aceitarChamada} className="btn" disabled={loading}>
-            ✅ Aceitar chamada
-          </button>
-        )
-      }
-    }
-
     if (status === 'aceita') {
       if (tipo === 'freela' && !chamada.checkInFreela) {
         return (
-          <button onClick={checkInFreela} className="btn" disabled={loading}>
-            📍 Fazer check-in
+          <button
+            onClick={handleCheckIn}
+            disabled={loading}
+            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+          >
+            ✅ Check-In Freela
           </button>
         )
       }
     }
 
-    if (status === 'checkin_freela') {
+    if (status === 'aguardando-checkin-estabelecimento') {
       if (tipo === 'estabelecimento' && !chamada.checkInEstabelecimento) {
         return (
-          <button onClick={checkInEstabelecimento} className="btn" disabled={loading}>
-            ✅ Confirmar check-in
+          <button
+            onClick={handleConfirmarCheckIn}
+            disabled={loading}
+            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+          >
+            ✅ Confirmar Check-In
           </button>
         )
       }
     }
 
-    if (status === 'em_andamento') {
+    if (status === 'em-trabalho') {
       if (tipo === 'freela' && !chamada.checkOutFreela) {
         return (
-          <button onClick={checkOutFreela} className="btn" disabled={loading}>
-            ⏳ Fazer check-out
+          <button
+            onClick={handleCheckOut}
+            disabled={loading}
+            className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+          >
+            ⏳ Check-Out Freela
           </button>
         )
       }
     }
 
-    if (status === 'checkout_freela') {
+    if (status === 'aguardando-checkout-estabelecimento') {
       if (tipo === 'estabelecimento' && !chamada.checkOutEstabelecimento) {
         return (
-          <button onClick={checkOutEstabelecimento} className="btn" disabled={loading}>
-            ✅ Confirmar checkout
+          <button
+            onClick={handleConfirmarCheckOut}
+            disabled={loading}
+            className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+          >
+            ✅ Confirmar Check-Out
           </button>
         )
       }
-    }
-
-    if (status === 'concluido' || status === 'finalizada') {
-      return <span className="text-green-600 font-bold">✅ Finalizada</span>
     }
 
     return null
   }
 
   return (
-    <div className="border p-4 rounded-xl shadow bg-white mb-4">
-      <h2 className="font-bold text-lg text-orange-600">
-        Chamada #{chamada?.id?.slice(-5) || '---'}
-      </h2>
-      <p><strong>Freela:</strong> {chamada.freelaNome || '---'}</p>
-      <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome || '---'}</p>
-      <p><strong>Status:</strong> {chamada.status || '---'}</p>
-      <div className="mt-4 space-x-2">
-        {renderBotoes()}
+    <div className="border rounded-lg p-4 bg-white shadow-md space-y-2">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="font-bold text-lg text-orange-700">{chamada.vagaTitulo}</h3>
+          <p className="text-gray-600">Freela: {chamada.freelaNome}</p>
+          <p className="text-sm text-gray-500">Status: {statusLocal}</p>
+        </div>
+        <button
+          className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+          onClick={() => setMostrarChat(prev => !prev)}
+        >
+          {mostrarChat ? '❌ Fechar Chat' : '💬 Abrir Chat'}
+        </button>
       </div>
+
+      {mostrarChat && (
+        <div className="mt-2">
+          <Chat chamadaId={chamada.id} />
+        </div>
+      )}
+
+      <div className="mt-3 space-y-2">{renderBotoes()}</div>
+
+      {statusLocal === 'finalizado' && !chamada.avaliacaoEstabelecimentoFeita && (
+        <div className="mt-3 border-t pt-2">
+          <AvaliacaoEstabelecimento chamada={chamada} />
+        </div>
+      )}
     </div>
   )
 }
