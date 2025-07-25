@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
-import { auth } from '@/firebase'
+import { auth, db } from '@/firebase'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
+import { doc, setDoc } from 'firebase/firestore'
 
 export default function CadastroPessoaFisica() {
   const navigate = useNavigate()
@@ -10,6 +11,9 @@ export default function CadastroPessoaFisica() {
     nome: '',
     email: '',
     senha: '',
+    celular: '',
+    cpf: '',
+    endereco: ''
   })
 
   const [loading, setLoading] = useState(false)
@@ -23,8 +27,19 @@ export default function CadastroPessoaFisica() {
     setLoading(true)
     try {
       const { user } = await createUserWithEmailAndPassword(auth, form.email, form.senha)
+
+      await setDoc(doc(db, 'pessoasFisicas', user.uid), {
+        uid: user.uid,
+        nome: form.nome,
+        email: form.email,
+        celular: form.celular,
+        cpf: form.cpf,
+        endereco: form.endereco,
+        criadoEm: new Date()
+      })
+
       toast.success('Cadastro realizado com sucesso!')
-      navigate('/painelpessoafisica')
+      navigate('/painelpf')
     } catch (err) {
       console.error(err)
       toast.error('Erro ao cadastrar')
@@ -43,7 +58,8 @@ export default function CadastroPessoaFisica() {
           value={form.nome}
           onChange={handleChange}
           className="w-full p-2 border rounded"
-          placeholder="Seu nome"
+          placeholder="Nome completo"
+          required
         />
 
         <input
@@ -53,6 +69,7 @@ export default function CadastroPessoaFisica() {
           onChange={handleChange}
           className="w-full p-2 border rounded"
           placeholder="E-mail"
+          required
         />
 
         <input
@@ -62,6 +79,34 @@ export default function CadastroPessoaFisica() {
           onChange={handleChange}
           className="w-full p-2 border rounded"
           placeholder="Senha"
+          required
+        />
+
+        <input
+          name="celular"
+          value={form.celular}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          placeholder="Celular com DDD"
+          required
+        />
+
+        <input
+          name="cpf"
+          value={form.cpf}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          placeholder="CPF"
+          required
+        />
+
+        <input
+          name="endereco"
+          value={form.endereco}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          placeholder="Endereço completo"
+          required
         />
 
         <button
