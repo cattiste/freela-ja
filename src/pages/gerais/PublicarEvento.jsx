@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/utils/firebase'
+import { db } from '@/firebase'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 
