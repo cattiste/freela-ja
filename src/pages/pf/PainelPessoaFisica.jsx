@@ -3,7 +3,7 @@ import { auth, db } from '@/firebase'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
-import FormEventoPessoaFisica from './FormEventoPessoaFisica'
+import FormEventoPessoaFisica from '@/components/pessoafisica/FormEventoPessoaFisica'
 
 export default function PainelPessoaFisica() {
   const [usuario, setUsuario] = useState(null)
