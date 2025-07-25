@@ -13,6 +13,11 @@ import EsqueciSenha from '@/pages/gerais/EsqueciSenha'
 import Oportunidades from '@/pages/gerais/Oportunidades'
 import PublicarEvento from '@/pages/gerais/PublicarEvento'
 import Avaliacao from '@/pages/gerais/Avaliacao'
+import PagamentoEvento from '@/pages/gerais/PagamentoEvento'
+import EventoConfirmado from '@/pages/gerais/EventoConfirmado'
+import EventosPendentes from '@/pages/gerais/EventosPendentes'
+import BuscarEventos from '@/pages/freela/BuscarEventos'
+
 
 // Páginas de freela
 import CadastroFreela from '@/pages/freela/CadastroFreela'
@@ -41,6 +46,11 @@ export default function App() {
           <Route path="/esquecisenha" element={<EsqueciSenha />} />
           <Route path="/oportunidades" element={<Oportunidades />} />
           <Route path="/publicarevento" element={<PublicarEvento />} />
+          <Route path="/pagamento-evento/:id" element={<PagamentoEvento />} />
+          <Route path="/evento-confirmado" element={<EventoConfirmado />} />
+          <Route path="/meuseventos" element={<EventosPendentes />} />
+          <Route path="/freela/buscareventos" element={<BuscarEventos />} />
+
 
           {/* Avaliação compartilhada */}
           <Route path="/avaliar/:tipo/:id" element={<Avaliacao />} />

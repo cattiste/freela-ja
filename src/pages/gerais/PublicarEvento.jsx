@@ -1,46 +1,43 @@
-// src/pages/PublicarEvento.jsx
 import React, { useState } from 'react'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/firebase'
+import { db } from '@/utils/firebase'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-hot-toast'
 
 export default function PublicarEvento() {
+  const navigate = useNavigate()
+
   const [titulo, setTitulo] = useState('')
   const [descricao, setDescricao] = useState('')
   const [dataEvento, setDataEvento] = useState('')
   const [cidade, setCidade] = useState('')
   const [contato, setContato] = useState('')
-  const [status, setStatus] = useState('ativo')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [sucesso, setSucesso] = useState(null)
 
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    setSucesso(null)
 
     try {
       if (!titulo || !descricao || !dataEvento || !cidade || !contato) {
         throw new Error('Por favor, preencha todos os campos obrigatórios.')
       }
 
-      await addDoc(collection(db, 'eventos'), {
+      const docRef = await addDoc(collection(db, 'eventos'), {
         titulo,
         descricao,
         dataEvento: new Date(dataEvento).toISOString(),
         cidade,
         contato,
-        status,
+        status: 'pendente_pagamento',
         criadoEm: serverTimestamp(),
       })
 
-      setSucesso('Evento publicado com sucesso!')
-      setTitulo('')
-      setDescricao('')
-      setDataEvento('')
-      setCidade('')
-      setContato('')
+      toast.success('Evento criado! Redirecionando para pagamento...')
+      navigate(`/pagamento-evento/${docRef.id}`)
+
     } catch (err) {
       setError(err.message || 'Erro ao publicar evento.')
     } finally {
@@ -56,10 +53,6 @@ export default function PublicarEvento() {
         <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-center">{error}</div>
       )}
 
-      {sucesso && (
-        <div className="bg-green-100 text-green-700 p-3 rounded mb-4 text-center">{sucesso}</div>
-      )}
-
       <form onSubmit={handleSubmit} className="space-y-4">
         <label className="block font-semibold text-orange-700">
           Título do Evento:
@@ -68,7 +61,7 @@ export default function PublicarEvento() {
             value={titulo}
             onChange={e => setTitulo(e.target.value)}
             required
-            className="input-field mt-1"
+            className="input-field mt-1 w-full border p-2 rounded"
             placeholder="Ex: Festa de Aniversário"
           />
         </label>
@@ -79,7 +72,7 @@ export default function PublicarEvento() {
             value={descricao}
             onChange={e => setDescricao(e.target.value)}
             required
-            className="input-field mt-1"
+            className="input-field mt-1 w-full border p-2 rounded"
             placeholder="Detalhes do evento, requisitos, local, etc."
             rows={4}
           />
@@ -92,7 +85,7 @@ export default function PublicarEvento() {
             value={dataEvento}
             onChange={e => setDataEvento(e.target.value)}
             required
-            className="input-field mt-1"
+            className="input-field mt-1 w-full border p-2 rounded"
           />
         </label>
 
@@ -103,7 +96,7 @@ export default function PublicarEvento() {
             value={cidade}
             onChange={e => setCidade(e.target.value)}
             required
-            className="input-field mt-1"
+            className="input-field mt-1 w-full border p-2 rounded"
             placeholder="Ex: São Paulo"
           />
         </label>
@@ -115,7 +108,7 @@ export default function PublicarEvento() {
             value={contato}
             onChange={e => setContato(e.target.value)}
             required
-            className="input-field mt-1"
+            className="input-field mt-1 w-full border p-2 rounded"
             placeholder="Ex: contato@exemplo.com ou (11) 99999-9999"
           />
         </label>
@@ -123,9 +116,9 @@ export default function PublicarEvento() {
         <button
           type="submit"
           disabled={loading}
-          className="btn-primary w-full mt-4"
+          className="w-full bg-orange-600 text-white py-2 px-4 rounded hover:bg-orange-700"
         >
-          {loading ? 'Publicando...' : 'Publicar Evento'}
+          {loading ? 'Publicando...' : 'Publicar e Pagar'}
         </button>
       </form>
     </div>
