@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 // Contexto de autenticação
 import { AuthProvider } from '@/context/AuthContext'
+import PagamentoChamada from '@/pages/estabelecimento/PagamentoChamada'
 
 // Páginas gerais
 import Home from '@/pages/gerais/Home'
@@ -32,6 +33,7 @@ import CadastroEstabelecimento from '@/pages/estabelecimento/CadastroEstabelecim
 import EditarPerfilEstabelecimento from '@/pages/estabelecimento/EditarPerfilEstabelecimento'
 import PublicarVaga from '@/pages/estabelecimento/PublicarVaga'
 import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
+
 
 export default function App() {
   return (
@@ -65,6 +67,7 @@ export default function App() {
           <Route path="/cadastroestabelecimento" element={<CadastroEstabelecimento />} />
           <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
           <Route path="/painelestabelecimento/:rota?" element={<PainelEstabelecimento />} />
+          <Route path="/pagamento-chamada/:id" element={<PagamentoChamada />} />
           <Route path="/editarperfilestabelecimento/:uid" element={<EditarPerfilEstabelecimento />} />
           <Route path="/publicarvaga" element={<PublicarVaga />} />
           <Route
