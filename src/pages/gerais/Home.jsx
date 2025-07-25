@@ -61,7 +61,7 @@ export default function Home() {
             className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200 shadow"
           >
             <PlusCircle className="w-5 h-5" />
-            Cadastro de Evento
+            Cadastro Evento
           </Link>
         </div>
       </div>
