@@ -1,7 +1,7 @@
 // src/pages/gerais/EventosPendentes.jsx
 import React, { useEffect, useState } from 'react'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
-import { db } from '@/utils/firebase'
+import { db } from '@/firebase'
 
 export default function EventosPendentes() {
   const [eventos, setEventos] = useState([])

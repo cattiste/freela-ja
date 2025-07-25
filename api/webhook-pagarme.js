@@ -1,4 +1,4 @@
-import { db } from '@/utils/firebase' // ajuste o import conforme sua estrutura
+import { db } from '@/firebase' // ajuste o import conforme sua estrutura
 import { doc, updateDoc } from 'firebase/firestore'
 
 export default async function handler(req, res) {

@@ -1,7 +1,7 @@
 // src/pages/freelas/BuscarEventos.jsx
 import React, { useEffect, useState } from 'react'
 import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/utils/firebase'
+import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
 
 export default function BuscarEventos() {

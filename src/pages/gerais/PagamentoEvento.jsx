@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { doc, getDoc } from 'firebase/firestore'
-import { db } from '@/utils/firebase'
+import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
 
 export default function PagamentoEvento() {
