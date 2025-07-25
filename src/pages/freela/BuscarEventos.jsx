@@ -1,11 +1,21 @@
-// src/pages/freelas/BuscarEventos.jsx
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/firebase'
+import { collection, query, where, onSnapshot, doc, setDoc } from 'firebase/firestore'
+import { db, auth } from '@/firebase'
+import { onAuthStateChanged } from 'firebase/auth'
 import { toast } from 'react-hot-toast'
 
 export default function BuscarEventos() {
   const [eventos, setEventos] = useState([])
+  const [usuario, setUsuario] = useState(null)
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUsuario(user)
+      }
+    })
+    return () => unsub()
+  }, [])
 
   useEffect(() => {
     const q = query(collection(db, 'eventos'), where('status', '==', 'pago'))
@@ -16,17 +26,25 @@ export default function BuscarEventos() {
     return () => unsub()
   }, [])
 
-  const aceitarEvento = async (eventoId) => {
+  const seCandidatar = async (eventoId) => {
+    if (!usuario) {
+      toast.error('Você precisa estar logado para se candidatar.')
+      return
+    }
+
     try {
-      const ref = doc(db, 'eventos', eventoId)
-      await updateDoc(ref, {
-        status: 'aceito',
-        aceitoEm: serverTimestamp()
+      const ref = doc(db, 'eventos', eventoId, 'candidatos', usuario.uid)
+      await setDoc(ref, {
+        uid: usuario.uid,
+        nome: usuario.displayName || 'Freela Anônimo',
+        email: usuario.email || '',
+        status: 'pendente',
+        criadoEm: new Date()
       })
-      toast.success('Evento aceito!')
+      toast.success('Candidatura enviada!')
     } catch (err) {
       console.error(err)
-      toast.error('Erro ao aceitar evento.')
+      toast.error('Erro ao se candidatar.')
     }
   }
 
@@ -42,11 +60,12 @@ export default function BuscarEventos() {
               <p><strong>{evento.titulo}</strong></p>
               <p>{evento.descricao}</p>
               <p className="text-sm text-gray-500">Cidade: {evento.cidade}</p>
+              <p className="text-sm">Valor: R$ {parseFloat(evento.valor).toFixed(2)}</p>
               <button
-                onClick={() => aceitarEvento(evento.id)}
-                className="mt-2 bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700"
+                onClick={() => seCandidatar(evento.id)}
+                className="mt-2 bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700"
               >
-                Aceitar evento
+                Me candidatar
               </button>
             </li>
           ))}

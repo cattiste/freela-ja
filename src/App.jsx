@@ -18,6 +18,8 @@ import PagamentoEvento from '@/pages/gerais/PagamentoEvento'
 import EventoConfirmado from '@/pages/gerais/EventoConfirmado'
 import EventosPendentes from '@/pages/gerais/EventosPendentes'
 import BuscarEventos from '@/pages/freela/BuscarEventos'
+import PainelPessoaFisica from '@/pages/pf/PainelPessoaFisica'
+
 
 
 // Páginas de freela
@@ -25,6 +27,7 @@ import CadastroFreela from '@/pages/freela/CadastroFreela'
 import PerfilFreela from '@/pages/freela/PerfilFreela'
 import PainelFreela from '@/pages/freela/PainelFreela'
 import EditarFreela from '@/pages/freela/EditarFreela'
+
 
 // Páginas de estabelecimento
 import PerfilEstabelecimento from '@/pages/estabelecimento/PerfilEstabelecimento'
@@ -52,6 +55,8 @@ export default function App() {
           <Route path="/evento-confirmado" element={<EventoConfirmado />} />
           <Route path="/meuseventos" element={<EventosPendentes />} />
           <Route path="/freela/buscareventos" element={<BuscarEventos />} />
+          <Route path="/painelpf" element={<PainelPessoaFisica />} />
+
 
 
           {/* Avaliação compartilhada */}

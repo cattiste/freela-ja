@@ -40,8 +40,9 @@ export default function PagamentoEvento() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           titulo: evento.titulo,
-          valor: parseFloat(evento.valor || 1), // <— Você pode ajustar se quiser pegar direto do Firestore
-          eventoId: evento.id
+          valor: parseFloat(evento.valor || 1),
+          referenciaId: evento.id,
+          tipo: 'evento'
         })
       })
 
@@ -73,6 +74,7 @@ export default function PagamentoEvento() {
         <p><strong>Data:</strong> {new Date(evento.dataEvento).toLocaleDateString()}</p>
         <p><strong>Cidade:</strong> {evento.cidade}</p>
         <p><strong>Contato:</strong> {evento.contato}</p>
+        <p><strong>Valor:</strong> R$ {parseFloat(evento.valor).toFixed(2)}</p>
       </div>
 
       <div className="mt-6">
