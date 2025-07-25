@@ -49,16 +49,16 @@ export default function CadastroPessoaFisica() {
     }
   }
 
-  catch (err) {
-  console.error(err)
-  if (err.code === 'auth/email-already-in-use') {
-    toast.error('Este e-mail já está em uso. Faça login ou use outro e-mail.')
-  } else {
-    toast.error('Erro ao cadastrar')
-  }
-}
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    if (!validarCPF(form.cpf)) {
+      toast.error('CPF inválido')
+      return
+    }
 
     setLoading(true)
+
     try {
       const { user } = await createUserWithEmailAndPassword(auth, form.email, form.senha)
 
@@ -77,7 +77,11 @@ export default function CadastroPessoaFisica() {
       navigate('/painelpf')
     } catch (err) {
       console.error(err)
-      toast.error('Erro ao cadastrar')
+      if (err.code === 'auth/email-already-in-use') {
+        toast.error('Este e-mail já está em uso. Faça login ou use outro e-mail.')
+      } else {
+        toast.error('Erro ao cadastrar')
+      }
     } finally {
       setLoading(false)
     }

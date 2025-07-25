@@ -1,86 +1,59 @@
-// src/App.jsx
-import React from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import React, { useEffect, useState } from 'react'
+import { auth, db } from '@/firebase'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
+import { onAuthStateChanged } from 'firebase/auth'
+import { useNavigate } from 'react-router-dom'
+import FormEventoPessoaFisica from './FormEventoPessoaFisica'
 
-// Contexto de autenticação
-import { AuthProvider } from '@/context/AuthContext'
-import PagamentoChamada from '@/pages/estabelecimento/PagamentoChamada'
+export default function PainelPessoaFisica() {
+  const [usuario, setUsuario] = useState(null)
+  const [eventos, setEventos] = useState([])
+  const navigate = useNavigate()
 
-// Páginas gerais
-import Home from '@/pages/gerais/Home'
-import Sobre from '@/pages/gerais/Sobre'
-import Login from '@/pages/gerais/Login'
-import EsqueciSenha from '@/pages/gerais/EsqueciSenha'
-import Oportunidades from '@/pages/gerais/Oportunidades'
-import Avaliacao from '@/pages/gerais/Avaliacao'
-import PagamentoEvento from '@/pages/gerais/PagamentoEvento'
-import EventoConfirmado from '@/pages/gerais/EventoConfirmado'
-import EventosPendentes from '@/pages/gerais/EventosPendentes'
-import BuscarEventos from '@/pages/freela/BuscarEventos'
-import PainelPessoaFisica from '@/pages/pf/PainelPessoaFisica'
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        navigate('/login')
+      } else {
+        setUsuario(user)
+      }
+    })
+    return () => unsubscribe()
+  }, [])
 
+  useEffect(() => {
+    if (!usuario) return
 
+    const q = query(collection(db, 'eventos'), where('uidCriador', '==', usuario.uid))
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const lista = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      setEventos(lista)
+    })
 
-// Páginas de freela
-import CadastroFreela from '@/pages/freela/CadastroFreela'
-import PerfilFreela from '@/pages/freela/PerfilFreela'
-import PainelFreela from '@/pages/freela/PainelFreela'
-import EditarFreela from '@/pages/freela/EditarFreela'
+    return () => unsubscribe()
+  }, [usuario])
 
-
-// Páginas de estabelecimento
-import PerfilEstabelecimento from '@/pages/estabelecimento/PerfilEstabelecimento'
-import PainelEstabelecimento from '@/pages/estabelecimento/PainelEstabelecimento'
-import CadastroEstabelecimento from '@/pages/estabelecimento/CadastroEstabelecimento'
-import EditarPerfilEstabelecimento from '@/pages/estabelecimento/EditarPerfilEstabelecimento'
-import PublicarVaga from '@/pages/estabelecimento/PublicarVaga'
-import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
-
-
-export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Gerais */}
-          <Route path="/" element={<Home />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/sobre" element={<Sobre />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/esquecisenha" element={<EsqueciSenha />} />
-          <Route path="/oportunidades" element={<Oportunidades />} />         
-          <Route path="/pagamento-evento/:id" element={<PagamentoEvento />} />
-          <Route path="/evento-confirmado" element={<EventoConfirmado />} />
-          <Route path="/meuseventos" element={<EventosPendentes />} />
-          <Route path="/freela/buscareventos" element={<BuscarEventos />} />
-          <Route path="/painelpf" element={<PainelPessoaFisica />} />
+    <div className="max-w-3xl mx-auto mt-10 p-4">
+      <h1 className="text-2xl font-bold text-orange-700 mb-6 text-center">Painel da Pessoa Física</h1>
 
+      <FormEventoPessoaFisica />
 
-
-          {/* Avaliação compartilhada */}
-          <Route path="/avaliar/:tipo/:id" element={<Avaliacao />} />
-
-          {/* Freela */}
-          <Route path="/cadastrofreela" element={<CadastroFreela />} />
-          <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
-          <Route path="/painelfreela/:rota?" element={<PainelFreela />} />
-          <Route path="/freela/editarfreela" element={<EditarFreela />} />
-
-          {/* Estabelecimento */}
-          <Route path="/cadastroestabelecimento" element={<CadastroEstabelecimento />} />
-          <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
-          <Route path="/painelestabelecimento/:rota?" element={<PainelEstabelecimento />} />
-          <Route path="/pagamento-chamada/:id" element={<PagamentoChamada />} />
-          <Route path="/editarperfilestabelecimento/:uid" element={<EditarPerfilEstabelecimento />} />
-          <Route path="/publicarvaga" element={<PublicarVaga />} />
-          <Route
-            path="/painelestabelecimento/config-pagamento"
-            element={<ConfigPagamentoEstabelecimento />}
-          />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+      <h2 className="text-xl font-semibold mt-10 mb-4 text-gray-800">Seus eventos publicados:</h2>
+      {eventos.length === 0 ? (
+        <p className="text-gray-500">Nenhum evento cadastrado ainda.</p>
+      ) : (
+        <ul className="space-y-4">
+          {eventos.map((evento) => (
+            <li key={evento.id} className="border p-4 rounded shadow bg-white">
+              <p><strong>{evento.titulo}</strong></p>
+              <p>{evento.descricao}</p>
+              <p className="text-sm text-gray-600">Data: {new Date(evento.dataEvento).toLocaleDateString()}</p>
+              <p className="text-sm text-gray-600">Status: {evento.status}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }
-// Projeto original FreelaJá - Código registrado e rastreável
-// Assinatura interna: 𝙁𝙅-𝟮𝟬𝟮𝟱-𝘽𝘾-𝘾𝙃𝘼𝙏𝙂𝙋𝙏
