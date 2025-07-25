@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { useParams } from 'react-router-dom'
+import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/utils/firebase'
 import { toast } from 'react-hot-toast'
 
 export default function PagamentoEvento() {
   const { id } = useParams()
-  const navigate = useNavigate()
   const [evento, setEvento] = useState(null)
   const [loading, setLoading] = useState(true)
   const [pagando, setPagando] = useState(false)
@@ -32,20 +31,30 @@ export default function PagamentoEvento() {
     buscarEvento()
   }, [id])
 
-  const confirmarPagamento = async () => {
+  const iniciarPagamento = async () => {
     if (!evento) return
     setPagando(true)
     try {
-      const ref = doc(db, 'eventos', evento.id)
-      await updateDoc(ref, {
-        status: 'pago',
-        pagoEm: serverTimestamp()
+      const res = await fetch('/api/gerarCheckout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          titulo: evento.titulo,
+          valor: parseFloat(evento.valor || 1), // <— Você pode ajustar se quiser pegar direto do Firestore
+          eventoId: evento.id
+        })
       })
-      toast.success('Pagamento confirmado!')
-      navigate('/evento-confirmado')
+
+      const data = await res.json()
+      if (data.linkPagamento) {
+        window.location.href = data.linkPagamento
+      } else {
+        toast.error('Erro ao iniciar pagamento.')
+      }
+
     } catch (err) {
       console.error(err)
-      toast.error('Erro ao confirmar pagamento.')
+      toast.error('Erro na comunicação com o pagamento.')
     } finally {
       setPagando(false)
     }
@@ -68,11 +77,11 @@ export default function PagamentoEvento() {
 
       <div className="mt-6">
         <button
-          onClick={confirmarPagamento}
+          onClick={iniciarPagamento}
           disabled={pagando}
           className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
         >
-          {pagando ? 'Processando pagamento...' : 'Confirmar pagamento'}
+          {pagando ? 'Gerando link de pagamento...' : 'Pagar com Pagar.me'}
         </button>
       </div>
     </div>
