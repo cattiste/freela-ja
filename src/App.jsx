@@ -18,6 +18,8 @@ import EventoConfirmado from '@/pages/gerais/EventoConfirmado'
 import EventosPendentes from '@/pages/gerais/EventosPendentes'
 import BuscarEventos from '@/pages/freela/BuscarEventos'
 import PainelPessoaFisica from '@/pages/pf/PainelPessoaFisica'
+import CadastroPessoaFisica from '@/pages/pf/CadastroPessoaFisica'
+
 
 
 
@@ -54,6 +56,7 @@ export default function App() {
           <Route path="/meuseventos" element={<EventosPendentes />} />
           <Route path="/freela/buscareventos" element={<BuscarEventos />} />
           <Route path="/painelpf" element={<PainelPessoaFisica />} />
+          <Route path="/cadastropf" element={<CadastroPessoaFisica />} />
 
 
 
