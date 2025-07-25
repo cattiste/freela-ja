@@ -12,7 +12,6 @@ import Sobre from '@/pages/gerais/Sobre'
 import Login from '@/pages/gerais/Login'
 import EsqueciSenha from '@/pages/gerais/EsqueciSenha'
 import Oportunidades from '@/pages/gerais/Oportunidades'
-import PublicarEvento from '@/pages/gerais/PublicarEvento'
 import Avaliacao from '@/pages/gerais/Avaliacao'
 import PagamentoEvento from '@/pages/gerais/PagamentoEvento'
 import EventoConfirmado from '@/pages/gerais/EventoConfirmado'
@@ -49,8 +48,7 @@ export default function App() {
           <Route path="/sobre" element={<Sobre />} />
           <Route path="/login" element={<Login />} />
           <Route path="/esquecisenha" element={<EsqueciSenha />} />
-          <Route path="/oportunidades" element={<Oportunidades />} />
-          <Route path="/publicarevento" element={<PublicarEvento />} />
+          <Route path="/oportunidades" element={<Oportunidades />} />         
           <Route path="/pagamento-evento/:id" element={<PagamentoEvento />} />
           <Route path="/evento-confirmado" element={<EventoConfirmado />} />
           <Route path="/meuseventos" element={<EventosPendentes />} />

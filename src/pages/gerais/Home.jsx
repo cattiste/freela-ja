@@ -1,11 +1,12 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { PlusCircle } from 'lucide-react'
 
 export default function Home() {
   return (
     <div
       className="min-h-screen bg-cover bg-center bg-no-repeat relative"
-      style={{ backgroundImage: "url('/img/fundo-login.jpg')" }} // mesmo fundo do login
+      style={{ backgroundImage: "url('/img/fundo-login.jpg')" }}
     >
       <div className="absolute inset-0 bg-black bg-opacity-50 z-0" />
 
@@ -48,7 +49,6 @@ export default function Home() {
             Oportunidades
           </Link>
 
-
           <Link
             to="/sobre"
             className="px-6 py-3 rounded-lg font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200 shadow"
@@ -57,10 +57,11 @@ export default function Home() {
           </Link>
 
           <Link
-            to="/publicarevento"
-            className="px-6 py-3 rounded-lg font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200 shadow"
+            to="/cadastropf"
+            className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200 shadow"
           >
-            Publicar Evento
+            <PlusCircle className="w-5 h-5" />
+            Cadastro de Evento
           </Link>
         </div>
       </div>
