@@ -49,12 +49,15 @@ export default function CadastroPessoaFisica() {
     }
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!validarCPF(form.cpf)) {
-      toast.error('CPF inválido')
-      return
-    }
+  catch (err) {
+  console.error(err)
+  if (err.code === 'auth/email-already-in-use') {
+    toast.error('Este e-mail já está em uso. Faça login ou use outro e-mail.')
+  } else {
+    toast.error('Erro ao cadastrar')
+  }
+}
+
     setLoading(true)
     try {
       const { user } = await createUserWithEmailAndPassword(auth, form.email, form.senha)
