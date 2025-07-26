@@ -101,20 +101,24 @@ export default function BuscarFreelas({ estabelecimento }) {
   }, [])
 
   useEffect(() => {
-    const q = query(collection(db, 'status'))
-    const unsub = onSnapshot(q, (snap) => {
-      const map = {}
-      snap.forEach(doc => {
-        const data = doc.data()
-        map[doc.id] = {
-          online: data.online,
-          ultimaAtividade: data.ultimaAtividade?.toDate()
-        }
-      })
-      setOnlineStatusMap(map)
+  if (!estabelecimento?.uid) return
+
+  const q = query(collection(db, 'status'))
+  const unsub = onSnapshot(q, (snap) => {
+    const map = {}
+    snap.forEach(doc => {
+      const data = doc.data()
+      map[doc.id] = {
+        online: data.online,
+        ultimaAtividade: data.ultimaAtividade?.toDate()
+      }
     })
-    return () => unsub()
-  }, [])
+    setOnlineStatusMap(map)
+  })
+
+  return () => unsub()
+}, [estabelecimento])
+
 
   const chamarFreela = async (freela) => {
     if (!estabelecimento?.uid) return
