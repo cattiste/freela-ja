@@ -8,11 +8,8 @@ import {
   serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/firebase'
-import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
-function FreelaCard({ freela, onChamar, chamando }) {
-  const { online, ultimaAtividade } = useOnlineStatus(freela.id)
-
+function FreelaCard({ freela, online, ultimaAtividade, onChamar, chamando }) {
   const ultimaHora = ultimaAtividade
     ? ultimaAtividade.toDate().toLocaleTimeString('pt-BR')
     : '...'
@@ -64,12 +61,16 @@ function FreelaCard({ freela, onChamar, chamando }) {
 
 export default function BuscarFreelas({ estabelecimento }) {
   const [freelas, setFreelas] = useState([])
+  const [onlineStatusMap, setOnlineStatusMap] = useState({})
   const [carregando, setCarregando] = useState(true)
   const [chamando, setChamando] = useState(null)
 
+  // Filtros básicos de exemplo
+  const [filtroFuncao, setFiltroFuncao] = useState('')
+
+  // Carregar freelancers
   useEffect(() => {
     const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
-
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const lista = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -80,6 +81,24 @@ export default function BuscarFreelas({ estabelecimento }) {
     })
 
     return () => unsubscribe()
+  }, [])
+
+  // Carregar status online de todos
+  useEffect(() => {
+    const q = query(collection(db, 'status'))
+    const unsub = onSnapshot(q, (snap) => {
+      const map = {}
+      snap.forEach(doc => {
+        const data = doc.data()
+        map[doc.id] = {
+          online: data.online,
+          ultimaAtividade: data.ultimaAtividade?.toDate()
+        }
+      })
+      setOnlineStatusMap(map)
+    })
+
+    return () => unsub()
   }, [])
 
   const chamarFreela = async (freela) => {
@@ -105,12 +124,12 @@ export default function BuscarFreelas({ estabelecimento }) {
     setChamando(null)
   }
 
-  if (carregando) return <p>Carregando freelancers...</p>
-  if (freelas.length === 0) return <p>Nenhum freelancer encontrado.</p>
+  const freelasFiltrados = freelas.filter(f =>
+    f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
+  )
 
   return (
-    <div
-      className="min-h-screen bg-cover bg-center p-4 pb-20"
+    <div className="min-h-screen bg-cover bg-center p-4 pb-20"
       style={{
         backgroundImage: `url('/img/fundo-login.jpg')`,
         backgroundAttachment: 'fixed',
@@ -118,16 +137,39 @@ export default function BuscarFreelas({ estabelecimento }) {
         backgroundSize: 'cover',
       }}
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
-        {freelas.map(freela => (
-          <FreelaCard
-            key={freela.id}
-            freela={freela}
-            onChamar={chamarFreela}
-            chamando={chamando}
-          />
-        ))}
+      {/* 🔍 Filtros */}
+      <div className="max-w-6xl mx-auto mb-6">
+        <input
+          type="text"
+          placeholder="Buscar por função..."
+          value={filtroFuncao}
+          onChange={(e) => setFiltroFuncao(e.target.value)}
+          className="w-full px-4 py-2 rounded-lg shadow-sm border border-gray-300 focus:ring-2 focus:ring-orange-400"
+        />
       </div>
+
+      {/* Lista */}
+      {carregando ? (
+        <p className="text-center text-white">Carregando freelancers...</p>
+      ) : freelasFiltrados.length === 0 ? (
+        <p className="text-center text-white">Nenhum freelancer encontrado.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
+          {freelasFiltrados.map(freela => {
+            const status = onlineStatusMap[freela.id] || { online: false, ultimaAtividade: null }
+            return (
+              <FreelaCard
+                key={freela.id}
+                freela={freela}
+                online={status.online}
+                ultimaAtividade={status.ultimaAtividade}
+                onChamar={chamarFreela}
+                chamando={chamando}
+              />
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

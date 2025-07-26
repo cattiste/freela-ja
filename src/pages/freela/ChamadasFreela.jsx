@@ -11,6 +11,10 @@ import {
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
+import AvaliacaoInline from '@/components/AvaliacaoInline'
+import ChatInline from '@/components/ChatInline'
+
+
 
 export default function ChamadasFreela() {
   const { usuario } = useAuth()
@@ -65,6 +69,7 @@ export default function ChamadasFreela() {
             <h2 className="font-semibold text-orange-600 text-lg">Chamada #{chamada?.id?.slice(-5)}</h2>
             <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
             <p><strong>Status:</strong> {chamada.status}</p>
+            <ChatInline chamadaId={chamada.id} />
 
             {/* Aceitar chamada */}
             {!chamada.status || chamada.status === 'pendente' ? (
@@ -109,8 +114,11 @@ export default function ChamadasFreela() {
 
             {/* Status final */}
             {(chamada.status === 'concluido' || chamada.status === 'finalizada') && (
-              <span className="text-green-600 font-bold">✅ Finalizada</span>
-            )}
+              <>
+                <span className="text-green-600 font-bold block text-center mt-2">✅ Finalizada</span>
+                <AvaliacaoInline chamada={chamada} tipo="freela" />
+              </>
+             )}            
           </div>
         ))
       )}
