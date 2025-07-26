@@ -89,7 +89,6 @@ export default function BuscarFreelas({ estabelecimento }) {
   const [chamando, setChamando] = useState(null)
   const [filtroFuncao, setFiltroFuncao] = useState('')
 
-  // Buscar freelas
   useEffect(() => {
     const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -101,7 +100,6 @@ export default function BuscarFreelas({ estabelecimento }) {
     return () => unsubscribe()
   }, [])
 
-  // Observar status online
   useEffect(() => {
     const q = query(collection(db, 'status'))
     const unsub = onSnapshot(q, (snap) => {
@@ -141,9 +139,34 @@ export default function BuscarFreelas({ estabelecimento }) {
     setChamando(null)
   }
 
-  const freelasFiltrados = freelas.filter(f =>
-    f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
-  )
+  const freelasFiltrados = freelas
+    .filter(f =>
+      f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
+    )
+    .map(f => {
+      const status = onlineStatusMap[f.id] || { online: false, ultimaAtividade: null }
+
+      const distanciaKm =
+        f.coordenadas && estabelecimento?.coordenadas
+          ? calcularDistancia(
+              estabelecimento.coordenadas.latitude,
+              estabelecimento.coordenadas.longitude,
+              f.coordenadas.latitude,
+              f.coordenadas.longitude
+            )
+          : null
+
+      return {
+        ...f,
+        online: status.online,
+        ultimaAtividade: status.ultimaAtividade,
+        distanciaKm
+      }
+    })
+    .sort((a, b) => {
+      if (a.online !== b.online) return a.online ? -1 : 1
+      return (a.distanciaKm || Infinity) - (b.distanciaKm || Infinity)
+    })
 
   return (
     <div className="min-h-screen bg-cover bg-center p-4 pb-20"
@@ -170,31 +193,17 @@ export default function BuscarFreelas({ estabelecimento }) {
         <p className="text-center text-white">Nenhum freelancer encontrado.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
-          {freelasFiltrados.map(freela => {
-            const status = onlineStatusMap[freela.id] || { online: false, ultimaAtividade: null }
-
-            const distanciaKm =
-              freela.coordenadas && estabelecimento?.coordenadas
-                ? calcularDistancia(
-                    estabelecimento.coordenadas.latitude,
-                    estabelecimento.coordenadas.longitude,
-                    freela.coordenadas.latitude,
-                    freela.coordenadas.longitude
-                  )
-                : null
-
-            return (
-              <FreelaCard
-                key={freela.id}
-                freela={freela}
-                online={status.online}
-                ultimaAtividade={status.ultimaAtividade}
-                onChamar={chamarFreela}
-                chamando={chamando}
-                distanciaKm={distanciaKm}
-              />
-            )
-          })}
+          {freelasFiltrados.map(freela => (
+            <FreelaCard
+              key={freela.id}
+              freela={freela}
+              online={freela.online}
+              ultimaAtividade={freela.ultimaAtividade}
+              distanciaKm={freela.distanciaKm}
+              onChamar={chamarFreela}
+              chamando={chamando}
+            />
+          ))}
         </div>
       )}
     </div>
