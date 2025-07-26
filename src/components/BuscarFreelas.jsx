@@ -9,9 +9,27 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 
-function FreelaCard({ freela, online, ultimaAtividade, onChamar, chamando }) {
+// 📌 Função para calcular distância entre dois pontos (Haversine)
+function calcularDistancia(lat1, lon1, lat2, lon2) {
+  const toRad = (x) => (x * Math.PI) / 180
+  const R = 6371 // km
+
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) ** 2
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
+function FreelaCard({ freela, online, ultimaAtividade, distanciaKm, onChamar, chamando }) {
   const ultimaHora = ultimaAtividade
-    ? ultimaAtividade.toDate().toLocaleTimeString('pt-BR')
+    ? ultimaAtividade.toLocaleTimeString('pt-BR')
     : '...'
 
   return (
@@ -34,6 +52,11 @@ function FreelaCard({ freela, online, ultimaAtividade, onChamar, chamando }) {
         {freela.valorDiaria && (
           <p className="text-sm font-semibold text-orange-700 mt-1">
             💰 R$ {freela.valorDiaria} / diária
+          </p>
+        )}
+        {distanciaKm != null && (
+          <p className="text-sm text-gray-600 mt-1">
+            📍 Aprox. {distanciaKm.toFixed(1)} km do local
           </p>
         )}
         <div className="flex items-center gap-2 mt-1">
@@ -64,18 +87,13 @@ export default function BuscarFreelas({ estabelecimento }) {
   const [onlineStatusMap, setOnlineStatusMap] = useState({})
   const [carregando, setCarregando] = useState(true)
   const [chamando, setChamando] = useState(null)
-
-  // Filtros básicos de exemplo
   const [filtroFuncao, setFiltroFuncao] = useState('')
 
-  // Carregar freelancers
+  // Buscar freelas
   useEffect(() => {
     const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const lista = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }))
+      const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
       setFreelas(lista)
       setCarregando(false)
     })
@@ -83,7 +101,7 @@ export default function BuscarFreelas({ estabelecimento }) {
     return () => unsubscribe()
   }, [])
 
-  // Carregar status online de todos
+  // Observar status online
   useEffect(() => {
     const q = query(collection(db, 'status'))
     const unsub = onSnapshot(q, (snap) => {
@@ -97,7 +115,6 @@ export default function BuscarFreelas({ estabelecimento }) {
       })
       setOnlineStatusMap(map)
     })
-
     return () => unsub()
   }, [])
 
@@ -137,7 +154,6 @@ export default function BuscarFreelas({ estabelecimento }) {
         backgroundSize: 'cover',
       }}
     >
-      {/* 🔍 Filtros */}
       <div className="max-w-6xl mx-auto mb-6">
         <input
           type="text"
@@ -148,7 +164,6 @@ export default function BuscarFreelas({ estabelecimento }) {
         />
       </div>
 
-      {/* Lista */}
       {carregando ? (
         <p className="text-center text-white">Carregando freelancers...</p>
       ) : freelasFiltrados.length === 0 ? (
@@ -157,6 +172,17 @@ export default function BuscarFreelas({ estabelecimento }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
           {freelasFiltrados.map(freela => {
             const status = onlineStatusMap[freela.id] || { online: false, ultimaAtividade: null }
+
+            const distanciaKm =
+              freela.coordenadas && estabelecimento?.coordenadas
+                ? calcularDistancia(
+                    estabelecimento.coordenadas.latitude,
+                    estabelecimento.coordenadas.longitude,
+                    freela.coordenadas.latitude,
+                    freela.coordenadas.longitude
+                  )
+                : null
+
             return (
               <FreelaCard
                 key={freela.id}
@@ -165,6 +191,7 @@ export default function BuscarFreelas({ estabelecimento }) {
                 ultimaAtividade={status.ultimaAtividade}
                 onChamar={chamarFreela}
                 chamando={chamando}
+                distanciaKm={distanciaKm}
               />
             )
           })}
