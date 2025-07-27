@@ -8,12 +8,19 @@ export function useOnlineStatus(uid) {
   const [ultimaAtividade, setUltimaAtividade] = useState(null)
 
   useEffect(() => {
-    if (!uid) return
+    // 🔒 Proteção contra UID nulo ou inválido
+    if (!uid || typeof uid !== 'string') {
+      console.warn('[useOnlineStatus] UID inválido ou ausente:', uid)
+      setOnline(false)
+      setUltimaAtividade(null)
+      return
+    }
 
     const docRef = doc(db, 'usuarios', uid)
 
     const unsubscribe = onSnapshot(docRef, (snap) => {
       if (!snap.exists()) {
+        console.warn('[useOnlineStatus] Documento não encontrado para UID:', uid)
         setOnline(false)
         setUltimaAtividade(null)
         return
@@ -24,7 +31,7 @@ export function useOnlineStatus(uid) {
 
       setUltimaAtividade(ts)
 
-      if (!ts) {
+      if (!ts || typeof ts.toMillis !== 'function') {
         setOnline(false)
         return
       }
@@ -33,11 +40,16 @@ export function useOnlineStatus(uid) {
       const ultima = ts.toMillis()
       const diferencaMs = agora - ultima
 
-      // ✅ Considera online se a última atividade foi há menos de 2 minutos
-      setOnline(diferencaMs < 2 * 60 * 1000)
+      // ✅ Online se menos de 2 min
+      const statusOnline = diferencaMs < 2 * 60 * 1000
+      setOnline(statusOnline)
 
-      // 💬 Para debug (pode remover depois)
-      console.log(`[useOnlineStatus] ${uid} → ${Math.floor(diferencaMs / 1000)}s atrás → ${diferencaMs < 2 * 60 * 1000 ? '🟢 Online' : '🔴 Offline'}`)
+      // 🔍 Debug (pode remover em prod)
+      console.log(`[useOnlineStatus] ${uid} → ${Math.floor(diferencaMs / 1000)}s atrás → ${statusOnline ? '🟢 Online' : '🔴 Offline'}`)
+    }, (error) => {
+      console.error('[useOnlineStatus] Erro no snapshot:', error)
+      setOnline(false)
+      setUltimaAtividade(null)
     })
 
     return () => unsubscribe()
