@@ -11,6 +11,10 @@ import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
 import HistoricoFreela from '@/pages/freela/HistoricoTrabalhosFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
+import ChamadaInline from '@/components/ChamadaInline'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
+import { db } from '@/firebase'
+import { usePresence } from '@/hooks/usePresence'
 
 export default function PainelFreela() {
   const { usuario, carregando } = useAuth()
@@ -26,7 +30,7 @@ export default function PainelFreela() {
   const freelaId = usuario?.uid
 
   usePresence(freelaId)
-  
+
   useEffect(() => {
     if (!freelaId) return
 
