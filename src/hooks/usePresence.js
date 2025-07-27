@@ -1,35 +1,20 @@
-// src/hooks/usePresence.js
 import { useEffect } from 'react'
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export function usePresence(uid) {
   useEffect(() => {
-    if (!uid) {
-      console.warn('[usePresence] UID ausente. Não será possível registrar presença.')
-      return
-    }
+    if (!uid) return
 
-    const docRef = doc(db, 'status', uid)
-    console.log(`[usePresence] Iniciando presença para UID: ${uid}`)
+    const docRef = doc(db, 'usuarios', uid)
 
-    const updateStatus = () =>
-      setDoc(docRef, {
-        online: true,
-        ultimaAtividade: serverTimestamp()
-      }, { merge: true })
-
-    updateStatus()
-
+    // Atualiza última atividade a cada 30 segundos
     const interval = setInterval(() => {
-      updateStatus()
-        .then(() =>
-          console.log(`[usePresence] Presença registrada: ${new Date().toLocaleTimeString()}`)
-        )
-        .catch(err =>
-          console.error('[usePresence] Erro ao registrar presença:', err)
-        )
+      updateDoc(docRef, { ultimaAtividade: serverTimestamp() }).catch(console.error)
     }, 30000)
+
+    // Atualiza na montagem (logo que abre)
+    updateDoc(docRef, { ultimaAtividade: serverTimestamp() }).catch(console.error)
 
     return () => clearInterval(interval)
   }, [uid])
