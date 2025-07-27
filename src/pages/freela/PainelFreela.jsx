@@ -29,34 +29,42 @@ export default function PainelFreela() {
 
   const freelaId = usuario?.uid
 
-  usePresence(freelaId)
+  // ✅ Protege contra UID nulo
+  useEffect(() => {
+    if (freelaId) usePresence(freelaId)
+  }, [freelaId])
 
   useEffect(() => {
     if (!freelaId) return
 
     const unsubChamadas = onSnapshot(
       query(collection(db, 'chamadas'), where('freelaUid', '==', freelaId), where('status', '==', 'pendente')),
-      (snap) => setAlertas(prev => ({ ...prev, chamadas: snap.size > 0 }))
+      (snap) => setAlertas(prev => ({ ...prev, chamadas: snap.size > 0 })),
+      (err) => console.error('Erro snapshot chamadas:', err)
     )
 
     const unsubEventos = onSnapshot(
       query(collection(db, 'eventos'), where('ativo', '==', true)),
-      (snap) => setAlertas(prev => ({ ...prev, agenda: snap.size > 0 }))
+      (snap) => setAlertas(prev => ({ ...prev, agenda: snap.size > 0 })),
+      (err) => console.error('Erro snapshot eventos:', err)
     )
 
     const unsubVagas = onSnapshot(
       query(collection(db, 'vagas'), where('status', '==', 'aberta')),
-      (snap) => setAlertas(prev => ({ ...prev, agenda: snap.size > 0 }))
+      (snap) => setAlertas(prev => ({ ...prev, agenda: snap.size > 0 })),
+      (err) => console.error('Erro snapshot vagas:', err)
     )
 
     const unsubAvaliacoes = onSnapshot(
       query(collection(db, 'avaliacoesFreelas'), where('freelaUid', '==', freelaId)),
-      (snap) => setAlertas(prev => ({ ...prev, avaliacoes: snap.size > 0 }))
+      (snap) => setAlertas(prev => ({ ...prev, avaliacoes: snap.size > 0 })),
+      (err) => console.error('Erro snapshot avaliações:', err)
     )
 
     const unsubRecebimentos = onSnapshot(
       query(collection(db, 'chamadas'), where('freelaUid', '==', freelaId), where('status', 'in', ['finalizado', 'concluido'])),
-      (snap) => setAlertas(prev => ({ ...prev, recebimentos: snap.size > 0 }))
+      (snap) => setAlertas(prev => ({ ...prev, recebimentos: snap.size > 0 })),
+      (err) => console.error('Erro snapshot recebimentos:', err)
     )
 
     return () => {
@@ -80,6 +88,8 @@ export default function PainelFreela() {
     const unsubscribe = onSnapshot(q, (snap) => {
       const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       setChamadaAtiva(docs[0] || null)
+    }, (err) => {
+      console.error('Erro snapshot chamada ativa:', err)
     })
 
     return () => unsubscribe()
@@ -122,7 +132,11 @@ export default function PainelFreela() {
   return (
     <div className="p-4 pb-20">
       {renderConteudo()}
-      <MenuInferiorFreela onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} alertas={alertas} />
+      <MenuInferiorFreela
+        onSelect={setAbaSelecionada}
+        abaAtiva={abaSelecionada}
+        alertas={alertas}
+      />
     </div>
   )
 }

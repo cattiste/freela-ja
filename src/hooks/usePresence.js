@@ -1,34 +1,36 @@
+// src/hooks/usePresence.js
 import { useEffect } from 'react'
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export function usePresence(uid) {
   useEffect(() => {
     if (!uid) {
-      console.warn('[usePresence] UID ausente. Presença não será registrada.')
+      console.warn('[usePresence] UID ausente. Não será possível registrar presença.')
       return
     }
 
-    const ref = doc(db, 'usuarios', uid)
+    const docRef = doc(db, 'status', uid)
     console.log(`[usePresence] Iniciando presença para UID: ${uid}`)
 
-    // Primeira atualização ao montar
-    const atualizarPresenca = async () => {
-      try {
-        await updateDoc(ref, { ultimaAtividade: serverTimestamp(), status: true })
-        console.log(`[usePresence] ✅ Presença registrada para UID: ${uid}`)
-      } catch (err) {
-        console.error('[usePresence] ❌ Erro ao registrar presença:', err)
-      }
-    }
+    const updateStatus = () =>
+      setDoc(docRef, {
+        online: true,
+        ultimaAtividade: serverTimestamp()
+      }, { merge: true })
 
-    atualizarPresenca()
+    updateStatus()
 
-    const intervalo = setInterval(atualizarPresenca, 30000) // Atualiza a cada 30s
+    const interval = setInterval(() => {
+      updateStatus()
+        .then(() =>
+          console.log(`[usePresence] Presença registrada: ${new Date().toLocaleTimeString()}`)
+        )
+        .catch(err =>
+          console.error('[usePresence] Erro ao registrar presença:', err)
+        )
+    }, 30000)
 
-    return () => {
-      clearInterval(intervalo)
-      console.log(`[usePresence] ⛔ Parando presença de UID: ${uid}`)
-    }
+    return () => clearInterval(interval)
   }, [uid])
 }
