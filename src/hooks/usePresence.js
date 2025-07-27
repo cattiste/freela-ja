@@ -25,9 +25,7 @@ export function usePresence(uid) {
       )
     }
 
-    console.log(`[usePresence] Iniciando presença para UID: ${uid}`)
     atualizar()
-
     const interval = setInterval(atualizar, 30000)
 
     return () => {
