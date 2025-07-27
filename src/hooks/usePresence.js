@@ -4,8 +4,9 @@ import { db } from '@/firebase'
 
 export function usePresence(uid) {
   useEffect(() => {
-    if (!uid) {
-      console.warn('[usePresence] UID ausente. Não será possível registrar presença.')
+    // 🔒 Proteção extra contra UID inválido
+    if (!uid || typeof uid !== 'string') {
+      console.warn('[usePresence] UID inválido ou ausente:', uid)
       return
     }
 
