@@ -1,4 +1,3 @@
-// src/hooks/useOnlineStatus.js
 import { useState, useEffect } from 'react'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -10,9 +9,9 @@ export function useOnlineStatus(uid) {
   useEffect(() => {
     if (!uid) return
 
-    const docRef = doc(db, 'usuarios', uid)
+    const ref = doc(db, 'usuarios', uid)
 
-    const unsubscribe = onSnapshot(docRef, (snap) => {
+    const unsubscribe = onSnapshot(ref, (snap) => {
       if (!snap.exists()) {
         setOnline(false)
         setUltimaAtividade(null)
@@ -22,22 +21,21 @@ export function useOnlineStatus(uid) {
       const data = snap.data()
       const ts = data.ultimaAtividade
 
-      setUltimaAtividade(ts)
+      setUltimaAtividade(ts || null)
 
-      if (!ts) {
+      if (!ts?.toMillis) {
         setOnline(false)
         return
       }
 
       const agora = Date.now()
       const ultima = ts.toMillis()
-      const diferencaMs = agora - ultima
+      const diff = agora - ultima
 
-      // ✅ Considera online se a última atividade foi há menos de 2 minutos
-      setOnline(diferencaMs < 2 * 60 * 1000)
+      setOnline(diff < 2 * 60 * 1000) // menos de 2min = online
 
-      // 💬 Para debug (pode remover depois)
-      console.log(`[useOnlineStatus] ${uid} → ${Math.floor(diferencaMs / 1000)}s atrás → ${diferencaMs < 2 * 60 * 1000 ? '🟢 Online' : '🔴 Offline'}`)
+      // Debug
+      console.log(`[useOnlineStatus] ${uid} → ${Math.floor(diff / 1000)}s atrás → ${diff < 120000 ? '🟢 Online' : '🔴 Offline'}`)
     })
 
     return () => unsubscribe()

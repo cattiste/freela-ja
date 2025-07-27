@@ -5,37 +5,30 @@ import { db } from '@/firebase'
 export function usePresence(uid) {
   useEffect(() => {
     if (!uid) {
-      console.warn('[usePresence] UID ausente. Não será possível registrar presença.')
+      console.warn('[usePresence] UID ausente. Presença não será registrada.')
       return
     }
 
-    const docRef = doc(db, 'usuarios', uid)
+    const ref = doc(db, 'usuarios', uid)
     console.log(`[usePresence] Iniciando presença para UID: ${uid}`)
 
-    // Atualiza imediatamente ao montar
-    updateDoc(docRef, { ultimaAtividade: serverTimestamp() })
-      .then(() => {
-        console.log(`[usePresence] Atualização imediata enviada para UID: ${uid}`)
-      })
-      .catch((err) => {
-        console.error(`[usePresence] Erro na atualização imediata:`, err)
-      })
+    // Primeira atualização ao montar
+    const atualizarPresenca = async () => {
+      try {
+        await updateDoc(ref, { ultimaAtividade: serverTimestamp(), status: true })
+        console.log(`[usePresence] ✅ Presença registrada para UID: ${uid}`)
+      } catch (err) {
+        console.error('[usePresence] ❌ Erro ao registrar presença:', err)
+      }
+    }
 
-    // Atualiza a cada 30 segundos
-    const interval = setInterval(() => {
-      updateDoc(docRef, { ultimaAtividade: serverTimestamp() })
-        .then(() => {
-          console.log(`[usePresence] Presença registrada: ${new Date().toLocaleTimeString()}`)
-        })
-        .catch((err) => {
-          console.error(`[usePresence] Erro ao registrar presença:`, err)
-        })
-    }, 30000)
+    atualizarPresenca()
 
-    // Cleanup
+    const intervalo = setInterval(atualizarPresenca, 30000) // Atualiza a cada 30s
+
     return () => {
-      clearInterval(interval)
-      console.log(`[usePresence] Parando atualização de presença para UID: ${uid}`)
+      clearInterval(intervalo)
+      console.log(`[usePresence] ⛔ Parando presença de UID: ${uid}`)
     }
   }, [uid])
 }
