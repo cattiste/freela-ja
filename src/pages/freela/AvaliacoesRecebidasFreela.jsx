@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 
@@ -10,23 +10,29 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    if (!uid) return
+    const buscarAvaliacoes = async () => {
+      if (!uid) return
 
-    const q = query(
-      collection(db, 'avaliacoesFreelas'),
-      where('freelaUid', '==', uid)
-    )
+      try {
+        const q = query(
+          collection(db, 'avaliacoesFreelas'),
+          where('freelaUid', '==', uid)
+        )
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const lista = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
-      setAvaliacoes(lista)
-      setCarregando(false)
-    })
+        const snapshot = await getDocs(q)
+        const lista = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        setAvaliacoes(lista)
+      } catch (err) {
+        console.error('Erro ao buscar avaliações:', err)
+      } finally {
+        setCarregando(false)
+      }
+    }
 
-    return () => unsubscribe()
+    buscarAvaliacoes()
   }, [uid])
 
   if (!uid) {
