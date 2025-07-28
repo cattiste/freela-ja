@@ -159,6 +159,13 @@ export default function PainelFreela() {
 
   const renderConteudo = () => {
     switch (abaSelecionada) {
+      case 'agenda':
+        return (
+          <div className="max-w-7xl mx-auto p-4">
+            <AgendaCompleta freela={freela} />
+          </div>
+        )
+
       case 'chamadas':
         return (
           <div className="max-w-4xl mx-auto p-4">
@@ -171,12 +178,12 @@ export default function PainelFreela() {
           <div className="max-w-4xl mx-auto p-4">
             <RecebimentosFreela freela={freela} />
           </div>
-        )  
+        )
 
-      case 'agenda':
+      case 'config':
         return (
-          <div className="max-w-4xl mx-auto p-4">
-            <AgendaFreela freela={freela} />
+          <div className="max-w-3xl mx-auto p-4">
+            <ConfiguracoesFreela freela={freela} />
           </div>
         )
 
