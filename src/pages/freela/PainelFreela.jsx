@@ -1,9 +1,7 @@
-
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
-import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/firebase'
 
+// Componentes das abas
 import MenuInferiorFreela from '@/components/MenuInferiorFreela'
 import PerfilFreelaCard from '@/pages/freela/PerfilFreela'
 import AgendaFreela from '@/pages/freela/AgendaFreela'
@@ -16,89 +14,14 @@ import HistoricoFreela from '@/pages/freela/HistoricoTrabalhosFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 
-
 export default function PainelFreela() {
   const { usuario, carregando } = useAuth()
   const [abaSelecionada, setAbaSelecionada] = useState('perfil')
-  const [alertas, setAlertas] = useState({
-    chamadas: false,
-    agenda: false,
-    avaliacoes: false,
-    recebimentos: false
-  })
-  const [chamadaAtiva, setChamadaAtiva] = useState(null)
-
-  const freelaId = usuario?.uid
-
-  useEffect(() => {
-    if (!freelaId) return
-
-    const interval = setInterval(() => {
-      const ref = doc(db, 'usuarios', freelaId)
-      updateDoc(ref, { ultimaAtividade: serverTimestamp() }).catch(console.error)
-    }, 15 * 1000)
-
-    updateDoc(doc(db, 'usuarios', freelaId), { ultimaAtividade: serverTimestamp() }).catch(console.error)
-
-    return () => clearInterval(interval)
-  }, [freelaId])
-
-  useEffect(() => {
-    if (!freelaId) return
-
-    const unsubChamadas = onSnapshot(
-      query(collection(db, 'chamadas'), where('freelaUid', '==', freelaId), where('status', '==', 'pendente')),
-      (snap) => setAlertas(prev => ({ ...prev, chamadas: snap.size > 0 }))
-    )
-
-    const unsubEventos = onSnapshot(
-      query(collection(db, 'eventos'), where('ativo', '==', true)),
-      (snap) => setAlertas(prev => ({ ...prev, agenda: snap.size > 0 }))
-    )
-
-    const unsubVagas = onSnapshot(
-      query(collection(db, 'vagas'), where('status', '==', 'aberta')),
-      (snap) => setAlertas(prev => ({ ...prev, agenda: snap.size > 0 }))
-    )
-
-    const unsubAvaliacoes = onSnapshot(
-      query(collection(db, 'avaliacoesFreelas'), where('freelaUid', '==', freelaId)),
-      (snap) => setAlertas(prev => ({ ...prev, avaliacoes: snap.size > 0 }))
-    )
-
-    const unsubRecebimentos = onSnapshot(
-      query(collection(db, 'chamadas'), where('freelaUid', '==', freelaId), where('status', 'in', ['finalizado', 'concluido'])),
-      (snap) => setAlertas(prev => ({ ...prev, recebimentos: snap.size > 0 }))
-    )
-
-    return () => {
-      unsubChamadas()
-      unsubEventos()
-      unsubVagas()
-      unsubAvaliacoes()
-      unsubRecebimentos()
-    }
-  }, [freelaId])
-
-  useEffect(() => {
-    if (!freelaId) return
-
-    const q = query(
-      collection(db, 'chamadas'),
-      where('freelaUid', '==', freelaId),
-      where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'checkout_freela'])
-    )
-
-    const unsubscribe = onSnapshot(q, (snap) => {
-      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      setChamadaAtiva(docs[0] || null)
-    })
-
-    return () => unsubscribe()
-  }, [freelaId])
 
   if (carregando) return <div className="text-center mt-10">Verificando autenticação...</div>
   if (!usuario) return <div className="text-center mt-10">Usuário não autenticado.</div>
+
+  const freelaId = usuario.uid
 
   const renderConteudo = () => {
     switch (abaSelecionada) {
@@ -108,11 +31,6 @@ export default function PainelFreela() {
             <PerfilFreelaCard freelaId={freelaId} />
             <AgendaFreela freela={usuario} />
             <AvaliacoesRecebidasFreela freelaUid={freelaId} />
-            {chamadaAtiva && (
-              <div className="md:col-span-3">
-                <ChamadaInline chamada={chamadaAtiva} tipo="freela" usuario={usuario} />
-              </div>
-            )}
           </div>
         )
       case 'agenda':
@@ -139,7 +57,10 @@ export default function PainelFreela() {
   return (
     <div className="p-4 pb-20">
       {renderConteudo()}
-      <MenuInferiorFreela onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} alertas={alertas} />
+      <MenuInferiorFreela
+        onSelect={setAbaSelecionada}
+        abaAtiva={abaSelecionada}
+      />
     </div>
   )
 }
