@@ -20,6 +20,8 @@ import MenuInferiorFreela from '@/components/MenuInferiorFreela'
 import AgendaFreela from '@/pages/freela/AgendaFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import ChamadasFreela from '@/pages/freela/ChamadasFreela'
+import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
+
 
 export default function PainelFreela() {
   const navigate = useNavigate()
@@ -164,6 +166,13 @@ export default function PainelFreela() {
           </div>
         )
 
+      case 'recebimentos':
+        return (
+          <div className="max-w-4xl mx-auto p-4">
+            <RecebimentosFreela freela={freela} />
+          </div>
+        )  
+
       case 'agenda':
         return (
           <div className="max-w-4xl mx-auto p-4">
@@ -278,18 +287,7 @@ export default function PainelFreela() {
                       </div>
                     ))}
                   </div>
-                )}
-              </div>
-
-              <div className="mt-10 flex justify-center">
-                <Link
-                  to="/eventosdisponiveis"
-                  className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded px-6 py-3 transition"
-                >
-                  🎉 Eventos Disponíveis
-                </Link>
-              </div>
-            </div>
+                )}                        
           </>
         )
     }
