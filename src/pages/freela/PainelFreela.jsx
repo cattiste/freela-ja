@@ -1,6 +1,6 @@
-// src/pages/freela/PerfilFreela.jsx
-
 import React from 'react'
+import AgendaFreela from '@/pages/freela/AgendaFreela'
+import AvaliacoesRecebidasFreela from '@/pages/freela/AvaliacoesRecebidasFreela'
 
 export default function PerfilFreela({ freela }) {
   if (!freela) {
@@ -8,22 +8,22 @@ export default function PerfilFreela({ freela }) {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow p-4 text-center">
-      <img
-        src={freela.foto || 'https://via.placeholder.com/100'}
-        alt="Foto do Freela"
-        className="w-24 h-24 rounded-full mx-auto border-2 border-orange-300 object-cover"
-      />
-      <h2 className="text-xl font-bold text-orange-700 mt-2">{freela.nome}</h2>
-      <p className="text-sm text-gray-600">{freela.especialidade}</p>
-      <p className="text-sm text-gray-600">📞 {freela.celular}</p>
-    </div>
-      <div className="grid md:grid-cols-3 gap-4 mt-4">
-      <PerfilFreela freela={freela} />
-      <AgendaFreela freela={freela} />
-      <AvaliacoesRecebidasFreela freelaUid={freela.uid} />
-      
-    </div>
+    <>
+      <div className="bg-white rounded-xl shadow p-4 text-center">
+        <img
+          src={freela.foto || 'https://via.placeholder.com/100'}
+          alt="Foto do Freela"
+          className="w-24 h-24 rounded-full mx-auto border-2 border-orange-300 object-cover"
+        />
+        <h2 className="text-xl font-bold text-orange-700 mt-2">{freela.nome}</h2>
+        <p className="text-sm text-gray-600">{freela.especialidade}</p>
+        <p className="text-sm text-gray-600">📞 {freela.celular}</p>
+      </div>
 
+      <div className="grid md:grid-cols-3 gap-4 mt-4">
+        <AgendaFreela freela={freela} />
+        <AvaliacoesRecebidasFreela freelaUid={freela.uid} />
+      </div>
+    </>
   )
 }
