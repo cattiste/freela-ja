@@ -17,6 +17,7 @@ import { signOut } from 'firebase/auth'
 
 // Componentes
 import MenuInferiorFreela from '@/components/MenuInferiorFreela'
+import AgendaFreela from '@/pages/freela/AgendaFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import ChamadasFreela from '@/pages/freela/ChamadasFreela'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
