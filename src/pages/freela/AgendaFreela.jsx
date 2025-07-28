@@ -2,15 +2,13 @@ import React, { useEffect, useState } from 'react'
 import Calendar from 'react-calendar'
 import '@/styles/calendar.css'
 import { db } from '@/firebase'
-import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore'
+import { collection, doc, setDoc, deleteDoc, getDocs } from 'firebase/firestore'
 import { useAuth } from '@/context/AuthContext'
 
 export default function AgendaFreela({ freela }) {
   const { usuario } = useAuth()
   const freelaReal = freela || usuario
 
-  const [eventos, setEventos] = useState([])
-  const [carregando, setCarregando] = useState(true)
   const [datasOcupadas, setDatasOcupadas] = useState({})
   const [dataSelecionada, setDataSelecionada] = useState(null)
   const [nota, setNota] = useState('')
@@ -19,28 +17,33 @@ export default function AgendaFreela({ freela }) {
   useEffect(() => {
     if (!freelaReal?.uid) return
 
-    const ref = collection(db, 'usuarios', freelaReal.uid, 'agenda')
-    const unsubscribe = onSnapshot(ref, snapshot => {
-      const datas = {}
-      snapshot.docs.forEach(doc => {
-        datas[doc.id] = doc.data()
-      })
-      setDatasOcupadas(datas)
-    })
+    const carregarAgenda = async () => {
+      try {
+        const ref = collection(db, 'usuarios', freelaReal.uid, 'agenda')
+        const snap = await getDocs(ref)
 
-    return () => unsubscribe()
+        const datas = {}
+        snap.docs.forEach(doc => {
+          datas[doc.id] = doc.data()
+        })
+
+        setDatasOcupadas(datas)
+      } catch (err) {
+        console.error('Erro ao carregar agenda:', err)
+      }
+    }
+
+    carregarAgenda()
   }, [freelaReal])
 
   const handleClickDia = (date) => {
     const dia = date.toISOString().split('T')[0]
 
     if (datasOcupadas[dia]) {
-      const confirm = window.confirm(
+      const confirmar = window.confirm(
         `A data ${dia} está marcada como ocupada. Deseja liberar essa data?`
       )
-      if (confirm) {
-        liberarData(dia)
-      }
+      if (confirmar) liberarData(dia)
     } else {
       setDataSelecionada(dia)
       setNota('')
@@ -60,6 +63,12 @@ export default function AgendaFreela({ freela }) {
       setModoEdicao(false)
       setDataSelecionada(null)
       setNota('')
+
+      // Atualizar a agenda localmente
+      setDatasOcupadas(prev => ({
+        ...prev,
+        [dataSelecionada]: { ocupado: true, nota: nota.trim() || null }
+      }))
     } catch (err) {
       alert('Erro ao marcar data. Veja o console.')
       console.error(err)
@@ -71,6 +80,13 @@ export default function AgendaFreela({ freela }) {
     try {
       const ref = doc(db, 'usuarios', freelaReal.uid, 'agenda', dia)
       await deleteDoc(ref)
+
+      // Atualizar a agenda localmente
+      setDatasOcupadas(prev => {
+        const novo = { ...prev }
+        delete novo[dia]
+        return novo
+      })
     } catch (err) {
       alert('Erro ao liberar data. Veja o console.')
       console.error(err)
