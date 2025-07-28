@@ -17,6 +17,16 @@ import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEsta
 import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
 import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
 import ChamadasAtivas from '@/pages/estabelecimento/ChamadasAtivas'
+import { getDatabase, ref, onValue } from 'firebase/database'
+
+const db = getDatabase()
+const statusRef = ref(db, 'statusOnline')
+
+onValue(statusRef, (snapshot) => {
+  const onlineMap = snapshot.val() || {}
+  console.log('Usuários online:', Object.keys(onlineMap))
+})
+
 
 
 export default function PainelEstabelecimento() {

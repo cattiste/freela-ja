@@ -15,6 +15,14 @@ import ChamadasFreela from '@/pages/freela/ChamadasFreela'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
 import { usePresence } from '@/hooks/usePresence'
+import { getDatabase, ref, set, onDisconnect } from 'firebase/database'
+
+const db = getDatabase()
+const statusRef = ref(db, `statusOnline/${uid}`)
+
+set(statusRef, true)
+onDisconnect(statusRef).remove()
+
 
 export default function PainelFreela() {
   const navigate = useNavigate()
