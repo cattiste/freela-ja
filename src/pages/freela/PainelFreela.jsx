@@ -14,7 +14,10 @@ import {
 } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 import { signOut } from 'firebase/auth'
+
+// Componentes
 import MenuInferiorFreela from '@/components/MenuInferiorFreela'
+import AgendaFreela from '@/pages/freela/AgendaFreela'
 
 export default function PainelFreela() {
   const navigate = useNavigate()
@@ -152,107 +155,131 @@ export default function PainelFreela() {
 
   const renderConteudo = () => {
     switch (abaSelecionada) {
+      case 'agenda':
+        return (
+          <div className="max-w-4xl mx-auto p-4">
+            <AgendaFreela freela={freela} />
+          </div>
+        )
+
       case 'painel':
       default:
         return (
           <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-2xl shadow p-6">
-                <div className="flex items-center gap-6">
-                  <img
-                    src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'}
-                    className="w-24 h-24 rounded-full object-cover border-2 border-blue-400 shadow"
-                    alt="Foto do freelancer"
-                  />
-                  <div>
-                    <h2 className="text-2xl font-semibold">{freela.nome}</h2>
-                    <p className="text-blue-600">{freela.funcao}</p>
-                    <p className="text-gray-600">{freela.email}</p>
-                    <p className="text-gray-600">📱 {freela.celular}</p>
-                    <p className="text-gray-600">📍 {freela.endereco}</p>
-                    <p className="text-green-700 font-semibold">💰 Diária: R$ {freela.valorDiaria || '—'}</p>
-                    <p className="text-sm text-gray-500 mt-1">📝 Tipo: {freela.tipoContrato || '—'}</p>
-                    <div className="flex gap-3 mt-3">
-                      <button
-                        onClick={fazerCheckin}
-                        disabled={loadingCheckin}
-                        className="bg-green-600 text-white px-4 py-2 rounded"
-                      >
-                        {loadingCheckin ? 'Registrando...' : 'Check-in'}
-                      </button>
-                      <button
-                        onClick={fazerCheckout}
-                        disabled={loadingCheckout}
-                        className="bg-yellow-600 text-white px-4 py-2 rounded"
-                      >
-                        {loadingCheckout ? 'Registrando...' : 'Check-out'}
-                      </button>
-                    </div>
-                  </div>
+            <div className="max-w-6xl mx-auto p-6">
+              <div className="flex justify-between mb-6">
+                <h1 className="text-3xl font-bold text-blue-800">🎯 Painel do Freelancer</h1>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => navigate('/editar-perfil-freela')}
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                  >
+                    ✏️ Editar Perfil
+                  </button>
+                  <button onClick={handleLogout} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                    🔒 Logout
+                  </button>
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl shadow p-6 max-h-[500px] overflow-auto">
-                <h2 className="text-xl font-semibold mb-4">Chamadas Ativas</h2>
-                {chamadas.length === 0 && <p>Nenhuma chamada ativa.</p>}
-                {chamadas.map(chamada => (
-                  <div key={chamada.id} className="border rounded p-3 mb-4">
-                    <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
-                    <p><strong>Status:</strong> {chamada.status}</p>
-                    <p><strong>Check-in feito:</strong> {chamada.checkInFreela ? 'Sim' : 'Não'}</p>
-                    <p><strong>Check-out feito:</strong> {chamada.checkOutFreela ? 'Sim' : 'Não'}</p>
-                    {chamada.status === 'pendente' && (
-                      <div className="mt-2 flex gap-3">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white rounded-2xl shadow p-6">
+                  <div className="flex items-center gap-6">
+                    <img
+                      src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'}
+                      className="w-24 h-24 rounded-full object-cover border-2 border-blue-400 shadow"
+                      alt="Foto do freelancer"
+                    />
+                    <div>
+                      <h2 className="text-2xl font-semibold">{freela.nome}</h2>
+                      <p className="text-blue-600">{freela.funcao}</p>
+                      <p className="text-gray-600">{freela.email}</p>
+                      <p className="text-gray-600">📱 {freela.celular}</p>
+                      <p className="text-gray-600">📍 {freela.endereco}</p>
+                      <p className="text-green-700 font-semibold">💰 Diária: R$ {freela.valorDiaria || '—'}</p>
+                      <p className="text-sm text-gray-500 mt-1">📝 Tipo: {freela.tipoContrato || '—'}</p>
+                      <div className="flex gap-3 mt-3">
                         <button
-                          onClick={async () => await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })}
-                          className="bg-green-600 text-white px-3 py-1 rounded"
+                          onClick={fazerCheckin}
+                          disabled={loadingCheckin}
+                          className="bg-green-600 text-white px-4 py-2 rounded"
                         >
-                          ✅ Aceitar
+                          {loadingCheckin ? 'Registrando...' : 'Check-in'}
                         </button>
                         <button
-                          onClick={async () => await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })}
-                          className="bg-red-600 text-white px-3 py-1 rounded"
+                          onClick={fazerCheckout}
+                          disabled={loadingCheckout}
+                          className="bg-yellow-600 text-white px-4 py-2 rounded"
                         >
-                          ❌ Recusar
+                          {loadingCheckout ? 'Registrando...' : 'Check-out'}
                         </button>
                       </div>
-                    )}
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
 
-            <div className="mt-10">
-              <h2 className="text-2xl font-semibold text-blue-700 mb-4">📌 Vagas Disponíveis</h2>
-              {vagas.length === 0 ? (
-                <p className="text-gray-600">🔎 Nenhuma vaga no momento.</p>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {vagas.map(vaga => (
-                    <div
-                      key={vaga.id}
-                      onClick={() => navigate(`/vaga/${vaga.id}`)}
-                      className="bg-white p-4 rounded shadow hover:shadow-lg cursor-pointer"
-                    >
-                      <h3 className="font-bold text-lg">{vaga.titulo}</h3>
-                      <p>🏢 {vaga.empresa || '—'}</p>
-                      <p>📍 {vaga.cidade || '—'}</p>
-                      <p>💰 {vaga.valorDiaria ? `R$ ${vaga.valorDiaria}` : vaga.salario || '—'}</p>
-                      <p>📅 Tipo: {vaga.tipo || '—'}</p>
-                      <p className="text-sm text-gray-600 mt-1">{vaga.descricao}</p>
+                <div className="bg-white rounded-2xl shadow p-6 max-h-[500px] overflow-auto">
+                  <h2 className="text-xl font-semibold mb-4">Chamadas Ativas</h2>
+                  {chamadas.length === 0 && <p>Nenhuma chamada ativa.</p>}
+                  {chamadas.map(chamada => (
+                    <div key={chamada.id} className="border rounded p-3 mb-4">
+                      <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
+                      <p><strong>Status:</strong> {chamada.status}</p>
+                      <p><strong>Check-in feito:</strong> {chamada.checkInFreela ? 'Sim' : 'Não'}</p>
+                      <p><strong>Check-out feito:</strong> {chamada.checkOutFreela ? 'Sim' : 'Não'}</p>
+                      {chamada.status === 'pendente' && (
+                        <div className="mt-2 flex gap-3">
+                          <button
+                            onClick={async () => await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })}
+                            className="bg-green-600 text-white px-3 py-1 rounded"
+                          >
+                            ✅ Aceitar
+                          </button>
+                          <button
+                            onClick={async () => await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })}
+                            className="bg-red-600 text-white px-3 py-1 rounded"
+                          >
+                            ❌ Recusar
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
 
-            <div className="mt-10 flex justify-center">
-              <Link
-                to="/eventosdisponiveis"
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded px-6 py-3 transition"
-              >
-                🎉 Eventos Disponíveis
-              </Link>
+              <div className="mt-10">
+                <h2 className="text-2xl font-semibold text-blue-700 mb-4">📌 Vagas Disponíveis</h2>
+                {vagas.length === 0 ? (
+                  <p className="text-gray-600">🔎 Nenhuma vaga no momento.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {vagas.map(vaga => (
+                      <div
+                        key={vaga.id}
+                        onClick={() => navigate(`/vaga/${vaga.id}`)}
+                        className="bg-white p-4 rounded shadow hover:shadow-lg cursor-pointer"
+                      >
+                        <h3 className="font-bold text-lg">{vaga.titulo}</h3>
+                        <p>🏢 {vaga.empresa || '—'}</p>
+                        <p>📍 {vaga.cidade || '—'}</p>
+                        <p>💰 {vaga.valorDiaria ? `R$ ${vaga.valorDiaria}` : vaga.salario || '—'}</p>
+                        <p>📅 Tipo: {vaga.tipo || '—'}</p>
+                        <p className="text-sm text-gray-600 mt-1">{vaga.descricao}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-10 flex justify-center">
+                <Link
+                  to="/eventosdisponiveis"
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded px-6 py-3 transition"
+                >
+                  🎉 Eventos Disponíveis
+                </Link>
+              </div>
             </div>
           </>
         )
@@ -261,25 +288,7 @@ export default function PainelFreela() {
 
   return (
     <div className="min-h-screen bg-blue-50 pb-24">
-      <div className="max-w-6xl mx-auto p-6">
-        <div className="flex justify-between mb-6">
-          <h1 className="text-3xl font-bold text-blue-800">🎯 Painel do Freelancer</h1>
-          <div className="flex gap-2">
-            <button
-              onClick={() => navigate('/editar-perfil-freela')}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              ✏️ Editar Perfil
-            </button>
-            <button onClick={handleLogout} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
-              🔒 Logout
-            </button>
-          </div>
-        </div>
-
-        {renderConteudo()}
-      </div>
-
+      {renderConteudo()}
       <MenuInferiorFreela onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
     </div>
   )
