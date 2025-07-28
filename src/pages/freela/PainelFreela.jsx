@@ -2,16 +2,13 @@
 
 import React, { useState, useEffect } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
-import {
-  doc, getDoc, updateDoc, serverTimestamp
-} from 'firebase/firestore'
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 
-// Componentes
+// Componentes essenciais
 import MenuInferiorFreela from '@/components/MenuInferiorFreela'
 import PerfilFreela from '@/pages/freela/PerfilFreela'
 import AgendaFreela from '@/pages/freela/AgendaFreela'
-import AvaliacoesRecebidasFreela from '@/pages/freela/AvaliacoesRecebidasFreela'
 import ChamadasFreela from '@/pages/freela/ChamadasFreela'
 import EventosDisponiveis from '@/pages/freela/EventosDisponiveis'
 import VagasDisponiveis from '@/pages/freela/VagasDisponiveis'
@@ -73,8 +70,6 @@ export default function PainelFreela() {
         return <PerfilFreela freela={freela} />
       case 'agenda':
         return <AgendaFreela freela={freela} />
-      case 'avaliacoes':
-        return <AvaliacoesRecebidasFreela freela={freela} />
       case 'chamadas':
         return <ChamadasFreela freela={freela} />
       case 'eventos':
