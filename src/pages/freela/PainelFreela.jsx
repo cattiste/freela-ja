@@ -18,7 +18,7 @@ import { signOut } from 'firebase/auth'
 // Componentes
 import MenuInferiorFreela from '@/components/MenuInferiorFreela'
 import AgendaFreela from '@/pages/freela/AgendaFreela'
-import EventosDisponiveis from '@/pages/freela/EventosDisponiveis' // ✅ novo import
+import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 
 export default function PainelFreela() {
   const navigate = useNavigate()
@@ -156,12 +156,13 @@ export default function PainelFreela() {
 
   const renderConteudo = () => {
     switch (abaSelecionada) {
-      case 'eventos':
+      case 'agendaCompleta':
         return (
-          <div className="max-w-5xl mx-auto p-4">
-            <EventosDisponiveis freela={freela} />
+          <div className="max-w-7xl mx-auto p-4">
+            <AgendaCompleta freela={freela} />
           </div>
         )
+
       case 'agenda':
         return (
           <div className="max-w-4xl mx-auto p-4">
