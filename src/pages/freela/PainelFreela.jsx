@@ -7,6 +7,36 @@ export default function PerfilFreela({ freela }) {
     return <div className="text-center text-gray-500">Carregando perfil...</div>
   }
 
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      setFreela(null)
+      setCarregando(false)
+      return
+    }
+
+    try {
+      const ref = doc(db, 'usuarios', user.uid)
+      const snap = await getDoc(ref)
+
+      if (snap.exists() && snap.data().tipo === 'freela') {
+        const dados = snap.data()
+        setFreela({ uid: user.uid, ...dados })
+        await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
+      } else {
+        console.warn('[Auth] Documento não encontrado ou não é um freela')
+      }
+    } catch (err) {
+      console.error('[Auth] Erro ao buscar dados do freela:', err)
+    } finally {
+      setCarregando(false)
+    }
+  })
+
+  return () => unsubscribe()
+}, [])
+
+
   return (
     <>
       <div className="bg-white rounded-xl shadow p-4 text-center">
