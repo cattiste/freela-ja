@@ -1,42 +1,18 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useAuth } from '@/context/AuthContext'
-
-// Componentes básicos
-import MenuInferiorFreela from '@/components/MenuInferiorFreela'
-import PerfilFreelaCard from '@/pages/freela/PerfilFreela'
-import AgendaFreela from '@/pages/freela/AgendaFreela'
-import AvaliacoesRecebidasFreela from '@/pages/freela/AvaliacoesRecebidasFreela'
 
 export default function PainelFreela() {
   const { usuario, carregando } = useAuth()
-  const [abaSelecionada, setAbaSelecionada] = useState('perfil')
 
-  if (carregando) return <div className="text-center mt-10">Verificando autenticação...</div>
-  if (!usuario) return <div className="text-center mt-10">Usuário não autenticado.</div>
-
-  const renderConteudo = () => {
-    switch (abaSelecionada) {
-      case 'perfil':
-        return (
-          <div className="grid md:grid-cols-3 gap-4 mt-4">
-            <PerfilFreelaCard freelaId={usuario.uid} />
-            <AgendaFreela freela={usuario} />
-            <AvaliacoesRecebidasFreela freelaUid={usuario.uid} />
-          </div>
-        )
-      default:
-        return <div className="text-center mt-4 text-gray-500">Aba não encontrada.</div>
-    }
-  }
+  if (carregando) return <div className="text-center mt-10 text-orange-600">Verificando autenticação...</div>
+  if (!usuario) return <div className="text-center mt-10 text-red-600">Usuário não autenticado.</div>
 
   return (
-    <div className="p-4 pb-20">
-      {renderConteudo()}
-      <MenuInferiorFreela
-        onSelect={setAbaSelecionada}
-        abaAtiva={abaSelecionada}
-        alertas={{ chamadas: false, agenda: false, avaliacoes: false, recebimentos: false }}
-      />
+    <div className="p-4 max-w-xl mx-auto bg-white rounded-xl shadow">
+      <h1 className="text-2xl font-bold text-orange-700 mb-4">Painel do Freela</h1>
+      <p>Bem-vindo, <span className="font-semibold">{usuario.nome || usuario.email}</span>!</p>
+      <p className="mt-2 text-sm text-gray-600">UID: {usuario.uid}</p>
+      <p className="mt-1 text-sm text-gray-600">Tipo: {usuario.tipo}</p>
     </div>
   )
 }
