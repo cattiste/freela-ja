@@ -1,145 +1,281 @@
-
-import React, { useEffect, useState } from 'react'
-import { useAuth } from '@/context/AuthContext'
-import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/firebase'
-
-import MenuInferiorFreela from '@/components/MenuInferiorFreela'
-import PerfilFreelaCard from '@/pages/freela/PerfilFreela'
-import AgendaFreela from '@/pages/freela/AgendaFreela'
-import AvaliacoesRecebidasFreela from '@/pages/freela/AvaliacoesRecebidasFreela'
-import ChamadasFreela from '@/pages/freela/ChamadasFreela'
-import Eventos from '@/pages/freela/EventosDisponiveis'
-import Vagas from '@/pages/freela/VagasDisponiveis'
-import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
-import HistoricoFreela from '@/pages/freela/HistoricoTrabalhosFreela'
-import AgendaCompleta from '@/pages/freela/AgendaCompleta'
-import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
-
+import React, { useEffect, useState, useCallback } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  doc,
+  getDoc,
+  updateDoc,
+  serverTimestamp
+} from 'firebase/firestore'
+import { auth, db } from '@/firebase'
+import { signOut } from 'firebase/auth'
 
 export default function PainelFreela() {
-  const { usuario, carregando } = useAuth()
-  const [abaSelecionada, setAbaSelecionada] = useState('perfil')
-  const [alertas, setAlertas] = useState({
-    chamadas: false,
-    agenda: false,
-    avaliacoes: false,
-    recebimentos: false
-  })
-  const [chamadaAtiva, setChamadaAtiva] = useState(null)
+  const navigate = useNavigate()
+  const [freela, setFreela] = useState(null)
+  const [vagas, setVagas] = useState([])
+  const [chamadas, setChamadas] = useState([])
+  const [loadingCheckin, setLoadingCheckin] = useState(false)
+  const [loadingCheckout, setLoadingCheckout] = useState(false)
 
-  const freelaId = usuario?.uid
-
-  useEffect(() => {
-    if (!freelaId) return
-
-    const interval = setInterval(() => {
-      const ref = doc(db, 'usuarios', freelaId)
-      updateDoc(ref, { ultimaAtividade: serverTimestamp() }).catch(console.error)
-    }, 15 * 1000)
-
-    updateDoc(doc(db, 'usuarios', freelaId), { ultimaAtividade: serverTimestamp() }).catch(console.error)
-
-    return () => clearInterval(interval)
-  }, [freelaId])
+  const [audioChamada] = useState(() =>
+    new Audio('https://res.cloudinary.com/dbemvuau3/video/upload/v1750961914/qhkd3ojkqhi2imr9lup8.mp3')
+  )
 
   useEffect(() => {
-    if (!freelaId) return
+    audioChamada.load()
+  }, [audioChamada])
 
-    const unsubChamadas = onSnapshot(
-      query(collection(db, 'chamadas'), where('freelaUid', '==', freelaId), where('status', '==', 'pendente')),
-      (snap) => setAlertas(prev => ({ ...prev, chamadas: snap.size > 0 }))
-    )
+  const tocarSomChamada = useCallback(() => {
+    audioChamada.play().catch(() => console.log('🔇 Áudio bloqueado'))
+  }, [audioChamada])
 
-    const unsubEventos = onSnapshot(
-      query(collection(db, 'eventos'), where('ativo', '==', true)),
-      (snap) => setAlertas(prev => ({ ...prev, agenda: snap.size > 0 }))
-    )
+  const carregarFreela = useCallback(async () => {
+    const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
+    if (!usuario || usuario.tipo !== 'freela') {
+      navigate('/login')
+      return
+    }
 
-    const unsubVagas = onSnapshot(
-      query(collection(db, 'vagas'), where('status', '==', 'aberta')),
-      (snap) => setAlertas(prev => ({ ...prev, agenda: snap.size > 0 }))
-    )
+    try {
+      const ref = doc(db, 'usuarios', usuario.uid)
+      const snap = await getDoc(ref)
 
-    const unsubAvaliacoes = onSnapshot(
-      query(collection(db, 'avaliacoesFreelas'), where('freelaUid', '==', freelaId)),
-      (snap) => setAlertas(prev => ({ ...prev, avaliacoes: snap.size > 0 }))
-    )
+      if (!snap.exists()) {
+        alert('Freelancer não encontrado.')
+        navigate('/login')
+        return
+      }
 
-    const unsubRecebimentos = onSnapshot(
-      query(collection(db, 'chamadas'), where('freelaUid', '==', freelaId), where('status', 'in', ['finalizado', 'concluido'])),
-      (snap) => setAlertas(prev => ({ ...prev, recebimentos: snap.size > 0 }))
-    )
+      const dados = snap.data()
+      setFreela({ uid: usuario.uid, ...dados })
+
+      const chamadasRef = collection(db, 'chamadas')
+      const q = query(chamadasRef, where('freelaUid', '==', usuario.uid))
+
+      const unsubscribe = onSnapshot(q, snapshot => {
+        snapshot.docChanges().forEach(change => {
+          const chamada = { id: change.doc.id, ...change.doc.data() }
+          if (change.type === 'added') {
+            alert(`📩 Você foi chamado por ${chamada.estabelecimentoNome}!`)
+            tocarSomChamada()
+            setChamadas(prev => [chamada, ...prev])
+          }
+          if (change.type === 'modified') {
+            setChamadas(prev =>
+              prev.map(c => (c.id === chamada.id ? chamada : c))
+            )
+          }
+          if (change.type === 'removed') {
+            setChamadas(prev => prev.filter(c => c.id !== chamada.id))
+          }
+        })
+      })
+
+      return unsubscribe
+    } catch (err) {
+      console.error('Erro ao carregar freela:', err)
+      navigate('/login')
+    }
+  }, [navigate, tocarSomChamada])
+
+  useEffect(() => {
+    let unsubscribeChamadas = () => {}
+    let unsubscribeVagas = () => {}
+
+    const iniciar = async () => {
+      unsubscribeChamadas = await carregarFreela()
+      const vagasRef = collection(db, 'vagas')
+      const q = query(vagasRef, where('status', '==', 'ativo'))
+      unsubscribeVagas = onSnapshot(q, snapshot => {
+        const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        setVagas(lista)
+      })
+    }
+
+    iniciar()
 
     return () => {
-      unsubChamadas()
-      unsubEventos()
-      unsubVagas()
-      unsubAvaliacoes()
-      unsubRecebimentos()
+      unsubscribeChamadas()
+      unsubscribeVagas()
     }
-  }, [freelaId])
+  }, [carregarFreela])
 
-  useEffect(() => {
-    if (!freelaId) return
-
-    const q = query(
-      collection(db, 'chamadas'),
-      where('freelaUid', '==', freelaId),
-      where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'checkout_freela'])
-    )
-
-    const unsubscribe = onSnapshot(q, (snap) => {
-      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      setChamadaAtiva(docs[0] || null)
-    })
-
-    return () => unsubscribe()
-  }, [freelaId])
-
-  if (carregando) return <div className="text-center mt-10">Verificando autenticação...</div>
-  if (!usuario) return <div className="text-center mt-10">Usuário não autenticado.</div>
-
-  const renderConteudo = () => {
-    switch (abaSelecionada) {
-      case 'perfil':
-        return (
-          <div className="grid md:grid-cols-3 gap-4 mt-4">
-            <PerfilFreelaCard freelaId={freelaId} />
-            <AgendaFreela freela={usuario} />
-            <AvaliacoesRecebidasFreela freelaUid={freelaId} />
-            {chamadaAtiva && (
-              <div className="md:col-span-3">
-                <ChamadaInline chamada={chamadaAtiva} tipo="freela" usuario={usuario} />
-              </div>
-            )}
-          </div>
-        )
-      case 'agenda':
-        return <AgendaCompleta freelaId={freelaId} />
-      case 'chamadas':
-        return <ChamadasFreela />
-      case 'avaliacoes':
-        return <AvaliacoesRecebidasFreela freelaUid={freelaId} />
-      case 'eventos':
-        return <Eventos freelaId={freelaId} />
-      case 'vagas':
-        return <Vagas freelaId={freelaId} />
-      case 'config':
-        return <ConfiguracoesFreela freelaId={freelaId} />
-      case 'historico':
-        return <HistoricoFreela freelaId={freelaId} />
-      case 'recebimentos':
-        return <RecebimentosFreela freelaId={freelaId} />
-      default:
-        return null
+  const fazerCheckin = async () => {
+    const chamada = chamadas.find(c => !c.checkInFreela && c.status === 'aceita')
+    if (!chamada) return alert('Nenhuma chamada pendente para check-in.')
+    setLoadingCheckin(true)
+    try {
+      await updateDoc(doc(db, 'chamadas', chamada.id), {
+        checkInFreela: true,
+        checkInHora: serverTimestamp()
+      })
+      alert('Check-in realizado!')
+    } catch (err) {
+      alert('Erro ao fazer check-in.')
     }
+    setLoadingCheckin(false)
+  }
+
+  const fazerCheckout = async () => {
+    const chamada = chamadas.find(c => c.checkInFreela && !c.checkOutFreela && c.status === 'aceita')
+    if (!chamada) return alert('Nenhuma chamada pendente para check-out.')
+    setLoadingCheckout(true)
+    try {
+      await updateDoc(doc(db, 'chamadas', chamada.id), {
+        checkOutFreela: true,
+        checkOutHora: serverTimestamp()
+      })
+      alert('Check-out realizado!')
+    } catch (err) {
+      alert('Erro ao fazer check-out.')
+    }
+    setLoadingCheckout(false)
+  }
+
+  const handleLogout = async () => {
+    await signOut(auth)
+    localStorage.removeItem('usuarioLogado')
+    navigate('/login')
+  }
+
+  if (!freela) {
+    return <div className="min-h-screen flex items-center justify-center text-gray-600">Carregando...</div>
   }
 
   return (
-    <div className="p-4 pb-20">
-      {renderConteudo()}
-      <MenuInferiorFreela onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} alertas={alertas} />
+    <div className="min-h-screen bg-blue-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex justify-between mb-6">
+          <h1 className="text-3xl font-bold text-blue-800">🎯 Painel do Freelancer</h1>
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate('/editar-perfil-freela')}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              ✏️ Editar Perfil
+            </button>
+            <button onClick={handleLogout} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+              🔒 Logout
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-2xl shadow p-6">
+            <div className="flex items-center gap-6">
+              <img
+                src={freela.foto || 'https://i.imgur.com/3W8i1sT.png'}
+                className="w-24 h-24 rounded-full object-cover border-2 border-blue-400 shadow"
+                alt="Foto do freelancer"
+              />
+              <div>
+                <h2 className="text-2xl font-semibold">{freela.nome}</h2>
+                <p className="text-blue-600">{freela.funcao}</p>
+                <p className="text-gray-600">{freela.email}</p>
+                <p className="text-gray-600">📱 {freela.celular}</p>
+                <p className="text-gray-600">📍 {freela.endereco}</p>
+                <p className="text-green-700 font-semibold">💰 Diária: R$ {freela.valorDiaria || '—'}</p>
+                <p className="text-sm text-gray-500 mt-1">📝 Tipo: {freela.tipoContrato || '—'}</p>
+                <div className="flex gap-3 mt-3">
+                  <button
+                    onClick={fazerCheckin}
+                    disabled={loadingCheckin}
+                    className="bg-green-600 text-white px-4 py-2 rounded"
+                  >
+                    {loadingCheckin ? 'Registrando...' : 'Check-in'}
+                  </button>
+                  <button
+                    onClick={fazerCheckout}
+                    disabled={loadingCheckout}
+                    className="bg-yellow-600 text-white px-4 py-2 rounded"
+                  >
+                    {loadingCheckout ? 'Registrando...' : 'Check-out'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow p-6 max-h-[500px] overflow-auto">
+            <h2 className="text-xl font-semibold mb-4">Chamadas Ativas</h2>
+            {chamadas.length === 0 && <p>Nenhuma chamada ativa.</p>}
+            {chamadas.map(chamada => (
+              <div key={chamada.id} className="border rounded p-3 mb-4">
+                <p>
+                  <strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}
+                </p>
+                <p>
+                  <strong>Status:</strong> {chamada.status}
+                </p>
+                <p>
+                  <strong>Check-in feito:</strong> {chamada.checkInFreela ? 'Sim' : 'Não'}
+                </p>
+                <p>
+                  <strong>Check-out feito:</strong> {chamada.checkOutFreela ? 'Sim' : 'Não'}
+                </p>
+                {chamada.status === 'pendente' && (
+                  <div className="mt-2 flex gap-3">
+                    <button
+                      onClick={async () =>
+                        await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'aceita' })
+                      }
+                      className="bg-green-600 text-white px-3 py-1 rounded"
+                    >
+                      ✅ Aceitar
+                    </button>
+                    <button
+                      onClick={async () =>
+                        await updateDoc(doc(db, 'chamadas', chamada.id), { status: 'recusada' })
+                      }
+                      className="bg-red-600 text-white px-3 py-1 rounded"
+                    >
+                      ❌ Recusar
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-10">
+          <h2 className="text-2xl font-semibold text-blue-700 mb-4">📌 Vagas Disponíveis</h2>
+          {vagas.length === 0 ? (
+            <p className="text-gray-600">🔎 Nenhuma vaga no momento.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {vagas.map(vaga => (
+                <div
+                  key={vaga.id}
+                  onClick={() => navigate(`/vaga/${vaga.id}`)}
+                  className="bg-white p-4 rounded shadow hover:shadow-lg cursor-pointer"
+                >
+                  <h3 className="font-bold text-lg">{vaga.titulo}</h3>
+                  <p>🏢 {vaga.empresa || '—'}</p>
+                  <p>📍 {vaga.cidade || '—'}</p>
+                  <p>💰 {vaga.valorDiaria ? `R$ ${vaga.valorDiaria}` : vaga.salario || '—'}</p>
+                  <p>📅 Tipo: {vaga.tipo || '—'}</p>
+                  <p className="text-sm text-gray-600 mt-1">{vaga.descricao}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Botão Eventos Disponíveis só para o freela */}
+        <div className="mt-10 flex justify-center">
+          <Link
+            to="/eventosdisponiveis"
+            className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded px-6 py-3 transition"
+          >
+            🎉 Eventos Disponíveis
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }
