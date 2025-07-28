@@ -19,8 +19,23 @@ import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecim
 import ChamadasAtivas from '@/pages/estabelecimento/ChamadasAtivas'
 import { getDatabase, ref, onValue } from 'firebase/database'
 
-const db = getDatabase()
-const statusRef = ref(db, 'statusOnline')
+function useFreelasOnline() {
+  const [freelasOnline, setFreelasOnline] = useState({})
+
+  useEffect(() => {
+    const db = getDatabase()
+    const statusRef = ref(db, 'statusOnline')
+
+    const unsubscribe = onValue(statusRef, (snapshot) => {
+      const data = snapshot.val() || {}
+      setFreelasOnline(data)
+    })
+
+    return () => unsubscribe()
+  }, [])
+
+  return freelasOnline
+}
 
 onValue(statusRef, (snapshot) => {
   const onlineMap = snapshot.val() || {}

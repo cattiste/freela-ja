@@ -17,11 +17,20 @@ import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
 import { usePresence } from '@/hooks/usePresence'
 import { getDatabase, ref, set, onDisconnect } from 'firebase/database'
 
-const db = getDatabase()
-const statusRef = ref(db, `statusOnline/${uid}`)
+function useRealtimePresence(uid) {
+  useEffect(() => {
+    if (!uid) return
 
-set(statusRef, true)
-onDisconnect(statusRef).remove()
+    const db = getDatabase()
+    const statusRef = ref(db, `statusOnline/${uid}`)
+
+    // Marca como online
+    set(statusRef, true)
+
+    // Remove automaticamente se desconectar
+    onDisconnect(statusRef).remove()
+  }, [uid])
+}
 
 
 export default function PainelFreela() {
