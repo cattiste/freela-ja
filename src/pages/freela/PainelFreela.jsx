@@ -1,5 +1,3 @@
-// PainelFreela.jsx com status online Realtime Database e Firestore
-
 import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -20,10 +18,19 @@ import { getDatabase, ref, set, onDisconnect } from 'firebase/database'
 function useRealtimePresence(uid) {
   useEffect(() => {
     if (!uid) return
+
     const db = getDatabase()
-    const statusRef = ref(db, `statusOnline/${uid}`)
-    set(statusRef, true)
-    onDisconnect(statusRef).remove()
+    const userStatusRef = ref(db, 'users/' + uid)
+
+    onDisconnect(userStatusRef).update({
+      online: false,
+      lastSeen: Date.now()
+    })
+
+    set(userStatusRef, {
+      online: true,
+      lastSeen: Date.now()
+    })
   }, [uid])
 }
 
