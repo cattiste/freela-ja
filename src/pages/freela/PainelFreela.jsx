@@ -1,4 +1,4 @@
-// src/pages/freela/PainelFreela.jsx
+// PainelFreela.jsx com check-in/check-out e estados corrigidos
 
 import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -9,7 +9,6 @@ import {
 import { auth, db } from '@/firebase'
 import { signOut } from 'firebase/auth'
 
-// Componentes
 import MenuInferiorFreela from '@/components/MenuInferiorFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import ChamadasFreela from '@/pages/freela/ChamadasFreela'
@@ -21,6 +20,8 @@ export default function PainelFreela() {
   const [freela, setFreela] = useState(null)
   const [vagas, setVagas] = useState([])
   const [chamadas, setChamadas] = useState([])
+  const [loadingCheckin, setLoadingCheckin] = useState(false)
+  const [loadingCheckout, setLoadingCheckout] = useState(false)
   const [abaSelecionada, setAbaSelecionada] = useState('painel')
 
   const carregarFreela = useCallback(async () => {
@@ -80,10 +81,36 @@ export default function PainelFreela() {
     }
   }, [carregarFreela])
 
-  const handleLogout = async () => {
-    await signOut(auth)
-    localStorage.removeItem('usuarioLogado')
-    navigate('/login')
+  const fazerCheckin = async () => {
+    const chamada = chamadas.find(c => !c.checkInFreela && c.status === 'aceita')
+    if (!chamada) return alert('Nenhuma chamada pendente para check-in.')
+    setLoadingCheckin(true)
+    try {
+      await updateDoc(doc(db, 'chamadas', chamada.id), {
+        checkInFreela: true,
+        checkInHora: serverTimestamp()
+      })
+      alert('Check-in realizado!')
+    } catch (err) {
+      alert('Erro ao fazer check-in.')
+    }
+    setLoadingCheckin(false)
+  }
+
+  const fazerCheckout = async () => {
+    const chamada = chamadas.find(c => c.checkInFreela && !c.checkOutFreela && c.status === 'aceita')
+    if (!chamada) return alert('Nenhuma chamada pendente para check-out.')
+    setLoadingCheckout(true)
+    try {
+      await updateDoc(doc(db, 'chamadas', chamada.id), {
+        checkOutFreela: true,
+        checkOutHora: serverTimestamp()
+      })
+      alert('Check-out realizado!')
+    } catch (err) {
+      alert('Erro ao fazer check-out.')
+    }
+    setLoadingCheckout(false)
   }
 
   if (!freela) {
@@ -121,21 +148,7 @@ export default function PainelFreela() {
         return (
           <div className="max-w-6xl mx-auto p-6">
             <div className="flex justify-between mb-6">
-              <h1 className="text-3xl font-bold text-blue-800">🎯 Painel do Freelancer</h1>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => navigate('/editar-perfil-freela')}
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                  ✏️ Editar Perfil
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                >
-                  🔒 Logout
-                </button>
-              </div>
+              <h1 className="text-3xl font-bold text-blue-800">🎯 Painel do Freelancer</h1>              
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -154,6 +167,23 @@ export default function PainelFreela() {
                     <p className="text-gray-600">📍 {freela.endereco}</p>
                     <p className="text-green-700 font-semibold">💰 Diária: R$ {freela.valorDiaria || '—'}</p>
                     <p className="text-sm text-gray-500 mt-1">📝 Tipo: {freela.tipoContrato || '—'}</p>
+
+                    <div className="flex gap-3 mt-4">
+                      <button
+                        onClick={fazerCheckin}
+                        disabled={loadingCheckin}
+                        className="bg-green-600 text-white px-4 py-2 rounded"
+                      >
+                        {loadingCheckin ? 'Registrando...' : 'Check-in'}
+                      </button>
+                      <button
+                        onClick={fazerCheckout}
+                        disabled={loadingCheckout}
+                        className="bg-yellow-600 text-white px-4 py-2 rounded"
+                      >
+                        {loadingCheckout ? 'Registrando...' : 'Check-out'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
