@@ -1,8 +1,8 @@
 import React from 'react'
-import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
-export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
-  const { online, ultimaAtividade } = useOnlineStatus(prof.id)
+export default function ProfissionalCard({ prof, onChamar, distanciaKm, status }) {
+  const online = status?.online ?? false
+  const ultimaAtividade = status?.ultimaAtividade
 
   const imagemValida =
     typeof prof.foto === 'string' && prof.foto.trim() !== ''
@@ -12,7 +12,7 @@ export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
   const diariaNumerica = !isNaN(parseFloat(prof.valorDiaria))
 
   const ultimaHora = ultimaAtividade
-    ? ultimaAtividade.toDate().toLocaleTimeString('pt-BR')
+    ? ultimaAtividade.toLocaleTimeString('pt-BR')
     : '...'
 
   return (
