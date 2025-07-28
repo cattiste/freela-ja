@@ -1,6 +1,14 @@
+// src/components/ProfissionalCard.jsx
+
 import React from 'react'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
 export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
+  const { online, ultimaAtividade } = useOnlineStatus(prof.id)
+  const ultimaHora = ultimaAtividade
+    ? ultimaAtividade.toDate().toLocaleTimeString('pt-BR')
+    : '--:--'
+
   const imagemValida =
     typeof prof.foto === 'string' && prof.foto.trim() !== ''
       ? prof.foto
@@ -51,6 +59,14 @@ export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
       {prof.descricao && (
         <p className="italic mt-2 text-sm text-gray-600">{prof.descricao}</p>
       )}
+
+      {/* ✅ Status online/offline */}
+      <div className="flex items-center justify-center gap-2 mt-2">
+        <span className={`w-2 h-2 rounded-full ${online ? 'bg-green-500' : 'bg-gray-400'}`} />
+        <span className={`text-xs ${online ? 'text-green-700' : 'text-gray-500'}`}>
+          {online ? '🟢 Online agora' : `🔴 Offline (última: ${ultimaHora})`}
+        </span>
+      </div>
 
       {onChamar && (
         <button

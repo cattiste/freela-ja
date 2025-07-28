@@ -8,6 +8,8 @@ import {
   serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/firebase'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+
 
 // 📌 Função para calcular distância entre dois pontos (Haversine)
 function calcularDistancia(lat1, lon1, lat2, lon2) {
@@ -27,10 +29,8 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
   return R * c
 }
 
-function FreelaCard({ freela, online, ultimaAtividade, distanciaKm, onChamar, chamando }) {
-  const ultimaHora = ultimaAtividade
-    ? ultimaAtividade.toLocaleTimeString('pt-BR')
-    : '...'
+function FreelaCard({ freela, distanciaKm, onChamar, chamando }) {
+  const { online, ultimaAtividade } = useOnlineStatus(freela.id)    
 
   return (
     <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100 hover:shadow-xl transition">
