@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, getDocs } from 'firebase/firestore'
+import { collection, query, where, getDocs, limit } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 
@@ -16,7 +16,8 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
       try {
         const q = query(
           collection(db, 'avaliacoesFreelas'),
-          where('freelaUid', '==', uid)
+          where('freelaUid', '==', uid),
+          limit(10) // 🔒 Limita a 10 resultados
         )
 
         const snapshot = await getDocs(q)
