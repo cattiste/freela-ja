@@ -1,3 +1,5 @@
+// BuscarFreelas.jsx - versão corrigida com useOnlineStatus
+
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -10,27 +12,23 @@ import {
 import { db } from '@/firebase'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
-
-// 📌 Função para calcular distância entre dois pontos (Haversine)
 function calcularDistancia(lat1, lon1, lat2, lon2) {
   const toRad = (x) => (x * Math.PI) / 180
-  const R = 6371 // km
-
+  const R = 6371
   const dLat = toRad(lat2 - lat1)
   const dLon = toRad(lon2 - lon1)
-
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.sin(dLon / 2) ** 2
-
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   return R * c
 }
 
 function FreelaCard({ freela, distanciaKm, onChamar, chamando }) {
-  const { online, ultimaAtividade } = useOnlineStatus(freela.id)    
+  const { online, ultimaAtividade } = useOnlineStatus(freela.id)
+  const ultimaHora = ultimaAtividade
+    ? ultimaAtividade.toDate().toLocaleTimeString('pt-BR')
+    : '--:--'
 
   return (
     <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100 hover:shadow-xl transition">
@@ -84,7 +82,6 @@ function FreelaCard({ freela, distanciaKm, onChamar, chamando }) {
 
 export default function BuscarFreelas({ estabelecimento }) {
   const [freelas, setFreelas] = useState([])
-  const [onlineStatusMap, setOnlineStatusMap] = useState({})
   const [carregando, setCarregando] = useState(true)
   const [chamando, setChamando] = useState(null)
   const [filtroFuncao, setFiltroFuncao] = useState('')
@@ -96,29 +93,8 @@ export default function BuscarFreelas({ estabelecimento }) {
       setFreelas(lista)
       setCarregando(false)
     })
-
     return () => unsubscribe()
   }, [])
-
-  useEffect(() => {
-  if (!estabelecimento?.uid) return
-
-  const q = query(collection(db, 'status'))
-  const unsub = onSnapshot(q, (snap) => {
-    const map = {}
-    snap.forEach(doc => {
-      const data = doc.data()
-      map[doc.id] = {
-        online: data.online,
-        ultimaAtividade: data.ultimaAtividade?.toDate()
-      }
-    })
-    setOnlineStatusMap(map)
-  })
-
-  return () => unsub()
-}, [estabelecimento])
-
 
   const chamarFreela = async (freela) => {
     if (!estabelecimento?.uid) return
@@ -148,8 +124,6 @@ export default function BuscarFreelas({ estabelecimento }) {
       f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
     )
     .map(f => {
-      const status = onlineStatusMap[f.id] || { online: false, ultimaAtividade: null }
-
       const distanciaKm =
         f.coordenadas && estabelecimento?.coordenadas
           ? calcularDistancia(
@@ -159,18 +133,9 @@ export default function BuscarFreelas({ estabelecimento }) {
               f.coordenadas.longitude
             )
           : null
-
-      return {
-        ...f,
-        online: status.online,
-        ultimaAtividade: status.ultimaAtividade,
-        distanciaKm
-      }
+      return { ...f, distanciaKm }
     })
-    .sort((a, b) => {
-      if (a.online !== b.online) return a.online ? -1 : 1
-      return (a.distanciaKm || Infinity) - (b.distanciaKm || Infinity)
-    })
+    .sort((a, b) => (a.distanciaKm || Infinity) - (b.distanciaKm || Infinity))
 
   return (
     <div className="min-h-screen bg-cover bg-center p-4 pb-20"
@@ -201,8 +166,6 @@ export default function BuscarFreelas({ estabelecimento }) {
             <FreelaCard
               key={freela.id}
               freela={freela}
-              online={freela.online}
-              ultimaAtividade={freela.ultimaAtividade}
               distanciaKm={freela.distanciaKm}
               onChamar={chamarFreela}
               chamando={chamando}
