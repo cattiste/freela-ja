@@ -17,7 +17,6 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
 }
 
 function FreelaCard({ freela, distanciaKm, onChamar, chamando, usuarioOnline }) {
-  
   const online = !!usuarioOnline?.online
   const lastSeen = usuarioOnline?.lastSeen
     ? new Date(usuarioOnline.lastSeen).toLocaleTimeString('pt-BR')
