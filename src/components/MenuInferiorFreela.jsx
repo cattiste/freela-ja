@@ -14,7 +14,6 @@ import '@/styles/menuInferior.css' // Importa seus estilos customizados
 const botoes = [
   { id: 'perfil', label: 'Perfil', icon: <UserCircle size={20} /> },
   { id: 'chamadas', label: 'Chamadas', icon: <PhoneCall size={20} /> },
-  { id: 'agenda', label: 'Agenda', icon: <Calendar size={20} /> },
   { id: 'agendaCompleta', label: 'Completa', icon: <Calendar size={20} /> }, // ✅ novo botão
   { id: 'avaliacoes', label: 'Avaliações', icon: <Star size={20} /> },
   { id: 'recebimentos', label: 'Recebimentos', icon: <Wallet size={20} /> },
