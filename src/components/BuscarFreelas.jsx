@@ -1,16 +1,8 @@
-// BuscarFreelas.jsx - versão corrigida com useOnlineStatus
-
 import React, { useEffect, useState } from 'react'
 import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  addDoc,
-  serverTimestamp
+  collection, query, where, onSnapshot, addDoc, serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/firebase'
-import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
 function calcularDistancia(lat1, lon1, lat2, lon2) {
   const toRad = (x) => (x * Math.PI) / 180
@@ -24,10 +16,10 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
   return R * c
 }
 
-function FreelaCard({ freela, distanciaKm, onChamar, chamando }) {
-  const { online, ultimaAtividade } = useOnlineStatus(freela.id)
-  const ultimaHora = ultimaAtividade
-    ? ultimaAtividade.toDate().toLocaleTimeString('pt-BR')
+function FreelaCard({ freela, distanciaKm, onChamar, chamando, usuarioOnline }) {
+  const online = usuarioOnline?.online || false
+  const lastSeen = usuarioOnline?.lastSeen
+    ? new Date(usuarioOnline.lastSeen).toLocaleTimeString('pt-BR')
     : '--:--'
 
   return (
@@ -60,7 +52,7 @@ function FreelaCard({ freela, distanciaKm, onChamar, chamando }) {
         <div className="flex items-center gap-2 mt-1">
           <span className={`w-2 h-2 rounded-full ${online ? 'bg-green-500' : 'bg-gray-400'}`} />
           <span className={`text-xs ${online ? 'text-green-700' : 'text-gray-500'}`}>
-            {online ? '🟢 Online agora' : `🔴 Offline (última: ${ultimaHora})`}
+            {online ? '🟢 Online agora' : `🔴 Offline (última: ${lastSeen})`}
           </span>
         </div>
       </div>
@@ -80,7 +72,7 @@ function FreelaCard({ freela, distanciaKm, onChamar, chamando }) {
   )
 }
 
-export default function BuscarFreelas({ estabelecimento }) {
+export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) {
   const [freelas, setFreelas] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [chamando, setChamando] = useState(null)
@@ -133,9 +125,9 @@ export default function BuscarFreelas({ estabelecimento }) {
               f.coordenadas.longitude
             )
           : null
+
       return { ...f, distanciaKm }
     })
-    .sort((a, b) => (a.distanciaKm || Infinity) - (b.distanciaKm || Infinity))
 
   return (
     <div className="min-h-screen bg-cover bg-center p-4 pb-20"
@@ -167,6 +159,7 @@ export default function BuscarFreelas({ estabelecimento }) {
               key={freela.id}
               freela={freela}
               distanciaKm={freela.distanciaKm}
+              usuarioOnline={usuariosOnline[freela.id]}
               onChamar={chamarFreela}
               chamando={chamando}
             />
