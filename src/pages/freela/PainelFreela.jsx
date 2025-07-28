@@ -1,6 +1,10 @@
+// src/pages/freela/PainelFreela.jsx
+
 import React, { useState, useEffect } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
-import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import {
+  doc, getDoc, updateDoc, serverTimestamp
+} from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 
 // Componentes
@@ -19,10 +23,7 @@ export default function PainelFreela() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('[Auth] Usuário autenticado:', user)
-
       if (!user) {
-        console.warn('[Auth] Nenhum usuário logado.')
         setFreela(null)
         setCarregando(false)
         return
@@ -32,22 +33,15 @@ export default function PainelFreela() {
         const ref = doc(db, 'usuarios', user.uid)
         const snap = await getDoc(ref)
 
-        if (snap.exists()) {
+        if (snap.exists() && snap.data().tipo === 'freela') {
           const dados = snap.data()
-          console.log('[Firestore] Dados do usuário:', dados)
-
-          if (dados.tipo === 'freela') {
-            setFreela({ uid: user.uid, ...dados })
-            await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
-            console.log('[Firestore] Freela carregado e atualizado.')
-          } else {
-            console.warn('[Auth] Esse usuário não é um freela.')
-          }
+          setFreela({ uid: user.uid, ...dados })
+          await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
         } else {
-          console.warn('[Firestore] Documento do usuário não encontrado.')
+          console.warn('[Auth] Documento não encontrado ou não é um freela')
         }
       } catch (err) {
-        console.error('[Erro] Falha ao buscar dados do usuário:', err)
+        console.error('[Auth] Erro ao buscar dados do freela:', err)
       } finally {
         setCarregando(false)
       }
@@ -76,19 +70,13 @@ export default function PainelFreela() {
   const renderConteudo = () => {
     switch (abaSelecionada) {
       case 'perfil':
-        return (
-          <div className="grid md:grid-cols-3 gap-4 mt-4">
-            <PerfilFreela freela={freela} />
-            <AgendaFreela freela={freela} />
-            <AvaliacoesRecebidasFreela freelaUid={freela.uid} />
-          </div>
-        )
+        return <PerfilFreela freela={freela} />
       case 'agenda':
         return <AgendaFreela freela={freela} />
+      case 'avaliacoes':
+        return <AvaliacoesRecebidasFreela freela={freela} />
       case 'chamadas':
         return <ChamadasFreela freela={freela} />
-      case 'avaliacoes':
-        return <AvaliacoesRecebidasFreela freelaUid={freela.uid} />
       case 'eventos':
         return <EventosDisponiveis freela={freela} />
       case 'vagas':
