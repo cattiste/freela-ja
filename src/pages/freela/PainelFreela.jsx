@@ -11,24 +11,17 @@ import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
 import HistoricoFreela from '@/pages/freela/HistoricoTrabalhosFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
+import ChamadaInline from '@/components/ChamadaInline'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
-import { usePresence } from '@/hooks/usePresence'
 
 export default function PainelFreela() {
   const { usuario, carregando } = useAuth()
   const [abaSelecionada, setAbaSelecionada] = useState('perfil')
-  const [alertas, setAlertas] = useState({
-    chamadas: false,
-    agenda: false,
-    avaliacoes: false,
-    recebimentos: false
-  })
+  const [alertas, setAlertas] = useState({ chamadas: false, agenda: false, avaliacoes: false, recebimentos: false })
   const [chamadaAtiva, setChamadaAtiva] = useState(null)
 
   const freelaId = usuario?.uid
-
-  usePresence(freelaId)
 
   useEffect(() => {
     if (!freelaId) return
