@@ -1,3 +1,4 @@
+// PainelEstabelecimento.jsx com useUsuariosOnline e lastSeen visível
 
 import React, { useState, useEffect } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
@@ -7,7 +8,6 @@ import {
 } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 
-// Componentes
 import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
 import BuscarFreelas from '@/components/BuscarFreelas'
 import AgendasContratadas from '@/components/AgendasContratadas'
@@ -17,38 +17,17 @@ import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEsta
 import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
 import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
 import ChamadasAtivas from '@/pages/estabelecimento/ChamadasAtivas'
-import { getDatabase, ref, onValue } from 'firebase/database'
+import ChamadaInline from '@/components/ChamadaInline'
 
-function useFreelasOnline() {
-  const [freelasOnline, setFreelasOnline] = useState({})
-
-  useEffect(() => {
-    const db = getDatabase()
-    const statusRef = ref(db, 'statusOnline')
-
-    const unsubscribe = onValue(statusRef, (snapshot) => {
-      const data = snapshot.val() || {}
-      setFreelasOnline(data)
-    })
-
-    return () => unsubscribe()
-  }, [])
-
-  return freelasOnline
-}
-
-onValue(statusRef, (snapshot) => {
-  const onlineMap = snapshot.val() || {}
-  console.log('Usuários online:', Object.keys(onlineMap))
-})
-
-
+import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
 
 export default function PainelEstabelecimento() {
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [abaSelecionada, setAbaSelecionada] = useState('buscar')
   const [chamadaAtiva, setChamadaAtiva] = useState(null)
+
+  const usuariosOnline = useUsuariosOnline()
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -148,7 +127,7 @@ export default function PainelEstabelecimento() {
   const renderConteudo = () => {
     switch (abaSelecionada) {
       case 'buscar':
-        return <BuscarFreelas estabelecimento={estabelecimento} />
+        return <BuscarFreelas estabelecimento={estabelecimento} usuariosOnline={usuariosOnline} />
       case 'agendas':
         return <AgendasContratadas estabelecimento={estabelecimento} />
       case 'vagas':

@@ -1,4 +1,4 @@
-// PainelFreela.jsx com usePresence corrigido
+// PainelFreela.jsx com status online Realtime Database e Firestore
 
 import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -20,18 +20,12 @@ import { getDatabase, ref, set, onDisconnect } from 'firebase/database'
 function useRealtimePresence(uid) {
   useEffect(() => {
     if (!uid) return
-
     const db = getDatabase()
     const statusRef = ref(db, `statusOnline/${uid}`)
-
-    // Marca como online
     set(statusRef, true)
-
-    // Remove automaticamente se desconectar
     onDisconnect(statusRef).remove()
   }, [uid])
 }
-
 
 export default function PainelFreela() {
   const navigate = useNavigate()
@@ -97,8 +91,8 @@ export default function PainelFreela() {
     }
   }, [carregarFreela])
 
-  // ✅ Atualiza status online do freela
   usePresence(freela?.uid)
+  useRealtimePresence(freela?.uid)
 
   const handleLogout = async () => {
     await signOut(auth)
