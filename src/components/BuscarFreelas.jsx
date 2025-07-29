@@ -74,7 +74,7 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
         const data = doc.data()
         return {
           ...data,
-          id: data.uid || doc.id // Garante que o ID seja igual ao UID do Realtime DB
+          id: doc.id // ✅ garante compatibilidade exata com Realtime DB
         }
       })
       setFreelas(todos)
@@ -107,9 +107,6 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
   }
 
   const freelasFiltrados = useMemo(() => {
-    console.log('✅ Firestore (freelas):', freelas)
-    console.log('✅ Realtime DB (usuariosOnline):', usuariosOnline)
-
     return freelas
       .filter((f) => {
         const status = usuariosOnline[f.id]
