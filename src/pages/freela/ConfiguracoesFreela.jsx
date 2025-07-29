@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react'
 import { auth, db } from '@/firebase'
 import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore'
 import { sendPasswordResetEmail, signOut } from 'firebase/auth'
+import { getDatabase, ref, set, serverTimestamp } from 'firebase/database'
 import { useNavigate } from 'react-router-dom'
 
 export default function ConfiguracoesFreela() {
   const navigate = useNavigate()
 
-  // pega o usuário corretamente:
-  const usuario = auth.currentUser 
+  const usuario = auth.currentUser
   const [config, setConfig] = useState({
     notificacoes: true,
     visibilidadePerfil: true,
@@ -24,8 +24,8 @@ export default function ConfiguracoesFreela() {
   useEffect(() => {
     if (!usuario) return
     const fetchDados = async () => {
-      const ref = doc(db, 'usuarios', usuario.uid)
-      const snap = await getDoc(ref)
+      const refUser = doc(db, 'usuarios', usuario.uid)
+      const snap = await getDoc(refUser)
       if (snap.exists()) {
         const data = snap.data()
         setConfig({
@@ -86,6 +86,18 @@ export default function ConfiguracoesFreela() {
   }
 
   const sair = async () => {
+    const uid = auth.currentUser?.uid
+    if (uid) {
+      const dbRealtime = getDatabase()
+      const userRef = ref(dbRealtime, `users/${uid}`)
+
+      // Marca como offline antes de sair
+      await set(userRef, {
+        online: false,
+        lastSeen: serverTimestamp()
+      })
+    }
+
     await signOut(auth)
     localStorage.removeItem('usuarioLogado')
     navigate('/login')
@@ -107,11 +119,11 @@ export default function ConfiguracoesFreela() {
               onChange={handleToggle}
             />
             <span>
-              {{
+              {({
                 notificacoes: 'Receber notificações por e-mail',
                 visibilidadePerfil: 'Perfil visível para estabelecimentos',
                 chamadasAutomaticas: 'Aceitar chamadas automáticas'
-              }[name]}
+              })[name]}
             </span>
           </label>
         ))}
@@ -158,6 +170,6 @@ export default function ConfiguracoesFreela() {
           Sair
         </button>
       </div>
-    </div> //
+    </div>
   )
 }
