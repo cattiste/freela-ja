@@ -20,6 +20,9 @@ import ChamadasAtivas from '@/pages/estabelecimento/ChamadasAtivas'
 import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
 import TesteUsuariosOnline from '@/components/TesteUsuariosOnline'
 
+
+
+
 export default function PainelEstabelecimento() {
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
@@ -124,11 +127,6 @@ export default function PainelEstabelecimento() {
   )
 
   const renderConteudo = () => {
-<<<<<<< HEAD
-    
-=======
-    <TesteUsuariosOnline />
->>>>>>> 5aa624513c9196e042eb877b62e9e58986b7d2f1
     switch (abaSelecionada) {
       case 'buscar':
         return <BuscarFreelas estabelecimento={estabelecimento} usuariosOnline={usuariosOnline} />
@@ -148,7 +146,6 @@ export default function PainelEstabelecimento() {
         return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
       default:
         return null
-       
     }
   }
 
