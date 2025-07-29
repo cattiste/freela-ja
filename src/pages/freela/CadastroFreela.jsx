@@ -1,6 +1,5 @@
-// 📄 src/pages/freela/CadastroFreela.jsx
 import React, { useState } from 'react'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { createUserWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth'
 import { doc, setDoc, GeoPoint, serverTimestamp } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import InputMask from 'react-input-mask'
@@ -65,34 +64,36 @@ export default function CadastroFreela() {
         fotoUrl = await uploadImage(foto)
       }
 
-      // Cria o usuário na autenticação
+      // Cria o usuário
       await createUserWithEmailAndPassword(auth, email, senha)
 
-      // Aguarda o auth.currentUser estar disponível
-      const currentUser = auth.currentUser
-      if (!currentUser) throw new Error('Erro ao autenticar. Tente novamente.')
+      // Aguarda o login estar ativo para capturar UID com permissão
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          const uid = user.uid
+          const geo = new GeoPoint(-23.55052, -46.633308)
 
-      const geo = new GeoPoint(-23.55052, -46.633308) // Localização padrão SP
+          await setDoc(doc(db, 'usuarios', uid), {
+            uid,
+            nome,
+            email,
+            celular,
+            endereco,
+            funcao,
+            especialidades,
+            valorDiaria: parseFloat(valorDiaria),
+            cpf,
+            tipo: 'freela',
+            foto: fotoUrl,
+            criadoEm: serverTimestamp(),
+            localizacao: geo
+          })
 
-      // Salva os dados no Firestore
-      await setDoc(doc(db, 'usuarios', currentUser.uid), {
-        uid: currentUser.uid,
-        nome,
-        email,
-        celular,
-        endereco,
-        funcao,
-        especialidades,
-        valorDiaria: parseFloat(valorDiaria),
-        cpf,
-        tipo: 'freela',
-        foto: fotoUrl,
-        criadoEm: serverTimestamp(),
-        localizacao: geo
+          unsubscribe() // para não rodar múltiplas vezes
+          alert('Cadastro realizado com sucesso!')
+          navigate('/painelfreela')
+        }
       })
-
-      alert('Cadastro realizado com sucesso!')
-      navigate('/painelfreela')
 
     } catch (err) {
       console.error('Erro no cadastro:', err)
