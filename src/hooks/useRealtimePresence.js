@@ -1,37 +1,30 @@
-// src/hooks/useRealtimePresence.js
 import { useEffect } from 'react'
 import { getDatabase, ref, onDisconnect, set, serverTimestamp } from 'firebase/database'
-import { getAuth } from 'firebase/auth'
 
 export function useRealtimePresence(uid) {
   useEffect(() => {
     if (!uid) return
 
     const db = getDatabase()
-    const userStatusRef = ref(db, `users/${uid}`)
+    const userRef = ref(db, `users/${uid}`)
 
     // Marca como online
-    set(userStatusRef, {
+    set(userRef, {
       online: true,
-      lastSeen: Date.now(),
+      lastSeen: serverTimestamp()
     })
 
-    // Remove o status quando desconectar
-    onDisconnect(userStatusRef).remove()
+    // Define o comportamento ao se desconectar (automático pelo Firebase)
+    onDisconnect(userRef).set({
+      online: false,
+      lastSeen: serverTimestamp()
+    })
 
-    // Atualiza timestamp a cada N segundos se quiser manter vivo
-    const interval = setInterval(() => {
-      set(userStatusRef, {
-        online: true,
-        lastSeen: Date.now(),
-      })
-    }, 60 * 1000) // a cada 1 minuto
-
+    // Quando desmontar o componente (logout ou sair do painel)
     return () => {
-      clearInterval(interval)
-      set(userStatusRef, {
+      set(userRef, {
         online: false,
-        lastSeen: Date.now(),
+        lastSeen: serverTimestamp()
       })
     }
   }, [uid])
