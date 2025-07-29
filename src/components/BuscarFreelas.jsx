@@ -103,7 +103,8 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
   const freelasFiltrados = useMemo(() => {
     return freelas
       .filter((f) => {
-        const online = usuariosOnline[f.id]?.online
+        const status = usuariosOnline[f.id]
+        const online = status?.online === true
         const funcaoMatch = f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
         return online && funcaoMatch
       })
