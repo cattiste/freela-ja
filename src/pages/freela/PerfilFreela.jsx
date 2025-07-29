@@ -29,9 +29,7 @@ export default function PainelFreela() {
 
   const freelaId = usuario?.uid
 
-  // ✅ Registrar presença somente se UID estiver disponível
-  usePresence(freelaId)
-
+  
   // 🔔 Alertas de chamadas, eventos e vagas
   useEffect(() => {
     if (!freelaId) return
