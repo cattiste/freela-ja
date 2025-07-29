@@ -28,11 +28,8 @@ export default function PainelFreela() {
   })
   const [chamadaAtiva, setChamadaAtiva] = useState(null)
 
-  // ✅ Ativa presença online
-  if (usuario?.uid) {
-    useRealtimePresence(usuario.uid)
-    console.log('📡 Presença ativada para:', usuario.uid)
-  }
+  // ✅ Presença online segura — SEM condicional
+  useRealtimePresence(usuario?.uid)
 
   useEffect(() => {
     if (!usuario?.uid) return
