@@ -1,19 +1,20 @@
-export function useUserRealtimeStatus(uid) {
-  const [status, setStatus] = useState({ online: false, lastSeen: null })
+import { useEffect, useState } from 'react'
+import { getDatabase, ref, onValue } from 'firebase/database'
+
+export function useUsuariosOnline() {
+  const [usuarios, setUsuarios] = useState({})
 
   useEffect(() => {
-    if (!uid) return
     const db = getDatabase()
-    const refUser = ref(db, 'users/' + uid)
+    const statusRef = ref(db, 'users')
 
-    return onValue(refUser, (snap) => {
-      const data = snap.val() || {}
-      setStatus({
-        online: !!data.online,
-        lastSeen: data.lastSeen || null
-      })
+    const unsub = onValue(statusRef, (snapshot) => {
+      const data = snapshot.val() || {}
+      setUsuarios(data)
     })
-  }, [uid])
 
-  return status
+    return () => unsub()
+  }, [])
+
+  return usuarios
 }
