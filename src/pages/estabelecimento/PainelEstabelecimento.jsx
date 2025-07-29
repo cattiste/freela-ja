@@ -124,7 +124,11 @@ export default function PainelEstabelecimento() {
   )
 
   const renderConteudo = () => {
+<<<<<<< HEAD
+    
+=======
     <TesteUsuariosOnline />
+>>>>>>> 5aa624513c9196e042eb877b62e9e58986b7d2f1
     switch (abaSelecionada) {
       case 'buscar':
         return <BuscarFreelas estabelecimento={estabelecimento} usuariosOnline={usuariosOnline} />
@@ -144,7 +148,7 @@ export default function PainelEstabelecimento() {
         return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
       default:
         return null
-        
+       
     }
   }
 
@@ -165,6 +169,7 @@ export default function PainelEstabelecimento() {
       {!['buscar', 'ativas', 'historico'].includes(abaSelecionada) && renderChamadaAtiva()}
       {renderConteudo()}
       <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
+      <TesteUsuariosOnline />
     </div>
   )
 }
