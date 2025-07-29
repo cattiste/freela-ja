@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, getDoc } from 'firebase/firestore'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -18,28 +18,17 @@ export default function Login() {
 
     try {
       const credenciais = await signInWithEmailAndPassword(auth, email, senha)
-      const usuario = credenciais.usuario
+      const usuario = credenciais.user
       const docRef = doc(db, 'usuarios', usuario.uid)
       const docSnap = await getDoc(docRef)
 
-      let dadosUsuario = {}
-
-      if (docSnap.exists()) {
-        dadosUsuario = docSnap.data()
-      } else {
-        dadosUsuario = {
-          nome: usuario.displayName || '',
-          tipo: 'freela',
-          funcao: '',
-          endereco: '',
-          foto: usuario.photoURL || '',
-          celular: '',
-          valorDiaria: '',
-          email: usuario.email,
-          criadoEm: new Date()
-        }
-        await setDoc(docRef, dadosUsuario)
+      if (!docSnap.exists()) {
+        setError('Seu cadastro ainda não foi finalizado. Tente novamente em alguns segundos.')
+        setLoading(false)
+        return
       }
+
+      const dadosUsuario = docSnap.data()
 
       const usuarioLocal = {
         uid: usuario.uid,
