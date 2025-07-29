@@ -1,5 +1,12 @@
 import { useEffect } from 'react'
-import { getDatabase, ref, onDisconnect, set, serverTimestamp } from 'firebase/database'
+import {
+  getDatabase,
+  ref,
+  onDisconnect,
+  set,
+  onValue,
+  serverTimestamp
+} from 'firebase/database'
 
 export function useRealtimePresence(uid) {
   useEffect(() => {
@@ -7,20 +14,26 @@ export function useRealtimePresence(uid) {
 
     const db = getDatabase()
     const userRef = ref(db, `users/${uid}`)
+    const connectedRef = ref(db, '.info/connected')
 
-    // Marca como online
-    set(userRef, {
-      online: true,
-      lastSeen: serverTimestamp()
+    const unsubscribe = onValue(connectedRef, (snap) => {
+      const connected = snap.val()
+      if (connected) {
+        // Desconectar automaticamente ao sair
+        onDisconnect(userRef).set({
+          online: false,
+          lastSeen: serverTimestamp()
+        })
+
+        // Marcar como online assim que conectado
+        set(userRef, {
+          online: true,
+          lastSeen: serverTimestamp()
+        })
+      }
     })
 
-    // Define o comportamento ao se desconectar (automático pelo Firebase)
-    onDisconnect(userRef).set({
-      online: false,
-      lastSeen: serverTimestamp()
-    })
-
-    // Quando desmontar o componente (logout ou sair do painel)
+    // Ao desmontar o componente, marca offline
     return () => {
       set(userRef, {
         online: false,
