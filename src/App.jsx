@@ -66,7 +66,7 @@ export default function App() {
           {/* Freela */}
           <Route path="/cadastrofreela" element={<CadastroFreela />} />
           <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
-          <Route path="/painelfreela/:rota?" element={<PainelFreela />} />
+          <Route path="/painelfreela" element={<PainelFreela />} />
           <Route path="/freela/editarfreela" element={<EditarFreela />} />
 
           {/* Estabelecimento */}
