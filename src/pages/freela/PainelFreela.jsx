@@ -15,7 +15,7 @@ import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
 import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 import { getDatabase, ref, set, onDisconnect } from 'firebase/database'
 
-function useRealtimePresence(uid) {
+function useRealtimePresence(freela?.uid) {
   useEffect(() => {
     if (!uid) return
     const db = getDatabase()
