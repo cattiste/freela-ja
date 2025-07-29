@@ -1,22 +1,23 @@
-// useUsuariosOnline.js - escuta /users/{uid} com status e lastSeen
-
+// src/hooks/useUsuariosOnline.js
 import { useEffect, useState } from 'react'
 import { getDatabase, ref, onValue } from 'firebase/database'
 
 export function useUsuariosOnline() {
-  const [usuarios, setUsuarios] = useState({})
+  const [usuariosOnline, setUsuariosOnline] = useState({})
 
   useEffect(() => {
     const db = getDatabase()
-    const refStatus = ref(db, 'users')
+    const usersRef = ref(db, 'users')
 
-    const unsub = onValue(refStatus, (snapshot) => {
+    const unsubscribe = onValue(usersRef, (snapshot) => {
       const data = snapshot.val() || {}
-      setUsuarios(data)
+      setUsuariosOnline(data)
     })
 
-    return () => unsub()
+    return () => {
+      unsubscribe()
+    }
   }, [])
 
-  return usuarios
+  return usuariosOnline
 }
