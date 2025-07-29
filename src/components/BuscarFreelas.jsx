@@ -70,7 +70,13 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
   useEffect(() => {
     const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const todos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      const todos = snapshot.docs.map(doc => {
+        const data = doc.data()
+        return {
+          ...data,
+          id: data.uid || doc.id // ⚠️ chave final que garante compatibilidade com Realtime
+        }
+      })
       setFreelas(todos)
       setCarregando(false)
     })
