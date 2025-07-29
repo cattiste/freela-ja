@@ -74,7 +74,7 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
         const data = doc.data()
         return {
           ...data,
-          id: data.uid || doc.id // ⚠️ chave final que garante compatibilidade com Realtime
+          id: data.uid || doc.id // garante compatibilidade com Realtime DB
         }
       })
       setFreelas(todos)
@@ -111,7 +111,8 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
       .filter((f) => {
         const status = usuariosOnline[f.id]
         const online = status?.online === true
-        const funcaoMatch = f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
+        const funcaoMatch =
+          !filtroFuncao || f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
         return online && funcaoMatch
       })
       .map((f) => {
