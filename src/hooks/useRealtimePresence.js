@@ -8,11 +8,13 @@ export function useRealtimePresence(uid) {
     const db = getDatabase()
     const statusRef = ref(db, 'users/' + uid)
 
+    // Remove ao desconectar
     onDisconnect(statusRef).update({
       online: false,
       lastSeen: serverTimestamp()
     })
 
+    // Marca como online
     set(statusRef, {
       online: true,
       lastSeen: serverTimestamp()

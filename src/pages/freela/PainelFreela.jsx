@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   collection, query, where, onSnapshot, doc,
@@ -13,25 +13,6 @@ import ChamadasFreela from '@/pages/freela/ChamadasFreela'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
 import { useRealtimePresence } from '@/hooks/useRealtimePresence'
-import { getDatabase, ref, set, onDisconnect } from 'firebase/database'
-
-function useRealtimePresence(freela?.uid) {
-  useEffect(() => {
-    if (!uid) return
-    const db = getDatabase()
-    const userStatusRef = ref(db, 'users/' + uid)
-
-    onDisconnect(userStatusRef).update({
-      online: false,
-      lastSeen: Date.now()
-    })
-
-    set(userStatusRef, {
-      online: true,
-      lastSeen: Date.now()
-    })
-  }, [uid])
-}
 
 export default function PainelFreela() {
   const navigate = useNavigate()
@@ -61,10 +42,6 @@ export default function PainelFreela() {
         const dados = snap.data()
         setFreela({ uid: usuario.uid, ...dados })
         await updateDoc(refUsuario, { ultimaAtividade: serverTimestamp() })
-
-        // Presença só após confirmação do UID
-        usePresence(usuario.uid)
-        useRealtimePresence(usuario.uid)
 
         // Chamadas
         const chamadasRef = collection(db, 'chamadas')
@@ -99,6 +76,12 @@ export default function PainelFreela() {
 
     carregarDados()
   }, [navigate])
+
+  useEffect(() => {
+    if (freela?.uid) {
+      useRealtimePresence(freela.uid)
+    }
+  }, [freela?.uid])
 
   const handleLogout = async () => {
     await signOut(auth)
