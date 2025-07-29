@@ -66,7 +66,7 @@ export default function CadastroFreela() {
       }
 
       const usuarioCredential = await createUserWithEmailAndPassword(auth, email, senha)
-      const usuario = usuarioCredential.user
+      const usuario = usuarioCredential.usuario
 
       const geo = new GeoPoint(-23.55052, -46.633308) // SP padrão
 

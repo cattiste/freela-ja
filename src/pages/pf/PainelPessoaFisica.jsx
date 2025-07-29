@@ -11,11 +11,11 @@ export default function PainelPessoaFisica() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
+    const unsubscribe = onAuthStateChanged(auth, (usuario) => {
+      if (!usuario) {
         navigate('/login')
       } else {
-        setUsuario(user)
+        setUsuario(usuario)
       }
     })
     return () => unsubscribe()

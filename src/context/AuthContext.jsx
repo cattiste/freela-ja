@@ -41,11 +41,11 @@ export function AuthProvider({ children }) {
   }, [])
 
   const atualizarUsuario = async () => {
-    const user = auth.currentUser
-    if (user) {
-      const docSnap = await getDoc(doc(db, 'usuarios', user.uid))
+    const usuario = auth.currentUser
+    if (usuario) {
+      const docSnap = await getDoc(doc(db, 'usuarios', usuario.uid))
       if (docSnap.exists()) {
-        const dados = { uid: user.uid, ...docSnap.data() }
+        const dados = { uid: usuario.uid, ...docSnap.data() }
         setUsuario(dados)
         localStorage.setItem('usuarioLogado', JSON.stringify(dados))
       }

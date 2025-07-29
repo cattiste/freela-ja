@@ -26,19 +26,19 @@ export default function EditarPerfilEstabelecimento() {
   })
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
+    const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
+      if (!usuario) {
         navigate('/login')
         return
       }
       try {
-        const ref = doc(db, 'usuarios', user.uid)
+        const ref = doc(db, 'usuarios', usuario.uid)
         const snap = await getDoc(ref)
         if (snap.exists() && snap.data().tipo === 'estabelecimento') {
           const data = snap.data()
           setEstabelecimento({
             nome: data.nome || '',
-            email: data.email || user.email || '',
+            email: data.email || usuario.email || '',
             celular: data.celular || '',
             endereco: data.endereco || '',
             descricao: data.descricao || '',
@@ -79,13 +79,13 @@ export default function EditarPerfilEstabelecimento() {
     e.preventDefault()
     setSalvando(true)
     try {
-      const user = auth.currentUser
-      if (!user) throw new Error('Usuário não autenticado')
+      const usuario = auth.currentUser
+      if (!usuario) throw new Error('Usuário não autenticado')
       let fotoUrl = estabelecimento.foto
       if (foto) {
         fotoUrl = await uploadImage(foto)
       }
-      const ref = doc(db, 'usuarios', user.uid)
+      const ref = doc(db, 'usuarios', usuario.uid)
       await updateDoc(ref, {
         nome: estabelecimento.nome,
         email: estabelecimento.email,

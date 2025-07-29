@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom'
 
 export default function ConfigPagamentoEstabelecimento() {
   const navigate = useNavigate()
-  const user = auth.currentUser
+  const usuario = auth.currentUser
   const [form, setForm] = useState({
     nomeTitular: '',
     cpf: '',
@@ -29,10 +29,10 @@ export default function ConfigPagamentoEstabelecimento() {
 
   // Carrega configurações existentes
   useEffect(() => {
-    if (!user) return navigate('/login')
+    if (!usuario) return navigate('/login')
     const load = async () => {
       try {
-        const ref = doc(db, 'configuracoes', user.uid)
+        const ref = doc(db, 'configuracoes', usuario.uid)
         const snap = await getDoc(ref)
         if (snap.exists()) {
           setForm({
@@ -49,7 +49,7 @@ export default function ConfigPagamentoEstabelecimento() {
     }
     load()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user])
+  }, [usuario])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -63,7 +63,7 @@ export default function ConfigPagamentoEstabelecimento() {
     e.preventDefault()
     setSalvando(true)
     try {
-      await updateDoc(doc(db, 'configuracoes', user.uid), {
+      await updateDoc(doc(db, 'configuracoes', usuario.uid), {
         ...form,
         atualizadoEm: serverTimestamp(),
       })

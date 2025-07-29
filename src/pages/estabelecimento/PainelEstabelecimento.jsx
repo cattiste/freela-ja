@@ -28,20 +28,20 @@ export default function PainelEstabelecimento() {
   const usuariosOnline = useUsuariosOnline()
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
+    const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
+      if (!usuario) {
         setEstabelecimento(null)
         setCarregando(false)
         return
       }
 
       try {
-        const ref = doc(db, 'usuarios', user.uid)
+        const ref = doc(db, 'usuarios', usuario.uid)
         const snap = await getDoc(ref)
 
         if (snap.exists() && snap.data().tipo === 'estabelecimento') {
           const dados = snap.data()
-          setEstabelecimento({ uid: user.uid, ...dados })
+          setEstabelecimento({ uid: usuario.uid, ...dados })
           await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
         } else {
           console.warn('[Auth] Documento não encontrado ou não é um estabelecimento')

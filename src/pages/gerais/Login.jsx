@@ -18,7 +18,7 @@ export default function Login() {
 
     try {
       const credenciais = await signInWithEmailAndPassword(auth, email, senha)
-      const usuario = credenciais.user
+      const usuario = credenciais.usuario
       const docRef = doc(db, 'usuarios', usuario.uid)
       const docSnap = await getDoc(docRef)
 

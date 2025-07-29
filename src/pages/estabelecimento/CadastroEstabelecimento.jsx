@@ -71,7 +71,7 @@ export default function CadastroEstabelecimento() {
       }
 
       const userCredential = await createUserWithEmailAndPassword(auth, email, senha)
-      const usuario = userCredential.user
+      const usuario = userCredential.usuario
 
       const geo = new GeoPoint(-23.55052, -46.633308) // Posição padrão SP
 

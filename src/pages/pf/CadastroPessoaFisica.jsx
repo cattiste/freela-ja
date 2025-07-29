@@ -60,10 +60,10 @@ export default function CadastroPessoaFisica() {
     setLoading(true)
 
     try {
-      const { user } = await createUserWithEmailAndPassword(auth, form.email, form.senha)
+      const { usuario } = await createUserWithEmailAndPassword(auth, form.email, form.senha)
 
-      await setDoc(doc(db, 'pessoasFisicas', user.uid), {
-        uid: user.uid,
+      await setDoc(doc(db, 'pessoasFisicas', usuario.uid), {
+        uid: usuario.uid,
         nome: form.nome,
         email: form.email,
         celular: form.celular,

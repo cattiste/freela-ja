@@ -19,7 +19,7 @@ import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 
 export default function PainelFreela() {
-  const { user, carregando } = useAuth()
+  const { usuario, carregando } = useAuth()
   const [abaSelecionada, setAbaSelecionada] = useState('perfil')
   const [alertas, setAlertas] = useState({
     chamadas: false,
@@ -29,7 +29,7 @@ export default function PainelFreela() {
   })
   const [chamadaAtiva, setChamadaAtiva] = useState(null)
 
-  const freelaId = user?.uid
+  const freelaId = usuario?.uid
   useRealtimePresence(freelaId)
 
   useEffect(() => {
@@ -87,7 +87,7 @@ export default function PainelFreela() {
   }, [freelaId])
 
   if (carregando) return <div className="text-center mt-10">Verificando autenticação...</div>
-  if (!user) return <div className="text-center mt-10">Usuário não autenticado.</div>
+  if (!usuario) return <div className="text-center mt-10">Usuário não autenticado.</div>
 
   const renderConteudo = () => {
     switch (abaSelecionada) {
@@ -95,7 +95,7 @@ export default function PainelFreela() {
         return (
           <div className="grid md:grid-cols-3 gap-4 mt-4">
             <PerfilFreela freelaId={freelaId || ''} />
-            <AgendaFreela freela={user} />
+            <AgendaFreela freela={usuario} />
             <AvaliacoesRecebidasFreela freelaUid={freelaId} />
           </div>
         )

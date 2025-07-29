@@ -20,7 +20,7 @@ export default function Cadastro() {
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, senha)
-      const usuario = userCredential.user
+      const usuario = userCredential.usuario
 
       await addDoc(collection(db, 'usuarios'), {
         uid: usuario.uid,

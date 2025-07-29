@@ -9,9 +9,9 @@ export default function BuscarEventos() {
   const [usuario, setUsuario] = useState(null)
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUsuario(user)
+    const unsub = onAuthStateChanged(auth, (usuario) => {
+      if (usuario) {
+        setUsuario(usuario)
       }
     })
     return () => unsub()
