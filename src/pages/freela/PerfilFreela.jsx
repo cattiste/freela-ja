@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
-import { usePresence } from '@/hooks/usePresence'
+import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 
 import MenuInferiorFreela from '@/components/MenuInferiorFreela'
 import PerfilFreelaCard from '@/pages/freela/PerfilFreela'
