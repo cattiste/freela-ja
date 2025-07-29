@@ -1,5 +1,6 @@
 // src/pages/freela/PainelFreela.jsx
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -20,6 +21,8 @@ import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 
 export default function PainelFreela() {
   const { usuario, carregando } = useAuth()
+  const navigate = useNavigate()
+
   const [abaSelecionada, setAbaSelecionada] = useState('perfil')
   const [alertas, setAlertas] = useState({
     chamadas: false,
@@ -28,6 +31,12 @@ export default function PainelFreela() {
     recebimentos: false
   })
   const [chamadaAtiva, setChamadaAtiva] = useState(null)
+
+  useEffect(() => {
+    if (!carregando && usuario && usuario.tipo !== 'freela') {
+      navigate('/')
+    }
+  }, [carregando, usuario])
 
   const freelaId = usuario?.uid
   useRealtimePresence(freelaId)
