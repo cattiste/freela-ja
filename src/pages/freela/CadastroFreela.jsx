@@ -1,4 +1,4 @@
-// 📄 src/pages/CadastroFreela.jsx
+// 📄 src/pages/freela/CadastroFreela.jsx
 import React, { useState } from 'react'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { doc, setDoc, GeoPoint, serverTimestamp } from 'firebase/firestore'
@@ -65,13 +65,18 @@ export default function CadastroFreela() {
         fotoUrl = await uploadImage(foto)
       }
 
-      const usuarioCredential = await createUserWithEmailAndPassword(auth, email, senha)
-      const usuario = usuarioCredential.usuario
+      // Cria o usuário na autenticação
+      await createUserWithEmailAndPassword(auth, email, senha)
 
-      const geo = new GeoPoint(-23.55052, -46.633308) // SP padrão
+      // Aguarda o auth.currentUser estar disponível
+      const currentUser = auth.currentUser
+      if (!currentUser) throw new Error('Erro ao autenticar. Tente novamente.')
 
-      await setDoc(doc(db, 'usuarios', usuario.uid), {
-        uid: usuario.uid,
+      const geo = new GeoPoint(-23.55052, -46.633308) // Localização padrão SP
+
+      // Salva os dados no Firestore
+      await setDoc(doc(db, 'usuarios', currentUser.uid), {
+        uid: currentUser.uid,
         nome,
         email,
         celular,
@@ -88,6 +93,7 @@ export default function CadastroFreela() {
 
       alert('Cadastro realizado com sucesso!')
       navigate('/painelfreela')
+
     } catch (err) {
       console.error('Erro no cadastro:', err)
       setError(err.message || 'Erro desconhecido')
