@@ -126,7 +126,14 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
             )
           : null
 
-      return { ...f, distanciaKm }
+      const online = !!usuariosOnline[f.id]?.online
+
+      return { ...f, distanciaKm, online }
+    })
+    .sort((a, b) => {
+      if (a.online && !b.online) return -1
+      if (!a.online && b.online) return 1
+      return (a.distanciaKm || Infinity) - (b.distanciaKm || Infinity)
     })
 
   return (

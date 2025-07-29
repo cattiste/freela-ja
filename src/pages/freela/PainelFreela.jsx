@@ -1,7 +1,10 @@
+// src/pages/freela/PainelFreela.jsx
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
+
+import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 
 import MenuInferiorFreela from '@/components/MenuInferiorFreela'
 import PerfilFreela from '@/pages/freela/PerfilFreela'
@@ -14,10 +17,9 @@ import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
 import HistoricoFreela from '@/pages/freela/HistoricoTrabalhosFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
-import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 
 export default function PainelFreela() {
-  const { usuario, carregando } = useAuth()
+  const { user, carregando } = useAuth()
   const [abaSelecionada, setAbaSelecionada] = useState('perfil')
   const [alertas, setAlertas] = useState({
     chamadas: false,
@@ -27,7 +29,7 @@ export default function PainelFreela() {
   })
   const [chamadaAtiva, setChamadaAtiva] = useState(null)
 
-  const freelaId = usuario?.uid
+  const freelaId = user?.uid
   useRealtimePresence(freelaId)
 
   useEffect(() => {
@@ -85,7 +87,7 @@ export default function PainelFreela() {
   }, [freelaId])
 
   if (carregando) return <div className="text-center mt-10">Verificando autenticação...</div>
-  if (!usuario) return <div className="text-center mt-10">Usuário não autenticado.</div>
+  if (!user) return <div className="text-center mt-10">Usuário não autenticado.</div>
 
   const renderConteudo = () => {
     switch (abaSelecionada) {
@@ -93,7 +95,7 @@ export default function PainelFreela() {
         return (
           <div className="grid md:grid-cols-3 gap-4 mt-4">
             <PerfilFreela freelaId={freelaId || ''} />
-            <AgendaFreela freela={usuario} />
+            <AgendaFreela freela={user} />
             <AvaliacoesRecebidasFreela freelaUid={freelaId} />
           </div>
         )
