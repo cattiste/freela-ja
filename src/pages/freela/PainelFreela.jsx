@@ -12,7 +12,7 @@ import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import ChamadasFreela from '@/pages/freela/ChamadasFreela'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
-import { usePresence } from '@/hooks/useRealtimePresence'
+import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 import { getDatabase, ref, set, onDisconnect } from 'firebase/database'
 
 function useRealtimePresence(uid) {
