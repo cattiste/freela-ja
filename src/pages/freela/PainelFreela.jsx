@@ -18,7 +18,6 @@ import { getDatabase, ref, set, onDisconnect } from 'firebase/database'
 function useRealtimePresence(uid) {
   useEffect(() => {
     if (!uid) return
-
     const db = getDatabase()
     const userStatusRef = ref(db, 'users/' + uid)
 
@@ -40,66 +39,66 @@ export default function PainelFreela() {
   const [vagas, setVagas] = useState([])
   const [chamadas, setChamadas] = useState([])
   const [abaSelecionada, setAbaSelecionada] = useState('painel')
+  const [carregando, setCarregando] = useState(true)
 
-  const carregarFreela = useCallback(async () => {
+  useEffect(() => {
     const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
     if (!usuario || usuario.tipo !== 'freela') {
       navigate('/login')
       return
     }
 
-    try {
-      const ref = doc(db, 'usuarios', usuario.uid)
-      const snap = await getDoc(ref)
-      if (!snap.exists()) {
-        alert('Freelancer não encontrado.')
+    const carregarDados = async () => {
+      try {
+        const refUsuario = doc(db, 'usuarios', usuario.uid)
+        const snap = await getDoc(refUsuario)
+        if (!snap.exists()) {
+          alert('Freelancer não encontrado.')
+          navigate('/login')
+          return
+        }
+
+        const dados = snap.data()
+        setFreela({ uid: usuario.uid, ...dados })
+        await updateDoc(refUsuario, { ultimaAtividade: serverTimestamp() })
+
+        // Presença só após confirmação do UID
+        usePresence(usuario.uid)
+        useRealtimePresence(usuario.uid)
+
+        // Chamadas
+        const chamadasRef = collection(db, 'chamadas')
+        const qChamadas = query(chamadasRef, where('freelaUid', '==', usuario.uid))
+        const unsubChamadas = onSnapshot(qChamadas, snapshot => {
+          const chamadasAtuais = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }))
+          setChamadas(chamadasAtuais)
+        })
+
+        // Vagas
+        const vagasRef = collection(db, 'vagas')
+        const qVagas = query(vagasRef, where('status', '==', 'ativo'))
+        const unsubVagas = onSnapshot(qVagas, snapshot => {
+          const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+          setVagas(lista)
+        })
+
+        setCarregando(false)
+        return () => {
+          unsubChamadas()
+          unsubVagas()
+        }
+
+      } catch (err) {
+        console.error('Erro ao carregar freela:', err)
         navigate('/login')
-        return
       }
-
-      const dados = snap.data()
-      setFreela({ uid: usuario.uid, ...dados })
-
-      const chamadasRef = collection(db, 'chamadas')
-      const q = query(chamadasRef, where('freelaUid', '==', usuario.uid))
-      const unsubscribe = onSnapshot(q, snapshot => {
-        const chamadasAtuais = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }))
-        setChamadas(chamadasAtuais)
-      })
-
-      return unsubscribe
-    } catch (err) {
-      console.error('Erro ao carregar freela:', err)
-      navigate('/login')
     }
+
+    carregarDados()
   }, [navigate])
-
-  useEffect(() => {
-    let unsubChamadas = () => {}
-    let unsubVagas = () => {}
-
-    const iniciar = async () => {
-      unsubChamadas = await carregarFreela()
-      const vagasRef = collection(db, 'vagas')
-      const q = query(vagasRef, where('status', '==', 'ativo'))
-      unsubVagas = onSnapshot(q, snapshot => {
-        const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-        setVagas(lista)
-      })
-    }
-
-    iniciar()
-    return () => {
-      unsubChamadas()
-      unsubVagas()
-    }
-  }, [carregarFreela])
-
-  usePresence(freela?.uid)
-  useRealtimePresence(freela?.uid)
 
   const handleLogout = async () => {
     await signOut(auth)
@@ -107,8 +106,8 @@ export default function PainelFreela() {
     navigate('/login')
   }
 
-  if (!freela) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-600">Carregando...</div>
+  if (carregando || !freela) {
+    return <div className="min-h-screen flex items-center justify-center text-gray-600">Carregando painel...</div>
   }
 
   const renderConteudo = () => {
