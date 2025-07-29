@@ -1,6 +1,5 @@
-// 📄 src/pages/CadastroEstabelecimento.jsx
 import React, { useState } from 'react'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { createUserWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth'
 import { doc, setDoc, GeoPoint, serverTimestamp } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import InputMask from 'react-input-mask'
@@ -70,28 +69,31 @@ export default function CadastroEstabelecimento() {
         fotoUrl = await uploadImage(foto)
       }
 
-      const userCredential = await createUserWithEmailAndPassword(auth, email, senha)
-      const usuario = userCredential.user // ✅ Correção aqui
+      await createUserWithEmailAndPassword(auth, email, senha)
 
-      const geo = new GeoPoint(-23.55052, -46.633308) // SP padrão
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          const geo = new GeoPoint(-23.55052, -46.633308)
 
-      const usuarioData = {
-        uid: usuario.uid,
-        nome,
-        email,
-        celular,
-        cnpj,
-        endereco,
-        tipo: 'estabelecimento',
-        localizacao: geo,
-        criadoEm: serverTimestamp(),
-        ...(fotoUrl && { foto: fotoUrl })
-      }
+          const usuarioData = {
+            uid: user.uid,
+            nome,
+            email,
+            celular,
+            cnpj,
+            endereco,
+            tipo: 'estabelecimento',
+            localizacao: geo,
+            criadoEm: serverTimestamp(),
+            ...(fotoUrl && { foto: fotoUrl })
+          }
 
-      await setDoc(doc(db, 'usuarios', usuario.uid), usuarioData)
+          await setDoc(doc(db, 'usuarios', user.uid), usuarioData)
 
-      alert('Cadastro realizado com sucesso!')
-      navigate('/login')
+          alert('Cadastro realizado com sucesso!')
+          navigate('/login')
+        }
+      })
     } catch (err) {
       console.error('Erro no cadastro:', err)
       setError(err.message || 'Erro desconhecido')
