@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import {
   collection, query, where, onSnapshot, addDoc, serverTimestamp
 } from 'firebase/firestore'
@@ -16,12 +16,7 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
   return R * c
 }
 
-function FreelaCard({ freela, distanciaKm, onChamar, chamando, usuarioOnline }) {
-  const online = !!usuarioOnline?.online
-  const lastSeen = usuarioOnline?.lastSeen
-    ? new Date(usuarioOnline.lastSeen).toLocaleTimeString('pt-BR')
-    : '—'
-
+function FreelaCard({ freela, distanciaKm, onChamar, chamando }) {
   return (
     <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100 hover:shadow-xl transition">
       <div className="flex flex-col items-center mb-3">
@@ -50,21 +45,15 @@ function FreelaCard({ freela, distanciaKm, onChamar, chamando, usuarioOnline }) 
           </p>
         )}
         <div className="flex items-center gap-2 mt-1">
-          <span className={`w-2 h-2 rounded-full ${online ? 'bg-green-500' : 'bg-gray-400'}`} />
-          <span className={`text-xs ${online ? 'text-green-700' : 'text-gray-500'}`}>
-            {online ? '🟢 Online agora' : `🔴 Offline (última: ${lastSeen})`}
-          </span>
+          <span className="w-2 h-2 rounded-full bg-green-500" />
+          <span className="text-xs text-green-700">🟢 Online agora</span>
         </div>
       </div>
 
       <button
         onClick={() => onChamar(freela)}
-        disabled={!online || chamando === freela.id}
-        className={`w-full py-2 px-4 rounded-lg font-semibold transition ${
-          online
-            ? 'bg-orange-500 hover:bg-orange-600 text-white'
-            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-        }`}
+        disabled={chamando === freela.id}
+        className="w-full py-2 px-4 rounded-lg font-semibold transition bg-orange-500 hover:bg-orange-600 text-white"
       >
         {chamando === freela.id ? 'Chamando...' : '📞 Chamar'}
       </button>
@@ -81,8 +70,8 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
   useEffect(() => {
     const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      setFreelas(lista)
+      const todos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      setFreelas(todos)
       setCarregando(false)
     })
     return () => unsubscribe()
@@ -111,30 +100,28 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
     setChamando(null)
   }
 
-  const freelasFiltrados = freelas
-    .filter(f =>
-      f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
-    )
-    .map(f => {
-      const distanciaKm =
-        f.coordenadas && estabelecimento?.coordenadas
-          ? calcularDistancia(
-              estabelecimento.coordenadas.latitude,
-              estabelecimento.coordenadas.longitude,
-              f.coordenadas.latitude,
-              f.coordenadas.longitude
-            )
-          : null
+  const freelasFiltrados = useMemo(() => {
+    return freelas
+      .filter((f) => {
+        const online = usuariosOnline[f.id]?.online
+        const funcaoMatch = f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
+        return online && funcaoMatch
+      })
+      .map((f) => {
+        const distanciaKm =
+          f.coordenadas && estabelecimento?.coordenadas
+            ? calcularDistancia(
+                estabelecimento.coordenadas.latitude,
+                estabelecimento.coordenadas.longitude,
+                f.coordenadas.latitude,
+                f.coordenadas.longitude
+              )
+            : null
 
-      const online = !!usuariosOnline[f.id]?.online
-
-      return { ...f, distanciaKm, online }
-    })
-    .sort((a, b) => {
-      if (a.online && !b.online) return -1
-      if (!a.online && b.online) return 1
-      return (a.distanciaKm || Infinity) - (b.distanciaKm || Infinity)
-    })
+        return { ...f, distanciaKm }
+      })
+      .sort((a, b) => (a.distanciaKm || Infinity) - (b.distanciaKm || Infinity))
+  }, [freelas, usuariosOnline, filtroFuncao, estabelecimento])
 
   return (
     <div className="min-h-screen bg-cover bg-center p-4 pb-20"
@@ -158,15 +145,14 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
       {carregando ? (
         <p className="text-center text-white">Carregando freelancers...</p>
       ) : freelasFiltrados.length === 0 ? (
-        <p className="text-center text-white">Nenhum freelancer encontrado.</p>
+        <p className="text-center text-white">Nenhum freelancer online com essa função.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
-          {freelasFiltrados.map(freela => (
+          {freelasFiltrados.map((freela) => (
             <FreelaCard
               key={freela.id}
               freela={freela}
               distanciaKm={freela.distanciaKm}
-              usuarioOnline={usuariosOnline[freela.id]}
               onChamar={chamarFreela}
               chamando={chamando}
             />
