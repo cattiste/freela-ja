@@ -1,11 +1,7 @@
-// src/pages/freela/PainelFreela.jsx
 import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
-
-import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 
 import MenuInferiorFreela from '@/components/MenuInferiorFreela'
 import PerfilFreela from '@/pages/freela/PerfilFreela'
@@ -19,10 +15,10 @@ import HistoricoFreela from '@/pages/freela/HistoricoTrabalhosFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 
+import { useRealtimePresence } from '@/hooks/useRealtimePresence'
+
 export default function PainelFreela() {
   const { usuario, carregando } = useAuth()
-  const navigate = useNavigate()
-
   const [abaSelecionada, setAbaSelecionada] = useState('perfil')
   const [alertas, setAlertas] = useState({
     chamadas: false,
@@ -32,20 +28,17 @@ export default function PainelFreela() {
   })
   const [chamadaAtiva, setChamadaAtiva] = useState(null)
 
-  useEffect(() => {
-    if (!carregando && usuario && usuario.tipo !== 'freela') {
-      navigate('/')
-    }
-  }, [carregando, usuario])
-
-  const freelaId = usuario?.uid
-  useRealtimePresence(freelaId)
+  // ✅ Ativa presença online
+  if (usuario?.uid) {
+    useRealtimePresence(usuario.uid)
+    console.log('📡 Presença ativada para:', usuario.uid)
+  }
 
   useEffect(() => {
-    if (!freelaId) return
+    if (!usuario?.uid) return
 
     const unsubChamadas = onSnapshot(
-      query(collection(db, 'chamadas'), where('freelaUid', '==', freelaId), where('status', '==', 'pendente')),
+      query(collection(db, 'chamadas'), where('freelaUid', '==', usuario.uid), where('status', '==', 'pendente')),
       (snap) => setAlertas(prev => ({ ...prev, chamadas: snap.size > 0 }))
     )
 
@@ -60,12 +53,12 @@ export default function PainelFreela() {
     )
 
     const unsubAvaliacoes = onSnapshot(
-      query(collection(db, 'avaliacoesFreelas'), where('freelaUid', '==', freelaId)),
+      query(collection(db, 'avaliacoesFreelas'), where('freelaUid', '==', usuario.uid)),
       (snap) => setAlertas(prev => ({ ...prev, avaliacoes: snap.size > 0 }))
     )
 
     const unsubRecebimentos = onSnapshot(
-      query(collection(db, 'chamadas'), where('freelaUid', '==', freelaId), where('status', 'in', ['finalizado', 'concluido'])),
+      query(collection(db, 'chamadas'), where('freelaUid', '==', usuario.uid), where('status', 'in', ['finalizado', 'concluido'])),
       (snap) => setAlertas(prev => ({ ...prev, recebimentos: snap.size > 0 }))
     )
 
@@ -76,14 +69,14 @@ export default function PainelFreela() {
       unsubAvaliacoes()
       unsubRecebimentos()
     }
-  }, [freelaId])
+  }, [usuario?.uid])
 
   useEffect(() => {
-    if (!freelaId) return
+    if (!usuario?.uid) return
 
     const q = query(
       collection(db, 'chamadas'),
-      where('freelaUid', '==', freelaId),
+      where('freelaUid', '==', usuario.uid),
       where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'checkout_freela'])
     )
 
@@ -93,7 +86,7 @@ export default function PainelFreela() {
     })
 
     return () => unsubscribe()
-  }, [freelaId])
+  }, [usuario?.uid])
 
   if (carregando) return <div className="text-center mt-10">Verificando autenticação...</div>
   if (!usuario) return <div className="text-center mt-10">Usuário não autenticado.</div>
@@ -103,27 +96,27 @@ export default function PainelFreela() {
       case 'perfil':
         return (
           <div className="grid md:grid-cols-3 gap-4 mt-4">
-            <PerfilFreela freelaId={freelaId || ''} />
+            <PerfilFreela freelaId={usuario.uid} />
             <AgendaFreela freela={usuario} />
-            <AvaliacoesRecebidasFreela freelaUid={freelaId} />
+            <AvaliacoesRecebidasFreela freelaUid={usuario.uid} />
           </div>
         )
       case 'agenda':
-        return <AgendaCompleta freelaId={freelaId} />
+        return <AgendaCompleta freelaId={usuario.uid} />
       case 'chamadas':
         return <ChamadasFreela />
       case 'avaliacoes':
-        return <AvaliacoesRecebidasFreela freelaUid={freelaId} />
+        return <AvaliacoesRecebidasFreela freelaUid={usuario.uid} />
       case 'eventos':
-        return <Eventos freelaId={freelaId} />
+        return <Eventos freelaId={usuario.uid} />
       case 'vagas':
-        return <Vagas freelaId={freelaId} />
+        return <Vagas freelaId={usuario.uid} />
       case 'config':
-        return <ConfiguracoesFreela freelaId={freelaId} />
+        return <ConfiguracoesFreela />
       case 'historico':
-        return <HistoricoFreela freelaId={freelaId} />
+        return <HistoricoFreela freelaId={usuario.uid} />
       case 'recebimentos':
-        return <RecebimentosFreela freelaId={freelaId} />
+        return <RecebimentosFreela freelaId={usuario.uid} />
       default:
         return null
     }
