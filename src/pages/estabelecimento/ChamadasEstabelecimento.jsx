@@ -13,8 +13,6 @@ import { toast } from 'react-hot-toast'
 import AvaliacaoInline from '@/components/AvaliacaoInline'
 import ChatInline from '@/components/ChatInline'
 
-
-
 export default function ChamadasEstabelecimento({ estabelecimento }) {
   const [chamadas, setChamadas] = useState([])
   const [carregando, setCarregando] = useState(true)
@@ -134,8 +132,12 @@ checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: 
           {(chamada.status === 'concluido' || chamada.status === 'finalizada') && (
             <>
               <span className="text-green-600 font-bold block text-center mt-2">✅ Finalizada</span>
-              <AvaliacaoInline chamada={chamada} tipo="estabelecimento" />
-           </>
+              {!chamada.avaliacaoFreelaFeita ? (
+                <AvaliacaoInline chamada={chamada} tipo="estabelecimento" />
+              ) : (
+                <p className="text-sm text-gray-500 text-center">Freelancer já avaliado ✅</p>
+              )}
+            </>
           )}
         </div>
       ))}
