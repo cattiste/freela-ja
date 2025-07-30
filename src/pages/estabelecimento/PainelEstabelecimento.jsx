@@ -18,7 +18,7 @@ import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagame
 import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
 import ChamadasAtivas from '@/pages/estabelecimento/ChamadasAtivas'
 import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
-import TesteUsuariosOnline from '@/components/TesteUsuariosOnline'
+
 
 
 
@@ -165,8 +165,7 @@ export default function PainelEstabelecimento() {
       {renderTopo()}
       {!['buscar', 'ativas', 'historico'].includes(abaSelecionada) && renderChamadaAtiva()}
       {renderConteudo()}
-      <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
-      <TesteUsuariosOnline />
+      <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />      
     </div>
   )
 }
