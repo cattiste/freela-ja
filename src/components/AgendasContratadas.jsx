@@ -3,7 +3,7 @@ import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/fire
 import { db } from '@/firebase'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
-import './estiloAgenda.css'
+import '@/styles/estiloAgenda.css'
 
 export default function AgendasContratadas({ estabelecimento }) {
   const [todasChamadas, setTodasChamadas] = useState([])
