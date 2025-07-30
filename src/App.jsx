@@ -12,7 +12,6 @@ import Sobre from '@/pages/gerais/Sobre'
 import Login from '@/pages/gerais/Login'
 import EsqueciSenha from '@/pages/gerais/EsqueciSenha'
 import Oportunidades from '@/pages/gerais/Oportunidades'
-import Avaliacao from '@/pages/gerais/Avaliacao'
 import PagamentoEvento from '@/pages/gerais/PagamentoEvento'
 import EventoConfirmado from '@/pages/gerais/EventoConfirmado'
 import EventosPendentes from '@/pages/gerais/EventosPendentes'
@@ -58,11 +57,7 @@ export default function App() {
           <Route path="/painelpf" element={<PainelPessoaFisica />} />
           <Route path="/cadastropf" element={<CadastroPessoaFisica />} />
 
-
-
-          {/* Avaliação compartilhada */}
-          <Route path="/avaliar/:tipo/:id" element={<Avaliacao />} />
-
+          
           {/* Freela */}
           <Route path="/cadastrofreela" element={<CadastroFreela />} />
           <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
