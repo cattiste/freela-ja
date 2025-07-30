@@ -14,9 +14,10 @@ import { db } from '@/firebase'
 
 import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
 import CardAvaliacaoFreela from '@/components/CardAvaliacaoFreela'
+import AgendasContratadas from '@/components/AgendasContratadas'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
-import '@/styles/estiloAgenda.css' // se quiser customizar o estilo depois
+import './estiloAgenda.css'
 
 export default function PainelEstabelecimento() {
   const { usuario, carregando } = useAuth()
@@ -52,7 +53,6 @@ export default function PainelEstabelecimento() {
         if (!freelaSnap.exists()) continue
         chamada.freela = { ...freelaSnap.data(), uid: chamada.freelaUid }
 
-        // datas agendadas
         if (chamada.data) {
           datas.add(chamada.data.toDate().toDateString())
         }
@@ -100,15 +100,11 @@ export default function PainelEstabelecimento() {
     return null
   }
 
-  if (carregando || !usuario) return <p className="p-4">Carregando...</p>
-
   return (
-    <div className="pb-28">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white pb-28">
       {aba === 'perfil' && (
         <div className="p-4 space-y-6">
-          {/* Grid principal */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Coluna 1: dados */}
             <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
               <img
                 src={usuario.foto || 'https://via.placeholder.com/100'}
@@ -127,16 +123,21 @@ export default function PainelEstabelecimento() {
               </div>
             </div>
 
-            {/* Coluna 2: calendário */}
             <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
               <h3 className="text-lg font-bold text-orange-700 mb-2">Minha Agenda</h3>
-              <Calendar tileClassName={tileClassName} />
+              <Calendar
+                tileClassName={tileClassName}
+                tileContent={({ date }) =>
+                  datasAgendadas.includes(date.toDateString()) ? (
+                    <div className="dot-indicator" />
+                  ) : null
+                }
+              />
               <p className="text-xs text-gray-500 mt-2">
                 Datas em laranja indicam eventos, entrevistas ou agendamentos.
               </p>
             </div>
 
-            {/* Coluna 3: avaliações pendentes */}
             <div>
               <h3 className="font-bold text-orange-700 mb-2">Freelas a Avaliar</h3>
               {avaliacoesPendentes.length === 0 ? (
@@ -157,7 +158,6 @@ export default function PainelEstabelecimento() {
             </div>
           </div>
 
-          {/* Chamadas ativas abaixo */}
           <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
             <h3 className="text-lg font-bold text-orange-700 mb-3">Chamadas Ativas</h3>
             {chamadasAtivas.length === 0 ? (
@@ -198,13 +198,37 @@ export default function PainelEstabelecimento() {
       {aba === 'buscar' && (
         <div className="p-4">
           <h2 className="text-xl font-bold mb-4">Buscar Freelas</h2>
-          {/* aqui você integra o componente de busca */}
+          {/* Componente de busca aqui */}
         </div>
       )}
 
-      {/* outras abas futuras: chamadas, recebimentos, config */}
+      {aba === 'agendas' && (
+        <div className="p-4">
+          <AgendasContratadas estabelecimento={usuario} />
+        </div>
+      )}
 
-      <MenuInferiorEstabelecimento abaAtual={aba} setAba={setAba} />
+      {aba === 'ativas' && (
+        <div className="p-4 text-orange-700 font-semibold">Chamadas Ativas (em construção...)</div>
+      )}
+
+      {aba === 'vagas' && (
+        <div className="p-4 text-orange-700 font-semibold">Vagas públicas (em breve...)</div>
+      )}
+
+      {aba === 'avaliacao' && (
+        <div className="p-4 text-orange-700 font-semibold">Área de Avaliações (em breve...)</div>
+      )}
+
+      {aba === 'historico' && (
+        <div className="p-4 text-orange-700 font-semibold">Histórico de Chamadas (em breve...)</div>
+      )}
+
+      {aba === 'configuracoes' && (
+        <div className="p-4 text-orange-700 font-semibold">Configurações da Conta (em breve...)</div>
+      )}
+
+      <MenuInferiorEstabelecimento abaAtiva={aba} onSelect={setAba} />
     </div>
   )
 }

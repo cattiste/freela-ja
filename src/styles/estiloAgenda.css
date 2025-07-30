@@ -1,27 +1,95 @@
-/* estiloAgenda.css */
-
 .react-calendar {
   width: 100%;
+  max-width: 100%;
+  background: #fff;
+  border: 1px solid #fbbf24;
+  border-radius: 12px;
+  font-family: 'Segoe UI', sans-serif;
+  line-height: 1.125em;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.react-calendar__navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1em;
+}
+
+.react-calendar__navigation button {
+  color: #ea580c;
+  background: none;
   border: none;
-  font-family: inherit;
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 0.5rem;
+  transition: background 0.3s;
+  border-radius: 6px;
+}
+
+.react-calendar__navigation button:hover {
+  background-color: #fef3c7;
+}
+
+.react-calendar__month-view__weekdays {
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #9ca3af;
+  font-size: 0.75rem;
 }
 
 .react-calendar__tile {
-  padding: 10px 0;
+  max-width: 100%;
+  padding: 0.6em 0.4em;
+  background: none;
   text-align: center;
   border-radius: 8px;
+  transition: background 0.2s, color 0.2s;
+  cursor: pointer;
+}
+
+.react-calendar__tile:disabled {
+  background-color: #fef3c7;
+  color: #a16207;
+  cursor: not-allowed;
+  font-weight: bold;
 }
 
 .react-calendar__tile--now {
-  background: #facc15 !important; /* amarelo para hoje */
-  color: black !important;
+  background: #fef9c3;
+  color: #b45309;
+  border: 1px solid #facc15;
 }
 
 .react-calendar__tile--active {
-  background: #fb923c !important; /* laranja para seleção */
-  color: white !important;
+  background: #f97316;
+  color: white;
 }
 
-.bg-orange-200 {
-  background-color: #fed7aa !important;
+.react-calendar__tile:hover:not(:disabled) {
+  background: #fde68a;
+}
+
+.react-calendar__tile--hasActive {
+  background: #fb923c;
+  color: white;
+}
+
+.react-calendar__month-view__days__day--weekend {
+  color: #be123c;
+}
+
+@media (max-width: 600px) {
+  .react-calendar {
+    font-size: 14px;
+  }
+}
+.dot-indicator {
+  width: 8px;
+  height: 8px;
+  margin: 0 auto;
+  margin-top: 4px;
+  border-radius: 50%;
+  background-color: #f97316; /* laranja */
 }
