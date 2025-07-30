@@ -15,9 +15,16 @@ import { db } from '@/firebase'
 import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
 import CardAvaliacaoFreela from '@/components/CardAvaliacaoFreela'
 import AgendasContratadas from '@/components/AgendasContratadas'
+import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
+import BuscarFreelas from '@/pages/estabelecimento/BuscarFreelas'
+import VagasDisponiveis from '@/pages/estabelecimento/VagasDisponiveis'
+import AvaliacoesRecebidasEstabelecimento from '@/pages/estabelecimento/AvaliacoesRecebidasEstabelecimento'
+import HistoricoChamadasEstabelecimento from '@/pages/estabelecimento/HistoricoChamadasEstabelecimento'
+import ConfiguracoesEstabelecimento from '@/pages/estabelecimento/ConfiguracoesEstabelecimento'
+
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
-import '@/styles/estiloAgenda.css'
+import './estiloAgenda.css'
 
 export default function PainelEstabelecimento() {
   const { usuario, carregando } = useAuth()
@@ -195,43 +202,15 @@ export default function PainelEstabelecimento() {
         </div>
       )}
 
-      {aba === 'buscar' && (
-        <div className="p-4">
-          <h2 className="text-xl font-bold mb-4">Buscar Freelas</h2>
-          {/* Componente de busca aqui */}
-        </div>
-      )}
+      {aba === 'buscar' && <BuscarFreelas />}      
+      {aba === 'agendas' && <AgendasContratadas estabelecimento={usuario} />}      
+      {aba === 'ativas' && <ChamadasEstabelecimento />}      
+      {aba === 'vagas' && <VagasDisponiveis />}      
+      {aba === 'avaliacao' && <AvaliacoesRecebidasEstabelecimento />}      
+      {aba === 'historico' && <HistoricoChamadasEstabelecimento />}      
+      {aba === 'configuracoes' && <ConfiguracoesEstabelecimento />}      
 
-      {aba === 'agendas' && (
-        <div className="p-4">
-          <AgendasContratadas estabelecimento={usuario} />
-        </div>
-      )}
-
-      {aba === 'ativas' && (
-        <div className="p-4 text-orange-700 font-semibold">Chamadas Ativas (em construção...)</div>
-      )}
-
-      {aba === 'vagas' && (
-        <div className="p-4 text-orange-700 font-semibold">Vagas públicas (em breve...)</div>
-      )}
-
-      {aba === 'avaliacao' && (
-        <div className="p-4 text-orange-700 font-semibold">Área de Avaliações (em breve...)</div>
-      )}
-
-      {aba === 'historico' && (
-        <div className="p-4 text-orange-700 font-semibold">Histórico de Chamadas (em breve...)</div>
-      )}
-
-      {aba === 'configuracoes' && (
-        <div className="p-4 text-orange-700 font-semibold">Configurações da Conta (em breve...)</div>
-      )}
-
-      <MenuInferiorEstabelecimento abaAtiva={aba} onSelect={(id) => {
-        console.log('Clicou em:', id)
-        setAba(id)
-      }} />
+      <MenuInferiorEstabelecimento abaAtiva={aba} onSelect={setAba} />
     </div>
   )
 }
