@@ -1,10 +1,10 @@
-// PainelEstabelecimento.jsx com ícone 'perfil' e aba personalizada
+// PainelEstabelecimento.jsx sem ChamadaInline e com correções gerais
 
 import React, { useState, useEffect } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
 import {
   doc, getDoc, updateDoc, serverTimestamp,
-  collection, query, where, onSnapshot
+  collection, query, where, onSnapshot, getDocs
 } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 
@@ -27,7 +27,6 @@ export default function PainelEstabelecimento() {
   const [estabelecimento, setEstabelecimento] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [abaSelecionada, setAbaSelecionada] = useState('perfil')
-  const [chamadaAtiva, setChamadaAtiva] = useState(null)
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
   const [datasAgendadas, setDatasAgendadas] = useState([])
 
@@ -61,47 +60,6 @@ export default function PainelEstabelecimento() {
 
     return () => unsubscribe()
   }, [])
-
-  useEffect(() => {
-    if (!estabelecimento?.uid) return
-
-    const unsub = onSnapshot(
-      query(
-        collection(db, 'chamadas'),
-        where('estabelecimentoUid', '==', estabelecimento.uid),
-        where('status', '==', 'checkout_freela'),
-        where('checkOutEstabelecimento', '==', false)
-      ),
-      (snap) => {
-        snap.docChanges().forEach(({ doc: d, type }) => {
-          if (type === 'added') {
-            const data = d.data()
-            new Audio('/sons/checkout.mp3').play().catch(() => {})
-            alert(`⚠️ O freela ${data.freelaNome} finalizou o serviço. Confirme o checkout.`)
-          }
-        })
-      }
-    )
-
-    return () => unsub()
-  }, [estabelecimento])
-
-  useEffect(() => {
-    if (!estabelecimento?.uid) return
-
-    const q = query(
-      collection(db, 'chamadas'),
-      where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'checkout_freela'])
-    )
-
-    const unsubscribe = onSnapshot(q, (snap) => {
-      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      setChamadaAtiva(docs[0] || null)
-    })
-
-    return () => unsubscribe()
-  }, [estabelecimento])
 
   useEffect(() => {
     if (!estabelecimento?.uid) return
@@ -197,23 +155,6 @@ export default function PainelEstabelecimento() {
     </div>
   )
 
-  const renderTopo = () => (
-    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow p-4 flex items-center gap-4 mb-4 sticky top-0 z-40">
-      {estabelecimento?.foto && (
-        <img
-          src={estabelecimento.foto}
-          alt="Logo"
-          className="w-16 h-16 rounded-full border border-orange-300 object-cover"
-        />
-      )}
-      <div>
-        <h2 className="text-xl font-bold text-orange-700">{estabelecimento?.nome}</h2>
-        <p className="text-sm text-gray-600">{estabelecimento?.endereco}</p>
-        <p className="text-sm text-gray-600">📞 {estabelecimento?.celular}</p>
-      </div>
-    </div>
-  )
-
   const renderConteudo = () => {
     switch (abaSelecionada) {
       case 'perfil':
@@ -252,8 +193,6 @@ export default function PainelEstabelecimento() {
         backgroundSize: 'cover',
       }}
     >
-      {renderTopo()}
-      {!['buscar', 'ativas', 'historico'].includes(abaSelecionada) && renderChamadaAtiva()}
       {renderConteudo()}
       <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
     </div>
