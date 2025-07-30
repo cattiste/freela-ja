@@ -1,205 +1,159 @@
-// PainelEstabelecimento.jsx com ícone de perfil, cards harmonizados e chamadas ativas fixas
+// Atualização do AgendasContratadas.jsx com salvamento corrigido e validação
 
-import React, { useState, useEffect } from 'react'
-import { onAuthStateChanged } from 'firebase/auth'
+import React, { useEffect, useState } from 'react'
 import {
-  doc, getDoc, updateDoc, serverTimestamp,
-  collection, query, where, onSnapshot, getDocs
+  collection,
+  query,
+  where,
+  onSnapshot,
+  doc,
+  getDoc,
+  addDoc,
+  Timestamp
 } from 'firebase/firestore'
-import { auth, db } from '@/firebase'
-
-import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
-import BuscarFreelas from '@/components/BuscarFreelas'
-import AgendasContratadas from '@/components/AgendasContratadas'
-import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompleto'
-import AvaliacaoFreela from '@/components/AvaliacaoFreela'
-import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
-import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
-import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
-import ChamadasAtivas from '@/pages/estabelecimento/ChamadasAtivas'
-import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
-import CardAvaliacaoFreela from '@/components/CardAvaliacaoFreela'
+import { db } from '@/firebase'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
 
-export default function PainelEstabelecimento() {
-  const [estabelecimento, setEstabelecimento] = useState(null)
+export default function AgendasContratadas({ estabelecimento }) {
+  const [chamadas, setChamadas] = useState([])
+  const [compromissos, setCompromissos] = useState([])
+  const [dataSelecionada, setDataSelecionada] = useState(new Date())
+  const [novoCompromisso, setNovoCompromisso] = useState('')
   const [carregando, setCarregando] = useState(true)
-  const [abaSelecionada, setAbaSelecionada] = useState('perfil')
-  const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
-  const [datasAgendadas, setDatasAgendadas] = useState([])
 
-  const usuariosOnline = useUsuariosOnline()
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
-      if (!usuario) {
-        setEstabelecimento(null)
-        setCarregando(false)
-        return
-      }
-
-      try {
-        const ref = doc(db, 'usuarios', usuario.uid)
-        const snap = await getDoc(ref)
-
-        if (snap.exists() && snap.data().tipo === 'estabelecimento') {
-          const dados = snap.data()
-          setEstabelecimento({ uid: usuario.uid, ...dados })
-          await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
-        } else {
-          console.warn('[Auth] Documento não encontrado ou não é um estabelecimento')
-        }
-      } catch (err) {
-        console.error('[Auth] Erro ao buscar dados do estabelecimento:', err)
-      } finally {
-        setCarregando(false)
-      }
-    })
-
-    return () => unsubscribe()
-  }, [])
+  const dataStr = dataSelecionada.toDateString()
 
   useEffect(() => {
     if (!estabelecimento?.uid) return
 
-    const carregarAvaliacoes = async () => {
-      const q = query(
-        collection(db, 'chamadas'),
-        where('estabelecimentoUid', '==', estabelecimento.uid),
-        where('status', '==', 'finalizada')
-      )
-      const snap = await getDocs(q)
-      const pendentes = []
-      const datas = new Set()
+    const q = query(
+      collection(db, 'chamadas'),
+      where('estabelecimentoUid', '==', estabelecimento.uid)
+    )
 
-      for (const docSnap of snap.docs) {
-        const chamada = { id: docSnap.id, ...docSnap.data() }
-
-        if (chamada.data) {
-          datas.add(chamada.data.toDate().toDateString())
-        }
-
-        const avaliacaoQ = query(
-          collection(db, 'avaliacoes'),
-          where('tipo', '==', 'freela'),
-          where('chamadaId', '==', chamada.id)
-        )
-        const avaliacaoSnap = await getDocs(avaliacaoQ)
-        if (avaliacaoSnap.empty) {
-          pendentes.push(chamada)
-        }
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const lista = []
+      for (const docSnap of snapshot.docs) {
+        const data = docSnap.data()
+        data.id = docSnap.id
+        data.dataStr = data.data?.toDate().toDateString()
+        lista.push(data)
       }
+      setChamadas(lista)
+      setCarregando(false)
+    })
 
-      setAvaliacoesPendentes(pendentes)
-      setDatasAgendadas([...datas])
-    }
-
-    carregarAvaliacoes()
+    return () => unsubscribe()
   }, [estabelecimento])
 
-  const renderPerfil = () => (
+  useEffect(() => {
+    if (!estabelecimento?.uid) return
+
+    const q = query(
+      collection(db, 'usuarios', estabelecimento.uid, 'compromissos')
+    )
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const lista = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        dataStr: doc.data().data?.toDate().toDateString()
+      }))
+      setCompromissos(lista)
+    })
+
+    return () => unsubscribe()
+  }, [estabelecimento])
+
+  const todasDatas = [
+    ...chamadas.map(c => c.dataStr),
+    ...compromissos.map(c => c.dataStr)
+  ]
+
+  const compromissosDoDia = [
+    ...chamadas.filter(c => c.dataStr === dataStr),
+    ...compromissos.filter(c => c.dataStr === dataStr)
+  ]
+
+  const salvarCompromisso = async () => {
+    if (!novoCompromisso.trim()) {
+      alert('Digite um título para o compromisso.')
+      return
+    }
+    try {
+      const ref = collection(db, 'usuarios', estabelecimento.uid, 'compromissos')
+      await addDoc(ref, {
+        titulo: novoCompromisso,
+        data: Timestamp.fromDate(dataSelecionada),
+        criadoEm: Timestamp.now()
+      })
+      setNovoCompromisso('')
+    } catch (error) {
+      console.error('Erro ao salvar compromisso:', error)
+      alert('Erro ao salvar compromisso. Verifique as permissões do Firestore.')
+    }
+  }
+
+  return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
-          <img
-            src={estabelecimento?.foto || 'https://via.placeholder.com/100'}
-            alt={estabelecimento?.nome}
-            className="w-24 h-24 rounded-full object-cover mb-2 border-2 border-orange-500 mx-auto"
-          />
-          <h2 className="text-center text-xl font-bold text-orange-700">{estabelecimento?.nome}</h2>
-          <p className="text-center text-sm text-gray-600 mb-4">{estabelecimento?.funcao} — {estabelecimento?.especialidade}</p>
-          <div className="text-sm text-gray-700 space-y-1">
-            <p>📞 {estabelecimento?.celular || 'Telefone não informado'}</p>
-            <p>📧 {estabelecimento?.email}</p>
-            <p>📍 {estabelecimento?.endereco}</p>
-            <p>🧾 {estabelecimento?.cnpj}</p>
+      <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
+        <h3 className="text-lg font-bold text-orange-700 mb-2">Minha Agenda</h3>
+
+        <Calendar
+          value={dataSelecionada}
+          onChange={setDataSelecionada}
+          tileClassName={({ date }) =>
+            todasDatas.includes(date.toDateString())
+              ? 'bg-orange-200 text-black font-bold rounded-lg'
+              : null
+          }
+          tileContent={({ date }) =>
+            todasDatas.includes(date.toDateString()) ? (
+              <div className="dot-indicator" />
+            ) : null
+          }
+        />
+
+        <div className="mt-4 space-y-2">
+          <h4 className="text-sm font-semibold text-orange-700">
+            Adicionar compromisso em {dataSelecionada.toLocaleDateString()}
+          </h4>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              className="flex-1 border rounded px-2 py-1 text-sm"
+              placeholder="Ex: reunião, lembrete, entrevista..."
+              value={novoCompromisso}
+              onChange={(e) => setNovoCompromisso(e.target.value)}
+            />
+            <button
+              onClick={salvarCompromisso}
+              className="bg-orange-600 text-white text-sm px-3 py-1 rounded hover:bg-orange-700"
+            >
+              Salvar
+            </button>
           </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
-          <h3 className="text-lg font-bold text-orange-700 mb-2">Minha Agenda</h3>
-          <Calendar
-            tileClassName={({ date }) =>
-              datasAgendadas.includes(date.toDateString())
-                ? 'bg-orange-200 text-black font-bold rounded-lg'
-                : null
-            }
-            tileContent={({ date }) =>
-              datasAgendadas.includes(date.toDateString()) ? (
-                <div className="dot-indicator" />
-              ) : null
-            }
-          />
-          <p className="text-xs text-gray-500 mt-2">Datas em laranja indicam eventos, entrevistas ou agendamentos.</p>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
-          <h3 className="font-bold text-orange-700 mb-2">Freelas a Avaliar</h3>
-          {avaliacoesPendentes.length === 0 ? (
-            <p className="text-sm text-gray-500">Nenhum freela para avaliar no momento.</p>
-          ) : (
-            avaliacoesPendentes.map((chamada) => (
-              <CardAvaliacaoFreela
-                key={chamada.id}
-                chamada={chamada}
-                onAvaliado={(id) =>
-                  setAvaliacoesPendentes((prev) => prev.filter((c) => c.id !== id))
-                }
-              />
-            ))
-          )}
         </div>
       </div>
 
       <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
-        <h3 className="text-lg font-bold text-orange-700 mb-3">Chamadas Ativas</h3>
-        <p className="text-sm text-gray-500">Nenhuma chamada ativa no momento.</p>
+        <h3 className="text-lg font-bold text-orange-700 mb-2">
+          Compromissos em {dataSelecionada.toLocaleDateString()}
+        </h3>
+        {carregando ? (
+          <p className="text-sm text-gray-500">Carregando...</p>
+        ) : compromissosDoDia.length === 0 ? (
+          <p className="text-sm text-gray-500">Nenhum compromisso marcado para este dia.</p>
+        ) : (
+          <ul className="text-sm list-disc list-inside space-y-1">
+            {compromissosDoDia.map((item) => (
+              <li key={item.id}>{item.titulo || item.vagaTitulo || 'Evento'}</li>
+            ))}
+          </ul>
+        )}
       </div>
-    </div>
-  )
-
-  const renderConteudo = () => {
-    switch (abaSelecionada) {
-      case 'perfil':
-        return renderPerfil()
-      case 'buscar':
-        return <BuscarFreelas estabelecimento={estabelecimento} usuariosOnline={usuariosOnline} />
-      case 'agendas':
-        return <AgendasContratadas estabelecimento={estabelecimento} />
-      case 'vagas':
-        return <VagasEstabelecimentoCompleto estabelecimento={estabelecimento} />
-      case 'avaliacao':
-        return <AvaliacaoFreela estabelecimento={estabelecimento} />
-      case 'historico':
-        return <HistoricoChamadasEstabelecimento estabelecimento={estabelecimento} />
-      case 'configuracoes':
-        return <ConfigPagamentoEstabelecimento usuario={estabelecimento} />
-      case 'ativas':
-        return <ChamadasAtivas estabelecimento={estabelecimento} />
-      case 'chamadas':
-        return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
-      default:
-        return null
-    }
-  }
-
-  if (carregando) return <div className="text-center text-orange-600 mt-8">Carregando painel...</div>
-  if (!estabelecimento) return <div className="text-center text-red-600 mt-8">Acesso não autorizado.</div>
-
-  return (
-    <div
-      className="min-h-screen bg-cover bg-center p-4 pb-20"
-      style={{
-        backgroundImage: `url('/img/fundo-login.jpg')`,
-        backgroundAttachment: 'fixed',
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: 'cover',
-      }}
-    >
-      {renderConteudo()}
-      <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
     </div>
   )
 }
