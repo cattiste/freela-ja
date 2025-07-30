@@ -1,10 +1,10 @@
-// PainelEstabelecimento.jsx com ícone de perfil, cards harmonizados e chamadas ativas fixas
+// PainelEstabelecimento.jsx com datasAgendadas unificando compromissos e chamadas
 
 import React, { useState, useEffect } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
 import {
   doc, getDoc, updateDoc, serverTimestamp,
-  collection, query, where, onSnapshot, getDocs
+  collection, query, where, getDocs
 } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 
@@ -28,9 +28,12 @@ export default function PainelEstabelecimento() {
   const [carregando, setCarregando] = useState(true)
   const [abaSelecionada, setAbaSelecionada] = useState('perfil')
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
-  const [datasAgendadas, setDatasAgendadas] = useState([])
+  const [datasChamadas, setDatasChamadas] = useState([])
+  const [datasCompromissos, setDatasCompromissos] = useState([])
 
   const usuariosOnline = useUsuariosOnline()
+
+  const datasAgendadas = [...new Set([...datasChamadas, ...datasCompromissos])]
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
@@ -48,8 +51,6 @@ export default function PainelEstabelecimento() {
           const dados = snap.data()
           setEstabelecimento({ uid: usuario.uid, ...dados })
           await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
-        } else {
-          console.warn('[Auth] Documento não encontrado ou não é um estabelecimento')
         }
       } catch (err) {
         console.error('[Auth] Erro ao buscar dados do estabelecimento:', err)
@@ -64,39 +65,33 @@ export default function PainelEstabelecimento() {
   useEffect(() => {
     if (!estabelecimento?.uid) return
 
-    const carregarAvaliacoes = async () => {
+    const carregarChamadas = async () => {
       const q = query(
         collection(db, 'chamadas'),
-        where('estabelecimentoUid', '==', estabelecimento.uid),
-        where('status', '==', 'finalizada')
+        where('estabelecimentoUid', '==', estabelecimento.uid)
       )
       const snap = await getDocs(q)
-      const pendentes = []
       const datas = new Set()
-
-      for (const docSnap of snap.docs) {
-        const chamada = { id: docSnap.id, ...docSnap.data() }
-
-        if (chamada.data) {
-          datas.add(chamada.data.toDate().toDateString())
-        }
-
-        const avaliacaoQ = query(
-          collection(db, 'avaliacoes'),
-          where('tipo', '==', 'freela'),
-          where('chamadaId', '==', chamada.id)
-        )
-        const avaliacaoSnap = await getDocs(avaliacaoQ)
-        if (avaliacaoSnap.empty) {
-          pendentes.push(chamada)
-        }
-      }
-
-      setAvaliacoesPendentes(pendentes)
-      setDatasAgendadas([...datas])
+      snap.docs.forEach(doc => {
+        const data = doc.data().data?.toDate().toDateString()
+        if (data) datas.add(data)
+      })
+      setDatasChamadas([...datas])
     }
 
-    carregarAvaliacoes()
+    const carregarCompromissos = async () => {
+      const q = collection(db, 'usuarios', estabelecimento.uid, 'compromissos')
+      const snap = await getDocs(q)
+      const datas = new Set()
+      snap.docs.forEach(doc => {
+        const data = doc.data().data?.toDate().toDateString()
+        if (data) datas.add(data)
+      })
+      setDatasCompromissos([...datas])
+    }
+
+    carregarChamadas()
+    carregarCompromissos()
   }, [estabelecimento])
 
   const renderPerfil = () => (
@@ -151,11 +146,6 @@ export default function PainelEstabelecimento() {
             ))
           )}
         </div>
-      </div>
-
-      <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
-        <h3 className="text-lg font-bold text-orange-700 mb-3">Chamadas Ativas</h3>
-        <p className="text-sm text-gray-500">Nenhuma chamada ativa no momento.</p>
       </div>
     </div>
   )
