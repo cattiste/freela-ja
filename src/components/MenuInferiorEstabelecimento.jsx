@@ -12,7 +12,7 @@ import {
 import '@/styles/menuInferior.css'
 
 const botoes = [
-  { id: 'perfil', label: 'perfil', icon: <Search size={20} /> },
+  { id: 'perfil', label: 'Perfil', icon: <UserCircle size={20} /> },
   { id: 'buscar', label: 'Buscar', icon: <Search size={20} /> },
   { id: 'ativas', label: 'Ativas', icon: <Signal size={20} /> }, // ✅ NOVA ABA
   { id: 'agendas', label: 'Agendas', icon: <CalendarDays size={20} /> },
