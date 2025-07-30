@@ -1,3 +1,5 @@
+// Atualização do AgendasContratadas.jsx com salvamento corrigido e validação
+
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -23,7 +25,6 @@ export default function AgendasContratadas({ estabelecimento }) {
 
   const dataStr = dataSelecionada.toDateString()
 
-  // Carrega chamadas do sistema (vagas e eventos)
   useEffect(() => {
     if (!estabelecimento?.uid) return
 
@@ -34,14 +35,12 @@ export default function AgendasContratadas({ estabelecimento }) {
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       const lista = []
-
       for (const docSnap of snapshot.docs) {
         const data = docSnap.data()
         data.id = docSnap.id
         data.dataStr = data.data?.toDate().toDateString()
         lista.push(data)
       }
-
       setChamadas(lista)
       setCarregando(false)
     })
@@ -49,7 +48,6 @@ export default function AgendasContratadas({ estabelecimento }) {
     return () => unsubscribe()
   }, [estabelecimento])
 
-  // Carrega compromissos manuais
   useEffect(() => {
     if (!estabelecimento?.uid) return
 
@@ -80,16 +78,22 @@ export default function AgendasContratadas({ estabelecimento }) {
   ]
 
   const salvarCompromisso = async () => {
-    if (!novoCompromisso.trim()) return
-    const ref = collection(db, 'usuarios', estabelecimento.uid, 'compromissos')
-
-    await addDoc(ref, {
-      titulo: novoCompromisso,
-      data: Timestamp.fromDate(dataSelecionada),
-      criadoEm: Timestamp.now()
-    })
-
-    setNovoCompromisso('')
+    if (!novoCompromisso.trim()) {
+      alert('Digite um título para o compromisso.')
+      return
+    }
+    try {
+      const ref = collection(db, 'usuarios', estabelecimento.uid, 'compromissos')
+      await addDoc(ref, {
+        titulo: novoCompromisso,
+        data: Timestamp.fromDate(dataSelecionada),
+        criadoEm: Timestamp.now()
+      })
+      setNovoCompromisso('')
+    } catch (error) {
+      console.error('Erro ao salvar compromisso:', error)
+      alert('Erro ao salvar compromisso. Verifique as permissões do Firestore.')
+    }
   }
 
   return (
