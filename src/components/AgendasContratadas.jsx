@@ -1,15 +1,29 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  doc,
+  getDoc,
+  addDoc,
+  Timestamp
+} from 'firebase/firestore'
 import { db } from '@/firebase'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
 
 export default function AgendasContratadas({ estabelecimento }) {
-  const [todasChamadas, setTodasChamadas] = useState([])
+  const [chamadas, setChamadas] = useState([])
+  const [compromissos, setCompromissos] = useState([])
   const [dataSelecionada, setDataSelecionada] = useState(new Date())
-  const [datasAgendadas, setDatasAgendadas] = useState([])
+  const [novoCompromisso, setNovoCompromisso] = useState('')
+  const [carregando, setCarregando] = useState(true)
 
+  const dataStr = dataSelecionada.toDateString()
+
+  // Carrega chamadas do sistema (vagas e eventos)
   useEffect(() => {
     if (!estabelecimento?.uid) return
 
@@ -19,76 +33,121 @@ export default function AgendasContratadas({ estabelecimento }) {
     )
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const chamadas = await Promise.all(snapshot.docs.map(async (docSnap) => {
-        const chamada = { id: docSnap.id, ...docSnap.data() }
+      const lista = []
 
-        const freelaSnap = await getDoc(doc(db, 'usuarios', chamada.freelaUid))
-        chamada.freela = freelaSnap.exists() ? freelaSnap.data() : {}
+      for (const docSnap of snapshot.docs) {
+        const data = docSnap.data()
+        data.id = docSnap.id
+        data.dataStr = data.data?.toDate().toDateString()
+        lista.push(data)
+      }
 
-        return chamada
-      }))
-
-      const datas = chamadas
-        .filter((c) => c.data)
-        .map((c) => c.data.toDate().toDateString())
-
-      setTodasChamadas(chamadas)
-      setDatasAgendadas([...new Set(datas)])
+      setChamadas(lista)
+      setCarregando(false)
     })
 
     return () => unsubscribe()
   }, [estabelecimento])
 
-  const tileClassName = ({ date }) => {
-    if (datasAgendadas.includes(date.toDateString())) {
-      return 'bg-orange-200 text-black font-bold rounded-lg'
-    }
-    return null
+  // Carrega compromissos manuais
+  useEffect(() => {
+    if (!estabelecimento?.uid) return
+
+    const q = query(
+      collection(db, 'usuarios', estabelecimento.uid, 'compromissos')
+    )
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const lista = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        dataStr: doc.data().data?.toDate().toDateString()
+      }))
+      setCompromissos(lista)
+    })
+
+    return () => unsubscribe()
+  }, [estabelecimento])
+
+  const todasDatas = [
+    ...chamadas.map(c => c.dataStr),
+    ...compromissos.map(c => c.dataStr)
+  ]
+
+  const compromissosDoDia = [
+    ...chamadas.filter(c => c.dataStr === dataStr),
+    ...compromissos.filter(c => c.dataStr === dataStr)
+  ]
+
+  const salvarCompromisso = async () => {
+    if (!novoCompromisso.trim()) return
+    const ref = collection(db, 'usuarios', estabelecimento.uid, 'compromissos')
+
+    await addDoc(ref, {
+      titulo: novoCompromisso,
+      data: Timestamp.fromDate(dataSelecionada),
+      criadoEm: Timestamp.now()
+    })
+
+    setNovoCompromisso('')
   }
 
-  const tileContent = ({ date }) =>
-    datasAgendadas.includes(date.toDateString()) ? (
-      <div className="dot-indicator" />
-    ) : null
-
-  const chamadasDoDia = todasChamadas.filter((chamada) =>
-    chamada.data?.toDate().toDateString() === dataSelecionada.toDateString()
-  )
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
         <h3 className="text-lg font-bold text-orange-700 mb-2">Minha Agenda</h3>
+
         <Calendar
           value={dataSelecionada}
           onChange={setDataSelecionada}
-          tileClassName={tileClassName}
-          tileContent={tileContent}
+          tileClassName={({ date }) =>
+            todasDatas.includes(date.toDateString())
+              ? 'bg-orange-200 text-black font-bold rounded-lg'
+              : null
+          }
+          tileContent={({ date }) =>
+            todasDatas.includes(date.toDateString()) ? (
+              <div className="dot-indicator" />
+            ) : null
+          }
         />
-        <p className="text-xs text-gray-500 mt-2">
-          Selecione uma data para ver os compromissos agendados.
-        </p>
+
+        <div className="mt-4 space-y-2">
+          <h4 className="text-sm font-semibold text-orange-700">
+            Adicionar compromisso em {dataSelecionada.toLocaleDateString()}
+          </h4>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              className="flex-1 border rounded px-2 py-1 text-sm"
+              placeholder="Ex: reunião, lembrete, entrevista..."
+              value={novoCompromisso}
+              onChange={(e) => setNovoCompromisso(e.target.value)}
+            />
+            <button
+              onClick={salvarCompromisso}
+              className="bg-orange-600 text-white text-sm px-3 py-1 rounded hover:bg-orange-700"
+            >
+              Salvar
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
-        <h3 className="text-lg font-bold text-orange-700 mb-3">
+        <h3 className="text-lg font-bold text-orange-700 mb-2">
           Compromissos em {dataSelecionada.toLocaleDateString()}
         </h3>
-
-        {chamadasDoDia.length === 0 ? (
-          <p className="text-sm text-gray-500">Nenhum compromisso marcado neste dia.</p>
+        {carregando ? (
+          <p className="text-sm text-gray-500">Carregando...</p>
+        ) : compromissosDoDia.length === 0 ? (
+          <p className="text-sm text-gray-500">Nenhum compromisso marcado para este dia.</p>
         ) : (
-          chamadasDoDia.map((chamada) => (
-            <div
-              key={chamada.id}
-              className="bg-orange-50 border border-orange-200 p-3 rounded mb-2"
-            >
-              <p><strong>Freela:</strong> {chamada.freela?.nome || '—'}</p>
-              <p><strong>Função:</strong> {chamada.freela?.funcao || '—'}</p>
-              <p><strong>Vaga:</strong> {chamada.vagaTitulo || '—'}</p>
-              <p><strong>Status:</strong> {chamada.status}</p>
-            </div>
-          ))
+          <ul className="text-sm list-disc list-inside space-y-1">
+            {compromissosDoDia.map((item) => (
+              <li key={item.id}>{item.titulo || item.vagaTitulo || 'Evento'}</li>
+            ))}
+          </ul>
         )}
       </div>
     </div>
