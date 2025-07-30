@@ -17,7 +17,7 @@ import CardAvaliacaoFreela from '@/components/CardAvaliacaoFreela'
 import AgendasContratadas from '@/components/AgendasContratadas'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
-import './estiloAgenda.css'
+import '@/styles/estiloAgenda.css'
 
 export default function PainelEstabelecimento() {
   const { usuario, carregando } = useAuth()
