@@ -1,216 +1,262 @@
-import React, { useEffect, useState } from 'react'
-import { useAuth } from '@/context/AuthContext'
-import { useNavigate } from 'react-router-dom'
+// PainelEstabelecimento.jsx com ícone 'perfil' e aba personalizada
+
+import React, { useState, useEffect } from 'react'
+import { onAuthStateChanged } from 'firebase/auth'
 import {
-  collection,
-  query,
-  where,
-  getDocs,
-  updateDoc,
-  doc,
-  getDoc,
+  doc, getDoc, updateDoc, serverTimestamp,
+  collection, query, where, onSnapshot
 } from 'firebase/firestore'
-import { db } from '@/firebase'
+import { auth, db } from '@/firebase'
 
 import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
 import BuscarFreelas from '@/components/BuscarFreelas'
 import AgendasContratadas from '@/components/AgendasContratadas'
+import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompleto'
+import AvaliacaoFreela from '@/components/AvaliacaoFreela'
+import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
+import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
 import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
-import VagasDisponiveis from '@/components/MinhasVagas'
-import AvaliacoesRecebidasEstabelecimento from '@/pages/estabelecimento/AvaliacoesRecebidasEstabelecimento'
-import HistoricoChamadasEstabelecimento from '@/pages/estabelecimento/HistoricoChamadasEstabelecimento'
-import ConfiguracoesEstabelecimento from '@/pages/estabelecimento/ConfiguracoesEstabelecimento'
+import ChamadasAtivas from '@/pages/estabelecimento/ChamadasAtivas'
+import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
+import ChamadaInline from '@/components/ChamadaInline'
 import CardAvaliacaoFreela from '@/components/CardAvaliacaoFreela'
-
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
 
 export default function PainelEstabelecimento() {
-  const { usuario, carregando } = useAuth()
-  const [aba, setAba] = useState('perfil')
-  const [chamadasAtivas, setChamadasAtivas] = useState([])
+  const [estabelecimento, setEstabelecimento] = useState(null)
+  const [carregando, setCarregando] = useState(true)
+  const [abaSelecionada, setAbaSelecionada] = useState('perfil')
+  const [chamadaAtiva, setChamadaAtiva] = useState(null)
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
   const [datasAgendadas, setDatasAgendadas] = useState([])
-  const navigate = useNavigate()
+
+  const usuariosOnline = useUsuariosOnline()
 
   useEffect(() => {
-    if (!carregando && (!usuario || usuario.tipo !== 'estabelecimento')) {
-      navigate('/')
-    }
-  }, [usuario, carregando, navigate])
+    const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
+      if (!usuario) {
+        setEstabelecimento(null)
+        setCarregando(false)
+        return
+      }
+
+      try {
+        const ref = doc(db, 'usuarios', usuario.uid)
+        const snap = await getDoc(ref)
+
+        if (snap.exists() && snap.data().tipo === 'estabelecimento') {
+          const dados = snap.data()
+          setEstabelecimento({ uid: usuario.uid, ...dados })
+          await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
+        } else {
+          console.warn('[Auth] Documento não encontrado ou não é um estabelecimento')
+        }
+      } catch (err) {
+        console.error('[Auth] Erro ao buscar dados do estabelecimento:', err)
+      } finally {
+        setCarregando(false)
+      }
+    })
+
+    return () => unsubscribe()
+  }, [])
 
   useEffect(() => {
-    if (!usuario?.uid) return
+    if (!estabelecimento?.uid) return
 
-    const carregarDados = async () => {
-      const chamadasQ = query(
+    const unsub = onSnapshot(
+      query(
         collection(db, 'chamadas'),
-        where('estabelecimentoUid', '==', usuario.uid)
+        where('estabelecimentoUid', '==', estabelecimento.uid),
+        where('status', '==', 'checkout_freela'),
+        where('checkOutEstabelecimento', '==', false)
+      ),
+      (snap) => {
+        snap.docChanges().forEach(({ doc: d, type }) => {
+          if (type === 'added') {
+            const data = d.data()
+            new Audio('/sons/checkout.mp3').play().catch(() => {})
+            alert(`⚠️ O freela ${data.freelaNome} finalizou o serviço. Confirme o checkout.`)
+          }
+        })
+      }
+    )
+
+    return () => unsub()
+  }, [estabelecimento])
+
+  useEffect(() => {
+    if (!estabelecimento?.uid) return
+
+    const q = query(
+      collection(db, 'chamadas'),
+      where('estabelecimentoUid', '==', estabelecimento.uid),
+      where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'checkout_freela'])
+    )
+
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      setChamadaAtiva(docs[0] || null)
+    })
+
+    return () => unsubscribe()
+  }, [estabelecimento])
+
+  useEffect(() => {
+    if (!estabelecimento?.uid) return
+
+    const carregarAvaliacoes = async () => {
+      const q = query(
+        collection(db, 'chamadas'),
+        where('estabelecimentoUid', '==', estabelecimento.uid),
+        where('status', '==', 'finalizada')
       )
-      const snap = await getDocs(chamadasQ)
-      const ativas = []
+      const snap = await getDocs(q)
       const pendentes = []
       const datas = new Set()
 
       for (const docSnap of snap.docs) {
         const chamada = { id: docSnap.id, ...docSnap.data() }
 
-        const freelaSnap = await getDoc(doc(db, 'usuarios', chamada.freelaUid))
-        if (!freelaSnap.exists()) continue
-        chamada.freela = { ...freelaSnap.data(), uid: chamada.freelaUid }
-
         if (chamada.data) {
           datas.add(chamada.data.toDate().toDateString())
         }
 
-        if (['aceita', 'checkin_freela'].includes(chamada.status)) {
-          ativas.push(chamada)
-        }
-
-        if (chamada.status === 'finalizada') {
-          const avaliacaoQ = query(
-            collection(db, 'avaliacoes'),
-            where('tipo', '==', 'freela'),
-            where('chamadaId', '==', chamada.id)
-          )
-          const avaliacaoSnap = await getDocs(avaliacaoQ)
-          if (avaliacaoSnap.empty) {
-            pendentes.push(chamada)
-          }
+        const avaliacaoQ = query(
+          collection(db, 'avaliacoes'),
+          where('tipo', '==', 'freela'),
+          where('chamadaId', '==', chamada.id)
+        )
+        const avaliacaoSnap = await getDocs(avaliacaoQ)
+        if (avaliacaoSnap.empty) {
+          pendentes.push(chamada)
         }
       }
 
-      setChamadasAtivas(ativas)
       setAvaliacoesPendentes(pendentes)
       setDatasAgendadas([...datas])
     }
 
-    carregarDados()
-  }, [usuario])
+    carregarAvaliacoes()
+  }, [estabelecimento])
 
-  const confirmarStatus = async (id, novoStatus) => {
-    try {
-      await updateDoc(doc(db, 'chamadas', id), {
-        status: novoStatus,
-      })
-      setChamadasAtivas((prev) => prev.filter((c) => c.id !== id))
-    } catch (e) {
-      console.error('Erro ao confirmar status:', e)
-    }
-  }
-
-  const tileClassName = ({ date }) => {
-    if (datasAgendadas.includes(date.toDateString())) {
-      return 'bg-orange-200 text-black font-bold rounded-lg'
-    }
-    return null
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white pb-28">
-      {aba === 'perfil' && (
-        <div className="p-4 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
-              <img
-                src={usuario.foto || 'https://via.placeholder.com/100'}
-                alt={usuario.nome}
-                className="w-24 h-24 rounded-full object-cover mb-2 border-2 border-orange-500 mx-auto"
-              />
-              <h2 className="text-center text-xl font-bold text-orange-700">{usuario.nome}</h2>
-              <p className="text-center text-sm text-gray-600 mb-4">
-                {usuario.funcao} — {usuario.especialidade}
-              </p>
-              <div className="text-sm text-gray-700 space-y-1">
-                <p>📞 {usuario.telefone || 'Telefone não informado'}</p>
-                <p>📧 {usuario.email}</p>
-                <p>📍 {usuario.endereco}</p>
-                <p>🧾 {usuario.cnpj}</p>
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
-              <h3 className="text-lg font-bold text-orange-700 mb-2">Minha Agenda</h3>
-              <Calendar
-                tileClassName={tileClassName}
-                tileContent={({ date }) =>
-                  datasAgendadas.includes(date.toDateString()) ? (
-                    <div className="dot-indicator" />
-                  ) : null
-                }
-              />
-              <p className="text-xs text-gray-500 mt-2">
-                Datas em laranja indicam eventos, entrevistas ou agendamentos.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-bold text-orange-700 mb-2">Freelas a Avaliar</h3>
-              {avaliacoesPendentes.length === 0 ? (
-                <p className="text-sm text-gray-500">Nenhum freela para avaliar no momento.</p>
-              ) : (
-                avaliacoesPendentes.map((chamada) => (
-                  <CardAvaliacaoFreela
-                    key={chamada.id}
-                    chamada={chamada}
-                    onAvaliado={(id) =>
-                      setAvaliacoesPendentes((prev) =>
-                        prev.filter((c) => c.id !== id)
-                      )
-                    }
-                  />
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
-            <h3 className="text-lg font-bold text-orange-700 mb-3">Chamadas Ativas</h3>
-            {chamadasAtivas.length === 0 ? (
-              <p className="text-sm text-gray-500">Nenhuma chamada ativa no momento.</p>
-            ) : (
-              <div className="space-y-3">
-                {chamadasAtivas.map((chamada) => (
-                  <div
-                    key={chamada.id}
-                    className="border border-orange-200 p-3 rounded-lg bg-orange-50"
-                  >
-                    <p className="font-semibold">{chamada.freela.nome}</p>
-                    <p className="text-sm text-gray-600 mb-2">Status: {chamada.status}</p>
-                    {chamada.status === 'checkin_freela' && (
-                      <button
-                        onClick={() => confirmarStatus(chamada.id, 'checkin_confirmado')}
-                        className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm"
-                      >
-                        Confirmar Check-in
-                      </button>
-                    )}
-                    {chamada.status === 'checkout_freela' && (
-                      <button
-                        onClick={() => confirmarStatus(chamada.id, 'finalizada')}
-                        className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
-                      >
-                        Confirmar Check-out
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+  const renderPerfil = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
+          <img
+            src={estabelecimento?.foto || 'https://via.placeholder.com/100'}
+            alt={estabelecimento?.nome}
+            className="w-24 h-24 rounded-full object-cover mb-2 border-2 border-orange-500 mx-auto"
+          />
+          <h2 className="text-center text-xl font-bold text-orange-700">{estabelecimento?.nome}</h2>
+          <p className="text-center text-sm text-gray-600 mb-4">{estabelecimento?.funcao} — {estabelecimento?.especialidade}</p>
+          <div className="text-sm text-gray-700 space-y-1">
+            <p>📞 {estabelecimento?.celular || 'Telefone não informado'}</p>
+            <p>📧 {estabelecimento?.email}</p>
+            <p>📍 {estabelecimento?.endereco}</p>
+            <p>🧾 {estabelecimento?.cnpj}</p>
           </div>
         </div>
+
+        <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
+          <h3 className="text-lg font-bold text-orange-700 mb-2">Minha Agenda</h3>
+          <Calendar
+            tileClassName={({ date }) =>
+              datasAgendadas.includes(date.toDateString())
+                ? 'bg-orange-200 text-black font-bold rounded-lg'
+                : null
+            }
+            tileContent={({ date }) =>
+              datasAgendadas.includes(date.toDateString()) ? (
+                <div className="dot-indicator" />
+              ) : null
+            }
+          />
+          <p className="text-xs text-gray-500 mt-2">Datas em laranja indicam eventos, entrevistas ou agendamentos.</p>
+        </div>
+
+        <div>
+          <h3 className="font-bold text-orange-700 mb-2">Freelas a Avaliar</h3>
+          {avaliacoesPendentes.length === 0 ? (
+            <p className="text-sm text-gray-500">Nenhum freela para avaliar no momento.</p>
+          ) : (
+            avaliacoesPendentes.map((chamada) => (
+              <CardAvaliacaoFreela
+                key={chamada.id}
+                chamada={chamada}
+                onAvaliado={(id) =>
+                  setAvaliacoesPendentes((prev) => prev.filter((c) => c.id !== id))
+                }
+              />
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  )
+
+  const renderTopo = () => (
+    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow p-4 flex items-center gap-4 mb-4 sticky top-0 z-40">
+      {estabelecimento?.foto && (
+        <img
+          src={estabelecimento.foto}
+          alt="Logo"
+          className="w-16 h-16 rounded-full border border-orange-300 object-cover"
+        />
       )}
+      <div>
+        <h2 className="text-xl font-bold text-orange-700">{estabelecimento?.nome}</h2>
+        <p className="text-sm text-gray-600">{estabelecimento?.endereco}</p>
+        <p className="text-sm text-gray-600">📞 {estabelecimento?.celular}</p>
+      </div>
+    </div>
+  )
 
-      {aba === 'buscar' && <BuscarFreelas />}      
-      {aba === 'agendas' && <AgendasContratadas estabelecimento={usuario} />}      
-      {aba === 'ativas' && <ChamadasEstabelecimento />}      
-      {aba === 'vagas' && <VagasDisponiveis />}      
-      {aba === 'avaliacao' && <AvaliacoesRecebidasEstabelecimento />}      
-      {aba === 'historico' && <HistoricoChamadasEstabelecimento />}      
-      {aba === 'configuracoes' && <ConfiguracoesEstabelecimento />}      
+  const renderConteudo = () => {
+    switch (abaSelecionada) {
+      case 'perfil':
+        return renderPerfil()
+      case 'buscar':
+        return <BuscarFreelas estabelecimento={estabelecimento} usuariosOnline={usuariosOnline} />
+      case 'agendas':
+        return <AgendasContratadas estabelecimento={estabelecimento} />
+      case 'vagas':
+        return <VagasEstabelecimentoCompleto estabelecimento={estabelecimento} />
+      case 'avaliacao':
+        return <AvaliacaoFreela estabelecimento={estabelecimento} />
+      case 'historico':
+        return <HistoricoChamadasEstabelecimento estabelecimento={estabelecimento} />
+      case 'configuracoes':
+        return <ConfigPagamentoEstabelecimento usuario={estabelecimento} />
+      case 'ativas':
+        return <ChamadasAtivas estabelecimento={estabelecimento} />
+      case 'chamadas':
+        return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
+      default:
+        return null
+    }
+  }
 
-      <MenuInferiorEstabelecimento abaAtiva={aba} onSelect={setAba} />
+  if (carregando) return <div className="text-center text-orange-600 mt-8">Carregando painel...</div>
+  if (!estabelecimento) return <div className="text-center text-red-600 mt-8">Acesso não autorizado.</div>
+
+  return (
+    <div
+      className="min-h-screen bg-cover bg-center p-4 pb-20"
+      style={{
+        backgroundImage: `url('/img/fundo-login.jpg')`,
+        backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+      }}
+    >
+      {renderTopo()}
+      {!['buscar', 'ativas', 'historico'].includes(abaSelecionada) && renderChamadaAtiva()}
+      {renderConteudo()}
+      <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
     </div>
   )
 }
