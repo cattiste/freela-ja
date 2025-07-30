@@ -1,18 +1,25 @@
 import React, { useEffect, useState } from 'react'
-import { useAuth } from '@/context/AuthContext'
 import {
   collection,
   query,
   where,
   onSnapshot,
+  updateDoc,
   doc,
-  getDoc
+  serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/firebase'
+import { useAuth } from '@/context/AuthContext'
+import { toast } from 'react-hot-toast'
+import AvaliacaoInline from '@/components/AvaliacaoInline'
+import ChatInline from '@/components/ChatInline'
+
+
 
 export default function ChamadasFreela() {
   const { usuario } = useAuth()
   const [chamadas, setChamadas] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!usuario?.uid) return
@@ -22,78 +29,99 @@ export default function ChamadasFreela() {
       where('freelaUid', '==', usuario.uid)
     )
 
-    const unsubscribe = onSnapshot(q, async (snap) => {
-      const chamadasCompletas = await Promise.all(
-        snap.docs.map(async (docSnap) => {
-          const chamada = { id: docSnap.id, ...docSnap.data() }
-
-          let estabelecimento = null
-          if (chamada.estabelecimentoUid) {
-            const estRef = doc(db, 'usuarios', chamada.estabelecimentoUid)
-            const estSnap = await getDoc(estRef)
-            if (estSnap.exists()) {
-              estabelecimento = estSnap.data()
-            }
-          }
-
-          return { ...chamada, estabelecimento }
-        })
-      )
-
-      setChamadas(chamadasCompletas)
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      setChamadas(lista)
+      setLoading(false)
     })
 
     return () => unsubscribe()
   }, [usuario])
 
-  if (!usuario) return <p className="text-center mt-8">Usuário não autenticado.</p>
-  if (chamadas.length === 0) return <p className="text-center mt-8">Nenhuma chamada encontrada.</p>
+  const atualizarChamada = async (id, dados) => {
+    try {
+      const ref = doc(db, 'chamadas', id)
+      await updateDoc(ref, dados)
+      toast.success('✅ Ação realizada com sucesso!')
+    } catch (err) {
+      console.error('Erro ao atualizar chamada:', err)
+      toast.error('Erro ao atualizar chamada.')
+    }
+  }
+
+  if (!usuario?.uid) {
+    return <div className="text-center text-red-600 mt-10">⚠️ Acesso não autorizado. Faça login novamente.</div>
+  }
+
+  if (loading) {
+    return <div className="text-center text-orange-600 mt-10">🔄 Carregando chamadas...</div>
+  }
 
   return (
-    <div className="space-y-4">
-      {chamadas.map((chamada) => (
-        <div key={chamada.id} className="bg-white p-4 rounded shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-lg font-semibold text-orange-600">
-                Estabelecimento: {chamada.estabelecimento?.nome || '—'}
-              </p>
-              <p className="text-sm text-gray-600">
-                Endereço: {chamada.estabelecimento?.endereco || '—'}
-              </p>
-            </div>
-            <span className="text-xs text-gray-500">Status: {chamada.status}</span>
+    <div className="p-4 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold text-orange-700 text-center mb-4">📞 Chamadas Recentes</h1>
+
+      {chamadas.length === 0 ? (
+        <p className="text-center text-gray-600">Nenhuma chamada encontrada.</p>
+      ) : (
+        chamadas.map((chamada) => (
+          <div key={chamada.id} className="bg-white shadow p-4 rounded-xl mb-4 border border-orange-200 space-y-2">
+            <h2 className="font-semibold text-orange-600 text-lg">Chamada #{chamada?.id?.slice(-5)}</h2>
+            <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
+            <p><strong>Status:</strong> {chamada.status}</p>
+            <ChatInline chamadaId={chamada.id} />
+
+            {/* Aceitar chamada */}
+            {!chamada.status || chamada.status === 'pendente' ? (
+              <button
+                onClick={() => atualizarChamada(chamada.id, {
+                  status: 'aceita',
+                  aceitaEm: serverTimestamp()
+                })}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition"
+              >
+                ✅ Aceitar chamada
+              </button>
+            ) : null}
+
+            {/* Fazer check-in */}
+            {chamada.status === 'aceita' && !chamada.checkInFreela && (
+              <button
+                onClick={() => atualizarChamada(chamada.id, {
+                  status: 'checkin_freela',
+                  checkInFreela: true,
+                  checkInFreelaHora: serverTimestamp()
+                })}
+                className="w-full bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition"
+              >
+                📍 Fazer check-in
+              </button>
+            )}
+
+            {/* Fazer check-out */}
+            {(chamada.status === 'checkin_freela' || chamada.status === 'em_andamento') && !chamada.checkOutFreela && (
+              <button
+                onClick={() => atualizarChamada(chamada.id, {
+                  status: 'checkout_freela',
+                  checkOutFreela: true,
+                  checkOutFreelaHora: serverTimestamp()
+                })}
+                className="w-full bg-yellow-500 text-white px-4 py-2 rounded-xl hover:bg-yellow-600 transition"
+              >
+                ⏳ Fazer check-out
+              </button>
+            )}
+
+            {/* Status final */}
+            {(chamada.status === 'concluido' || chamada.status === 'finalizada') && (
+              <>
+                <span className="text-green-600 font-bold block text-center mt-2">✅ Finalizada</span>
+                <AvaliacaoInline chamada={chamada} tipo="freela" />
+              </>
+             )}            
           </div>
-
-          {chamada.vagaTitulo && (
-            <p className="mt-2 text-sm">
-              <strong>Vaga:</strong> {chamada.vagaTitulo}
-            </p>
-          )}
-
-          {chamada.valorNegociado && (
-            <p className="text-sm text-green-700">
-              <strong>Valor negociado:</strong> R$ {chamada.valorNegociado}
-            </p>
-          )}
-
-          {chamada.status === 'checkin_freela' && (
-            <p className="mt-2 text-sm text-yellow-600">
-              ⏳ Aguardando check-out do estabelecimento.
-            </p>
-          )}
-
-          {chamada.status === 'checkout_freela' && (
-            <p className="mt-2 text-sm text-yellow-600">
-              ⏳ Aguardando confirmação de finalização.
-            </p>
-          )}
-
-          {(chamada.status === 'concluido' || chamada.status === 'finalizada') && (
-            <span className="text-green-600 font-bold block text-center mt-2">✅ Finalizada</span>
-          )}
-        </div>
-      ))}
+        ))
+      )}
     </div>
   )
 }
