@@ -18,7 +18,6 @@ import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagame
 import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
 import ChamadasAtivas from '@/pages/estabelecimento/ChamadasAtivas'
 import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
-import ChamadaInline from '@/components/ChamadaInline'
 import CardAvaliacaoFreela from '@/components/CardAvaliacaoFreela'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
