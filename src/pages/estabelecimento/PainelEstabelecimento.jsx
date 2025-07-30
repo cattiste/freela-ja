@@ -24,7 +24,7 @@ import ConfiguracoesEstabelecimento from '@/pages/estabelecimento/ConfiguracoesE
 
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
-import './estiloAgenda.css'
+import '@/styles/estiloAgenda.css'
 
 export default function PainelEstabelecimento() {
   const { usuario, carregando } = useAuth()
