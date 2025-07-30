@@ -11,11 +11,12 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL // ✅ necessário para RTDB
+  databaseURL: 'https://freelaja-web-50254-default-rtdb.firebaseio.com'
 }
 
 // Verificação básica das configurações
 if (!firebaseConfig.apiKey || !firebaseConfig.databaseURL) {
+  console.log("🌐 databaseURL:", firebaseConfig.databaseURL)
   console.error("Firebase API key or databaseURL is missing!")
   throw new Error("Firebase configuration is incomplete")
 }
