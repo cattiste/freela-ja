@@ -1,171 +1,114 @@
-// PainelEstabelecimento.jsx com useUsuariosOnline e lastSeen visível
-
-import React, { useState, useEffect } from 'react'
-import { onAuthStateChanged } from 'firebase/auth'
-import {
-  doc, getDoc, updateDoc, serverTimestamp,
-  collection, query, where, onSnapshot
-} from 'firebase/firestore'
-import { auth, db } from '@/firebase'
+import React, { useEffect, useState } from 'react'
+import { useAuth } from '@/context/AuthContext'
+import { useNavigate } from 'react-router-dom'
+import { collection, query, where, getDocs } from 'firebase/firestore'
+import { db } from '@/firebase'
 
 import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
-import BuscarFreelas from '@/components/BuscarFreelas'
-import AgendasContratadas from '@/components/AgendasContratadas'
-import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompleto'
-import AvaliacaoFreela from '@/components/AvaliacaoFreela'
-import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
-import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
-import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
-import ChamadasAtivas from '@/pages/estabelecimento/ChamadasAtivas'
-import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
-import AvaliarFreela from '@/components/AvaliarFreela'
-
+import ChamadasEstabelecimento from './ChamadasEstabelecimento'
+import RecebimentosEstabelecimento from './RecebimentosEstabelecimento'
+import ConfiguracoesEstabelecimento from './ConfiguracoesEstabelecimento'
+import CardAvaliacaoFreela from '@/components/CardAvaliacaoFreela'
 
 export default function PainelEstabelecimento() {
-  const [estabelecimento, setEstabelecimento] = useState(null)
-  const [carregando, setCarregando] = useState(true)
-  const [abaSelecionada, setAbaSelecionada] = useState('buscar')
-  const [chamadaAtiva, setChamadaAtiva] = useState(null)
-
-  const usuariosOnline = useUsuariosOnline()
+  const { usuario, carregando } = useAuth()
+  const [aba, setAba] = useState('chamadas')
+  const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
+  const navigate = useNavigate()
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
-      if (!usuario) {
-        setEstabelecimento(null)
-        setCarregando(false)
-        return
-      }
-
-      try {
-        const ref = doc(db, 'usuarios', usuario.uid)
-        const snap = await getDoc(ref)
-
-        if (snap.exists() && snap.data().tipo === 'estabelecimento') {
-          const dados = snap.data()
-          setEstabelecimento({ uid: usuario.uid, ...dados })
-          await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
-        } else {
-          console.warn('[Auth] Documento não encontrado ou não é um estabelecimento')
-        }
-      } catch (err) {
-        console.error('[Auth] Erro ao buscar dados do estabelecimento:', err)
-      } finally {
-        setCarregando(false)
-      }
-    })
-
-    return () => unsubscribe()
-  }, [])
-
-  useEffect(() => {
-    if (!estabelecimento?.uid) return
-
-    const unsub = onSnapshot(
-      query(
-        collection(db, 'chamadas'),
-        where('estabelecimentoUid', '==', estabelecimento.uid),
-        where('status', '==', 'checkout_freela'),
-        where('checkOutEstabelecimento', '==', false)
-      ),
-      (snap) => {
-        snap.docChanges().forEach(({ doc: d, type }) => {
-          if (type === 'added') {
-            const data = d.data()
-            new Audio('/sons/checkout.mp3').play().catch(() => {})
-            alert(`⚠️ O freela ${data.freelaNome} finalizou o serviço. Confirme o checkout.`)
-          }
-        })
-      }
-    )
-
-    return () => unsub()
-  }, [estabelecimento])
-
-  useEffect(() => {
-    if (!estabelecimento?.uid) return
-
-    const q = query(
-      collection(db, 'chamadas'),
-      where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'checkout_freela'])
-    )
-
-    const unsubscribe = onSnapshot(q, (snap) => {
-      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      setChamadaAtiva(docs[0] || null)
-    })
-
-    return () => unsubscribe()
-  }, [estabelecimento])
-
-  const renderTopo = () => (
-    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow p-4 flex items-center gap-4 mb-4 sticky top-0 z-40">
-      {estabelecimento?.foto && (
-        <img
-          src={estabelecimento.foto}
-          alt="Logo"
-          className="w-16 h-16 rounded-full border border-orange-300 object-cover"
-        />
-      )}
-      <div>
-        <h2 className="text-xl font-bold text-orange-700">{estabelecimento?.nome}</h2>
-        <p className="text-sm text-gray-600">{estabelecimento?.endereco}</p>
-        <p className="text-sm text-gray-600">📞 {estabelecimento?.celular}</p>
-      </div>
-    </div>
-  )
-
-  const renderChamadaAtiva = () => (
-    chamadaAtiva ? (
-      <div className="mb-4">
-        <ChamadaInline chamada={chamadaAtiva} tipo="estabelecimento" usuario={estabelecimento} />
-      </div>
-    ) : null
-  )
-
-  const renderConteudo = () => {
-    switch (abaSelecionada) {
-      case 'buscar':
-        return <BuscarFreelas estabelecimento={estabelecimento} usuariosOnline={usuariosOnline} />
-      case 'agendas':
-        return <AgendasContratadas estabelecimento={estabelecimento} />
-      case 'vagas':
-        return <VagasEstabelecimentoCompleto estabelecimento={estabelecimento} />
-      case 'avaliacao':
-        return <AvaliacaoFreela estabelecimento={estabelecimento} />
-      case 'historico':
-        return <HistoricoChamadasEstabelecimento estabelecimento={estabelecimento} />
-      case 'configuracoes':
-        return <ConfigPagamentoEstabelecimento usuario={estabelecimento} />
-      case 'ativas':
-        return <ChamadasAtivas estabelecimento={estabelecimento} />
-      case 'avaliacao':
-        return <AvaliarFreela estabelecimento={estabelecimento} />
-      case 'chamadas':
-        return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
-      default:
-        return null
+    if (!carregando && (!usuario || usuario.tipo !== 'estabelecimento')) {
+      navigate('/')
     }
-  }
+  }, [usuario, carregando, navigate])
 
-  if (carregando) return <div className="text-center text-orange-600 mt-8">Carregando painel...</div>
-  if (!estabelecimento) return <div className="text-center text-red-600 mt-8">Acesso não autorizado.</div>
+  useEffect(() => {
+    if (!usuario?.uid) return
+
+    const buscarChamadasNaoAvaliadas = async () => {
+      const q = query(
+        collection(db, 'chamadas'),
+        where('estabelecimentoUid', '==', usuario.uid),
+        where('status', '==', 'finalizada')
+      )
+
+      const snap = await getDocs(q)
+      const chamadasFinalizadas = []
+
+      for (let docSnap of snap.docs) {
+        const chamada = { id: docSnap.id, ...docSnap.data() }
+
+        // Verifica se já existe avaliação
+        const avaliacoesQ = query(
+          collection(db, 'avaliacoes'),
+          where('tipo', '==', 'freela'),
+          where('chamadaId', '==', chamada.id)
+        )
+        const avaliacoesSnap = await getDocs(avaliacoesQ)
+
+        if (avaliacoesSnap.empty) {
+          // Buscar dados do freela
+          const freelaSnap = await getDocs(
+            query(collection(db, 'usuarios'), where('uid', '==', chamada.freelaUid))
+          )
+          if (!freelaSnap.empty) {
+            const freela = freelaSnap.docs[0].data()
+            chamada.freela = { ...freela, uid: chamada.freelaUid }
+            chamadasFinalizadas.push(chamada)
+          }
+        }
+      }
+
+      setAvaliacoesPendentes(chamadasFinalizadas)
+    }
+
+    buscarChamadasNaoAvaliadas()
+  }, [usuario])
+
+  if (carregando || !usuario) return <p className="p-4">Carregando...</p>
 
   return (
-    <div
-      className="min-h-screen bg-cover bg-center p-4 pb-20"
-      style={{
-        backgroundImage: `url('/img/fundo-login.jpg')`,
-        backgroundAttachment: 'fixed',
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: 'cover',
-      }}
-    >
-      {renderTopo()}
-      {!['buscar', 'ativas', 'historico'].includes(abaSelecionada) && renderChamadaAtiva()}
-      {renderConteudo()}
-      <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />      
+    <div className="pb-20">
+      <div className="flex justify-around py-4 border-b">
+        <button onClick={() => setAba('chamadas')} className={aba === 'chamadas' ? 'font-bold text-orange-600' : ''}>
+          Chamadas
+        </button>
+        <button onClick={() => setAba('recebimentos')} className={aba === 'recebimentos' ? 'font-bold text-orange-600' : ''}>
+          Recebimentos
+        </button>
+        <button onClick={() => setAba('avaliar')} className={aba === 'avaliar' ? 'font-bold text-orange-600' : ''}>
+          Avaliar
+        </button>
+        <button onClick={() => setAba('config')} className={aba === 'config' ? 'font-bold text-orange-600' : ''}>
+          Configurações
+        </button>
+      </div>
+
+      {aba === 'chamadas' && <ChamadasEstabelecimento />}
+      {aba === 'recebimentos' && <RecebimentosEstabelecimento />}
+      {aba === 'config' && <ConfiguracoesEstabelecimento />}
+
+      {aba === 'avaliar' && (
+        <div className="p-4">
+          <h2 className="text-xl font-bold mb-4">Avaliar Freelancers</h2>
+
+          {avaliacoesPendentes.length === 0 ? (
+            <p className="text-gray-500">Nenhum freela para avaliar no momento.</p>
+          ) : (
+            avaliacoesPendentes.map((chamada) => (
+              <CardAvaliacaoFreela
+                key={chamada.id}
+                chamada={chamada}
+                onAvaliado={(id) =>
+                  setAvaliacoesPendentes((prev) => prev.filter((c) => c.id !== id))
+                }
+              />
+            ))
+          )}
+        </div>
+      )}
+
+      <MenuInferiorEstabelecimento abaAtual={aba} setAba={setAba} />
     </div>
   )
 }
