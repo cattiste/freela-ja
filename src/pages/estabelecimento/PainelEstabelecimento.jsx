@@ -1,4 +1,4 @@
-// PainelEstabelecimento.jsx com correção para datasAgendadas no calendário do perfil
+// PainelEstabelecimento.jsx com agenda do perfil replicando visual de anotações do freela
 
 import React, { useState, useEffect } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
@@ -28,8 +28,7 @@ export default function PainelEstabelecimento() {
   const [carregando, setCarregando] = useState(true)
   const [abaSelecionada, setAbaSelecionada] = useState('perfil')
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
-  const [datasChamadas, setDatasChamadas] = useState([])
-  const [datasCompromissos, setDatasCompromissos] = useState([])
+  const [agendaPerfil, setAgendaPerfil] = useState({})
 
   const usuariosOnline = useUsuariosOnline()
 
@@ -63,36 +62,18 @@ export default function PainelEstabelecimento() {
   useEffect(() => {
     if (!estabelecimento?.uid) return
 
-    const carregarChamadas = async () => {
-      const q = query(
-        collection(db, 'chamadas'),
-        where('estabelecimentoUid', '==', estabelecimento.uid)
-      )
-      const snap = await getDocs(q)
-      const datas = new Set()
+    const carregarAgenda = async () => {
+      const ref = collection(db, 'usuarios', estabelecimento.uid, 'agenda')
+      const snap = await getDocs(ref)
+      const datas = {}
       snap.docs.forEach(doc => {
-        const data = doc.data().data?.toDate().toDateString()
-        if (data) datas.add(data)
+        datas[doc.id] = doc.data()
       })
-      setDatasChamadas([...datas])
+      setAgendaPerfil(datas)
     }
 
-    const carregarCompromissos = async () => {
-      const q = collection(db, 'usuarios', estabelecimento.uid, 'compromissos')
-      const snap = await getDocs(q)
-      const datas = new Set()
-      snap.docs.forEach(doc => {
-        const data = doc.data().data?.toDate().toDateString()
-        if (data) datas.add(data)
-      })
-      setDatasCompromissos([...datas])
-    }
-
-    carregarChamadas()
-    carregarCompromissos()
+    carregarAgenda()
   }, [estabelecimento])
-
-  const datasAgendadas = [...new Set([...datasChamadas, ...datasCompromissos])]
 
   const renderPerfil = () => (
     <div className="space-y-6">
@@ -116,18 +97,19 @@ export default function PainelEstabelecimento() {
         <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
           <h3 className="text-lg font-bold text-orange-700 mb-2">Minha Agenda</h3>
           <Calendar
-            tileClassName={({ date }) =>
-              datasAgendadas.includes(date.toDateString())
-                ? 'bg-orange-200 text-black font-bold rounded-lg'
-                : null
-            }
-            tileContent={({ date }) =>
-              datasAgendadas.includes(date.toDateString()) ? (
-                <div className="dot-indicator" />
-              ) : null
-            }
+            tileContent={({ date }) => {
+              const dia = date.toISOString().split('T')[0]
+              if (agendaPerfil[dia]) {
+                return (
+                  <div className="text-xs text-orange-700 font-bold mt-1">
+                    📌 {agendaPerfil[dia].nota || 'Ocupado'}
+                  </div>
+                )
+              }
+              return null
+            }}
           />
-          <p className="text-xs text-gray-500 mt-2">Datas em laranja indicam eventos, entrevistas ou agendamentos.</p>
+          <p className="text-xs text-gray-500 mt-2">Clique em uma data na aba "Agendas" para adicionar ou remover compromissos.</p>
         </div>
 
         <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
