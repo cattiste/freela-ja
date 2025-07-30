@@ -228,7 +228,10 @@ export default function PainelEstabelecimento() {
         <div className="p-4 text-orange-700 font-semibold">Configurações da Conta (em breve...)</div>
       )}
 
-      <MenuInferiorEstabelecimento abaAtiva={aba} onSelect={setAba} />
+      <MenuInferiorEstabelecimento abaAtiva={aba} onSelect={(id) => {
+        console.log('Clicou em:', id)
+        setAba(id)
+      }} />
     </div>
   )
 }
