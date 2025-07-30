@@ -18,9 +18,7 @@ import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagame
 import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
 import ChamadasAtivas from '@/pages/estabelecimento/ChamadasAtivas'
 import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
-
-
-
+import AvaliarFreela from '@/components/AvaliarFreela'
 
 
 export default function PainelEstabelecimento() {
@@ -142,6 +140,8 @@ export default function PainelEstabelecimento() {
         return <ConfigPagamentoEstabelecimento usuario={estabelecimento} />
       case 'ativas':
         return <ChamadasAtivas estabelecimento={estabelecimento} />
+      case 'avaliacao':
+        return <AvaliarFreela estabelecimento={estabelecimento} />
       case 'chamadas':
         return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
       default:
