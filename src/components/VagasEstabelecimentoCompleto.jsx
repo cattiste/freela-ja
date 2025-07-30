@@ -41,7 +41,7 @@ export default function VagasEstabelecimentoCompleto({ estabelecimento }) {
           className={`px-4 py-2 font-semibold ${
             tab === 'candidaturas'
               ? 'border-b-2 border-orange-600 text-orange-600'
-              : 'text-white-500 hover:text-orange-600'
+              : 'text-bg-white-500 hover:text-orange-600'
           }`}
         >
           Candidaturas
