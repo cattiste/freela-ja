@@ -1,4 +1,4 @@
-// PainelEstabelecimento.jsx com datasAgendadas unificando compromissos e chamadas
+// PainelEstabelecimento.jsx com correção para datasAgendadas no calendário do perfil
 
 import React, { useState, useEffect } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
@@ -32,8 +32,6 @@ export default function PainelEstabelecimento() {
   const [datasCompromissos, setDatasCompromissos] = useState([])
 
   const usuariosOnline = useUsuariosOnline()
-
-  const datasAgendadas = [...new Set([...datasChamadas, ...datasCompromissos])]
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
@@ -93,6 +91,8 @@ export default function PainelEstabelecimento() {
     carregarChamadas()
     carregarCompromissos()
   }, [estabelecimento])
+
+  const datasAgendadas = [...new Set([...datasChamadas, ...datasCompromissos])]
 
   const renderPerfil = () => (
     <div className="space-y-6">
