@@ -1,6 +1,7 @@
 // src/components/MenuInferiorEstabelecimento.jsx
 import React from 'react'
 import {
+  UserCircle,
   Search,
   CalendarDays,
   Briefcase,
