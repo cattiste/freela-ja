@@ -16,7 +16,7 @@ import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabeleciment
 import BuscarFreelas from '@/components/BuscarFreelas'
 import AgendasContratadas from '@/components/AgendasContratadas'
 import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
-import VagasDisponiveis from '@/pages/estabelecimento/VagasDisponiveis'
+import VagasDisponiveis from '@/components/MinhasVagas'
 import AvaliacoesRecebidasEstabelecimento from '@/pages/estabelecimento/AvaliacoesRecebidasEstabelecimento'
 import HistoricoChamadasEstabelecimento from '@/pages/estabelecimento/HistoricoChamadasEstabelecimento'
 import ConfiguracoesEstabelecimento from '@/pages/estabelecimento/ConfiguracoesEstabelecimento'
