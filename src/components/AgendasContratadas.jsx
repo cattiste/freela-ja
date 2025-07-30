@@ -105,17 +105,16 @@ export default function AgendasContratadas({ estabelecimento }) {
           value={dataSelecionada}
           onChange={setDataSelecionada}
           tileClassName={({ date }) =>
-            todasDatas.includes(date.toDateString())
+            datasAgendadas.includes(date.toDateString())
               ? 'bg-orange-200 text-black font-bold rounded-lg'
               : null
           }
           tileContent={({ date }) =>
-            todasDatas.includes(date.toDateString()) ? (
+            datasAgendadas.includes(date.toDateString()) ? (
               <div className="dot-indicator" />
             ) : null
           }
         />
-
         <div className="mt-4 space-y-2">
           <h4 className="text-sm font-semibold text-orange-700">
             Adicionar compromisso em {dataSelecionada.toLocaleDateString()}
