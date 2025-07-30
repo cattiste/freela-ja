@@ -1,0 +1,27 @@
+/* estiloAgenda.css */
+
+.react-calendar {
+  width: 100%;
+  border: none;
+  font-family: inherit;
+}
+
+.react-calendar__tile {
+  padding: 10px 0;
+  text-align: center;
+  border-radius: 8px;
+}
+
+.react-calendar__tile--now {
+  background: #facc15 !important; /* amarelo para hoje */
+  color: black !important;
+}
+
+.react-calendar__tile--active {
+  background: #fb923c !important; /* laranja para seleção */
+  color: white !important;
+}
+
+.bg-orange-200 {
+  background-color: #fed7aa !important;
+}

@@ -14,13 +14,16 @@ import { db } from '@/firebase'
 
 import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
 import CardAvaliacaoFreela from '@/components/CardAvaliacaoFreela'
-import AgendasContratadas from '@/components/AgendasContratadas'
+import Calendar from 'react-calendar'
+import 'react-calendar/dist/Calendar.css'
+import '@/styles/estiloAgenda.css' // se quiser customizar o estilo depois
 
 export default function PainelEstabelecimento() {
   const { usuario, carregando } = useAuth()
   const [aba, setAba] = useState('perfil')
   const [chamadasAtivas, setChamadasAtivas] = useState([])
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
+  const [datasAgendadas, setDatasAgendadas] = useState([])
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -29,7 +32,6 @@ export default function PainelEstabelecimento() {
     }
   }, [usuario, carregando, navigate])
 
-  // Buscar chamadas ativas e pendentes de avaliação
   useEffect(() => {
     if (!usuario?.uid) return
 
@@ -41,6 +43,7 @@ export default function PainelEstabelecimento() {
       const snap = await getDocs(chamadasQ)
       const ativas = []
       const pendentes = []
+      const datas = new Set()
 
       for (const docSnap of snap.docs) {
         const chamada = { id: docSnap.id, ...docSnap.data() }
@@ -49,9 +52,12 @@ export default function PainelEstabelecimento() {
         if (!freelaSnap.exists()) continue
         chamada.freela = { ...freelaSnap.data(), uid: chamada.freelaUid }
 
-        if (
-          ['aceita', 'checkin_freela'].includes(chamada.status)
-        ) {
+        // datas agendadas
+        if (chamada.data) {
+          datas.add(chamada.data.toDate().toDateString())
+        }
+
+        if (['aceita', 'checkin_freela'].includes(chamada.status)) {
           ativas.push(chamada)
         }
 
@@ -70,6 +76,7 @@ export default function PainelEstabelecimento() {
 
       setChamadasAtivas(ativas)
       setAvaliacoesPendentes(pendentes)
+      setDatasAgendadas([...datas])
     }
 
     carregarDados()
@@ -84,6 +91,13 @@ export default function PainelEstabelecimento() {
     } catch (e) {
       console.error('Erro ao confirmar status:', e)
     }
+  }
+
+  const tileClassName = ({ date }) => {
+    if (datasAgendadas.includes(date.toDateString())) {
+      return 'bg-orange-200 text-black font-bold rounded-lg'
+    }
+    return null
   }
 
   if (carregando || !usuario) return <p className="p-4">Carregando...</p>
@@ -106,17 +120,20 @@ export default function PainelEstabelecimento() {
                 {usuario.funcao} — {usuario.especialidade}
               </p>
               <div className="text-sm text-gray-700 space-y-1">
-                <p>📞 {usuario.telefone}</p>
+                <p>📞 {usuario.telefone || 'Telefone não informado'}</p>
                 <p>📧 {usuario.email}</p>
                 <p>📍 {usuario.endereco}</p>
                 <p>🧾 {usuario.cnpj}</p>
-                <p>💰 R$ {usuario.valorDiaria},00 / diária</p>
               </div>
             </div>
 
-            {/* Coluna 2: agenda */}
-            <div>
-              <AgendasContratadas estabelecimento={usuario} />
+            {/* Coluna 2: calendário */}
+            <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
+              <h3 className="text-lg font-bold text-orange-700 mb-2">Minha Agenda</h3>
+              <Calendar tileClassName={tileClassName} />
+              <p className="text-xs text-gray-500 mt-2">
+                Datas em laranja indicam eventos, entrevistas ou agendamentos.
+              </p>
             </div>
 
             {/* Coluna 3: avaliações pendentes */}
@@ -140,7 +157,7 @@ export default function PainelEstabelecimento() {
             </div>
           </div>
 
-          {/* Chamadas ativas (abaixo das 3 colunas) */}
+          {/* Chamadas ativas abaixo */}
           <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
             <h3 className="text-lg font-bold text-orange-700 mb-3">Chamadas Ativas</h3>
             {chamadasAtivas.length === 0 ? (
