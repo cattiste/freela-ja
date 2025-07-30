@@ -1,4 +1,4 @@
-// PainelEstabelecimento.jsx sem ChamadaInline e com correções gerais
+// PainelEstabelecimento.jsx com ícone de perfil, cards harmonizados e chamadas ativas fixas
 
 import React, { useState, useEffect } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
@@ -135,7 +135,7 @@ export default function PainelEstabelecimento() {
           <p className="text-xs text-gray-500 mt-2">Datas em laranja indicam eventos, entrevistas ou agendamentos.</p>
         </div>
 
-        <div>
+        <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
           <h3 className="font-bold text-orange-700 mb-2">Freelas a Avaliar</h3>
           {avaliacoesPendentes.length === 0 ? (
             <p className="text-sm text-gray-500">Nenhum freela para avaliar no momento.</p>
@@ -151,6 +151,11 @@ export default function PainelEstabelecimento() {
             ))
           )}
         </div>
+      </div>
+
+      <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
+        <h3 className="text-lg font-bold text-orange-700 mb-3">Chamadas Ativas</h3>
+        <p className="text-sm text-gray-500">Nenhuma chamada ativa no momento.</p>
       </div>
     </div>
   )
