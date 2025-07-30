@@ -1,14 +1,21 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, onSnapshot, updateDoc, doc, addDoc, serverTimestamp } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  updateDoc,
+  doc,
+  serverTimestamp
+} from 'firebase/firestore'
 import { db } from '@/firebase'
 import toast from 'react-hot-toast'
 
 export default function AvaliacaoFreela({ estabelecimento }) {
-  const [chamadasParaAvaliar, setChamadasParaAvaliar] = useState([])
-  const [avaliandoId, setAvaliandoId] = useState(null)
-  const [nota, setNota] = useState(5)
-  const [comentario, setComentario] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [chamadas, setChamadas] = useState([])
+  const [nota, setNota] = useState({})
+  const [comentario, setComentario] = useState({})
+  const [enviando, setEnviando] = useState(null)
 
   useEffect(() => {
     if (!estabelecimento?.uid) return
@@ -16,132 +23,93 @@ export default function AvaliacaoFreela({ estabelecimento }) {
     const q = query(
       collection(db, 'chamadas'),
       where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', '==', 'finalizado'),
+      where('status', 'in', ['concluido', 'finalizada']),
       where('avaliacaoEstabelecimentoFeita', '==', false)
     )
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const chamadas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      setChamadasParaAvaliar(chamadas)
-      setLoading(false)
-    }, (error) => {
-      console.error('Erro ao buscar chamadas para avaliação:', error)
-      toast.error('Erro ao carregar chamadas para avaliação.')
-      setLoading(false)
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const lista = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      setChamadas(lista)
     })
 
     return () => unsubscribe()
-  }, [estabelecimento?.uid])
+  }, [estabelecimento])
 
-  async function enviarAvaliacao() {
-    if (!avaliandoId) return
+  const handleEnviar = async (chamada) => {
+    const chamadaId = chamada.id
+    const notaEnviada = nota[chamadaId]
+    const texto = comentario[chamadaId] || ''
 
-    setLoading(true)
-
-    try {
-      // Salvar avaliação na coleção de avaliações dos freelas
-      await addDoc(collection(db, 'avaliacoesFreelas'), {
-        chamadaId: avaliandoId,
-        estabelecimentoUid: estabelecimento.uid,
-        freelaUid: chamadasParaAvaliar.find(c => c.id === avaliandoId).freelaUid,
-        nota,
-        comentario,
-        dataCriacao: serverTimestamp()
-      })
-
-      // Atualizar chamada para marcar avaliação feita
-      await updateDoc(doc(db, 'chamadas', avaliandoId), {
-        avaliacaoEstabelecimentoFeita: true
-      })
-
-      toast.success('Avaliação enviada com sucesso!')
-
-      // Limpar campos e atualizar lista
-      setAvaliandoId(null)
-      setNota(5)
-      setComentario('')
-    } catch (err) {
-      console.error('Erro ao enviar avaliação:', err)
-      toast.error('Erro ao enviar avaliação. Tente novamente.')
+    if (!notaEnviada) {
+      toast.error('Dê uma nota antes de enviar.')
+      return
     }
 
-    setLoading(false)
+    setEnviando(chamadaId)
+
+    try {
+      const ref = doc(db, 'chamadas', chamadaId)
+      await updateDoc(ref, {
+        avaliacaoEstabelecimento: {
+          nota: notaEnviada,
+          comentario: texto,
+          criadoEm: serverTimestamp()
+        },
+        avaliacaoEstabelecimentoFeita: true
+      })
+      toast.success('✅ Avaliação enviada com sucesso!')
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao enviar avaliação.')
+    } finally {
+      setEnviando(null)
+    }
   }
 
-  if (loading) {
-    return <p className="text-center text-gray-600">Carregando chamadas para avaliação...</p>
-  }
-
-  if (chamadasParaAvaliar.length === 0) {
-    return <p className="text-center text-gray-600">Nenhuma avaliação pendente.</p>
+  if (chamadas.length === 0) {
+    return <p className="text-center text-gray-600 mt-6">Nenhuma avaliação pendente.</p>
   }
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-orange-700 mb-4">Avalie os Freelancers finalizados</h2>
+    <div className="space-y-4">
+      {chamadas.map((chamada) => (
+        <div key={chamada.id} className="p-4 bg-white rounded-xl shadow border border-orange-100">
+          <h3 className="text-orange-700 font-bold text-lg mb-1">
+            Avaliar freelancer: {chamada.freelaNome}
+          </h3>
+          <p className="text-sm text-gray-600 mb-2">Serviço finalizado • Valor diário: R$ {chamada.valorDiaria}</p>
 
-      <ul className="space-y-4">
-        {chamadasParaAvaliar.map(chamada => (
-          <li key={chamada.id} className="border rounded p-4 bg-white shadow-sm">
-            <p><strong>Freelancer:</strong> {chamada.freelaNome}</p>
-            <p><strong>Serviço:</strong> {chamada.servico || 'Não informado'}</p>
-            <p><strong>Data finalização:</strong> {chamada.checkOutFreelaHora?.toDate?.().toLocaleString() || 'Data indisponível'}</p>
-
-            <button
-              onClick={() => setAvaliandoId(chamada.id)}
-              disabled={avaliandoId === chamada.id}
-              className="mt-2 px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700"
-            >
-              {avaliandoId === chamada.id ? 'Avaliar este' : 'Avaliar'}
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      {avaliandoId && (
-        <div className="mt-6 p-4 border rounded bg-orange-50">
-          <h3 className="font-semibold mb-2">Avaliar Freelancer</h3>
-
-          <label className="block mb-1 font-medium">Nota (1 a 5):</label>
-          <select
-            value={nota}
-            onChange={e => setNota(Number(e.target.value))}
-            className="mb-3 p-2 border rounded w-full max-w-xs"
-          >
-            {[1, 2, 3, 4, 5].map(n => (
-              <option key={n} value={n}>{n}</option>
+          <div className="flex gap-1 mb-2">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                onClick={() => setNota(prev => ({ ...prev, [chamada.id]: n }))}
+                className={`w-8 h-8 rounded-full text-white font-bold ${
+                  nota[chamada.id] >= n ? 'bg-orange-500' : 'bg-gray-300'
+                }`}
+              >
+                {n}
+              </button>
             ))}
-          </select>
+          </div>
 
-          <label className="block mb-1 font-medium">Comentário (opcional):</label>
           <textarea
-            value={comentario}
-            onChange={e => setComentario(e.target.value)}
-            className="mb-3 p-2 border rounded w-full max-w-md"
-            rows={4}
+            placeholder="Comentário (opcional)"
+            value={comentario[chamada.id] || ''}
+            onChange={(e) => setComentario(prev => ({ ...prev, [chamada.id]: e.target.value }))}
+            className="w-full p-2 border rounded text-sm mb-2"
+            rows={2}
           />
 
-          <div className="flex gap-4">
-            <button
-              onClick={enviarAvaliacao}
-              disabled={loading}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-            >
-              {loading ? 'Enviando...' : 'Enviar Avaliação'}
-            </button>
-            <button
-              onClick={() => {
-                setAvaliandoId(null)
-                setNota(5)
-                setComentario('')
-              }}
-              className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-            >
-              Cancelar
-            </button>
-          </div>
+          <button
+            onClick={() => handleEnviar(chamada)}
+            disabled={enviando === chamada.id || !nota[chamada.id]}
+            className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 transition disabled:opacity-50"
+          >
+            {enviando === chamada.id ? 'Enviando...' : 'Enviar Avaliação'}
+          </button>
         </div>
-      )}
+      ))}
     </div>
   )
 }
