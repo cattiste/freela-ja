@@ -1,96 +1,71 @@
-import React, { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { doc, getDoc } from 'firebase/firestore'
-import { db } from '@/firebase'
-import { toast } from 'react-hot-toast'
+// PagamentoChamada.jsx ajustado com taxa de serviço e mensagem de segurança
 
-export default function PagamentoChamada() {
-  const { id } = useParams() // id da chamada
-  const navigate = useNavigate()
-  const [chamada, setChamada] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [pagando, setPagando] = useState(false)
+import React, { useState } from 'react'
 
-  useEffect(() => {
-    const buscarChamada = async () => {
-      try {
-        const ref = doc(db, 'chamadas', id)
-        const snap = await getDoc(ref)
-        if (snap.exists()) {
-          setChamada({ id: snap.id, ...snap.data() })
-        } else {
-          toast.error('Chamada não encontrada.')
-        }
-      } catch (err) {
-        console.error(err)
-        toast.error('Erro ao buscar chamada.')
-      } finally {
-        setLoading(false)
-      }
-    }
+export default function PagamentoChamada({ valorBase, onConfirmar }) {
+  const [cartao, setCartao] = useState('')
+  const [nome, setNome] = useState('')
+  const [validade, setValidade] = useState('')
+  const [cvv, setCvv] = useState('')
 
-    buscarChamada()
-  }, [id])
+  const taxaEstabelecimento = valorBase * 0.10
+  const valorTotal = valorBase + taxaEstabelecimento
 
-  const iniciarPagamento = async () => {
-    if (!chamada || !chamada.valorDiaria || !chamada.freelaNome) {
-      toast.error('Informações da chamada incompletas.')
-      return
-    }
-
-    setPagando(true)
-    try {
-      const valorTotal = chamada.valorDiaria * 1.1 // inclui taxa de 10%
-
-      const res = await fetch('/api/gerarCheckout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          titulo: `Diária de ${chamada.freelaNome}`,
-          valor: valorTotal,
-          referenciaId: chamada.id,
-          tipo: 'chamada'
-        })
-      })
-
-      const data = await res.json()
-      if (data.linkPagamento) {
-        window.location.href = data.linkPagamento
-      } else {
-        toast.error('Erro ao iniciar pagamento.')
-      }
-
-    } catch (err) {
-      console.error(err)
-      toast.error('Erro na comunicação com o pagamento.')
-    } finally {
-      setPagando(false)
-    }
+  const confirmarPagamento = () => {
+    // Aqui você integraria com a função gerarCobrancaPix ou com o gateway de cartão
+    onConfirmar({ valor: valorTotal })
   }
 
-  if (loading) return <p className="text-center mt-10">Carregando chamada...</p>
-  if (!chamada) return <p className="text-center mt-10">Chamada não encontrada.</p>
-
-  const valorTotal = chamada.valorDiaria * 1.1
-
   return (
-    <div className="max-w-xl mx-auto mt-10 p-6 bg-white shadow-xl rounded-xl">
-      <h1 className="text-2xl font-bold text-orange-700 mb-4">Pagamento da Chamada</h1>
+    <div className="max-w-md mx-auto bg-white p-6 rounded-xl shadow space-y-4">
+      <h2 className="text-xl font-bold text-orange-700">Pagamento da Chamada</h2>
 
-      <div className="text-gray-700 space-y-2 text-sm">
-        <p><strong>Freela:</strong> {chamada.freelaNome}</p>
-        <p><strong>Função:</strong> {chamada.funcao}</p>
-        <p><strong>Valor da diária:</strong> R$ {parseFloat(chamada.valorDiaria).toFixed(2)}</p>
-        <p><strong>Taxa da plataforma (10%):</strong> R$ {(chamada.valorDiaria * 0.1).toFixed(2)}</p>
-        <p><strong>Total:</strong> <span className="text-green-700 font-bold">R$ {valorTotal.toFixed(2)}</span></p>
+      <p className="text-sm text-gray-600">
+        Valor base da diária: <strong>R$ {valorBase.toFixed(2)}</strong><br />
+        Taxa de serviço (10%): <strong>R$ {taxaEstabelecimento.toFixed(2)}</strong><br />
+        <span className="text-orange-700 font-bold">Total: R$ {valorTotal.toFixed(2)}</span>
+      </p>
+
+      <p className="text-xs text-gray-500 bg-yellow-50 p-2 rounded">
+        🔒 Para sua segurança, não armazenamos os dados do seu cartão de crédito.
+      </p>
+
+      <input
+        type="text"
+        placeholder="Número do cartão"
+        className="w-full border p-2 rounded"
+        value={cartao}
+        onChange={(e) => setCartao(e.target.value)}
+      />
+      <input
+        type="text"
+        placeholder="Nome impresso no cartão"
+        className="w-full border p-2 rounded"
+        value={nome}
+        onChange={(e) => setNome(e.target.value)}
+      />
+      <div className="flex gap-2">
+        <input
+          type="text"
+          placeholder="Validade (MM/AA)"
+          className="flex-1 border p-2 rounded"
+          value={validade}
+          onChange={(e) => setValidade(e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="CVV"
+          className="w-20 border p-2 rounded"
+          value={cvv}
+          onChange={(e) => setCvv(e.target.value)}
+        />
       </div>
 
       <button
-        onClick={iniciarPagamento}
-        disabled={pagando}
-        className="mt-6 w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
+        onClick={confirmarPagamento}
+        className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 w-full"
       >
-        {pagando ? 'Processando pagamento...' : 'Pagar e Confirmar Chamada'}
+        Confirmar Pagamento
       </button>
     </div>
   )
