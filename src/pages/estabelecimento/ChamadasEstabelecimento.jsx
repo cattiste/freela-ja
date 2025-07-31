@@ -1,5 +1,3 @@
-// ChamadasEstabelecimento.jsx – versão final com fetch para funções HTTP
-
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -139,7 +137,8 @@ checkInFreela: {chamada.checkInFreela?.toString()} | checkInEstabelecimento: {ch
 checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: {chamada.checkOutEstabelecimento?.toString()}
             </pre>
 
-            {!pg && chamada.status === 'aceita' && (
+            {/* ✅ CORREÇÃO: mostra botão mesmo se pagamento incompleto */}
+            {(!pg || !pg.txid) && chamada.status === 'aceita' && (
               <button
                 onClick={() => pagarChamada(chamada)}
                 className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
@@ -155,7 +154,7 @@ checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: 
               </div>
             )}
 
-            {pg && (
+            {pg && pg.pixConfirmado && (
               <p className="text-green-700 font-semibold text-sm text-center">✅ Pagamento confirmado</p>
             )}
 
