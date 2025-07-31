@@ -14,7 +14,6 @@ import AgendasContratadas from '@/components/AgendasContratadas'
 import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompleto'
 import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
-import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
 import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
 import ChamadasAtivas from '@/pages/estabelecimento/ChamadasAtivas'
 import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
@@ -146,8 +145,6 @@ export default function PainelEstabelecimento() {
         return <AvaliacaoFreela estabelecimento={estabelecimento} />
       case 'historico':
         return <HistoricoChamadasEstabelecimento estabelecimento={estabelecimento} />
-      case 'configuracoes':
-        return <ConfigPagamentoEstabelecimento usuario={estabelecimento} />
       case 'ativas':
         return <ChamadasAtivas estabelecimento={estabelecimento} />
       case 'chamadas':

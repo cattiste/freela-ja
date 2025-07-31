@@ -19,8 +19,8 @@ const botoes = [
   { id: 'agendas', label: 'Agendas', icon: <CalendarDays size={20} /> },
   { id: 'vagas', label: 'Vagas', icon: <Briefcase size={20} /> },
   { id: 'avaliacao', label: 'Avaliar', icon: <Star size={20} /> },
-  { id: 'historico', label: 'Histórico', icon: <ScrollText size={20} /> },
-  { id: 'configuracoes', label: 'Config', icon: <Settings size={20} /> }
+  { id: 'historico', label: 'Histórico', icon: <ScrollText size={20} /> }
+  
 ]
 
 export default function MenuInferiorEstabelecimento({ onSelect, abaAtiva }) {
