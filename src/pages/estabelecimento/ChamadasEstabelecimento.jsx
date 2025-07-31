@@ -1,4 +1,4 @@
-// ChamadasEstabelecimento.jsx unificado – controle completo de chamadas, pagamentos, check-in/out e avaliações
+// ChamadasEstabelecimento.jsx – versão final com fetch para funções HTTP
 
 import React, { useEffect, useState } from 'react'
 import {
@@ -11,8 +11,7 @@ import {
   serverTimestamp,
   getDoc
 } from 'firebase/firestore'
-import { db, functions } from '@/firebase'
-import { httpsCallable } from 'firebase/functions'
+import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
 import AvaliacaoInline from '@/components/AvaliacaoInline'
 import ChatInline from '@/components/ChatInline'
@@ -54,16 +53,24 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
   }, [estabelecimento])
 
   const pagarChamada = async (chamada) => {
-    const cobraPix = httpsCallable(functions, 'cobraChamadaAoAceitar')
     try {
-      const res = await cobraPix({
-        chamadaId: chamada.id,
-        valorDiaria: chamada.valorDiaria,
-        nomeEstabelecimento: estabelecimento.nome,
-        cpfEstabelecimento: estabelecimento.cpf
+      const res = await fetch('https://us-central1-freelaja-web-50254.cloudfunctions.net/api/cobraChamadaAoAceitar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chamadaId: chamada.id,
+          valorDiaria: chamada.valorDiaria,
+          nomeEstabelecimento: estabelecimento.nome,
+          cpfEstabelecimento: estabelecimento.cpf
+        })
       })
-      toast.success('✅ Cobrança Pix gerada com sucesso!')
-      setQrcodes(prev => ({ ...prev, [chamada.id]: res.data.imagem }))
+      const data = await res.json()
+      if (res.ok) {
+        toast.success('✅ Cobrança Pix gerada com sucesso!')
+        setQrcodes(prev => ({ ...prev, [chamada.id]: data.imagem }))
+      } else {
+        throw new Error(data.error || 'Erro desconhecido')
+      }
     } catch (err) {
       console.error(err)
       toast.error('Erro ao gerar cobrança Pix')
@@ -180,18 +187,25 @@ checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: 
               </button>
             )}
 
-            {/* Pagar freela após conclusão */}
             {chamada.status === 'concluido' && pg && !pg.pixConfirmado && (
               <button
                 onClick={async () => {
                   try {
-                    const pagar = httpsCallable(functions, 'pagarFreelaAoCheckout')
-                    const res = await pagar({ chamadaId: chamada.id })
-                    toast.success('✅ Freela pago com sucesso!')
-                    setPagamentos(prev => ({
-                      ...prev,
-                      [chamada.id]: { ...pg, pixConfirmado: true }
-                    }))
+                    const res = await fetch('https://us-central1-freelaja-web-50254.cloudfunctions.net/api/pagarFreelaAoCheckout', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ chamadaId: chamada.id })
+                    })
+                    const data = await res.json()
+                    if (res.ok) {
+                      toast.success('✅ Freela pago com sucesso!')
+                      setPagamentos(prev => ({
+                        ...prev,
+                        [chamada.id]: { ...pg, pixConfirmado: true }
+                      }))
+                    } else {
+                      throw new Error(data.error || 'Erro desconhecido')
+                    }
                   } catch (err) {
                     console.error(err)
                     toast.error('Erro ao pagar freela.')
