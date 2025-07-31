@@ -58,3 +58,45 @@ exports.pagarFreelaAoCheckout = functions.https.onCall(async (data, context) => 
     throw new functions.https.HttpsError('internal', 'Erro ao pagar freela')
   }
 })
+exports.cobraChamadaAoAceitar = functions.https.onCall(async (data, context) => {
+  const { chamadaId, valorDiaria, nomeEstabelecimento, cpfEstabelecimento } = data
+
+  const valorTotal = Number(valorDiaria) * 1.10
+
+  const body = {
+    calendario: { expiracao: 3600 },
+    devedor: { nome: nomeEstabelecimento, cpf: cpfEstabelecimento },
+    valor: { original: valorTotal.toFixed(2) },
+    chave: process.env.GN_PIX_KEY,
+    solicitacaoPagador: 'Pagamento FreelaJá - Chamada'
+  }
+
+  try {
+    const charge = await gn.pixCreateImmediateCharge([], body)
+    const qrCode = await gn.pixGenerateQRCode({ id: charge.loc.id })
+
+    await db.collection('pagamentos').doc(chamadaId).set({
+      chamadaId,
+      valorBase: Number(valorDiaria),
+      valorTotal,
+      valorFreela: Number(valorDiaria) * 0.9,
+      valorPlataforma: Number(valorDiaria) * 0.2,
+      tipo: 'pix',
+      txid: charge.txid,
+      imagemQrcode: qrCode.imagemQrcode,
+      qrcode: qrCode.qrcode,
+      status: 'pendente',
+      criadoEm: admin.firestore.FieldValue.serverTimestamp()
+    })
+
+    return {
+      imagem: qrCode.imagemQrcode,
+      qrcode: qrCode.qrcode,
+      txid: charge.txid
+    }
+
+  } catch (err) {
+    console.error('Erro ao criar cobrança Pix:', err.response?.data || err)
+    throw new functions.https.HttpsError('internal', 'Erro ao criar cobrança Pix')
+  }
+})
