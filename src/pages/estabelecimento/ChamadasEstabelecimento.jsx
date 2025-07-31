@@ -1,4 +1,4 @@
-// ChamadasEstabelecimento.jsx com botão de pagamento Pix integrado e controle de check-in
+// ChamadasEstabelecimento.jsx com botão 'Pagar Freela' no status concluído
 
 import React, { useEffect, useState } from 'react'
 import {
@@ -182,6 +182,29 @@ checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: 
               </button>
             )}
 
+            {/* Pagar freela após conclusão */}
+            {chamada.status === 'concluido' && pg && !pg.pixConfirmado && (
+              <button
+                onClick={async () => {
+                  try {
+                    const pagar = httpsCallable(functions, 'pagarFreelaAoCheckout')
+                    const res = await pagar({ chamadaId: chamada.id })
+                    toast.success('✅ Freela pago com sucesso!')
+                    setPagamentos(prev => ({
+                      ...prev,
+                      [chamada.id]: { ...pg, pixConfirmado: true }
+                    }))
+                  } catch (err) {
+                    console.error(err)
+                    toast.error('Erro ao pagar freela.')
+                  }
+                }}
+                className="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition"
+              >
+                💸 Pagar Freela
+              </button>
+            )}
+
             {(chamada.status === 'concluido' || chamada.status === 'finalizada') && (
               <>
                 <span className="text-green-600 font-bold block text-center mt-2">✅ Finalizada</span>
@@ -197,4 +220,4 @@ checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: 
       })}
     </div>
   )
-} 
+}
