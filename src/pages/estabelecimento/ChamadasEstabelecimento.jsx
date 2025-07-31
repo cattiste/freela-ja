@@ -1,3 +1,5 @@
+// ChamadasEstabelecimento.jsx com botão de pagamento Pix integrado e controle de check-in
+
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -6,9 +8,11 @@ import {
   onSnapshot,
   updateDoc,
   doc,
-  serverTimestamp
+  serverTimestamp,
+  getDoc
 } from 'firebase/firestore'
-import { db } from '@/firebase'
+import { db, functions } from '@/firebase'
+import { httpsCallable } from 'firebase/functions'
 import { toast } from 'react-hot-toast'
 import AvaliacaoInline from '@/components/AvaliacaoInline'
 import ChatInline from '@/components/ChatInline'
@@ -17,6 +21,8 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
   const [chamadas, setChamadas] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [loadingId, setLoadingId] = useState(null)
+  const [pagamentos, setPagamentos] = useState({})
+  const [qrcodes, setQrcodes] = useState({})
 
   useEffect(() => {
     if (!estabelecimento?.uid) return
@@ -26,12 +32,20 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
       where('estabelecimentoUid', '==', estabelecimento.uid)
     )
 
-    const unsubscribe = onSnapshot(q, snapshot => {
-      const lista = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }))
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const lista = []
+      const pagamentosTemp = {}
+
+      for (const docSnap of snapshot.docs) {
+        const chamada = { id: docSnap.id, ...docSnap.data() }
+        lista.push(chamada)
+
+        const pgSnap = await getDoc(doc(db, 'pagamentos', chamada.id))
+        if (pgSnap.exists()) pagamentosTemp[chamada.id] = pgSnap.data()
+      }
+
       setChamadas(lista)
+      setPagamentos(pagamentosTemp)
       setCarregando(false)
     }, err => {
       console.error('Erro ao buscar chamadas:', err)
@@ -40,6 +54,23 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
 
     return () => unsubscribe()
   }, [estabelecimento])
+
+  const pagarChamada = async (chamada) => {
+    const cobraPix = httpsCallable(functions, 'cobraChamadaAoAceitar')
+    try {
+      const res = await cobraPix({
+        chamadaId: chamada.id,
+        valorDiaria: chamada.valorDiaria,
+        nomeEstabelecimento: estabelecimento.nome,
+        cpfEstabelecimento: estabelecimento.cpf
+      })
+      toast.success('✅ Cobrança Pix gerada com sucesso!')
+      setQrcodes(prev => ({ ...prev, [chamada.id]: res.data.imagem }))
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao gerar cobrança Pix')
+    }
+  }
 
   const atualizarChamada = async (id, dados) => {
     try {
@@ -62,7 +93,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
       em_andamento: 'bg-green-200 text-green-700',
       checkout_freela: 'bg-blue-200 text-blue-700',
       concluido: 'bg-green-100 text-green-600',
-      finalizada: 'bg-gray-200 text-gray-600',
+      finalizada: 'bg-gray-200 text-gray-600'
     }
     return (
       <span className={`px-2 py-1 rounded text-xs font-semibold ${cores[status] || 'bg-gray-200 text-gray-700'}`}>
@@ -76,71 +107,94 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
 
   return (
     <div className="space-y-3">
-      {chamadas.map(chamada => (
-        <div key={chamada.id} className="p-3 bg-white rounded-xl shadow border border-orange-100 space-y-2">
-          <div className="flex items-center gap-3">
-            <img
-              src={chamada.freelaFoto || 'https://via.placeholder.com/40'}
-              alt={chamada.freelaNome}
-              className="w-10 h-10 rounded-full border border-orange-300 object-cover"
-            />
-            <div className="flex-1">
-              <p className="font-bold text-orange-600">{chamada.freelaNome}</p>
-              {chamada.valorDiaria && (
-                <p className="text-xs text-gray-500">💰 R$ {chamada.valorDiaria} / diária</p>
-              )}
-              <p className="text-sm mt-1">📌 Status: {badgeStatus(chamada.status)}</p>
-              <ChatInline chamadaId={chamada.id} />
-            </div>
-          </div>
+      {chamadas.map(chamada => {
+        const pg = pagamentos[chamada.id]
+        const qr = qrcodes[chamada.id]
 
-          <pre className="text-xs text-gray-500 bg-gray-50 p-2 rounded border border-gray-200 whitespace-pre-wrap">
+        return (
+          <div key={chamada.id} className="p-3 bg-white rounded-xl shadow border border-orange-100 space-y-2">
+            <div className="flex items-center gap-3">
+              <img
+                src={chamada.freelaFoto || 'https://via.placeholder.com/40'}
+                alt={chamada.freelaNome}
+                className="w-10 h-10 rounded-full border border-orange-300 object-cover"
+              />
+              <div className="flex-1">
+                <p className="font-bold text-orange-600">{chamada.freelaNome}</p>
+                {chamada.valorDiaria && (
+                  <p className="text-xs text-gray-500">💰 R$ {chamada.valorDiaria} / diária</p>
+                )}
+                <p className="text-sm mt-1">📌 Status: {badgeStatus(chamada.status)}</p>
+                <ChatInline chamadaId={chamada.id} />
+              </div>
+            </div>
+
+            <pre className="text-xs text-gray-500 bg-gray-50 p-2 rounded border border-gray-200 whitespace-pre-wrap">
 checkInFreela: {chamada.checkInFreela?.toString()} | checkInEstabelecimento: {chamada.checkInEstabelecimento?.toString()} |
 checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: {chamada.checkOutEstabelecimento?.toString()}
-          </pre>
+            </pre>
 
-          {/* Confirmar Check-in */}
-          {chamada.status === 'checkin_freela' && !chamada.checkInEstabelecimento && (
-            <button
-              onClick={() => atualizarChamada(chamada.id, {
-                checkInEstabelecimento: true,
-                checkInEstabelecimentoHora: serverTimestamp(),
-                status: 'em_andamento'
-              })}
-              disabled={loadingId === chamada.id}
-              className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
-            >
-              {loadingId === chamada.id ? 'Confirmando...' : '✅ Confirmar Check-in'}
-            </button>
-          )}
+            {!pg && chamada.status === 'aceita' && (
+              <button
+                onClick={() => pagarChamada(chamada)}
+                className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              >
+                💳 Efetuar Pagamento Pix
+              </button>
+            )}
 
-          {/* Confirmar Check-out */}
-          {chamada.status === 'checkout_freela' && !chamada.checkOutEstabelecimento && (
-            <button
-              onClick={() => atualizarChamada(chamada.id, {
-                checkOutEstabelecimento: true,
-                checkOutEstabelecimentoHora: serverTimestamp(),
-                status: 'concluido'
-              })}
-              disabled={loadingId === chamada.id}
-              className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-            >
-              {loadingId === chamada.id ? 'Confirmando...' : '📤 Confirmar Check-out'}
-            </button>
-          )}
+            {qr && (
+              <div className="mt-3">
+                <img src={qr} alt="QR Code Pix" className="w-48 mx-auto" />
+                <p className="text-center text-sm text-gray-500 mt-1">Escaneie para pagar</p>
+              </div>
+            )}
 
-          {(chamada.status === 'concluido' || chamada.status === 'finalizada') && (
-            <>
-              <span className="text-green-600 font-bold block text-center mt-2">✅ Finalizada</span>
-              {!chamada.avaliacaoFreelaFeita ? (
-                <AvaliacaoInline chamada={chamada} tipo="estabelecimento" />
-              ) : (
-                <p className="text-sm text-gray-500 text-center">Freelancer já avaliado ✅</p>
-              )}
-            </>
-          )}
-        </div>
-      ))}
+            {pg && (
+              <p className="text-green-700 font-semibold text-sm text-center">✅ Pagamento confirmado</p>
+            )}
+
+            {chamada.status === 'checkin_freela' && !chamada.checkInEstabelecimento && (
+              <button
+                onClick={() => atualizarChamada(chamada.id, {
+                  checkInEstabelecimento: true,
+                  checkInEstabelecimentoHora: serverTimestamp(),
+                  status: 'em_andamento'
+                })}
+                disabled={loadingId === chamada.id}
+                className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+              >
+                {loadingId === chamada.id ? 'Confirmando...' : '✅ Confirmar Check-in'}
+              </button>
+            )}
+
+            {chamada.status === 'checkout_freela' && !chamada.checkOutEstabelecimento && (
+              <button
+                onClick={() => atualizarChamada(chamada.id, {
+                  checkOutEstabelecimento: true,
+                  checkOutEstabelecimentoHora: serverTimestamp(),
+                  status: 'concluido'
+                })}
+                disabled={loadingId === chamada.id}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+              >
+                {loadingId === chamada.id ? 'Confirmando...' : '📤 Confirmar Check-out'}
+              </button>
+            )}
+
+            {(chamada.status === 'concluido' || chamada.status === 'finalizada') && (
+              <>
+                <span className="text-green-600 font-bold block text-center mt-2">✅ Finalizada</span>
+                {!chamada.avaliacaoFreelaFeita ? (
+                  <AvaliacaoInline chamada={chamada} tipo="estabelecimento" />
+                ) : (
+                  <p className="text-sm text-gray-500 text-center">Freelancer já avaliado ✅</p>
+                )}
+              </>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
-}
+} 
