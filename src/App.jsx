@@ -37,6 +37,8 @@ import EditarPerfilEstabelecimento from '@/pages/estabelecimento/EditarPerfilEst
 import PublicarVaga from '@/pages/estabelecimento/PublicarVaga'
 import ConfigPagamentoEstabelecimento from '@/pages/estabelecimento/ConfigPagamentoEstabelecimento'
 
+import PagamentoPix from '@/pages/gerais/PagamentoPix'
+
 
 export default function App() {
   return (
@@ -71,10 +73,10 @@ export default function App() {
           <Route path="/pagamento-chamada/:id" element={<PagamentoChamada />} />
           <Route path="/editarperfilestabelecimento/:uid" element={<EditarPerfilEstabelecimento />} />
           <Route path="/publicarvaga" element={<PublicarVaga />} />
+          <Route path="/pagamento-pix" element={<PagamentoPix />} />
           <Route
             path="/painelestabelecimento/config-pagamento"
-            element={<ConfigPagamentoEstabelecimento />}
-          />
+            element={<ConfigPagamentoEstabelecimento />} />            
         </Routes>
       </BrowserRouter>
     </AuthProvider>
