@@ -1,4 +1,4 @@
-// ChamadasEstabelecimento.jsx com botão 'Pagar Freela' no status concluído
+// ChamadasEstabelecimento.jsx unificado – controle completo de chamadas, pagamentos, check-in/out e avaliações
 
 import React, { useEffect, useState } from 'react'
 import {
@@ -29,14 +29,15 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
 
     const q = query(
       collection(db, 'chamadas'),
-      where('estabelecimentoUid', '==', estabelecimento.uid)
+      where('estabelecimentoUid', '==', estabelecimento.uid),
+      where('status', 'in', ['aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'concluido', 'finalizada'])
     )
 
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
+    const unsub = onSnapshot(q, async (snap) => {
       const lista = []
       const pagamentosTemp = {}
 
-      for (const docSnap of snapshot.docs) {
+      for (const docSnap of snap.docs) {
         const chamada = { id: docSnap.id, ...docSnap.data() }
         lista.push(chamada)
 
@@ -47,12 +48,9 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
       setChamadas(lista)
       setPagamentos(pagamentosTemp)
       setCarregando(false)
-    }, err => {
-      console.error('Erro ao buscar chamadas:', err)
-      setCarregando(false)
     })
 
-    return () => unsubscribe()
+    return () => unsub()
   }, [estabelecimento])
 
   const pagarChamada = async (chamada) => {
