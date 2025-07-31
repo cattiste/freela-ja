@@ -41,5 +41,9 @@ if (import.meta.env.MODE === 'development') {
 
 export { app, auth, db, storage, rtdb } // ✅ exporte o RTDB também
 
+import { getFunctions } from 'firebase/functions'
+export const functions = getFunctions()
+
+
 // Projeto original FreelaJá - Código registrado e rastreável
 // Assinatura interna: 𝙁𝙅-𝟮𝟬𝟮𝟱-𝘽𝘾-𝘾𝙃𝘼𝙏𝙂𝙋𝙏
