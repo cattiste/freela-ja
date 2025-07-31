@@ -1,5 +1,15 @@
-node_modules
+# Ignorar dependências
+node_modules/
+
+# Ignorar arquivos sensíveis
 .env
+.env.local
+.env.production
+.env.development
+
+# Logs
 firebase-debug.log
 firebase-debug.*.log
+
+# Outros temporários
 *.local
