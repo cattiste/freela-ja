@@ -22,12 +22,14 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
   const [qrcodes, setQrcodes] = useState({})
 
   useEffect(() => {
+    console.log('🧪 Estabelecimento carregado:', estabelecimento?.uid)
     if (!estabelecimento?.uid) return
 
     const q = query(
       collection(db, 'chamadas'),
-      where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', 'in', ['aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'concluido', 'finalizada'])
+      where('estabelecimentoUid', '==', estabelecimento.uid)
+      // Se quiser voltar a filtrar, reative o status aqui
+      // where('status', 'in', ['aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'concluido', 'finalizada'])
     )
 
     const unsub = onSnapshot(q, async (snap) => {
@@ -36,6 +38,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
 
       for (const docSnap of snap.docs) {
         const chamada = { id: docSnap.id, ...docSnap.data() }
+        console.log('📦 Chamada encontrada:', chamada)
         lista.push(chamada)
 
         const pgSnap = await getDoc(doc(db, 'pagamentos', chamada.id))
@@ -78,8 +81,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
   const atualizarChamada = async (id, dados) => {
     try {
       setLoadingId(id)
-      const ref = doc(db, 'chamadas', id)
-      await updateDoc(ref, dados)
+      await updateDoc(doc(db, 'chamadas', id), dados)
       toast.success('✅ Ação realizada com sucesso!')
     } catch (err) {
       console.error('Erro ao atualizar chamada:', err)
@@ -106,7 +108,8 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
   }
 
   if (carregando) return <p className="text-center text-orange-600">🔄 Carregando chamadas...</p>
-  if (chamadas.length === 0) return <p className="text-center text-gray-600">📭 Nenhuma chamada registrada.</p>
+  if (!carregando && chamadas.length === 0)
+    return <p className="text-center text-gray-600">📭 Nenhuma chamada registrada.</p>
 
   return (
     <div className="space-y-3">
@@ -118,7 +121,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
           <div key={chamada.id} className="p-3 bg-white rounded-xl shadow border border-orange-100 space-y-2">
             <div className="flex items-center gap-3">
               <img
-                src={chamada.freelaFoto || 'https://via.placeholder.com/40'}
+                src={chamada.freelaFoto || 'https://placehold.co/100x100'}
                 alt={chamada.freelaNome}
                 className="w-10 h-10 rounded-full border border-orange-300 object-cover"
               />
@@ -137,7 +140,6 @@ checkInFreela: {chamada.checkInFreela?.toString()} | checkInEstabelecimento: {ch
 checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: {chamada.checkOutEstabelecimento?.toString()}
             </pre>
 
-            {/* ✅ CORREÇÃO: mostra botão mesmo se pagamento incompleto */}
             {(!pg || !pg.txid) && chamada.status === 'aceita' && (
               <button
                 onClick={() => pagarChamada(chamada)}
@@ -154,7 +156,7 @@ checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: 
               </div>
             )}
 
-            {pg && pg.pixConfirmado && (
+            {pg?.pixConfirmado && (
               <p className="text-green-700 font-semibold text-sm text-center">✅ Pagamento confirmado</p>
             )}
 
