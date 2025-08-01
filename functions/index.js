@@ -1,4 +1,4 @@
-// functions/index.js – versão com logs e proteção extra
+// functions/index.js – com fallback para usar CNPJ ou CPF do responsável
 
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
@@ -23,10 +23,12 @@ app.use(express.json());
 
 // === POST /cobraChamadaAoAceitar ===
 app.post('/cobraChamadaAoAceitar', async (req, res) => {
-  const { chamadaId, valorDiaria, nomeEstabelecimento, cpfEstabelecimento } = req.body;
+  const { chamadaId, valorDiaria, nomeEstabelecimento, cpfEstabelecimento, cnpjEstabelecimento, cpfResponsavel } = req.body;
 
   try {
-    if (!chamadaId || !valorDiaria || !nomeEstabelecimento || !cpfEstabelecimento) {
+    const documentoPagador = cpfEstabelecimento || cnpjEstabelecimento || cpfResponsavel;
+
+    if (!chamadaId || !valorDiaria || !nomeEstabelecimento || !documentoPagador) {
       return res.status(400).json({ error: 'Dados incompletos para gerar cobrança' });
     }
 
@@ -34,7 +36,7 @@ app.post('/cobraChamadaAoAceitar', async (req, res) => {
 
     const body = {
       calendario: { expiracao: 3600 },
-      devedor: { nome: nomeEstabelecimento, cpf: cpfEstabelecimento },
+      devedor: { nome: nomeEstabelecimento, cpf: documentoPagador },
       valor: { original: valorTotal.toFixed(2) },
       chave: pixKey,
       solicitacaoPagador: 'Pagamento FreelaJá - Chamada'
