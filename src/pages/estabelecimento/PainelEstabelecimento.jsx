@@ -15,6 +15,7 @@ import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompl
 import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
 import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
+import ChamadasAtivas from '@/pages/estabelecimento/ChamadasAtivas'
 import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
 import CardAvaliacaoFreela from '@/components/CardAvaliacaoFreela'
 import Calendar from 'react-calendar'
@@ -143,7 +144,9 @@ export default function PainelEstabelecimento() {
       case 'avaliacao':
         return <AvaliacaoFreela estabelecimento={estabelecimento} />
       case 'historico':
-        return <HistoricoChamadasEstabelecimento estabelecimento={estabelecimento} />      
+        return <HistoricoChamadasEstabelecimento estabelecimento={estabelecimento} />
+      case 'ativas':
+        return <ChamadasAtivas estabelecimento={estabelecimento} />      
       case 'chamadas':
         return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
       default:
