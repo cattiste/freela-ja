@@ -48,9 +48,9 @@ export default function ChamadasAtivas({ estabelecimento }) {
   }, [estabelecimento])
 
   const pagarChamada = async (chamada) => {
-    const cpfFallback = cpfManual[chamada.id]
     const valorNumerico = Number(chamada.valorDiaria)
     const cnpjLimpo = estabelecimento.cnpj?.replace(/[^0-9]/g, '')
+    const documentoManual = cpfManual[chamada.id]?.replace(/[^0-9]/g, '') || ''
 
     const payload = {
       chamadaId: chamada.id,
@@ -58,17 +58,14 @@ export default function ChamadasAtivas({ estabelecimento }) {
       nomeEstabelecimento: estabelecimento.nome,
       cpfEstabelecimento: estabelecimento.cpf,
       cnpjEstabelecimento: cnpjLimpo,
-      cpfResponsavel: cpfFallback
+      cpfResponsavel: estabelecimento.cpfResponsavel,
+      documentoManual
     }
 
     console.log('📤 Enviando payload:', payload)
 
-    if (
-      !payload.cpfEstabelecimento &&
-      !payload.cnpjEstabelecimento &&
-      (!cpfFallback || cpfFallback.length < 11)
-    ) {
-      toast.error('⚠️ Preencha um CPF válido (11 dígitos) do responsável')
+    if (!payload.valorDiaria || !payload.nomeEstabelecimento || (!documentoManual && !payload.cpfEstabelecimento && !payload.cnpjEstabelecimento)) {
+      toast.error('⚠️ Preencha um CPF ou CNPJ válido')
       return
     }
 
@@ -126,7 +123,6 @@ export default function ChamadasAtivas({ estabelecimento }) {
   return (
     <div className="space-y-4">
       {chamadas.map((chamada) => {
-        const mostrarFormularioCPF = !estabelecimento?.cpf && !estabelecimento?.cnpj
         const confirmar = confirmarDados[chamada.id] === true
 
         return (
@@ -146,24 +142,15 @@ export default function ChamadasAtivas({ estabelecimento }) {
               </div>
             </div>
 
-            <pre className="text-xs text-gray-500 bg-gray-50 p-2 rounded border border-gray-200 whitespace-pre-wrap">
-checkInFreela: {chamada.checkInFreela?.toString()} | checkInEstabelecimento: {chamada.checkInEstabelecimento?.toString()} |
-checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: {chamada.checkOutEstabelecimento?.toString()}
-            </pre>
+            <input
+              type="text"
+              placeholder="Digite CPF ou CNPJ para pagamento"
+              value={cpfManual[chamada.id] || ''}
+              onChange={(e) => setCpfManual(prev => ({ ...prev, [chamada.id]: e.target.value }))}
+              className="w-full border rounded px-3 py-2 text-sm"
+            />
 
-            {chamada.status === 'aceita' && mostrarFormularioCPF && (
-              <input
-                type="text"
-                placeholder="Digite o CPF do responsável"
-                value={cpfManual[chamada.id] || ''}
-                onChange={(e) =>
-                  setCpfManual(prev => ({ ...prev, [chamada.id]: e.target.value }))
-                }
-                className="w-full border rounded px-3 py-2 text-sm mb-2"
-              />
-            )}
-
-            {chamada.status === 'aceita' && !confirmar && (
+            {!confirmar && (
               <button
                 onClick={() => setConfirmarDados(prev => ({ ...prev, [chamada.id]: true }))}
                 className="w-full bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300"
@@ -172,14 +159,12 @@ checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: 
               </button>
             )}
 
-            {chamada.status === 'aceita' && confirmar && (
+            {confirmar && (
               <>
                 <div className="bg-gray-50 border border-gray-200 p-2 rounded text-sm text-gray-700">
                   <p><strong>Estabelecimento:</strong> {estabelecimento.nome}</p>
-                  {estabelecimento?.cpf && <p><strong>CPF:</strong> {estabelecimento.cpf}</p>}
-                  {estabelecimento?.cnpj && <p><strong>CNPJ:</strong> {estabelecimento.cnpj}</p>}
                   {cpfManual[chamada.id] && (
-                    <p><strong>CPF do responsável:</strong> {cpfManual[chamada.id]}</p>
+                    <p><strong>Documento informado:</strong> {cpfManual[chamada.id]}</p>
                   )}
                   <p><strong>Valor da diária:</strong> <input type="text" value={chamada.valorDiaria} disabled className="w-full bg-transparent text-gray-700" /></p>
                 </div>
