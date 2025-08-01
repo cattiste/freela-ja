@@ -16,6 +16,7 @@ export default function ChamadasAtivas({ estabelecimento }) {
   const [loadingId, setLoadingId] = useState(null)
   const [qrcodes, setQrcodes] = useState({})
   const [cpfManual, setCpfManual] = useState({})
+  const [confirmarDados, setConfirmarDados] = useState({})
 
   useEffect(() => {
     if (!estabelecimento?.uid) return
@@ -48,13 +49,15 @@ export default function ChamadasAtivas({ estabelecimento }) {
 
   const pagarChamada = async (chamada) => {
     const cpfFallback = cpfManual[chamada.id]
+    const valorNumerico = Number(chamada.valorDiaria)
+    const cnpjLimpo = estabelecimento.cnpj?.replace(/[^0-9]/g, '')
 
     const payload = {
       chamadaId: chamada.id,
-      valorDiaria: chamada.valorDiaria,
+      valorDiaria: valorNumerico,
       nomeEstabelecimento: estabelecimento.nome,
       cpfEstabelecimento: estabelecimento.cpf,
-      cnpjEstabelecimento: estabelecimento.cnpj,
+      cnpjEstabelecimento: cnpjLimpo,
       cpfResponsavel: cpfFallback
     }
 
@@ -124,6 +127,7 @@ export default function ChamadasAtivas({ estabelecimento }) {
     <div className="space-y-4">
       {chamadas.map((chamada) => {
         const mostrarFormularioCPF = !estabelecimento?.cpf && !estabelecimento?.cnpj
+        const confirmar = confirmarDados[chamada.id] === true
 
         return (
           <div key={chamada.id} className="bg-white rounded-xl p-3 shadow border border-orange-100 space-y-2">
@@ -147,7 +151,6 @@ checkInFreela: {chamada.checkInFreela?.toString()} | checkInEstabelecimento: {ch
 checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: {chamada.checkOutEstabelecimento?.toString()}
             </pre>
 
-            {/* Campo para CPF do responsável se necessário */}
             {chamada.status === 'aceita' && mostrarFormularioCPF && (
               <input
                 type="text"
@@ -160,8 +163,17 @@ checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: 
               />
             )}
 
-            {/* Botão de pagamento Pix */}
-            {chamada.status === 'aceita' && (
+            {/* Confirmação antes de pagar */}
+            {chamada.status === 'aceita' && !confirmar && (
+              <button
+                onClick={() => setConfirmarDados(prev => ({ ...prev, [chamada.id]: true }))}
+                className="w-full bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300"
+              >
+                🧾 Confirmar dados de pagamento
+              </button>
+            )}
+
+            {chamada.status === 'aceita' && confirmar && (
               <>
                 <button
                   onClick={() => pagarChamada(chamada)}
@@ -178,7 +190,6 @@ checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: 
               </>
             )}
 
-            {/* Confirmar Check-in */}
             {chamada.checkInFreela === true && !chamada.checkInEstabelecimento && (
               <button
                 onClick={() =>
@@ -195,7 +206,6 @@ checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: 
               </button>
             )}
 
-            {/* Confirmar Check-out */}
             {chamada.checkOutFreela === true && !chamada.checkOutEstabelecimento && (
               <button
                 onClick={() =>
