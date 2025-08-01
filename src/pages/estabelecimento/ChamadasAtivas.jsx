@@ -82,7 +82,7 @@ export default function ChamadasAtivas({ estabelecimento }) {
         <div key={chamada.id} className="bg-white rounded-xl p-3 shadow border border-orange-100 space-y-2">
           <div className="flex items-center gap-3">
             <img
-              src={chamada.freelaFoto || 'https://via.placeholder.com/40'}
+              src={chamada.freelaFoto || 'https://placehold.co/100x100'}
               alt={chamada.freelaNome}
               className="w-10 h-10 rounded-full border border-orange-300 object-cover"
             />
