@@ -15,6 +15,7 @@ export default function ChamadasAtivas({ estabelecimento }) {
   const [chamadas, setChamadas] = useState([])
   const [loadingId, setLoadingId] = useState(null)
   const [qrcodes, setQrcodes] = useState({})
+  const [cpfManual, setCpfManual] = useState({})
 
   useEffect(() => {
     if (!estabelecimento?.uid) return
@@ -47,18 +48,27 @@ export default function ChamadasAtivas({ estabelecimento }) {
 
   const pagarChamada = async (chamada) => {
     console.log('🚀 Clicou no botão de pagamento:', chamada.id)
+    const cpfFallback = cpfManual[chamada.id]
+
+    const payload = {
+      chamadaId: chamada.id,
+      valorDiaria: chamada.valorDiaria,
+      nomeEstabelecimento: estabelecimento.nome,
+      cpfEstabelecimento: estabelecimento.cpf,
+      cnpjEstabelecimento: estabelecimento.cnpj,
+      cpfResponsavel: cpfFallback
+    }
+
+    if (!payload.cpfEstabelecimento && !payload.cnpjEstabelecimento && !cpfFallback) {
+      toast.error('⚠️ Preencha o CPF do responsável para gerar o Pix')
+      return
+    }
+
     try {
       const res = await fetch('https://us-central1-freelaja-web-50254.cloudfunctions.net/api/cobraChamadaAoAceitar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chamadaId: chamada.id,
-          valorDiaria: chamada.valorDiaria,
-          nomeEstabelecimento: estabelecimento.nome,
-          cpfEstabelecimento: estabelecimento.cpf,
-          cnpjEstabelecimento: estabelecimento.cnpj,
-          cpfResponsavel: estabelecimento.cpfResponsavel
-        })
+        body: JSON.stringify(payload)
       })
       const data = await res.json()
       if (res.ok) {
@@ -108,7 +118,8 @@ export default function ChamadasAtivas({ estabelecimento }) {
   return (
     <div className="space-y-4">
       {chamadas.map((chamada) => {
-        console.log('🧪 chamada.status:', chamada.status)
+        const mostrarFormularioCPF = !estabelecimento?.cpf && !estabelecimento?.cnpj
+
         return (
           <div key={chamada.id} className="bg-white rounded-xl p-3 shadow border border-orange-100 space-y-2">
             <div className="flex items-center gap-3">
@@ -130,6 +141,19 @@ export default function ChamadasAtivas({ estabelecimento }) {
 checkInFreela: {chamada.checkInFreela?.toString()} | checkInEstabelecimento: {chamada.checkInEstabelecimento?.toString()} |
 checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: {chamada.checkOutEstabelecimento?.toString()}
             </pre>
+
+            {/* Campo para CPF do responsável se necessário */}
+            {chamada.status === 'aceita' && mostrarFormularioCPF && (
+              <input
+                type="text"
+                placeholder="Digite o CPF do responsável"
+                value={cpfManual[chamada.id] || ''}
+                onChange={(e) =>
+                  setCpfManual(prev => ({ ...prev, [chamada.id]: e.target.value }))
+                }
+                className="w-full border rounded px-3 py-2 text-sm mb-2"
+              />
+            )}
 
             {/* Botão de pagamento Pix */}
             {chamada.status === 'aceita' && (
