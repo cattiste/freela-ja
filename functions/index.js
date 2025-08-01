@@ -12,7 +12,8 @@ const db = admin.firestore();
 const gn = new Gerencianet({
   client_id: functions.config().gerencianet.client_id,
   client_secret: functions.config().gerencianet.client_secret,
-  sandbox: true
+  sandbox: true,
+  certificate: './certs/certificado.p12'
 });
 
 const pixKey = functions.config().gerencianet.pix_key;
