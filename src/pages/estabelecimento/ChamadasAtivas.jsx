@@ -163,7 +163,6 @@ checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: 
               />
             )}
 
-            {/* Confirmação antes de pagar */}
             {chamada.status === 'aceita' && !confirmar && (
               <button
                 onClick={() => setConfirmarDados(prev => ({ ...prev, [chamada.id]: true }))}
@@ -175,9 +174,18 @@ checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: 
 
             {chamada.status === 'aceita' && confirmar && (
               <>
+                <div className="bg-gray-50 border border-gray-200 p-2 rounded text-sm text-gray-700">
+                  <p><strong>Estabelecimento:</strong> {estabelecimento.nome}</p>
+                  {estabelecimento?.cpf && <p><strong>CPF:</strong> {estabelecimento.cpf}</p>}
+                  {estabelecimento?.cnpj && <p><strong>CNPJ:</strong> {estabelecimento.cnpj}</p>}
+                  {cpfManual[chamada.id] && (
+                    <p><strong>CPF do responsável:</strong> {cpfManual[chamada.id]}</p>
+                  )}
+                  <p><strong>Valor da diária:</strong> <input type="text" value={chamada.valorDiaria} disabled className="w-full bg-transparent text-gray-700" /></p>
+                </div>
                 <button
                   onClick={() => pagarChamada(chamada)}
-                  className="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition"
+                  className="w-full mt-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition"
                 >
                   💳 Efetuar Pagamento Pix
                 </button>
