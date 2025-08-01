@@ -94,6 +94,7 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
         estabelecimentoUid: estabelecimento.uid,
         estabelecimentoNome: estabelecimento.nome,
         vagaTitulo: 'Serviço direto',
+        valorDiaria: freela.valorDiaria || null,
         status: 'pendente',
         criadoEm: serverTimestamp()
       })
