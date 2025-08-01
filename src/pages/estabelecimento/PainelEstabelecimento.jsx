@@ -79,7 +79,7 @@ export default function PainelEstabelecimento() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
           <img
-            src={estabelecimento?.foto || 'https://via.placeholder.com/100'}
+            src={estabelecimento?.foto || 'https://placehold.co/100x100'}
             alt={estabelecimento?.nome}
             className="w-24 h-24 rounded-full object-cover mb-2 border-2 border-orange-500 mx-auto"
           />
