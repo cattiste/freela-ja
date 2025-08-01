@@ -55,7 +55,9 @@ export default function ChamadasAtivas({ estabelecimento }) {
           chamadaId: chamada.id,
           valorDiaria: chamada.valorDiaria,
           nomeEstabelecimento: estabelecimento.nome,
-          cpfEstabelecimento: estabelecimento.cpf
+          cpfEstabelecimento: estabelecimento.cpf,
+          cnpjEstabelecimento: estabelecimento.cnpj,
+          cpfResponsavel: estabelecimento.cpfResponsavel
         })
       })
       const data = await res.json()
