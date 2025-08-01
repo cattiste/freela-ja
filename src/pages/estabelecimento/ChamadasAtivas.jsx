@@ -47,7 +47,6 @@ export default function ChamadasAtivas({ estabelecimento }) {
   }, [estabelecimento])
 
   const pagarChamada = async (chamada) => {
-    console.log('🚀 Clicou no botão de pagamento:', chamada.id)
     const cpfFallback = cpfManual[chamada.id]
 
     const payload = {
@@ -59,8 +58,14 @@ export default function ChamadasAtivas({ estabelecimento }) {
       cpfResponsavel: cpfFallback
     }
 
-    if (!payload.cpfEstabelecimento && !payload.cnpjEstabelecimento && !cpfFallback) {
-      toast.error('⚠️ Preencha o CPF do responsável para gerar o Pix')
+    console.log('📤 Enviando payload:', payload)
+
+    if (
+      !payload.cpfEstabelecimento &&
+      !payload.cnpjEstabelecimento &&
+      (!cpfFallback || cpfFallback.length < 11)
+    ) {
+      toast.error('⚠️ Preencha um CPF válido (11 dígitos) do responsável')
       return
     }
 
