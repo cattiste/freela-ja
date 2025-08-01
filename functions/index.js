@@ -1,79 +1,55 @@
-// Funções Firebase com pagarFreelaAoCheckout integrado
+// functions/index.js – versão com logs e proteção extra
 
-const functions = require('firebase-functions')
-const admin = require('firebase-admin')
-const Gerencianet = require('gn-api-sdk-node')
-const dotenv = require('dotenv')
-dotenv.config()
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
+const Gerencianet = require('gn-api-sdk-node');
+const express = require('express');
+const cors = require('cors');
 
-admin.initializeApp()
-const db = admin.firestore()
+admin.initializeApp();
+const db = admin.firestore();
 
 const gn = new Gerencianet({
-  client_id: process.env.GN_CLIENT_ID,
-  client_secret: process.env.GN_CLIENT_SECRET,
+  client_id: functions.config().gerencianet.client_id,
+  client_secret: functions.config().gerencianet.client_secret,
   sandbox: true
-})
+});
 
-exports.pagarFreelaAoCheckout = functions.https.onCall(async (data, context) => {
-  const { chamadaId } = data
+const pixKey = functions.config().gerencianet.pix_key;
+
+const app = express();
+app.use(cors({ origin: true }));
+app.use(express.json());
+
+// === POST /cobraChamadaAoAceitar ===
+app.post('/cobraChamadaAoAceitar', async (req, res) => {
+  const { chamadaId, valorDiaria, nomeEstabelecimento, cpfEstabelecimento } = req.body;
 
   try {
-    const chamadaSnap = await db.collection('chamadas').doc(chamadaId).get()
-    if (!chamadaSnap.exists) throw new Error('Chamada não encontrada')
-
-    const chamada = chamadaSnap.data()
-    const { freelaUid, valorDiaria } = chamada
-
-    const userSnap = await db.collection('usuarios').doc(freelaUid).get()
-    if (!userSnap.exists) throw new Error('Freela não encontrado')
-
-    const freela = userSnap.data()
-    const chavePix = freela?.dadosBancarios?.chavePix
-
-    if (!chavePix) throw new Error('Freela não possui chave Pix cadastrada')
-
-    const valorTransferencia = Number(valorDiaria) * 0.9
-
-    const body = {
-      valor: {
-        original: valorTransferencia.toFixed(2)
-      },
-      chave: chavePix,
-      solicitacaoPagador: 'Pagamento por serviço realizado na FreelaJá'
+    if (!chamadaId || !valorDiaria || !nomeEstabelecimento || !cpfEstabelecimento) {
+      return res.status(400).json({ error: 'Dados incompletos para gerar cobrança' });
     }
 
-    const res = await gn.pixSend({ id: chamadaId }, body)
+    const valorTotal = Number(valorDiaria) * 1.10;
 
-    await db.collection('pagamentos').doc(chamadaId).update({
-      status: 'pago',
-      pixConfirmado: true,
-      dataPagamento: admin.firestore.FieldValue.serverTimestamp(),
-      comprovante: res.endToEndId
-    })
+    const body = {
+      calendario: { expiracao: 3600 },
+      devedor: { nome: nomeEstabelecimento, cpf: cpfEstabelecimento },
+      valor: { original: valorTotal.toFixed(2) },
+      chave: pixKey,
+      solicitacaoPagador: 'Pagamento FreelaJá - Chamada'
+    };
 
-    return { ok: true, comprovante: res.endToEndId }
-  } catch (error) {
-    console.error('Erro ao pagar freela:', error.response?.data || error)
-    throw new functions.https.HttpsError('internal', 'Erro ao pagar freela')
-  }
-})
-exports.cobraChamadaAoAceitar = functions.https.onCall(async (data, context) => {
-  const { chamadaId, valorDiaria, nomeEstabelecimento, cpfEstabelecimento } = data
+    const charge = await gn.pixCreateImmediateCharge([], body);
+    const qrCode = await gn.pixGenerateQRCode({ id: charge.loc.id });
 
-  const valorTotal = Number(valorDiaria) * 1.10
-
-  const body = {
-    calendario: { expiracao: 3600 },
-    devedor: { nome: nomeEstabelecimento, cpf: cpfEstabelecimento },
-    valor: { original: valorTotal.toFixed(2) },
-    chave: process.env.GN_PIX_KEY,
-    solicitacaoPagador: 'Pagamento FreelaJá - Chamada'
-  }
-
-  try {
-    const charge = await gn.pixCreateImmediateCharge([], body)
-    const qrCode = await gn.pixGenerateQRCode({ id: charge.loc.id })
+    console.log('✅ Cobrança Pix gerada:', {
+      chamadaId,
+      txid: charge.txid,
+      valorBase: valorDiaria,
+      valorTotal,
+      qrCode: qrCode.qrcode
+    });
 
     await db.collection('pagamentos').doc(chamadaId).set({
       chamadaId,
@@ -87,16 +63,55 @@ exports.cobraChamadaAoAceitar = functions.https.onCall(async (data, context) => 
       qrcode: qrCode.qrcode,
       status: 'pendente',
       criadoEm: admin.firestore.FieldValue.serverTimestamp()
-    })
+    });
 
-    return {
-      imagem: qrCode.imagemQrcode,
-      qrcode: qrCode.qrcode,
-      txid: charge.txid
-    }
-
+    res.status(200).json({ imagem: qrCode.imagemQrcode, qrcode: qrCode.qrcode, txid: charge.txid });
   } catch (err) {
-    console.error('Erro ao criar cobrança Pix:', err.response?.data || err)
-    throw new functions.https.HttpsError('internal', 'Erro ao criar cobrança Pix')
+    console.error('❌ Erro ao criar cobrança Pix:', err.response?.data || err.message || err);
+    res.status(500).json({ error: 'Erro ao criar cobrança Pix' });
   }
-})
+});
+
+// === POST /pagarFreelaAoCheckout ===
+app.post('/pagarFreelaAoCheckout', async (req, res) => {
+  const { chamadaId } = req.body;
+
+  try {
+    const chamadaSnap = await db.collection('chamadas').doc(chamadaId).get();
+    if (!chamadaSnap.exists) throw new Error('Chamada não encontrada');
+
+    const chamada = chamadaSnap.data();
+    const { freelaUid, valorDiaria } = chamada;
+
+    const userSnap = await db.collection('usuarios').doc(freelaUid).get();
+    if (!userSnap.exists) throw new Error('Freela não encontrado');
+
+    const freela = userSnap.data();
+    const chavePix = freela?.dadosBancarios?.chavePix;
+    if (!chavePix) throw new Error('Freela não possui chave Pix cadastrada');
+
+    const valorTransferencia = Number(valorDiaria) * 0.9;
+
+    const body = {
+      valor: { original: valorTransferencia.toFixed(2) },
+      chave: chavePix,
+      solicitacaoPagador: 'Pagamento por serviço realizado na FreelaJá'
+    };
+
+    const resPix = await gn.pixSend({ id: chamadaId }, body);
+
+    await db.collection('pagamentos').doc(chamadaId).update({
+      status: 'pago',
+      pixConfirmado: true,
+      dataPagamento: admin.firestore.FieldValue.serverTimestamp(),
+      comprovante: resPix.endToEndId
+    });
+
+    res.status(200).json({ ok: true, comprovante: resPix.endToEndId });
+  } catch (err) {
+    console.error('❌ Erro ao pagar freela:', err.response?.data || err.message || err);
+    res.status(500).json({ error: 'Erro ao pagar freela' });
+  }
+});
+
+exports.api = functions.https.onRequest(app);
