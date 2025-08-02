@@ -110,7 +110,14 @@ export default function PainelEstabelecimento() {
             <p>🧾 {estabelecimento?.cnpj}</p>
           </div>
         </div>
-
+          <button
+            onClick={() => window.location.href = '/estabelecimento/editarperfil'}
+            className="mt-4 w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition"
+          >
+            ✏️ Editar Perfil
+         </button>
+        </div>
+        
         <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
           <h3 className="text-lg font-bold text-orange-700 mb-2">Minha Agenda</h3>
           <Calendar
