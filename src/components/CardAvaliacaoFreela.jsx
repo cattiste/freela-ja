@@ -1,4 +1,3 @@
-// src/components/CardAvaliacaoFreela.jsx
 import React, { useState } from 'react'
 import { addDoc, collection, serverTimestamp, doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -17,6 +16,7 @@ export default function CardAvaliacaoFreela({ chamada, onAvaliado }) {
     try {
       setEnviando(true)
 
+      // ✅ Corrigido: usa a coleção correta com permissão nas regras
       await addDoc(collection(db, 'avaliacoesFreelas'), {
         tipo: 'freela',
         freelaUid: freela.uid || chamada.freelaUid,
@@ -27,6 +27,7 @@ export default function CardAvaliacaoFreela({ chamada, onAvaliado }) {
         data: serverTimestamp(),
       })
 
+      // ✅ Atualiza a própria chamada com a avaliação embutida
       await updateDoc(doc(db, 'chamadas', chamada.id), {
         avaliacaoFreela: {
           nota,
