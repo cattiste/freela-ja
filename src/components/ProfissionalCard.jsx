@@ -1,10 +1,13 @@
-// src/components/ProfissionalCard.jsx
-
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
+import { db } from '@/firebase'
 
 export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
   const { online, ultimaAtividade } = useOnlineStatus(prof.id)
+  const [media, setMedia] = useState(null)
+  const [totalAvaliacoes, setTotalAvaliacoes] = useState(0)
+
   const ultimaHora = ultimaAtividade
     ? ultimaAtividade.toDate().toLocaleTimeString('pt-BR')
     : '--:--'
@@ -15,6 +18,26 @@ export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
       : 'https://i.imgur.com/3W8i1sT.png'
 
   const diariaNumerica = !isNaN(parseFloat(prof.valorDiaria))
+
+  // ✅ Buscar avaliações desse freela
+  useEffect(() => {
+    if (!prof?.id) return
+
+    const q = query(
+      collection(db, 'avaliacoesFreelas'),
+      where('freelaUid', '==', prof.id)
+    )
+
+    const unsub = onSnapshot(q, (snap) => {
+      const notas = snap.docs.map(doc => doc.data().nota).filter(n => typeof n === 'number')
+      const soma = notas.reduce((acc, n) => acc + n, 0)
+      const mediaFinal = notas.length ? soma / notas.length : null
+      setMedia(mediaFinal)
+      setTotalAvaliacoes(notas.length)
+    })
+
+    return () => unsub()
+  }, [prof.id])
 
   return (
     <div className="bg-white rounded-2xl p-5 m-4 max-w-xs shadow-md text-center">
@@ -44,10 +67,16 @@ export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
         </p>
       )}
 
-      {typeof prof.avaliacao === 'number' && (
-        <p className="text-yellow-500 mt-1">
-          <strong>Avaliação:</strong> ⭐ {prof.avaliacao.toFixed(1)}
-        </p>
+      {/* ⭐ Estrelas de avaliação */}
+      {media && (
+        <div className="flex items-center justify-center gap-1 mt-2">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <span key={n} className="text-yellow-500 text-lg">
+              {media >= n ? '★' : '☆'}
+            </span>
+          ))}
+          <span className="text-sm text-gray-500">({totalAvaliacoes})</span>
+        </div>
       )}
 
       {diariaNumerica && (

@@ -17,6 +17,28 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
 }
 
 function FreelaCard({ freela, distanciaKm, onChamar, chamando, observacao, setObservacao }) {
+  const [media, setMedia] = useState(null)
+  const [total, setTotal] = useState(0)
+
+  useEffect(() => {
+    if (!freela?.id) return
+
+    const q = query(
+      collection(db, 'avaliacoesFreelas'),
+      where('freelaUid', '==', freela.id)
+    )
+
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const notas = snap.docs.map(doc => doc.data().nota).filter(n => typeof n === 'number')
+      const soma = notas.reduce((acc, n) => acc + n, 0)
+      const mediaFinal = notas.length ? soma / notas.length : null
+      setMedia(mediaFinal)
+      setTotal(notas.length)
+    })
+
+    return () => unsubscribe()
+  }, [freela.id])
+
   return (
     <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100 hover:shadow-xl transition">
       <div className="flex flex-col items-center mb-3">
@@ -27,6 +49,7 @@ function FreelaCard({ freela, distanciaKm, onChamar, chamando, observacao, setOb
         />
         <h3 className="mt-2 text-lg font-bold text-orange-700 text-center">{freela.nome}</h3>
         <p className="text-sm text-gray-600 text-center">{freela.funcao}</p>
+
         {freela.especialidades && (
           <p className="text-sm text-gray-500 text-center">
             {Array.isArray(freela.especialidades)
@@ -34,16 +57,31 @@ function FreelaCard({ freela, distanciaKm, onChamar, chamando, observacao, setOb
               : freela.especialidades}
           </p>
         )}
+
+        {/* ⭐ Avaliações em estrelas */}
+        {media && (
+          <div className="flex items-center gap-1 mt-2">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <span key={n} className="text-yellow-500 text-lg">
+                {media >= n ? '★' : '☆'}
+              </span>
+            ))}
+            <span className="text-sm text-gray-500">({total})</span>
+          </div>
+        )}
+
         {freela.valorDiaria && (
           <p className="text-sm font-semibold text-orange-700 mt-1">
             💰 R$ {freela.valorDiaria} / diária
           </p>
         )}
+
         {distanciaKm != null && (
           <p className="text-sm text-gray-600 mt-1">
             📍 Aprox. {distanciaKm.toFixed(1)} km do local
           </p>
         )}
+
         <div className="flex items-center gap-2 mt-1">
           <span className="w-2 h-2 rounded-full bg-green-500" />
           <span className="text-xs text-green-700">🟢 Online agora</span>
