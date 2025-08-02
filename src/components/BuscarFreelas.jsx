@@ -16,7 +16,7 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
   return R * c
 }
 
-function FreelaCard({ freela, distanciaKm, onChamar, chamando }) {
+function FreelaCard({ freela, distanciaKm, onChamar, chamando, observacao, setObservacao }) {
   return (
     <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100 hover:shadow-xl transition">
       <div className="flex flex-col items-center mb-3">
@@ -50,6 +50,21 @@ function FreelaCard({ freela, distanciaKm, onChamar, chamando }) {
         </div>
       </div>
 
+      <div className="mb-2">
+        <label className="block text-sm font-medium text-gray-700 mb-1">📝 Observações para o freela</label>
+        <textarea
+          value={observacao[freela.id] || ''}
+          onChange={(e) =>
+            setObservacao((prev) => ({ ...prev, [freela.id]: e.target.value }))
+          }
+          placeholder="Ex: Use roupa preta, falar com gerente João..."
+          className="w-full p-2 border rounded text-sm"
+          rows={2}
+          maxLength={200}
+        />
+        <p className="text-xs text-gray-500 mt-1">⚠️ Não inclua telefone, e-mail ou redes sociais.</p>
+      </div>
+
       <button
         onClick={() => onChamar(freela)}
         disabled={chamando === freela.id}
@@ -66,6 +81,7 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
   const [carregando, setCarregando] = useState(true)
   const [chamando, setChamando] = useState(null)
   const [filtroFuncao, setFiltroFuncao] = useState('')
+  const [observacao, setObservacao] = useState({})
 
   useEffect(() => {
     const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
@@ -74,7 +90,7 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
         const data = doc.data()
         return {
           ...data,
-          id: doc.id // ✅ garante compatibilidade exata com Realtime DB
+          id: doc.id
         }
       })
       setFreelas(todos)
@@ -87,6 +103,15 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
     if (!estabelecimento?.uid) return
     setChamando(freela.id)
 
+    const obs = observacao[freela.id] || ''
+
+    const contemContato = /(\d{4,}|\b(zap|whats|telefone|email|contato|instagram|arroba)\b)/i
+    if (contemContato.test(obs)) {
+      alert('🚫 Não inclua telefone, e-mail ou redes sociais nas instruções.')
+      setChamando(null)
+      return
+    }
+
     try {
       await addDoc(collection(db, 'chamadas'), {
         freelaUid: freela.id,
@@ -96,6 +121,7 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
         vagaTitulo: 'Serviço direto',
         valorDiaria: freela.valorDiaria || null,
         status: 'pendente',
+        observacao: obs,
         criadoEm: serverTimestamp()
       })
       alert(`Freelancer ${freela.nome} foi chamado com sucesso.`)
@@ -114,8 +140,6 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
         const online = status?.online === true
         const funcaoMatch =
           !filtroFuncao || f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
-
-        console.log(`🕵️ ${f.nome} [${f.id}] → Online: ${online} | Função: ${f.funcao}`)
 
         return online && funcaoMatch
       })
@@ -167,6 +191,8 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
               distanciaKm={freela.distanciaKm}
               onChamar={chamarFreela}
               chamando={chamando}
+              observacao={observacao}
+              setObservacao={setObservacao}
             />
           ))}
         </div>
