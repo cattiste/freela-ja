@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
+import AvaliacaoInline from '@/components/AvaliacaoInline'
 
 export default function ChamadasAtivas({ estabelecimento }) {
   const [chamadas, setChamadas] = useState([])
