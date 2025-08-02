@@ -1,6 +1,6 @@
 // src/components/CardAvaliacaoFreela.jsx
 import React, { useState } from 'react'
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { addDoc, collection, serverTimestamp, doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function CardAvaliacaoFreela({ chamada, onAvaliado }) {
@@ -16,6 +16,7 @@ export default function CardAvaliacaoFreela({ chamada, onAvaliado }) {
     try {
       setEnviando(true)
 
+      // 1. Salva em 'avaliacoes' (se desejar manter histórico separado)
       await addDoc(collection(db, 'avaliacoes'), {
         tipo: 'freela',
         freelaUid: freela.uid,
@@ -24,6 +25,15 @@ export default function CardAvaliacaoFreela({ chamada, onAvaliado }) {
         nota,
         comentario,
         data: serverTimestamp(),
+      })
+
+      // 2. Atualiza o documento da chamada com a avaliação
+      await updateDoc(doc(db, 'chamadas', chamada.id), {
+        avaliacaoFreela: {
+          nota,
+          comentario,
+          criadoEm: serverTimestamp()
+        }
       })
 
       if (onAvaliado) onAvaliado(chamada.id)
