@@ -1,3 +1,4 @@
+// src/components/AvaliacaoInline.jsx
 import React, { useState } from 'react'
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -8,11 +9,11 @@ export default function AvaliacaoInline({ chamada, tipo = 'freela' }) {
   const [comentario, setComentario] = useState('')
   const [enviando, setEnviando] = useState(false)
 
-  // ✅ VERIFICAÇÃO REFINADA
+  // Verifica se já foi avaliado
   const jaAvaliado =
     tipo === 'estabelecimento'
-      ? !!chamada.avaliacaoEstabelecimento?.nota
-      : !!chamada.avaliacaoFreela?.nota
+      ? !!chamada.avaliacaoFreela?.nota
+      : !!chamada.avaliacaoEstabelecimento?.nota
 
   if (jaAvaliado) return null
 
@@ -22,7 +23,7 @@ export default function AvaliacaoInline({ chamada, tipo = 'freela' }) {
     setEnviando(true)
 
     const campo =
-      tipo === 'estabelecimento' ? 'avaliacaoEstabelecimento' : 'avaliacaoFreela'
+      tipo === 'estabelecimento' ? 'avaliacaoFreela' : 'avaliacaoEstabelecimento'
 
     const dados = {
       [campo]: {
@@ -47,7 +48,9 @@ export default function AvaliacaoInline({ chamada, tipo = 'freela' }) {
   return (
     <div className="mt-3 border-t pt-3 border-gray-200">
       <h3 className="text-sm font-semibold text-gray-700 mb-2">
-        {tipo === 'estabelecimento' ? '📋 Avalie o freelancer' : '📋 Avalie o estabelecimento'}
+        {tipo === 'estabelecimento'
+          ? '📋 Avalie o freelancer'
+          : '📋 Avalie o estabelecimento'}
       </h3>
 
       <div className="flex gap-1 mb-2">
