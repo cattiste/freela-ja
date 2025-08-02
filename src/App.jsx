@@ -70,7 +70,7 @@ export default function App() {
           <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
           <Route path="/painelestabelecimento/:rota?" element={<PainelEstabelecimento />} />
           <Route path="/pagamento-chamada/:id" element={<PagamentoChamada />} />
-          <Route path="/editarperfilestabelecimento/:uid" element={<EditarPerfilEstabelecimento />} />
+          <Route path="/estabelecimento/editarperfil" element={<EditarPerfilEstabelecimento />} />
           <Route path="/publicarvaga" element={<PublicarVaga />} />
           <Route path="/pagamento-pix" element={<PagamentoPix />} />                      
         </Routes>

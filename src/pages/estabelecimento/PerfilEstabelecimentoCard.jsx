@@ -31,7 +31,7 @@ export default function PerfilEstabelecimentoCard({ estabelecimento }) {
       </p>    
 
         <button
-          onClick={() => navigate('/estabelecimento/EditarPerfilEstabelecimento')}
+          onClick={() => navigate('/estabelecimento/editarperfil')}
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
           ✏️ Editar Perfil

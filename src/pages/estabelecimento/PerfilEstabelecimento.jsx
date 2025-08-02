@@ -126,6 +126,13 @@ export default function PerfilEstabelecimento() {
         >
           ← Voltar
         </button>
+        
+        <button
+          onClick={() => navigate('/estabelecimento/editarperfil')}
+          className="mt-4 w-full text-center bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition"
+        >
+         ✏️ Editar Perfil
+        </button>
       </div>
     </div>
   )
