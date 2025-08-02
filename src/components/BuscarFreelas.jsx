@@ -116,14 +116,22 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
       await addDoc(collection(db, 'chamadas'), {
         freelaUid: freela.id,
         freelaNome: freela.nome,
+        freelaFoto: freela.foto || '',
+        freelaFuncao: freela.funcao || '',
+        freela: {
+          uid: freela.id,
+          nome: freela.nome,
+          foto: freela.foto || '',
+          funcao: freela.funcao || ''
+        },
         estabelecimentoUid: estabelecimento.uid,
         estabelecimentoNome: estabelecimento.nome,
-        vagaTitulo: 'Serviço direto',
         valorDiaria: freela.valorDiaria || null,
         status: 'pendente',
         observacao: obs,
         criadoEm: serverTimestamp()
       })
+      
       alert(`Freelancer ${freela.nome} foi chamado com sucesso.`)
     } catch (err) {
       console.error('Erro ao chamar freela:', err)

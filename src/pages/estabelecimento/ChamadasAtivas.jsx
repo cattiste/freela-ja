@@ -123,23 +123,32 @@ export default function ChamadasAtivas({ estabelecimento }) {
   return (
     <div className="space-y-4">
       {chamadas.map((chamada) => {
-        // ✅ Oculta chamadas já avaliadas pelo estabelecimento
         if (chamada.status === 'concluido' && chamada.avaliacaoFreela?.nota) {
           return null
         }
 
         const confirmar = confirmarDados[chamada.id] === true
 
+        const foto =
+          chamada.freelaFoto ||
+          chamada.freela?.foto ||
+          'https://placehold.co/100x100'
+
+        const nome =
+          chamada.freelaNome ||
+          chamada.freela?.nome ||
+          'Nome não informado'
+
         return (
           <div key={chamada.id} className="bg-white rounded-xl p-3 shadow border border-orange-100 space-y-2">
             <div className="flex items-center gap-3">
               <img
-                src={chamada.freelaFoto || 'https://placehold.co/100x100'}
-                alt={chamada.freelaNome}
+                src={foto}
+                alt={nome}
                 className="w-10 h-10 rounded-full border border-orange-300 object-cover"
               />
               <div className="flex-1">
-                <p className="font-bold text-orange-600">{chamada.freelaNome}</p>
+                <p className="font-bold text-orange-600">{nome}</p>
                 {chamada.valorDiaria && (
                   <p className="text-xs text-gray-500">💰 R$ {chamada.valorDiaria} / diária</p>
                 )}
@@ -220,7 +229,6 @@ export default function ChamadasAtivas({ estabelecimento }) {
               </button>
             )}
 
-            {/* ✅ Exibe Avaliação se ainda não foi feita */}
             {chamada.status === 'concluido' && (
               <AvaliacaoInline chamada={chamada} tipo="estabelecimento" />
             )}
