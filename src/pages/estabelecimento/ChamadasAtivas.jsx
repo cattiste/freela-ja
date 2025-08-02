@@ -25,7 +25,7 @@ export default function ChamadasAtivas({ estabelecimento }) {
     const q = query(
       collection(db, 'chamadas'),
       where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', 'in', ['aceita', 'checkin_freela', 'em_andamento', 'checkout_freela'])
+      where('status', 'in', ['aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'concluido'])
     )
 
     const unsub = onSnapshot(q, (snap) => {
@@ -108,7 +108,8 @@ export default function ChamadasAtivas({ estabelecimento }) {
       aceita: 'bg-yellow-200 text-yellow-700',
       checkin_freela: 'bg-purple-200 text-purple-700',
       em_andamento: 'bg-green-200 text-green-700',
-      checkout_freela: 'bg-blue-200 text-blue-700'
+      checkout_freela: 'bg-blue-200 text-blue-700',
+      concluido: 'bg-gray-200 text-gray-700'
     }
     return (
       <span className={`px-2 py-1 rounded text-xs font-semibold ${cores[status] || 'bg-gray-200 text-gray-700'}`}>
@@ -214,6 +215,11 @@ export default function ChamadasAtivas({ estabelecimento }) {
               >
                 {loadingId === chamada.id ? 'Confirmando...' : '📤 Confirmar Check-out'}
               </button>
+            )}
+
+            {/* ✅ Avaliação aparece somente após status "concluido" */}
+            {chamada.status === 'concluido' && (
+              <AvaliacaoInline chamada={chamada} tipo="estabelecimento" />
             )}
           </div>
         )
