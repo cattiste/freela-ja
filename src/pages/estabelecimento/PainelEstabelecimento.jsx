@@ -21,6 +21,8 @@ import CardAvaliacaoFreela from '@/components/CardAvaliacaoFreela'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
+import AvaliacoesRecebidasEstabelecimento from '@/pages/estabelecimento/AvaliacoesRecebidasEstabelecimento'
+
 
 export default function PainelEstabelecimento() {
   const [estabelecimento, setEstabelecimento] = useState(null)
@@ -142,11 +144,11 @@ export default function PainelEstabelecimento() {
       case 'vagas':
         return <VagasEstabelecimentoCompleto estabelecimento={estabelecimento} />
       case 'avaliacao':
-        return <AvaliacaoFreela estabelecimento={estabelecimento} />
+        return <AvaliacoesRecebidasEstabelecimento />
       case 'historico':
         return <HistoricoChamadasEstabelecimento estabelecimento={estabelecimento} />
       case 'ativas':
-        return <ChamadasAtivas estabelecimento={estabelecimento} />      
+        return <ChamadasAtivas estabelecimento={estabelecimento} />            
       case 'chamadas':
         return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
       default:
