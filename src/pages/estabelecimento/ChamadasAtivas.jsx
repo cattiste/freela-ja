@@ -63,8 +63,6 @@ export default function ChamadasAtivas({ estabelecimento }) {
       documentoManual
     }
 
-    console.log('📤 Enviando payload:', payload)
-
     if (!payload.valorDiaria || !payload.nomeEstabelecimento || (!documentoManual && !payload.cpfEstabelecimento && !payload.cnpjEstabelecimento)) {
       toast.error('⚠️ Preencha um CPF ou CNPJ válido')
       return
@@ -125,6 +123,11 @@ export default function ChamadasAtivas({ estabelecimento }) {
   return (
     <div className="space-y-4">
       {chamadas.map((chamada) => {
+        // ✅ Oculta chamadas já avaliadas pelo estabelecimento
+        if (chamada.status === 'concluido' && chamada.avaliacaoFreela?.nota) {
+          return null
+        }
+
         const confirmar = confirmarDados[chamada.id] === true
 
         return (
@@ -217,7 +220,7 @@ export default function ChamadasAtivas({ estabelecimento }) {
               </button>
             )}
 
-            {/* ✅ Avaliação aparece somente após status "concluido" */}
+            {/* ✅ Exibe Avaliação se ainda não foi feita */}
             {chamada.status === 'concluido' && (
               <AvaliacaoInline chamada={chamada} tipo="estabelecimento" />
             )}
