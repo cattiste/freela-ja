@@ -1,5 +1,3 @@
-// PainelEstabelecimento.jsx com agenda do perfil replicando visual de anotações do freela
-
 import React, { useState, useEffect } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
 import {
@@ -12,7 +10,7 @@ import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabeleciment
 import BuscarFreelas from '@/components/BuscarFreelas'
 import AgendasContratadas from '@/components/AgendasContratadas'
 import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompleto'
-import AvaliacaoFreela from '@/components/AvaliacaoFreela'
+import AvaliacoesRecebidasEstabelecimento from '@/pages/estabelecimento/AvaliacoesRecebidasEstabelecimento'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
 import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
 import ChamadasAtivas from '@/pages/estabelecimento/ChamadasAtivas'
@@ -21,8 +19,6 @@ import CardAvaliacaoFreela from '@/components/CardAvaliacaoFreela'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
-import AvaliacoesRecebidasEstabelecimento from '@/pages/estabelecimento/AvaliacoesRecebidasEstabelecimento'
-
 
 export default function PainelEstabelecimento() {
   const [estabelecimento, setEstabelecimento] = useState(null)
@@ -62,19 +58,39 @@ export default function PainelEstabelecimento() {
 
   useEffect(() => {
     if (!estabelecimento?.uid) return
-
-    const carregarAgenda = async () => {
-      const ref = collection(db, 'usuarios', estabelecimento.uid, 'agenda')
-      const snap = await getDocs(ref)
-      const datas = {}
-      snap.docs.forEach(doc => {
-        datas[doc.id] = doc.data()
-      })
-      setAgendaPerfil(datas)
-    }
-
     carregarAgenda()
+    carregarAvaliacoesPendentes()
   }, [estabelecimento])
+
+  const carregarAgenda = async () => {
+    const ref = collection(db, 'usuarios', estabelecimento.uid, 'agenda')
+    const snap = await getDocs(ref)
+    const datas = {}
+    snap.docs.forEach(doc => {
+      datas[doc.id] = doc.data()
+    })
+    setAgendaPerfil(datas)
+  }
+
+  const carregarAvaliacoesPendentes = async () => {
+    try {
+      const ref = collection(db, 'chamadas')
+      const q = query(
+        ref,
+        where('estabelecimentoUid', '==', estabelecimento.uid),
+        where('status', '==', 'concluido')
+      )
+
+      const snap = await getDocs(q)
+      const pendentes = snap.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(chamada => !chamada.avaliacaoFreela?.nota)
+
+      setAvaliacoesPendentes(pendentes)
+    } catch (err) {
+      console.error('Erro ao buscar chamadas pendentes de avaliação:', err)
+    }
+  }
 
   const renderPerfil = () => (
     <div className="space-y-6">
@@ -122,9 +138,7 @@ export default function PainelEstabelecimento() {
               <CardAvaliacaoFreela
                 key={chamada.id}
                 chamada={chamada}
-                onAvaliado={(id) =>
-                  setAvaliacoesPendentes((prev) => prev.filter((c) => c.id !== id))
-                }
+                onAvaliado={() => carregarAvaliacoesPendentes()}
               />
             ))
           )}
@@ -148,7 +162,7 @@ export default function PainelEstabelecimento() {
       case 'historico':
         return <HistoricoChamadasEstabelecimento estabelecimento={estabelecimento} />
       case 'ativas':
-        return <ChamadasAtivas estabelecimento={estabelecimento} />            
+        return <ChamadasAtivas estabelecimento={estabelecimento} />
       case 'chamadas':
         return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
       default:
