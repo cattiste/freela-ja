@@ -8,18 +8,18 @@ export default function CardAvaliacaoFreela({ chamada, onAvaliado }) {
   const [comentario, setComentario] = useState('')
   const [enviando, setEnviando] = useState(false)
 
-  const freela = chamada?.freela
+  const freela = chamada?.freela || {}
+
+  const nome = freela?.nome || chamada.freelaNome || 'Freela'
+  const foto = freela?.foto || chamada.freelaFoto || 'https://via.placeholder.com/60'
 
   const enviarAvaliacao = async () => {
-    if (!freela?.uid || !chamada?.id || !chamada?.estabelecimentoUid) return
-
     try {
       setEnviando(true)
 
-      // 1. Salva em 'avaliacoes' (se desejar manter histórico separado)
       await addDoc(collection(db, 'avaliacoes'), {
         tipo: 'freela',
-        freelaUid: freela.uid,
+        freelaUid: freela.uid || chamada.freelaUid,
         estabelecimentoUid: chamada.estabelecimentoUid,
         chamadaId: chamada.id,
         nota,
@@ -27,7 +27,6 @@ export default function CardAvaliacaoFreela({ chamada, onAvaliado }) {
         data: serverTimestamp(),
       })
 
-      // 2. Atualiza o documento da chamada com a avaliação
       await updateDoc(doc(db, 'chamadas', chamada.id), {
         avaliacaoFreela: {
           nota,
@@ -49,13 +48,13 @@ export default function CardAvaliacaoFreela({ chamada, onAvaliado }) {
     <div className="bg-white p-4 rounded-xl shadow-md border border-orange-200 mb-4">
       <div className="flex items-center gap-4 mb-2">
         <img
-          src={freela.foto || 'https://via.placeholder.com/60'}
-          alt={freela.nome}
+          src={foto}
+          alt={nome}
           className="w-16 h-16 rounded-full object-cover border border-orange-400"
         />
         <div>
-          <h3 className="text-lg font-bold text-orange-700">{freela.nome}</h3>
-          <p className="text-sm text-gray-600">{freela.funcao}</p>
+          <h3 className="text-lg font-bold text-orange-700">{nome}</h3>
+          <p className="text-sm text-gray-600">{freela.funcao || chamada.freelaFuncao || 'Função não informada'}</p>
         </div>
       </div>
 

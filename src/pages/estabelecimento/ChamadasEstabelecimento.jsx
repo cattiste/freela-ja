@@ -1,3 +1,4 @@
+// src/pages/estabelecimento/ChamadasEstabelecimento.jsx
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -80,78 +81,80 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
 
   return (
     <div className="space-y-3">
-      {chamadas.map(chamada => (
-        <div key={chamada.id} className="p-3 bg-white rounded-xl shadow border border-orange-100 space-y-2">
-          <div className="flex items-center gap-3">
-            <img
-              src={chamada.freelaFoto || 'https://placehold.co/100x100'}
-              alt={chamada.freelaNome}
-              className="w-10 h-10 rounded-full border border-orange-300 object-cover"
-            />
-            <div className="flex-1">
-              <p className="font-bold text-orange-600">{chamada.freelaNome}</p>
-              {chamada.valorDiaria && (
-                <p className="text-xs text-gray-500">💰 R$ {chamada.valorDiaria} / diária</p>
-              )}
-              <p className="text-sm mt-1 text-gray-600">Status: {chamada.status}</p>
-              <ChatInline chamadaId={chamada.id} />
-            </div>
-          </div>
+      {chamadas.map(chamada => {
+        const foto = chamada.freelaFoto || chamada.freela?.foto || 'https://placehold.co/100x100'
+        const nome = chamada.freelaNome || chamada.freela?.nome || 'Freela'
 
-          <pre className="text-xs text-gray-500 bg-gray-50 p-2 rounded border border-gray-200 whitespace-pre-wrap">
+        return (
+          <div key={chamada.id} className="p-3 bg-white rounded-xl shadow border border-orange-100 space-y-2">
+            <div className="flex items-center gap-3">
+              <img
+                src={foto}
+                alt={nome}
+                className="w-10 h-10 rounded-full border border-orange-300 object-cover"
+              />
+              <div className="flex-1">
+                <p className="font-bold text-orange-600">{nome}</p>
+                {chamada.valorDiaria && (
+                  <p className="text-xs text-gray-500">💰 R$ {chamada.valorDiaria} / diária</p>
+                )}
+                <p className="text-sm mt-1 text-gray-600">Status: {chamada.status}</p>
+                <ChatInline chamadaId={chamada.id} />
+              </div>
+            </div>
+
+            <pre className="text-xs text-gray-500 bg-gray-50 p-2 rounded border border-gray-200 whitespace-pre-wrap">
 checkInFreela: {chamada.checkInFreela?.toString()} | checkInEstabelecimento: {chamada.checkInEstabelecimento?.toString()} |
 checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: {chamada.checkOutEstabelecimento?.toString()}
-          </pre>
+            </pre>
 
-          {/* Botão de pagamento Pix */}
-          {chamada.status === 'aceita' && (
-            <>
+            {chamada.status === 'aceita' && (
+              <>
+                <button
+                  onClick={() => pagarChamada(chamada)}
+                  className="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition"
+                >
+                  💳 Efetuar Pagamento Pix
+                </button>
+                {qrcodes[chamada.id] && (
+                  <div className="mt-2 text-center">
+                    <img src={qrcodes[chamada.id]} alt="QR Code Pix" className="w-48 mx-auto" />
+                    <p className="text-xs text-gray-500">Escaneie para pagar</p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {chamada.status === 'checkin_freela' && !chamada.checkInEstabelecimento && (
               <button
-                onClick={() => pagarChamada(chamada)}
-                className="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition"
+                onClick={() => atualizarChamada(chamada.id, {
+                  checkInEstabelecimento: true,
+                  checkInEstabelecimentoHora: serverTimestamp(),
+                  status: 'em_andamento'
+                })}
+                disabled={loadingId === chamada.id}
+                className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
               >
-                💳 Efetuar Pagamento Pix
+                {loadingId === chamada.id ? 'Confirmando...' : '✅ Confirmar Check-in'}
               </button>
-              {qrcodes[chamada.id] && (
-                <div className="mt-2 text-center">
-                  <img src={qrcodes[chamada.id]} alt="QR Code Pix" className="w-48 mx-auto" />
-                  <p className="text-xs text-gray-500">Escaneie para pagar</p>
-                </div>
-              )}
-            </>
-          )}
+            )}
 
-          {/* Confirmar Check-in */}
-          {chamada.status === 'checkin_freela' && !chamada.checkInEstabelecimento && (
-            <button
-              onClick={() => atualizarChamada(chamada.id, {
-                checkInEstabelecimento: true,
-                checkInEstabelecimentoHora: serverTimestamp(),
-                status: 'em_andamento'
-              })}
-              disabled={loadingId === chamada.id}
-              className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
-            >
-              {loadingId === chamada.id ? 'Confirmando...' : '✅ Confirmar Check-in'}
-            </button>
-          )}
-
-          {/* Confirmar Check-out */}
-          {chamada.status === 'checkout_freela' && !chamada.checkOutEstabelecimento && (
-            <button
-              onClick={() => atualizarChamada(chamada.id, {
-                checkOutEstabelecimento: true,
-                checkOutEstabelecimentoHora: serverTimestamp(),
-                status: 'concluido'
-              })}
-              disabled={loadingId === chamada.id}
-              className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-            >
-              {loadingId === chamada.id ? 'Confirmando...' : '📤 Confirmar Check-out'}
-            </button>
-          )}
-        </div>
-      ))}
+            {chamada.status === 'checkout_freela' && !chamada.checkOutEstabelecimento && (
+              <button
+                onClick={() => atualizarChamada(chamada.id, {
+                  checkOutEstabelecimento: true,
+                  checkOutEstabelecimentoHora: serverTimestamp(),
+                  status: 'concluido'
+                })}
+                disabled={loadingId === chamada.id}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+              >
+                {loadingId === chamada.id ? 'Confirmando...' : '📤 Confirmar Check-out'}
+              </button>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
