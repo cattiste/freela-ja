@@ -102,20 +102,22 @@ export default function PainelEstabelecimento() {
             className="w-24 h-24 rounded-full object-cover mb-2 border-2 border-orange-500 mx-auto"
           />
           <h2 className="text-center text-xl font-bold text-orange-700">{estabelecimento?.nome}</h2>
-          <p className="text-center text-sm text-gray-600 mb-4">{estabelecimento?.funcao} — {estabelecimento?.especialidade}</p>
+          <p className="text-center text-sm text-gray-600 mb-4">
+            {estabelecimento?.funcao} — {estabelecimento?.especialidade}
+          </p>
           <div className="text-sm text-gray-700 space-y-1">
             <p>📞 {estabelecimento?.celular || 'Telefone não informado'}</p>
             <p>📧 {estabelecimento?.email}</p>
             <p>📍 {estabelecimento?.endereco}</p>
             <p>🧾 {estabelecimento?.cnpj}</p>
           </div>
-        </div>
+
           <button
             onClick={() => window.location.href = '/estabelecimento/editarperfil'}
             className="mt-4 w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition"
           >
             ✏️ Editar Perfil
-         </button>
+          </button>
         </div>
         
         <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
