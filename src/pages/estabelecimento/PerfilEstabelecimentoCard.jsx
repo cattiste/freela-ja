@@ -28,15 +28,21 @@ export default function PerfilEstabelecimentoCard({ estabelecimento }) {
 
       <p className="text-gray-700">
         <strong>Endereço:</strong> {estabelecimento.endereco || '—'}
-      </p>
+      </p>    
 
-      {podeEditar && (
         <button
-          onClick={() => navigate('/editar-estabelecimento')}
-          className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded transition"
+          onClick={() => navigate('/estabelecimento/EditarPerfilEstabelecimento')}
+          className="bg-blue-600 text-white px-4 py-2 rounded"
         >
           ✏️ Editar Perfil
         </button>
+        <button
+          onClick={salvar}
+          disabled={salvando}
+          className="bg-orange-600 text-white px-4 py-2 rounded"
+        >
+          {salvando ? 'Salvando...' : 'Salvar alterações'}
+      
       )}
     </div>
   )
