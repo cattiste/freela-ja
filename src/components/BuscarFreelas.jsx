@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import {
-  collection, query, where, onSnapshot, addDoc, serverTimestamp
+  collection, query, where, onSnapshot, setDoc, doc, serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 
@@ -104,8 +104,8 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
     setChamando(freela.id)
 
     const obs = observacao[freela.id] || ''
-
     const contemContato = /(\d{4,}|\b(zap|whats|telefone|email|contato|instagram|arroba)\b)/i
+
     if (contemContato.test(obs)) {
       alert('🚫 Não inclua telefone, e-mail ou redes sociais nas instruções.')
       setChamando(null)
@@ -113,17 +113,16 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
     }
 
     try {
-      await addDoc(collection(db, 'chamadas'), {
+      // Geração de ID único com UID + data/hora
+      const agora = new Date()
+      const timestamp = agora.toISOString().replace(/[-:T]/g, '').slice(0, 15)
+      const idChamada = `${estabelecimento.uid}_${timestamp}`
+
+      await setDoc(doc(db, 'chamadas', idChamada), {
+        id: idChamada,
         freelaUid: freela.id,
         freelaNome: freela.nome,
         freelaFoto: freela.foto || '',
-        freelaFuncao: freela.funcao || '',
-        freela: {
-          uid: freela.id,
-          nome: freela.nome,
-          foto: freela.foto || '',
-          funcao: freela.funcao || ''
-        },
         estabelecimentoUid: estabelecimento.uid,
         estabelecimentoNome: estabelecimento.nome,
         valorDiaria: freela.valorDiaria || null,
@@ -131,7 +130,7 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
         observacao: obs,
         criadoEm: serverTimestamp()
       })
-      
+
       alert(`Freelancer ${freela.nome} foi chamado com sucesso.`)
     } catch (err) {
       console.error('Erro ao chamar freela:', err)
@@ -148,7 +147,6 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
         const online = status?.online === true
         const funcaoMatch =
           !filtroFuncao || f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
-
         return online && funcaoMatch
       })
       .map((f) => {
