@@ -1,10 +1,15 @@
+// src/components/PerfilEstabelecimentoCard.jsx
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/context/AuthContext'
 
 export default function PerfilEstabelecimentoCard({ estabelecimento }) {
   const navigate = useNavigate()
+  const { usuario } = useAuth()
 
   if (!estabelecimento) return null
+
+  const podeEditar = usuario?.uid === estabelecimento.uid
 
   return (
     <div className="bg-white rounded-xl shadow p-6 space-y-4">
@@ -25,12 +30,14 @@ export default function PerfilEstabelecimentoCard({ estabelecimento }) {
         <strong>Endereço:</strong> {estabelecimento.endereco || '—'}
       </p>
 
-      <button
-        onClick={() => navigate(`/estabelecimento/editarperfil/${estabelecimento.uid}`)}
-        className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded transition"
-      >
-        ✏️ Editar Perfil
-      </button>
+      {podeEditar && (
+        <button
+          onClick={() => navigate('/editar-estabelecimento')}
+          className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded transition"
+        >
+          ✏️ Editar Perfil
+        </button>
+      )}
     </div>
   )
 }
