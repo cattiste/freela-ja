@@ -11,6 +11,7 @@ import {
 import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
 import ChatInline from '@/components/ChatInline'
+import AvaliacaoInline from '@/components/AvaliacaoInline'
 
 export default function ChamadasEstabelecimento({ estabelecimento }) {
   const [chamadas, setChamadas] = useState([])
