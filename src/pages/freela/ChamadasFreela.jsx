@@ -39,8 +39,8 @@ export default function ChamadasFreela() {
     const q = query(
       collection(db, 'chamadas'),
       where('freelaUid', '==', usuario.uid),
-      where('status', 'in', ['aceita', 'checkin_freela', 'em_andamento', 'checkout_freela'])
-    )
+      where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'em_andamento', 'checkout_freela'])
+
 
     const unsub = onSnapshot(q, (snap) => {
       const chamadasAtivas = snap.docs.map((doc) => ({
