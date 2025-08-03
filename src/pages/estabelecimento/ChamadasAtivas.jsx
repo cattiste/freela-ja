@@ -11,6 +11,7 @@ import {
 import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
 import AvaliacaoInline from '@/components/AvaliacaoInline'
+import MensagensRecebidasEstabelecimento from '@/components/MensagensRecebidasEstabelecimento'
 
 export default function ChamadasAtivas({ estabelecimento }) {
   const [chamadas, setChamadas] = useState([])
@@ -153,6 +154,7 @@ export default function ChamadasAtivas({ estabelecimento }) {
                   <p className="text-xs text-gray-500">💰 R$ {chamada.valorDiaria} / diária</p>
                 )}
                 <p className="text-sm mt-1">📌 Status: {badgeStatus(chamada.status)}</p>
+                <MensagensRecebidasEstabelecimento chamadaId={chamada.id} />
               </div>
             </div>
 
