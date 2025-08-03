@@ -40,8 +40,8 @@ export default function ChamadasFreela() {
       collection(db, 'chamadas'),
       where('freelaUid', '==', usuario.uid),
       where('status', 'in', ['pendente', 'aceita', 'pago', 'checkin_freela', 'em_andamento', 'checkout_freela'])
-
     )
+
 
     const unsub = onSnapshot(q, (snap) => {
       const chamadasAtivas = snap.docs.map((doc) => ({
@@ -112,8 +112,7 @@ export default function ChamadasFreela() {
     return <div className="text-center text-orange-600 mt-10">🔄 Carregando chamadas...</div>
   }
 
-  // [trecho removido para brevidade — mantido o código anterior intacto até a linha de .map(chamada) dentro do return]
-
+ 
 return (
   <div className="p-4 max-w-3xl mx-auto">
     <h1 className="text-2xl font-bold text-orange-700 text-center mb-4">📞 Chamadas Recentes</h1>
@@ -140,6 +139,12 @@ return (
             <h2 className="font-semibold text-orange-600 text-lg">Chamada #{chamada?.id?.slice(-5)}</h2>
             <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
             <p><strong>Status:</strong> {chamada.status}</p>
+
+            {['aceita', 'pago', 'checkin_freela'].includes(chamada.status) && (
+              <p className="text-sm text-orange-600 font-semibold text-center">
+                ⏳ Aguardando pagamento do estabelecimento...
+              </p>
+            )}
 
             {['aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'pago'].includes(chamada.status) && chamada.estabelecimentoCoordenadas && (
               <div className="flex flex-wrap gap-2 mt-2">
@@ -200,15 +205,13 @@ return (
                 </button>
               </>
             )}
-
-            {/* ✅ Aviso enquanto aguarda pagamento */}
+          
             {chamada.status === 'aceita' && (
               <p className="text-sm text-orange-600 font-semibold text-center">
                 ⏳ Aguardando pagamento do estabelecimento...
               </p>
             )}
-
-            {/* ✅ Check-in liberado apenas se status === 'pago' */}
+            
             {chamada.status === 'pago' && !chamada.checkInFreela && distanciaValida[chamada.id] && (
               <button
                 onClick={() => atualizarChamada(chamada.id, {
