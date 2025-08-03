@@ -1,6 +1,5 @@
-// src/components/AvaliacaoInline.jsx
 import React, { useState } from 'react'
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, updateDoc, serverTimestamp, addDoc, collection } from 'firebase/firestore'
 import { db } from '@/firebase'
 import toast from 'react-hot-toast'
 
@@ -9,7 +8,6 @@ export default function AvaliacaoInline({ chamada, tipo = 'freela' }) {
   const [comentario, setComentario] = useState('')
   const [enviando, setEnviando] = useState(false)
 
-  // Verifica se já foi avaliado
   const jaAvaliado =
     tipo === 'estabelecimento'
       ? !!chamada.avaliacaoFreela?.nota
@@ -34,8 +32,29 @@ export default function AvaliacaoInline({ chamada, tipo = 'freela' }) {
     }
 
     try {
+      // ✅ Atualiza o documento da chamada com o campo embutido
       const ref = doc(db, 'chamadas', chamada.id)
       await updateDoc(ref, dados)
+
+      // ✅ Cria um novo documento na coleção correta
+      const avaliacaoData = {
+        tipo,
+        chamadaId: chamada.id,
+        nota,
+        comentario,
+        data: serverTimestamp()
+      }
+
+      if (tipo === 'estabelecimento') {
+        avaliacaoData.freelaUid = chamada.freelaUid
+        avaliacaoData.estabelecimentoUid = chamada.estabelecimentoUid
+        await addDoc(collection(db, 'avaliacoesFreelas'), avaliacaoData)
+      } else {
+        avaliacaoData.freelaUid = chamada.freelaUid
+        avaliacaoData.estabelecimentoUid = chamada.estabelecimentoUid
+        await addDoc(collection(db, 'avaliacoesEstabelecimentos'), avaliacaoData)
+      }
+
       toast.success('Avaliação enviada com sucesso!')
     } catch (err) {
       console.error(err)
@@ -48,9 +67,7 @@ export default function AvaliacaoInline({ chamada, tipo = 'freela' }) {
   return (
     <div className="mt-3 border-t pt-3 border-gray-200">
       <h3 className="text-sm font-semibold text-gray-700 mb-2">
-        {tipo === 'estabelecimento'
-          ? '📋 Avalie o freelancer'
-          : '📋 Avalie o estabelecimento'}
+        {tipo === 'estabelecimento' ? '📋 Avalie o freelancer' : '📋 Avalie o estabelecimento'}
       </h3>
 
       <div className="flex gap-1 mb-2">

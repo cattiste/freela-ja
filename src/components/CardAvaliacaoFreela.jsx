@@ -1,5 +1,11 @@
 import React, { useState } from 'react'
-import { addDoc, collection, serverTimestamp, doc, updateDoc } from 'firebase/firestore'
+import {
+  addDoc,
+  collection,
+  serverTimestamp,
+  doc,
+  updateDoc
+} from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function CardAvaliacaoFreela({ chamada, onAvaliado }) {
@@ -16,7 +22,7 @@ export default function CardAvaliacaoFreela({ chamada, onAvaliado }) {
     try {
       setEnviando(true)
 
-      // ✅ Corrigido: usa a coleção correta com permissão nas regras
+      // ✅ Agora criando uma nova avaliação SEM sobrescrever
       await addDoc(collection(db, 'avaliacoesFreelas'), {
         tipo: 'freela',
         freelaUid: freela.uid || chamada.freelaUid,
@@ -24,10 +30,10 @@ export default function CardAvaliacaoFreela({ chamada, onAvaliado }) {
         chamadaId: chamada.id,
         nota,
         comentario,
-        data: serverTimestamp(),
+        data: serverTimestamp()
       })
 
-      // ✅ Atualiza a própria chamada com a avaliação embutida
+      // ✅ Ainda atualiza a própria chamada com o campo de avaliação
       await updateDoc(doc(db, 'chamadas', chamada.id), {
         avaliacaoFreela: {
           nota,
@@ -55,7 +61,9 @@ export default function CardAvaliacaoFreela({ chamada, onAvaliado }) {
         />
         <div>
           <h3 className="text-lg font-bold text-orange-700">{nome}</h3>
-          <p className="text-sm text-gray-600">{freela.funcao || chamada.freelaFuncao || 'Função não informada'}</p>
+          <p className="text-sm text-gray-600">
+            {freela.funcao || chamada.freelaFuncao || 'Função não informada'}
+          </p>
         </div>
       </div>
 
