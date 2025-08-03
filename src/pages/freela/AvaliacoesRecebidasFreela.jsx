@@ -15,7 +15,7 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
 
       try {
         const q = query(
-          collection(db, 'avaliacaoFreelas'),
+          collection(db, 'avaliacoesFreelas'),
           where('freelaUid', '==', uid),
           limit(10) // 🔒 Limita a 10 resultados
         )
@@ -71,7 +71,7 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
                 {avaliacao.estabelecimentoNome || '---'}
               </p>
               <p className="text-sm text-gray-600 italic">
-                "{avaliacao.mensagem || 'Sem mensagem'}"
+                "{avaliacao.comentario || 'Sem comentario'}"
               </p>
               <p className="text-yellow-600 mt-1">⭐ Nota: {avaliacao.nota || '---'}</p>
             </div>
