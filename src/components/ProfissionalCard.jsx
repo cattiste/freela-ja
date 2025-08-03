@@ -1,42 +1,32 @@
 import React, { useEffect, useState } from 'react'
-import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
-  const { online, ultimaAtividade } = useOnlineStatus(prof.id)
   const [media, setMedia] = useState(null)
-  const [totalAvaliacoes, setTotalAvaliacoes] = useState(0)
+  const [total, setTotal] = useState(0)
 
-  const ultimaHora = ultimaAtividade
-    ? ultimaAtividade.toDate().toLocaleTimeString('pt-BR')
-    : '--:--'
-
-  const imagemValida =
-    typeof prof.foto === 'string' && prof.foto.trim() !== ''
-      ? prof.foto
-      : 'https://i.imgur.com/3W8i1sT.png'
-
-  const diariaNumerica = !isNaN(parseFloat(prof.valorDiaria))
-
-  // ✅ Buscar avaliações desse freela
   useEffect(() => {
     if (!prof?.id) return
+
+    console.log('📌 ID do freela no card:', prof.id)
 
     const q = query(
       collection(db, 'avaliacoesFreelas'),
       where('freelaUid', '==', prof.id)
     )
 
-    const unsub = onSnapshot(q, (snap) => {
+    const unsubscribe = onSnapshot(q, (snap) => {
       const notas = snap.docs.map(doc => doc.data().nota).filter(n => typeof n === 'number')
       const soma = notas.reduce((acc, n) => acc + n, 0)
       const mediaFinal = notas.length ? soma / notas.length : null
       setMedia(mediaFinal)
-      setTotalAvaliacoes(notas.length)
+      setTotal(notas.length)
+
+      console.log('⭐ Avaliações encontradas:', notas.length, ' | Média:', mediaFinal)
     })
 
-    return () => unsub()
+    return () => unsubscribe()
   }, [prof.id])
 
   return (
