@@ -122,6 +122,35 @@ export default function ChamadasFreela() {
             <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
             <p><strong>Status:</strong> {chamada.status}</p>
 
+            {chamada.status !== 'pendente' && chamada.estabelecimentoCoordenadas && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                <a
+                  href={`https://waze.com/ul?ll=${chamada.estabelecimentoCoordenadas.latitude},${chamada.estabelecimentoCoordenadas.longitude}&navigate=yes`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-purple-600 text-white px-3 py-1 rounded text-sm"
+                >
+                  🧭 Abrir no Waze
+                </a>
+                <a
+                  href={`https://m.uber.com/ul/?action=setPickup&dropoff[latitude]=${chamada.estabelecimentoCoordenadas.latitude}&dropoff[longitude]=${chamada.estabelecimentoCoordenadas.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-black text-white px-3 py-1 rounded text-sm"
+                >
+                  🚗 Chamar Uber
+                </a>
+                <a
+                  href={`https://app.99app.com/open?lat=${chamada.estabelecimentoCoordenadas.latitude}&lng=${chamada.estabelecimentoCoordenadas.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-yellow-400 text-black px-3 py-1 rounded text-sm"
+                >
+                  🚕 Abrir 99 Táxi
+                </a>
+              </div>
+            )}
+
             {chamada.observacao && (
               <p className="text-sm text-gray-800 mt-2">
                 <strong>📝 Observação:</strong> {chamada.observacao}
@@ -130,7 +159,6 @@ export default function ChamadasFreela() {
 
             <RespostasRapidasFreela chamadaId={chamada.id} />
 
-            {/* ✅ Botão para aceitar chamada */}
             {chamada.status === 'pendente' && (
               <>
                 <button
@@ -154,7 +182,6 @@ export default function ChamadasFreela() {
               </>
             )}
 
-            {/* ✅ Check-in apenas se dentro do local */}
             {chamada.status === 'aceita' && !chamada.checkInFreela && distanciaValida[chamada.id] && (
               <button
                 onClick={() => atualizarChamada(chamada.id, {
