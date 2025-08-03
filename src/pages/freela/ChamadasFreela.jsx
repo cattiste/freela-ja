@@ -39,7 +39,8 @@ export default function ChamadasFreela() {
     const q = query(
       collection(db, 'chamadas'),
       where('freelaUid', '==', usuario.uid),
-      where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'pago'])
+      where('status', 'in', ['pendente', 'aceita', 'pago', 'checkin_freela', 'em_andamento', 'checkout_freela'])
+
     )
 
     const unsub = onSnapshot(q, (snap) => {

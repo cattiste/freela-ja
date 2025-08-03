@@ -26,7 +26,8 @@ export default function ChamadasAtivas({ estabelecimento }) {
     const q = query(
       collection(db, 'chamadas'),
       where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', 'in', ['aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'concluido'])
+      where('status', 'in', ['pendente', 'aceita', 'pago', 'checkin_freela', 'em_andamento', 'checkout_freela', 'concluido'])
+
     )
 
     const unsub = onSnapshot(q, (snap) => {
