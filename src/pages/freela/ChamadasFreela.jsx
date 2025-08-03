@@ -13,6 +13,7 @@ import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
 import AvaliacaoInline from '@/components/AvaliacaoInline'
 import ChatInline from '@/components/ChatInline'
+import RespostasRapidasFreela from '@/components/RespostasRapidasFreela'
 
 
 
@@ -68,8 +69,8 @@ export default function ChamadasFreela() {
           <div key={chamada.id} className="bg-white shadow p-4 rounded-xl mb-4 border border-orange-200 space-y-2">
             <h2 className="font-semibold text-orange-600 text-lg">Chamada #{chamada?.id?.slice(-5)}</h2>
             <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
-            <p><strong>Status:</strong> {chamada.status}</p>
-            <ChatInline chamadaId={chamada.id} />
+            <p><strong>Status:</strong> {chamada.status}</p>            
+            <RespostasRapidasFreela chamadaId={chamada.id} />
 
             {/* Aceitar chamada */}
             {!chamada.status || chamada.status === 'pendente' ? (
