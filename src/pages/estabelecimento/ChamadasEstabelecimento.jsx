@@ -26,7 +26,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
     const q = query(
       collection(db, 'chamadas'),
       where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', 'in', ['aceita', 'checkin_freela', 'em_andamento', 'checkout_freela'])
+      where('status', 'in', ['aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'concluido'])
     )
 
     const unsub = onSnapshot(q, (snap) => {
@@ -98,9 +98,10 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
                 {chamada.valorDiaria && (
                   <p className="text-xs text-gray-500">💰 R$ {chamada.valorDiaria} / diária</p>
                 )}
-                <p className="text-sm mt-1 text-gray-600">Status: {chamada.status}</p>                
-                <MensagensRecebidasEstabelecimento chamadaId={chamada.id} />
+                <p className="text-sm mt-1 text-gray-600">Status: {chamada.status}</p>
 
+                {/* ✅ Exibir mensagens recebidas */}
+                <MensagensRecebidasEstabelecimento chamadaId={chamada.id} />
               </div>
             </div>
 
@@ -152,6 +153,11 @@ checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: 
               >
                 {loadingId === chamada.id ? 'Confirmando...' : '📤 Confirmar Check-out'}
               </button>
+            )}
+
+            {/* ✅ Avaliação após conclusão */}
+            {chamada.status === 'concluido' && (
+              <AvaliacaoInline chamada={chamada} tipo="estabelecimento" />
             )}
           </div>
         )
