@@ -130,6 +130,31 @@ export default function ChamadasFreela() {
 
             <RespostasRapidasFreela chamadaId={chamada.id} />
 
+            {/* ✅ Botão para aceitar chamada */}
+            {chamada.status === 'pendente' && (
+              <>
+                <button
+                  onClick={() => atualizarChamada(chamada.id, {
+                    status: 'aceita',
+                    aceitaEm: serverTimestamp()
+                  })}
+                  className="w-full bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition"
+                >
+                  ✅ Aceitar chamada
+                </button>
+                <button
+                  onClick={() => atualizarChamada(chamada.id, {
+                    status: 'rejeitada',
+                    rejeitadaEm: serverTimestamp()
+                  })}
+                  className="w-full bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600 transition"
+                >
+                  ❌ Rejeitar chamada
+                </button>
+              </>
+            )}
+
+            {/* ✅ Check-in apenas se dentro do local */}
             {chamada.status === 'aceita' && !chamada.checkInFreela && distanciaValida[chamada.id] && (
               <button
                 onClick={() => atualizarChamada(chamada.id, {
