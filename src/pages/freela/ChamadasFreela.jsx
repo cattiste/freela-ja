@@ -13,6 +13,7 @@ import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
 import AvaliacaoInline from '@/components/AvaliacaoInline'
 import RespostasRapidasFreela from '@/components/RespostasRapidasFreela'
+import ContagemRegressiva from '@/components/ContagemRegressiva'
 
 function calcularDistancia(lat1, lon1, lat2, lon2) {
   const toRad = (x) => (x * Math.PI) / 180
@@ -39,9 +40,18 @@ export default function ChamadasFreela() {
     const q = query(
       collection(db, 'chamadas'),
       where('freelaUid', '==', usuario.uid),
-      where('status', 'in', ['pendente', 'aceita', 'pago', 'checkin_freela', 'em_andamento', 'checkout_freela'])
+      where('status', 'in', [
+        'pendente',
+        'aceita',
+        'pago',
+        'checkin_freela',
+        'em_andamento',
+        'checkout_freela',
+        'concluido',
+        'cancelada_por_falta_de_pagamento',
+        'rejeitada'
+      ])
     )
-
 
     const unsub = onSnapshot(q, (snap) => {
       const chamadasAtivas = snap.docs.map((doc) => ({
@@ -98,10 +108,16 @@ export default function ChamadasFreela() {
 
   const verificarTimeout = (chamada) => {
     if (chamada.status !== 'aceita') return false
+    if (!chamada.aceitaEm?.toMillis) return false
+
     const limite = 10 * 60 * 1000 // 10 minutos
-    const aceitaEm = chamada.aceitaEm?.toMillis?.() || 0
+    const aceitaEm = chamada.aceitaEm.toMillis()
     const agora = Date.now()
-    return agora - aceitaEm > limite
+
+    const expirou = agora - aceitaEm > limite
+    const pagamentoFeito = chamada.status === 'pago' || chamada.pagamentoConfirmado === true
+
+    return expirou && !pagamentoFeito
   }
 
   if (!usuario?.uid) {
@@ -112,143 +128,151 @@ export default function ChamadasFreela() {
     return <div className="text-center text-orange-600 mt-10">🔄 Carregando chamadas...</div>
   }
 
- 
-return (
-  <div className="p-4 max-w-3xl mx-auto">
-    <h1 className="text-2xl font-bold text-orange-700 text-center mb-4">📞 Chamadas Recentes</h1>
+  return (
+    <div className="p-4 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold text-orange-700 text-center mb-4">📞 Chamadas Recentes</h1>
 
-    {mensagemConfirmacao && (
-      <p className="text-sm text-green-700 bg-green-50 border border-green-300 rounded p-3 mb-4 text-center">
-        {mensagemConfirmacao}
-      </p>
-    )}
+      {mensagemConfirmacao && (
+        <p className="text-sm text-green-700 bg-green-50 border border-green-300 rounded p-3 mb-4 text-center">
+          {mensagemConfirmacao}
+        </p>
+      )}
 
-    {chamadas.length === 0 ? (
-      <p className="text-center text-gray-600">Nenhuma chamada encontrada.</p>
-    ) : (
-      chamadas.map((chamada) => {
-        const expirou = verificarTimeout(chamada)
+      {chamadas.length === 0 ? (
+        <p className="text-center text-gray-600">Nenhuma chamada encontrada.</p>
+      ) : (
+        chamadas.map((chamada) => {
+          const expirou = verificarTimeout(chamada)
 
-        if (expirou) {
-          atualizarChamada(chamada.id, { status: 'cancelada_por_falta_de_pagamento' })
-          return null
-        }
+          if (expirou) {
+            atualizarChamada(chamada.id, { status: 'cancelada_por_falta_de_pagamento' })
+            return null
+          }
 
-        return (
-          <div key={chamada.id} className="bg-white shadow p-4 rounded-xl mb-4 border border-orange-200 space-y-2">
-            <h2 className="font-semibold text-orange-600 text-lg">Chamada #{chamada?.id?.slice(-5)}</h2>
-            <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
-            <p><strong>Status:</strong> {chamada.status}</p>
+          return (
+            <div key={chamada.id} className="bg-white shadow p-4 rounded-xl mb-4 border border-orange-200 space-y-2">
+              <h2 className="font-semibold text-orange-600 text-lg">Chamada #{chamada?.id?.slice(-5)}</h2>
+              <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
+              <p><strong>Status:</strong> {chamada.status}</p>
 
-            {['aceita', 'pago', 'checkin_freela'].includes(chamada.status) && (
-              <p className="text-sm text-orange-600 font-semibold text-center">
-                ⏳ Aguardando pagamento do estabelecimento...
-              </p>
-            )}
+              {chamada.pagamentoConfirmado && (
+                <p className="text-sm text-green-600 font-semibold text-center">
+                  💰 Pagamento confirmado!
+                </p>
+              )}
 
-            {['aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'pago'].includes(chamada.status) && chamada.estabelecimentoCoordenadas && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                <a
-                  href={`https://waze.com/ul?ll=${chamada.estabelecimentoCoordenadas.latitude},${chamada.estabelecimentoCoordenadas.longitude}&navigate=yes`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-purple-600 text-white px-3 py-1 rounded text-sm"
-                >
-                  🧭 Abrir no Waze
-                </a>
-                <a
-                  href={`https://m.uber.com/ul/?action=setPickup&dropoff[latitude]=${chamada.estabelecimentoCoordenadas.latitude}&dropoff[longitude]=${chamada.estabelecimentoCoordenadas.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-black text-white px-3 py-1 rounded text-sm"
-                >
-                  🚗 Chamar Uber
-                </a>
-                <a
-                  href={`https://app.99app.com/open?lat=${chamada.estabelecimentoCoordenadas.latitude}&lng=${chamada.estabelecimentoCoordenadas.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-yellow-400 text-black px-3 py-1 rounded text-sm"
-                >
-                  🚕 Abrir 99 Táxi
-                </a>
-              </div>
-            )}
+              {chamada.status === 'aceita' && !chamada.pagamentoConfirmado && chamada.aceitaEm && (
+                <ContagemRegressiva aceitaEm={chamada.aceitaEm.toMillis()} />
+              )}
 
-            {chamada.observacao && (
-              <p className="text-sm text-gray-800 mt-2">
-                <strong>📝 Observação:</strong> {chamada.observacao}
-              </p>
-            )}
+              {['aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'pago'].includes(chamada.status) && chamada.estabelecimentoCoordenadas && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <a
+                    href={`https://waze.com/ul?ll=${chamada.estabelecimentoCoordenadas.latitude},${chamada.estabelecimentoCoordenadas.longitude}&navigate=yes`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-purple-600 text-white px-3 py-1 rounded text-sm"
+                  >
+                    🧭 Abrir no Waze
+                  </a>
+                  <a
+                    href={`https://m.uber.com/ul/?action=setPickup&dropoff[latitude]=${chamada.estabelecimentoCoordenadas.latitude}&dropoff[longitude]=${chamada.estabelecimentoCoordenadas.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-black text-white px-3 py-1 rounded text-sm"
+                  >
+                    🚗 Chamar Uber
+                  </a>
+                  <a
+                    href={`https://app.99app.com/open?lat=${chamada.estabelecimentoCoordenadas.latitude}&lng=${chamada.estabelecimentoCoordenadas.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-yellow-400 text-black px-3 py-1 rounded text-sm"
+                  >
+                    🚕 Abrir 99 Táxi
+                  </a>
+                </div>
+              )}
 
-            <RespostasRapidasFreela chamadaId={chamada.id} />
+              {chamada.observacao && (
+                <p className="text-sm text-gray-800 mt-2">
+                  <strong>📝 Observação:</strong> {chamada.observacao}
+                </p>
+              )}
 
-            {chamada.status === 'pendente' && (
-              <>
+              <RespostasRapidasFreela chamadaId={chamada.id} />
+
+              {chamada.status === 'pendente' && (
+                <>
+                  <button
+                    onClick={() => atualizarChamada(chamada.id, {
+                      status: 'aceita',
+                      aceitaEm: serverTimestamp()
+                    })}
+                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition"
+                  >
+                    ✅ Aceitar chamada
+                  </button>
+                  <button
+                    onClick={() => atualizarChamada(chamada.id, {
+                      status: 'rejeitada',
+                      rejeitadaEm: serverTimestamp()
+                    })}
+                    className="w-full bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600 transition"
+                  >
+                    ❌ Rejeitar chamada
+                  </button>
+                </>
+              )}
+
+              {chamada.status === 'pago' && !chamada.checkInFreela && distanciaValida[chamada.id] && (
                 <button
                   onClick={() => atualizarChamada(chamada.id, {
-                    status: 'aceita',
-                    aceitaEm: serverTimestamp()
+                    status: 'checkin_freela',
+                    checkInFreela: true,
+                    checkInFreelaHora: serverTimestamp()
                   })}
-                  className="w-full bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition"
+                  className="w-full bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition"
                 >
-                  ✅ Aceitar chamada
+                  📍 Fazer check-in
                 </button>
+              )}
+
+              {(chamada.status === 'checkin_freela' || chamada.status === 'em_andamento') && !chamada.checkOutFreela && (
                 <button
                   onClick={() => atualizarChamada(chamada.id, {
-                    status: 'rejeitada',
-                    rejeitadaEm: serverTimestamp()
+                    status: 'checkout_freela',
+                    checkOutFreela: true,
+                    checkOutFreelaHora: serverTimestamp()
                   })}
-                  className="w-full bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600 transition"
+                  className="w-full bg-yellow-500 text-white px-4 py-2 rounded-xl hover:bg-yellow-600 transition"
                 >
-                  ❌ Rejeitar chamada
+                  ⏳ Fazer check-out
                 </button>
-              </>
-            )}
-          
-            {chamada.status === 'aceita' && (
-              <p className="text-sm text-orange-600 font-semibold text-center">
-                ⏳ Aguardando pagamento do estabelecimento...
-              </p>
-            )}
-            
-            {chamada.status === 'pago' && !chamada.checkInFreela && distanciaValida[chamada.id] && (
-              <button
-                onClick={() => atualizarChamada(chamada.id, {
-                  status: 'checkin_freela',
-                  checkInFreela: true,
-                  checkInFreelaHora: serverTimestamp()
-                })}
-                className="w-full bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition"
-              >
-                📍 Fazer check-in
-              </button>
-            )}
+              )}
 
-            {(chamada.status === 'checkin_freela' || chamada.status === 'em_andamento') && !chamada.checkOutFreela && (
-              <button
-                onClick={() => atualizarChamada(chamada.id, {
-                  status: 'checkout_freela',
-                  checkOutFreela: true,
-                  checkOutFreelaHora: serverTimestamp()
-                })}
-                className="w-full bg-yellow-500 text-white px-4 py-2 rounded-xl hover:bg-yellow-600 transition"
-              >
-                ⏳ Fazer check-out
-              </button>
-            )}
+              {(chamada.status === 'concluido' || chamada.status === 'finalizada') && (
+                <>
+                  <span className="text-green-600 font-bold block text-center mt-2">✅ Finalizada</span>
+                  <AvaliacaoInline chamada={chamada} tipo="freela" />
+                </>
+              )}
 
-            {(chamada.status === 'concluido' || chamada.status === 'finalizada') && (
-              <>
-                <span className="text-green-600 font-bold block text-center mt-2">✅ Finalizada</span>
-                <AvaliacaoInline chamada={chamada} tipo="freela" />
-              </>
-            )}
-          </div>
-        )
-      })
-    )}
-  </div>
-)
+              {chamada.status === 'cancelada_por_falta_de_pagamento' && (
+                <p className="text-sm text-red-600 font-semibold text-center">
+                  ❌ Chamada cancelada por falta de pagamento.
+                </p>
+              )}
 
+              {chamada.status === 'rejeitada' && (
+                <p className="text-sm text-red-600 font-semibold text-center">
+                  ❌ Chamada rejeitada.
+                </p>
+              )}
+            </div>
+          )
+        })
+      )}
+    </div>
+  )
 }
