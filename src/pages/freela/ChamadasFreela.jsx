@@ -58,8 +58,11 @@ export default function ChamadasFreela() {
         id: doc.id,
         ...doc.data()
       }))
-      setChamadas(chamadasAtivas)
-      setLoading(false)
+
+      setTimeout(() => {
+        setChamadas(chamadasAtivas)
+        setLoading(false)
+      }, 1000) // Espera 1 segundo para evitar leitura sem aceitaEm
     })
 
     return () => unsub()
@@ -110,8 +113,10 @@ export default function ChamadasFreela() {
     if (chamada.status !== 'aceita') return false
     if (!chamada.aceitaEm?.toMillis) return false
 
-    const limite = 10 * 60 * 1000 // 10 minutos
     const aceitaEm = chamada.aceitaEm.toMillis()
+    if (!aceitaEm || aceitaEm < 1000000000000) return false // Protege contra valores inválidos
+
+    const limite = 10 * 60 * 1000 // 10 minutos
     const agora = Date.now()
 
     const expirou = agora - aceitaEm > limite
