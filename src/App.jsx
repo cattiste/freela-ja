@@ -18,6 +18,7 @@ import BuscarEventos from '@/pages/freela/BuscarEventos'
 import PainelPessoaFisica from '@/pages/pf/PainelPessoaFisica'
 import CadastroPessoaFisica from '@/pages/pf/CadastroPessoaFisica'
 import PagamentoPix from '@/pages/gerais/PagamentoPix'
+import DashboardAdmin from '@/components/DashboardAdmin'
 
 // Freela
 import CadastroFreela from '@/pages/freela/CadastroFreela'
@@ -53,6 +54,7 @@ export default function App() {
           <Route path="/painelpf" element={<PainelPessoaFisica />} />
           <Route path="/cadastropf" element={<CadastroPessoaFisica />} />
           <Route path="/pagamento-pix" element={<PagamentoPix />} />
+          <Route path="/admin" element={<DashboardAdmin />} />
 
           {/* 👤 Freela */}
           <Route path="/cadastrofreela" element={<CadastroFreela />} />
