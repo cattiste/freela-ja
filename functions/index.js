@@ -1,120 +1,111 @@
-// functions/index.js – com fallback para usar CNPJ ou CPF do responsável
+const functions = require('firebase-functions')
+const admin = require('firebase-admin')
+const Gerencianet = require('gn-api-sdk-node')
+const dotenv = require('dotenv')
+dotenv.config()
 
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
-const Gerencianet = require('gn-api-sdk-node');
-const express = require('express');
-const cors = require('cors');
-
-admin.initializeApp();
-const db = admin.firestore();
+admin.initializeApp()
+const db = admin.firestore()
 
 const gn = new Gerencianet({
-  client_id: functions.config().gerencianet.client_id,
-  client_secret: functions.config().gerencianet.client_secret,
-  sandbox: true,
-  certificate: './certs/certificado.p12'
-});
+  client_id: process.env.GN_CLIENT_ID,
+  client_secret: process.env.GN_CLIENT_SECRET,
+  sandbox: true
+})
 
-const pixKey = functions.config().gerencianet.pix_key;
-
-const app = express();
-app.use(cors({ origin: true }));
-app.use(express.json());
-
-// === POST /cobraChamadaAoAceitar ===
-app.post('/cobraChamadaAoAceitar', async (req, res) => {
-  const { chamadaId, valorDiaria, nomeEstabelecimento, cpfEstabelecimento, cnpjEstabelecimento, cpfResponsavel } = req.body;
+// ✅ Função 1: Envia pagamento para o freela
+exports.pagarFreelaAoCheckout = functions.https.onCall(async (data, context) => {
+  const { chamadaId } = data
 
   try {
-    const documentoPagador = cpfEstabelecimento || cnpjEstabelecimento || cpfResponsavel;
+    const chamadaSnap = await db.collection('chamadas').doc(chamadaId).get()
+    if (!chamadaSnap.exists) throw new Error('Chamada não encontrada')
 
-    if (!chamadaId || !valorDiaria || !nomeEstabelecimento || !documentoPagador) {
-      return res.status(400).json({ error: 'Dados incompletos para gerar cobrança' });
-    }
+    const chamada = chamadaSnap.data()
+    const { freelaUid, valorDiaria } = chamada
 
-    const valorTotal = Number(valorDiaria) * 1.10;
+    const userSnap = await db.collection('usuarios').doc(freelaUid).get()
+    if (!userSnap.exists) throw new Error('Freela não encontrado')
 
-    const body = {
-      calendario: { expiracao: 3600 },
-      devedor: { nome: nomeEstabelecimento, cpf: documentoPagador },
-      valor: { original: valorTotal.toFixed(2) },
-      chave: pixKey,
-      solicitacaoPagador: 'Pagamento FreelaJá - Chamada'
-    };
+    const freela = userSnap.data()
+    const chavePix = freela?.dadosBancarios?.chavePix
 
-    const charge = await gn.pixCreateImmediateCharge([], body);
-    const qrCode = await gn.pixGenerateQRCode({ id: charge.loc.id });
+    if (!chavePix) throw new Error('Freela não possui chave Pix cadastrada')
 
-    console.log('✅ Cobrança Pix gerada:', {
-      chamadaId,
-      txid: charge.txid,
-      valorBase: valorDiaria,
-      valorTotal,
-      qrCode: qrCode.qrcode
-    });
-
-    await db.collection('pagamentos').doc(chamadaId).set({
-      chamadaId,
-      valorBase: Number(valorDiaria),
-      valorTotal,
-      valorFreela: Number(valorDiaria) * 0.9,
-      valorPlataforma: Number(valorDiaria) * 0.2,
-      tipo: 'pix',
-      txid: charge.txid,
-      imagemQrcode: qrCode.imagemQrcode,
-      qrcode: qrCode.qrcode,
-      status: 'pendente',
-      criadoEm: admin.firestore.FieldValue.serverTimestamp()
-    });
-
-    res.status(200).json({ imagem: qrCode.imagemQrcode, qrcode: qrCode.qrcode, txid: charge.txid });
-  } catch (err) {
-    console.error('❌ Erro ao criar cobrança Pix:', err.response?.data || err.message || err);
-    res.status(500).json({ error: 'Erro ao criar cobrança Pix' });
-  }
-});
-
-// === POST /pagarFreelaAoCheckout ===
-app.post('/pagarFreelaAoCheckout', async (req, res) => {
-  const { chamadaId } = req.body;
-
-  try {
-    const chamadaSnap = await db.collection('chamadas').doc(chamadaId).get();
-    if (!chamadaSnap.exists) throw new Error('Chamada não encontrada');
-
-    const chamada = chamadaSnap.data();
-    const { freelaUid, valorDiaria } = chamada;
-
-    const userSnap = await db.collection('usuarios').doc(freelaUid).get();
-    if (!userSnap.exists) throw new Error('Freela não encontrado');
-
-    const freela = userSnap.data();
-    const chavePix = freela?.dadosBancarios?.chavePix;
-    if (!chavePix) throw new Error('Freela não possui chave Pix cadastrada');
-
-    const valorTransferencia = Number(valorDiaria) * 0.9;
+    const valorTransferencia = Number(valorDiaria) * 0.9
 
     const body = {
-      valor: { original: valorTransferencia.toFixed(2) },
+      valor: {
+        original: valorTransferencia.toFixed(2)
+      },
       chave: chavePix,
       solicitacaoPagador: 'Pagamento por serviço realizado na FreelaJá'
-    };
+    }
 
-    const resPix = await gn.pixSend({ id: chamadaId }, body);
+    const res = await gn.pixSend({ id: chamadaId }, body)
 
     await db.collection('pagamentos').doc(chamadaId).update({
       status: 'pago',
       pixConfirmado: true,
       dataPagamento: admin.firestore.FieldValue.serverTimestamp(),
-      comprovante: resPix.endToEndId
-    });
+      comprovante: res.endToEndId
+    })
 
-    res.status(200).json({ ok: true, comprovante: resPix.endToEndId });
-  } catch (err) {
-    console.error('❌ Erro ao pagar freela:', err.response?.data || err.message || err);
-    res.status(500).json({ error: 'Erro ao pagar freela' });
+    return { ok: true, comprovante: res.endToEndId }
+  } catch (error) {
+    console.error('Erro ao pagar freela:', error.response?.data || error)
+    throw new functions.https.HttpsError('internal', 'Erro ao pagar freela')
   }
-});
+})
 
-exports.api = functions.https.onRequest(app);
+// ✅ Função 2: Gera QR Code Pix para o estabelecimento e salva confirmação
+exports.cobraChamadaAoAceitar = functions.https.onRequest(async (req, res) => {
+  if (req.method !== 'POST') {
+    return res.status(405).send('Método não permitido')
+  }
+
+  const {
+    chamadaId,
+    valorDiaria,
+    nomeEstabelecimento,
+    cpfEstabelecimento,
+    cnpjEstabelecimento,
+    cpfResponsavel,
+    documentoManual
+  } = req.body
+
+  try {
+    const valor = Number(valorDiaria)
+    if (!valor || !chamadaId || !nomeEstabelecimento) {
+      throw new Error('Dados incompletos para cobrança')
+    }
+
+    const documento = documentoManual || cpfEstabelecimento || cnpjEstabelecimento
+    if (!documento) throw new Error('Documento não informado')
+
+    const txid = chamadaId
+    const body = {
+      calendario: { expiracao: 3600 },
+      valor: { original: valor.toFixed(2) },
+      chave: process.env.CHAVE_PIX_PLATAFORMA,
+      solicitacaoPagador: `Pagamento para chamada ${chamadaId}`,
+      infoAdicionais: [{ nome: 'Estabelecimento', valor: nomeEstabelecimento }]
+    }
+
+    const response = await gn.pixCreateImmediateCharge({ txid }, body)
+    const loc = response.loc.id
+    const qrCode = await gn.pixGenerateQRCode({ id: loc })
+
+    await db.collection('chamadas').doc(chamadaId).update({
+      status: 'pago',
+      pagamentoConfirmado: true,
+      pagoEm: admin.firestore.FieldValue.serverTimestamp(),
+      imagemQrcode: qrCode.imagemQrcode
+    })
+
+    return res.status(200).json({ imagem: qrCode.imagemQrcode })
+  } catch (error) {
+    console.error('Erro ao gerar cobrança Pix:', error.response?.data || error)
+    return res.status(500).json({ error: 'Erro ao gerar cobrança Pix' })
+  }
+})
