@@ -62,7 +62,7 @@ export default function ChamadasFreela() {
       setTimeout(() => {
         setChamadas(chamadasAtivas)
         setLoading(false)
-      }, 1000) // Espera 1 segundo para evitar leitura sem aceitaEm
+      }, 1000)
     })
 
     return () => unsub()
@@ -114,9 +114,9 @@ export default function ChamadasFreela() {
     if (!chamada.aceitaEm?.toMillis) return false
 
     const aceitaEm = chamada.aceitaEm.toMillis()
-    if (!aceitaEm || aceitaEm < 1000000000000) return false // Protege contra valores inválidos
+    if (!aceitaEm || aceitaEm < 1000000000000) return false
 
-    const limite = 10 * 60 * 1000 // 10 minutos
+    const limite = 10 * 60 * 1000
     const agora = Date.now()
 
     const expirou = agora - aceitaEm > limite
@@ -160,9 +160,9 @@ export default function ChamadasFreela() {
               <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
               <p><strong>Status:</strong> {chamada.status}</p>
 
-              {chamada.pagamentoConfirmado && (
-                <p className="text-sm text-green-600 font-semibold text-center">
-                  💰 Pagamento confirmado!
+              {chamada.status === 'pago' && (
+                <p className="text-sm text-yellow-600 font-semibold text-center">
+                  ⏳ Pagamento em processamento...
                 </p>
               )}
 
@@ -230,7 +230,7 @@ export default function ChamadasFreela() {
                 </>
               )}
 
-              {chamada.status === 'pago' && !chamada.checkInFreela && distanciaValida[chamada.id] && (
+              {chamada.status === 'pago' && chamada.checkInFreela !== true && distanciaValida[chamada.id] && (
                 <button
                   onClick={() => atualizarChamada(chamada.id, {
                     status: 'checkin_freela',
