@@ -160,7 +160,7 @@ export default function ChamadasFreela() {
               <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
               <p><strong>Status:</strong> {chamada.status}</p>
 
-              {chamada.status === 'pago' && (
+              {['aceita', 'pago'].includes(chamada.status) && (
                 <p className="text-sm text-yellow-600 font-semibold text-center">
                   ⏳ Pagamento em processamento...
                 </p>
@@ -214,6 +214,8 @@ export default function ChamadasFreela() {
                   ❌ Chamada rejeitada.
                 </p>
               )}
+
+              <RespostasRapidasFreela chamadaId={chamada.id} />
             </div>
           )
         })
