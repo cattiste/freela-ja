@@ -35,6 +35,8 @@ import PainelEstabelecimento from '@/pages/estabelecimento/PainelEstabelecimento
 import CadastroEstabelecimento from '@/pages/estabelecimento/CadastroEstabelecimento'
 import EditarPerfilEstabelecimento from '@/pages/estabelecimento/EditarPerfilEstabelecimento'
 import PublicarVaga from '@/pages/estabelecimento/PublicarVaga'
+import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
+
 
 import PagamentoPix from '@/pages/gerais/PagamentoPix'
 
@@ -69,6 +71,7 @@ export default function App() {
           <Route path="/cadastroestabelecimento" element={<CadastroEstabelecimento />} />
           <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
           <Route path="/painelestabelecimento/:rota?" element={<PainelEstabelecimento />} />
+          <Route path="/painel-estabelecimento/chamadas" element={<ChamadasEstabelecimento estabelecimento={usuario} />} />
           <Route path="/pagamento-chamada/:id" element={<PagamentoChamada />} />
           <Route path="/estabelecimento/editarperfil" element={<EditarPerfilEstabelecimento />} />
           <Route path="/publicarvaga" element={<PublicarVaga />} />
