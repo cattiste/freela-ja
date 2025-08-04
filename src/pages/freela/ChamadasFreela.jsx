@@ -170,67 +170,7 @@ export default function ChamadasFreela() {
                 <ContagemRegressiva aceitaEm={chamada.aceitaEm.toMillis()} />
               )}
 
-              {['aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'pago'].includes(chamada.status) && chamada.estabelecimentoCoordenadas && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  <a
-                    href={`https://waze.com/ul?ll=${chamada.estabelecimentoCoordenadas.latitude},${chamada.estabelecimentoCoordenadas.longitude}&navigate=yes`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-purple-600 text-white px-3 py-1 rounded text-sm"
-                  >
-                    🧭 Abrir no Waze
-                  </a>
-                  <a
-                    href={`https://m.uber.com/ul/?action=setPickup&dropoff[latitude]=${chamada.estabelecimentoCoordenadas.latitude}&dropoff[longitude]=${chamada.estabelecimentoCoordenadas.longitude}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-black text-white px-3 py-1 rounded text-sm"
-                  >
-                    🚗 Chamar Uber
-                  </a>
-                  <a
-                    href={`https://app.99app.com/open?lat=${chamada.estabelecimentoCoordenadas.latitude}&lng=${chamada.estabelecimentoCoordenadas.longitude}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-yellow-400 text-black px-3 py-1 rounded text-sm"
-                  >
-                    🚕 Abrir 99 Táxi
-                  </a>
-                </div>
-              )}
-
-              {chamada.observacao && (
-                <p className="text-sm text-gray-800 mt-2">
-                  <strong>📝 Observação:</strong> {chamada.observacao}
-                </p>
-              )}
-
-              <RespostasRapidasFreela chamadaId={chamada.id} />
-
-              {chamada.status === 'pendente' && (
-                <>
-                  <button
-                    onClick={() => atualizarChamada(chamada.id, {
-                      status: 'aceita',
-                      aceitaEm: serverTimestamp()
-                    })}
-                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition"
-                  >
-                    ✅ Aceitar chamada
-                  </button>
-                  <button
-                    onClick={() => atualizarChamada(chamada.id, {
-                      status: 'rejeitada',
-                      rejeitadaEm: serverTimestamp()
-                    })}
-                    className="w-full bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600 transition"
-                  >
-                    ❌ Rejeitar chamada
-                  </button>
-                </>
-              )}
-
-              {chamada.status === 'pago' && chamada.checkInFreela !== true && distanciaValida[chamada.id] && (
+              {['aceita', 'pago'].includes(chamada.status) && chamada.checkInFreela !== true && distanciaValida[chamada.id] && (
                 <button
                   onClick={() => atualizarChamada(chamada.id, {
                     status: 'checkin_freela',
