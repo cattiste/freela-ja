@@ -1,99 +1,243 @@
-// ChamadasEstabelecimento.jsx com QR Code e código Pix
+import React, { useEffect, useState } from 'react'
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  updateDoc,
+  doc,
+  serverTimestamp
+} from 'firebase/firestore'
+import { db } from '@/firebase'
+import { toast } from 'react-hot-toast'
+import AvaliacaoInline from '@/components/AvaliacaoInline'
+import MensagensRecebidasEstabelecimento from '@/components/MensagensRecebidasEstabelecimento'
 
-import React, { useEffect, useState } from 'react' import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore' import { db } from '@/firebase' import AvaliacaoInline from '@/components/AvaliacaoInline' import MensagensRecebidasEstabelecimento from '@/components/MensagensRecebidasEstabelecimento' import { toast } from 'react-hot-toast'
+export default function ChamadasAtivas({ estabelecimento }) {
+  const [chamadas, setChamadas] = useState([])
+  const [loadingId, setLoadingId] = useState(null)
+  const [qrcodes, setQrcodes] = useState({})
+  const [cpfManual, setCpfManual] = useState({})
+  const [confirmarDados, setConfirmarDados] = useState({})
 
-export default function ChamadasEstabelecimento({ estabelecimento }) { const [chamadas, setChamadas] = useState([])
+  useEffect(() => {
+    if (!estabelecimento?.uid) return
 
-useEffect(() => { if (!estabelecimento?.uid) return
+    const q = query(
+      collection(db, 'chamadas'),
+      where('estabelecimentoUid', '==', estabelecimento.uid),
+      where('status', 'in', ['pendente', 'aceita', 'pago', 'checkin_freela', 'em_andamento', 'checkout_freela', 'concluido'])
 
-const q = query(
-  collection(db, 'chamadas'),
-  where('estabelecimentoUid', '==', estabelecimento.uid),
-  where('status', 'in', [
-    'pendente',
-    'aceita',
-    'pago',
-    'checkin_freela',
-    'checkout_freela',
-    'concluido'
-  ])
-)
+    )
 
-const unsub = onSnapshot(q, (snap) => {
-  const lista = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-  setChamadas(lista)
-})
+    const unsub = onSnapshot(q, (snap) => {
+      const todasChamadas = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
-return () => unsub()
+      const unicas = {}
+      todasChamadas.forEach((chamada) => {
+        const existente = unicas[chamada.freelaUid]
+        const novaData = chamada.criadoEm?.toMillis?.() || 0
+        const dataExistente = existente?.criadoEm?.toMillis?.() || 0
 
-}, [estabelecimento])
+        if (!existente || novaData > dataExistente) {
+          unicas[chamada.freelaUid] = chamada
+        }
+      })
 
-const copiarCodigoPix = (codigo) => { navigator.clipboard.writeText(codigo) toast.success('Código Pix copiado!') }
+      setChamadas(Object.values(unicas))
+    })
 
-const atualizarChamada = async (id, dados) => { try { await updateDoc(doc(db, 'chamadas', id), dados) toast.success('✅ Ação realizada com sucesso!') } catch (err) { console.error('Erro ao atualizar chamada:', err) toast.error('Erro ao atualizar chamada.') } }
+    return () => unsub()
+  }, [estabelecimento])
 
-if (!chamadas.length) return <p className="text-center text-gray-500">Nenhuma chamada encontrada.</p>
+  const pagarChamada = async (chamada) => {
+    const valorNumerico = Number(chamada.valorDiaria)
+    const cnpjLimpo = estabelecimento.cnpj?.replace(/[^0-9]/g, '')
+    const documentoManual = cpfManual[chamada.id]?.replace(/[^0-9]/g, '') || ''
 
-return ( <div className="space-y-4"> {chamadas.map((chamada) => ( <div key={chamada.id} className="bg-white border border-orange-200 rounded-xl shadow p-4 space-y-2"> <h2 className="font-semibold text-orange-600">Freela: {chamada.freelaNome || '---'}</h2> <p>Status: <span className="font-medium text-gray-800">{chamada.status}</span></p>
+    const payload = {
+      chamadaId: chamada.id,
+      valorDiaria: valorNumerico,
+      nomeEstabelecimento: estabelecimento.nome,
+      cpfEstabelecimento: estabelecimento.cpf,
+      cnpjEstabelecimento: cnpjLimpo,
+      cpfResponsavel: estabelecimento.cpfResponsavel,
+      documentoManual
+    }
 
-{chamada.observacao && (
-        <p className="text-sm text-gray-700"><strong>Obs:</strong> {chamada.observacao}</p>
-      )}
+    if (!payload.valorDiaria || !payload.nomeEstabelecimento || (!documentoManual && !payload.cpfEstabelecimento && !payload.cnpjEstabelecimento)) {
+      toast.error('⚠️ Preencha um CPF ou CNPJ válido')
+      return
+    }
 
-      <MensagensRecebidasEstabelecimento chamadaId={chamada.id} />
+    try {
+      const res = await fetch('https://us-central1-freelaja-web-50254.cloudfunctions.net/api/cobraChamadaAoAceitar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success('✅ Pix gerado com sucesso!')
+        setQrcodes(prev => ({ ...prev, [chamada.id]: data.imagem }))
+      } else {
+        throw new Error(data.error || 'Erro desconhecido')
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao gerar Pix')
+    }
+  }
 
-      {/* QR Code e código Pix */}
-      {chamada.status === 'aceita' && chamada.imagemQrcode && (
-        <div className="bg-gray-50 border border-gray-200 p-3 rounded-md text-center">
-          <img src={chamada.imagemQrcode} alt="QR Code Pix" className="mx-auto w-40 h-40 mb-2" />
-          {chamada.brCode && (
-            <div>
-              <p className="text-xs break-words text-gray-600 mb-2">{chamada.brCode}</p>
-              <button
-                onClick={() => copiarCodigoPix(chamada.brCode)}
-                className="bg-orange-600 text-white px-3 py-1 rounded text-sm hover:bg-orange-700"
-              >
-                📋 Copiar código Pix
-              </button>
+  const atualizarChamada = async (id, dados) => {
+    try {
+      setLoadingId(id)
+      const ref = doc(db, 'chamadas', id)
+      await updateDoc(ref, dados)
+      toast.success('✅ Ação realizada com sucesso!')
+    } catch (err) {
+      console.error('Erro ao atualizar chamada:', err)
+      toast.error('Erro ao atualizar chamada.')
+    } finally {
+      setLoadingId(null)
+    }
+  }
+
+  const badgeStatus = (status) => {
+    const cores = {
+      aceita: 'bg-yellow-200 text-yellow-700',
+      checkin_freela: 'bg-purple-200 text-purple-700',
+      em_andamento: 'bg-green-200 text-green-700',
+      checkout_freela: 'bg-blue-200 text-blue-700',
+      concluido: 'bg-gray-200 text-gray-700'
+    }
+    return (
+      <span className={`px-2 py-1 rounded text-xs font-semibold ${cores[status] || 'bg-gray-200 text-gray-700'}`}>
+        {status.replace('_', ' ')}
+      </span>
+    )
+  }
+
+  if (!chamadas.length) {
+    return <div className="text-center mt-6 text-gray-500">Nenhuma chamada ativa no momento.</div>
+  }
+
+  return (
+    <div className="space-y-4">
+      {chamadas.map((chamada) => {
+        if (chamada.status === 'concluido' && chamada.avaliacaoFreela?.nota) {
+          return null
+        }
+
+        const confirmar = confirmarDados[chamada.id] === true
+
+        const foto =
+          chamada.freelaFoto ||
+          chamada.freela?.foto ||
+          'https://placehold.co/100x100'
+
+        const nome =
+          chamada.freelaNome ||
+          chamada.freela?.nome ||
+          'Nome não informado'
+
+        return (
+          <div key={chamada.id} className="bg-white rounded-xl p-3 shadow border border-orange-100 space-y-2">
+            <div className="flex items-center gap-3">
+              <img
+                src={foto}
+                alt={nome}
+                className="w-10 h-10 rounded-full border border-orange-300 object-cover"
+              />
+              <div className="flex-1">
+                <p className="font-bold text-orange-600">{nome}</p>
+                {chamada.valorDiaria && (
+                  <p className="text-xs text-gray-500">💰 R$ {chamada.valorDiaria} / diária</p>
+                )}
+                <p className="text-sm mt-1">📌 Status: {badgeStatus(chamada.status)}</p>
+                <MensagensRecebidasEstabelecimento chamadaId={chamada.id} />
+              </div>
             </div>
-          )}
-        </div>
-      )}
 
-      {/* Botões de progresso */}
-      {chamada.status === 'checkin_freela' && !chamada.checkInEstabelecimento && (
-        <button
-          onClick={() => atualizarChamada(chamada.id, {
-            checkInEstabelecimento: true,
-            checkInEstabelecimentoHora: serverTimestamp(),
-            status: 'em_andamento'
-          })}
-          className="w-full bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700"
-        >
-          ✅ Confirmar Check-in
-        </button>
-      )}
+            <input
+              type="text"
+              placeholder="Digite CPF ou CNPJ para pagamento"
+              value={cpfManual[chamada.id] || ''}
+              onChange={(e) => setCpfManual(prev => ({ ...prev, [chamada.id]: e.target.value }))}
+              className="w-full border rounded px-3 py-2 text-sm"
+            />
 
-      {chamada.status === 'checkout_freela' && !chamada.checkOutEstabelecimento && (
-        <button
-          onClick={() => atualizarChamada(chamada.id, {
-            checkOutEstabelecimento: true,
-            checkOutEstabelecimentoHora: serverTimestamp(),
-            status: 'concluido'
-          })}
-          className="w-full bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700"
-        >
-          📤 Confirmar Check-out
-        </button>
-      )}
+            {!confirmar && (
+              <button
+                onClick={() => setConfirmarDados(prev => ({ ...prev, [chamada.id]: true }))}
+                className="w-full bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300"
+              >
+                🧾 Confirmar dados de pagamento
+              </button>
+            )}
 
-      {/* Avaliação */}
-      {chamada.status === 'concluido' && (
-        <AvaliacaoInline chamada={chamada} tipo="estabelecimento" />
-      )}
+            {confirmar && (
+              <>
+                <div className="bg-gray-50 border border-gray-200 p-2 rounded text-sm text-gray-700">
+                  <p><strong>Estabelecimento:</strong> {estabelecimento.nome}</p>
+                  {cpfManual[chamada.id] && (
+                    <p><strong>Documento informado:</strong> {cpfManual[chamada.id]}</p>
+                  )}
+                  <p><strong>Valor da diária:</strong> <input type="text" value={chamada.valorDiaria} disabled className="w-full bg-transparent text-gray-700" /></p>
+                </div>
+                <button
+                  onClick={() => pagarChamada(chamada)}
+                  className="w-full mt-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition"
+                >
+                  💳 Efetuar Pagamento Pix
+                </button>
+                {qrcodes[chamada.id] && (
+                  <div className="mt-2 text-center">
+                    <img src={qrcodes[chamada.id]} alt="QR Code Pix" className="w-48 mx-auto" />
+                    <p className="text-xs text-gray-500">Escaneie para pagar</p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {chamada.checkInFreela === true && !chamada.checkInEstabelecimento && (
+              <button
+                onClick={() =>
+                  atualizarChamada(chamada.id, {
+                    checkInEstabelecimento: true,
+                    checkInEstabelecimentoHora: serverTimestamp(),
+                    status: 'em_andamento'
+                  })
+                }
+                disabled={loadingId === chamada.id}
+                className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+              >
+                {loadingId === chamada.id ? 'Confirmando...' : '✅ Confirmar Check-in'}
+              </button>
+            )}
+
+            {chamada.checkOutFreela === true && !chamada.checkOutEstabelecimento && (
+              <button
+                onClick={() =>
+                  atualizarChamada(chamada.id, {
+                    checkOutEstabelecimento: true,
+                    checkOutEstabelecimentoHora: serverTimestamp(),
+                    status: 'concluido'
+                  })
+                }
+                disabled={loadingId === chamada.id}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+              >
+                {loadingId === chamada.id ? 'Confirmando...' : '📤 Confirmar Check-out'}
+              </button>
+            )}
+
+            {chamada.status === 'concluido' && (
+              <AvaliacaoInline chamada={chamada} tipo="estabelecimento" />
+            )}
+          </div>
+        )
+      })}
     </div>
-  ))}
-</div>
-
-) }
-
+  )
+}
