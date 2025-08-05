@@ -1,4 +1,4 @@
-// ChamadasFreela.jsx - Revisado para garantir exibição do botão 'Aceitar chamada'
+// ChamadasFreela.jsx – versão de testes com pagamento desativado e fluxo validado por distância (15m)
 
 import React, { useEffect, useState } from 'react'
 import {
@@ -45,7 +45,6 @@ export default function ChamadasFreela() {
       where('status', 'in', [
         'pendente',
         'aceita',
-        'pago',
         'checkin_freela',
         'em_andamento',
         'checkout_freela',
@@ -119,8 +118,7 @@ export default function ChamadasFreela() {
     const limite = 10 * 60 * 1000
     const agora = Date.now()
     const expirou = agora - aceitaEm > limite
-    const pagamentoFeito = chamada.status === 'pago' || chamada.pagamentoConfirmado === true
-    return expirou && !pagamentoFeito
+    return expirou
   }
 
   if (!usuario?.uid) {
@@ -180,7 +178,7 @@ export default function ChamadasFreela() {
                 </>
               )}
 
-              {['aceita', 'pago'].includes(chamada.status) && chamada.checkInFreela !== true && distanciaValida[chamada.id] && (
+              {chamada.status === 'aceita' && chamada.checkInFreela !== true && distanciaValida[chamada.id] && (
                 <button
                   onClick={() => atualizarChamada(chamada.id, {
                     status: 'checkin_freela',
