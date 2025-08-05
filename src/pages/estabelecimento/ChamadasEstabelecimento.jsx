@@ -1,4 +1,4 @@
-// ChamadasEstabelecimento.jsx – versão de testes com pagamento desativado e fluxo correto de check-in/check-out
+// ChamadasEstabelecimento.jsx – revisão para garantir exibição do status 'aceita'
 
 import React, { useEffect, useState } from 'react'
 import {
@@ -25,7 +25,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
     const q = query(
       collection(db, 'chamadas'),
       where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', 'in', ['pendente', 'aceita', 'pago', 'checkin_freela', 'em_andamento', 'checkout_freela', 'concluido'])
+      where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'concluido'])
     )
 
     const unsub = onSnapshot(q, (snap) => {
@@ -83,10 +83,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
   return (
     <div className="space-y-4">
       {chamadas.map((chamada) => {
-        if (chamada.status === 'concluido' && chamada.avaliacaoFreela?.nota) {
-          return null
-        }
-
+        // Mostrar todas, inclusive 'aceita'
         const foto = chamada.freelaFoto || chamada.freela?.foto || 'https://placehold.co/100x100'
         const nome = chamada.freelaNome || chamada.freela?.nome || 'Nome não informado'
 
