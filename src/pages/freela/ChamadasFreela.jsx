@@ -1,3 +1,5 @@
+// ChamadasFreela.jsx - Revisado para garantir exibição do botão 'Aceitar chamada'
+
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -17,14 +19,14 @@ import ContagemRegressiva from '@/components/ContagemRegressiva'
 
 function calcularDistancia(lat1, lon1, lat2, lon2) {
   const toRad = (x) => (x * Math.PI) / 180
-  const R = 6371e3 // metros
+  const R = 6371e3
   const dLat = toRad(lat2 - lat1)
   const dLon = toRad(lon2 - lon1)
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return R * c // em metros
+  return R * c
 }
 
 export default function ChamadasFreela() {
@@ -112,16 +114,12 @@ export default function ChamadasFreela() {
   const verificarTimeout = (chamada) => {
     if (chamada.status !== 'aceita') return false
     if (!chamada.aceitaEm?.toMillis) return false
-
     const aceitaEm = chamada.aceitaEm.toMillis()
     if (!aceitaEm || aceitaEm < 1000000000000) return false
-
     const limite = 10 * 60 * 1000
     const agora = Date.now()
-
     const expirou = agora - aceitaEm > limite
     const pagamentoFeito = chamada.status === 'pago' || chamada.pagamentoConfirmado === true
-
     return expirou && !pagamentoFeito
   }
 
@@ -148,7 +146,6 @@ export default function ChamadasFreela() {
       ) : (
         chamadas.map((chamada) => {
           const expirou = verificarTimeout(chamada)
-
           if (expirou) {
             atualizarChamada(chamada.id, { status: 'cancelada_por_falta_de_pagamento' })
             return null
@@ -160,14 +157,27 @@ export default function ChamadasFreela() {
               <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
               <p><strong>Status:</strong> {chamada.status}</p>
 
-              {['aceita', 'pago'].includes(chamada.status) && (
-                <p className="text-sm text-yellow-600 font-semibold text-center">
-                  ⏳ Pagamento em processamento...
-                </p>
-              )}
-
-              {chamada.status === 'aceita' && !chamada.pagamentoConfirmado && chamada.aceitaEm && (
-                <ContagemRegressiva aceitaEm={chamada.aceitaEm.toMillis()} />
+              {chamada.status === 'pendente' && (
+                <>
+                  <button
+                    onClick={() => atualizarChamada(chamada.id, {
+                      status: 'aceita',
+                      aceitaEm: serverTimestamp()
+                    })}
+                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition"
+                  >
+                    ✅ Aceitar chamada
+                  </button>
+                  <button
+                    onClick={() => atualizarChamada(chamada.id, {
+                      status: 'rejeitada',
+                      rejeitadaEm: serverTimestamp()
+                    })}
+                    className="w-full bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600 transition"
+                  >
+                    ❌ Rejeitar chamada
+                  </button>
+                </>
               )}
 
               {['aceita', 'pago'].includes(chamada.status) && chamada.checkInFreela !== true && distanciaValida[chamada.id] && (
