@@ -1,4 +1,4 @@
-// ChamadasFreela.jsx – versão de testes com pagamento desativado e fluxo validado por distância (15m)
+// ChamadasFreela.jsx – Corrigido para exibir observação da chamada
 
 import React, { useEffect, useState } from 'react'
 import {
@@ -154,6 +154,12 @@ export default function ChamadasFreela() {
               <h2 className="font-semibold text-orange-600 text-lg">Chamada #{chamada?.id?.slice(-5)}</h2>
               <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
               <p><strong>Status:</strong> {chamada.status}</p>
+
+              {chamada.observacao && (
+                <p className="text-sm text-gray-800 mt-2">
+                  <strong>📝 Observação:</strong> {chamada.observacao}
+                </p>
+              )}
 
               {chamada.status === 'pendente' && (
                 <>
