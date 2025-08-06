@@ -1,4 +1,4 @@
-// ChamadasFreela.jsx – Corrigido para exibir observação da chamada
+// ChamadasFreela.jsx – com log e visualização da distância para debug do botão de check-in
 
 import React, { useEffect, useState } from 'react'
 import {
@@ -33,6 +33,7 @@ export default function ChamadasFreela() {
   const { usuario } = useAuth()
   const [chamadas, setChamadas] = useState([])
   const [distanciaValida, setDistanciaValida] = useState({})
+  const [distanciaReal, setDistanciaReal] = useState({})
   const [loading, setLoading] = useState(true)
   const [mensagemConfirmacao, setMensagemConfirmacao] = useState(null)
 
@@ -55,11 +56,7 @@ export default function ChamadasFreela() {
     )
 
     const unsub = onSnapshot(q, (snap) => {
-      const chamadasAtivas = snap.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data()
-      }))
-
+      const chamadasAtivas = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
       setTimeout(() => {
         setChamadas(chamadasAtivas)
         setLoading(false)
@@ -82,9 +79,16 @@ export default function ChamadasFreela() {
             estabelecimentoCoords.latitude,
             estabelecimentoCoords.longitude
           )
+          console.log(`Distância até o estabelecimento da chamada ${chamada.id}: ${dist.toFixed(2)} metros`)
+
           setDistanciaValida((prev) => ({
             ...prev,
             [chamada.id]: dist <= 15
+          }))
+
+          setDistanciaReal((prev) => ({
+            ...prev,
+            [chamada.id]: dist.toFixed(2)
           }))
         },
         (err) => {
@@ -159,6 +163,10 @@ export default function ChamadasFreela() {
                 <p className="text-sm text-gray-800 mt-2">
                   <strong>📝 Observação:</strong> {chamada.observacao}
                 </p>
+              )}
+
+              {distanciaReal[chamada.id] && (
+                <p className="text-xs text-gray-500">📍 Distância estimada: {distanciaReal[chamada.id]} metros</p>
               )}
 
               {chamada.status === 'pendente' && (
