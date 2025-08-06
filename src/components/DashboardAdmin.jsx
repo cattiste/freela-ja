@@ -1,14 +1,18 @@
-// DashboardAdmin.jsx – painel administrativo completo
+// DashboardAdmin.jsx – com proteção por senha e painel completo
 
 import React, { useEffect, useState } from 'react'
 import { collection, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function DashboardAdmin() {
+  const [senha, setSenha] = useState('')
+  const [acessoLiberado, setAcessoLiberado] = useState(false)
   const [chamadas, setChamadas] = useState([])
   const [usuarios, setUsuarios] = useState([])
 
   useEffect(() => {
+    if (!acessoLiberado) return
+
     const unsubChamadas = onSnapshot(collection(db, 'chamadas'), (snap) => {
       const lista = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
       setChamadas(lista.sort((a, b) => b.criadoEm?.seconds - a.criadoEm?.seconds))
@@ -23,9 +27,31 @@ export default function DashboardAdmin() {
       unsubChamadas()
       unsubUsuarios()
     }
-  }, [])
+  }, [acessoLiberado])
 
   const chamadasAtivas = chamadas.filter(c => ['pendente', 'aceita', 'checkin_freela', 'em_andamento'].includes(c.status))
+
+  if (!acessoLiberado) {
+    return (
+      <div className="max-w-sm mx-auto mt-20 text-center space-y-4">
+        <h2 className="text-xl font-semibold text-orange-600">🔐 Painel Administrativo</h2>
+        <input
+          type="password"
+          className="w-full border px-3 py-2 rounded"
+          placeholder="Digite a senha"
+          value={senha}
+          onChange={(e) => setSenha(e.target.value)}
+        />
+        <button
+          onClick={() => setAcessoLiberado(senha === 'admin2025')}
+          className="bg-orange-600 text-white px-4 py-2 rounded"
+        >
+          Entrar
+        </button>
+        {senha && senha !== 'admin2025' && <p className="text-red-500 text-sm">Senha incorreta</p>}
+      </div>
+    )
+  }
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
