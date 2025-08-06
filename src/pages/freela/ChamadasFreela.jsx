@@ -1,4 +1,4 @@
-// ChamadasFreela.jsx – com log e visualização da distância para debug do botão de check-in
+// ChamadasFreela.jsx – versão com validação por localização desativada (check-in liberado sem GeoPoint)
 
 import React, { useEffect, useState } from 'react'
 import {
@@ -17,23 +17,9 @@ import AvaliacaoInline from '@/components/AvaliacaoInline'
 import RespostasRapidasFreela from '@/components/RespostasRapidasFreela'
 import ContagemRegressiva from '@/components/ContagemRegressiva'
 
-function calcularDistancia(lat1, lon1, lat2, lon2) {
-  const toRad = (x) => (x * Math.PI) / 180
-  const R = 6371e3
-  const dLat = toRad(lat2 - lat1)
-  const dLon = toRad(lon2 - lon1)
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return R * c
-}
-
 export default function ChamadasFreela() {
   const { usuario } = useAuth()
   const [chamadas, setChamadas] = useState([])
-  const [distanciaValida, setDistanciaValida] = useState({})
-  const [distanciaReal, setDistanciaReal] = useState({})
   const [loading, setLoading] = useState(true)
   const [mensagemConfirmacao, setMensagemConfirmacao] = useState(null)
 
@@ -65,40 +51,6 @@ export default function ChamadasFreela() {
 
     return () => unsub()
   }, [usuario?.uid])
-
-  useEffect(() => {
-    chamadas.forEach((chamada) => {
-      const estabelecimentoCoords = chamada.estabelecimentoCoordenadas
-      if (!estabelecimentoCoords) return
-
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const dist = calcularDistancia(
-            pos.coords.latitude,
-            pos.coords.longitude,
-            estabelecimentoCoords.latitude,
-            estabelecimentoCoords.longitude
-          )
-          console.log(`Distância até o estabelecimento da chamada ${chamada.id}: ${dist.toFixed(2)} metros`)
-
-          setDistanciaValida((prev) => ({
-            ...prev,
-            [chamada.id]: dist <= 15
-          }))
-
-          setDistanciaReal((prev) => ({
-            ...prev,
-            [chamada.id]: dist.toFixed(2)
-          }))
-        },
-        (err) => {
-          console.error('Erro ao obter localização:', err)
-          setDistanciaValida((prev) => ({ ...prev, [chamada.id]: false }))
-        },
-        { enableHighAccuracy: true }
-      )
-    })
-  }, [chamadas])
 
   const atualizarChamada = async (id, dados) => {
     try {
@@ -165,10 +117,6 @@ export default function ChamadasFreela() {
                 </p>
               )}
 
-              {distanciaReal[chamada.id] && (
-                <p className="text-xs text-gray-500">📍 Distância estimada: {distanciaReal[chamada.id]} metros</p>
-              )}
-
               {chamada.status === 'pendente' && (
                 <>
                   <button
@@ -192,7 +140,7 @@ export default function ChamadasFreela() {
                 </>
               )}
 
-              {chamada.status === 'aceita' && chamada.checkInFreela !== true && distanciaValida[chamada.id] && (
+              {chamada.status === 'aceita' && chamada.checkInFreela !== true && (
                 <button
                   onClick={() => atualizarChamada(chamada.id, {
                     status: 'checkin_freela',
