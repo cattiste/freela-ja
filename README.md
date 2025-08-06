@@ -28,7 +28,7 @@ O **Freela Já** é um marketplace moderno e direto que conecta profissionais au
 ## 📦 Deploy
 
 Acesse o projeto em produção:
-🌐 [https://chefjaweb.vercel.app](https://chefjaweb.vercel.app) (em breve será atualizado para **freelaja.com**)
+🌐 [https://freelaja.com.br](https://freelaja.com.br) (em breve será atualizado para **freelaja.com**)
 
 ---
 
@@ -40,4 +40,4 @@ Pull requests são bem-vindos! Para mudanças maiores, abra uma issue antes de p
 
 ### 📘 Licença
 
-Este projeto é de código aberto sob a licença MIT.
+Desenvolvido por Bruno Cattiste & ChatGPT · FreelaJá original © 2025
