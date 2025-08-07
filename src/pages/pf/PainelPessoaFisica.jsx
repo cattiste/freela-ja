@@ -1,8 +1,13 @@
 
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
-import { doc, getDoc } from 'firebase/firestore'
-import { db } from '@/firebase'
+import { onAuthStateChanged } from 'firebase/auth'
+import {
+  doc, getDoc, updateDoc, serverTimestamp,
+  collection, query, where, getDocs
+} from 'firebase/firestore'
+import { auth, db } from '@/firebase'
+
 import MenuInferiorPF from '@/components/MenuInferiorPF'
 import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF'
 import BuscarFreelas from '@/components/BuscarFreelas'
