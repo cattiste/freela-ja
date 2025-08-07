@@ -5,7 +5,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import MenuInferiorPF from '@/components/MenuInferiorPF';
 import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF';
-import BuscarFreelas from '../estabelecimento/BuscarFreelas';
+import BuscarFreelas from '@/components/BuscarFreelas';
 import ChamadasPessoaFisica from './ChamadasPessoaFisica';
 import AgendaPessoaFisica from './AgendaPessoaFisica';
 import { useLocation } from 'react-router-dom';
