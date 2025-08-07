@@ -4,6 +4,9 @@ import { useAuth } from '@/context/AuthContext'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import dayjs from 'dayjs'
 
+import 'dayjs/locale/pt-br'
+dayjs.locale('pt-br')
+
 export default function AgendaEventosPF() {
   const { usuario } = useAuth()
   const [eventos, setEventos] = useState([])
