@@ -34,6 +34,13 @@ import EditarPerfilEstabelecimento from '@/pages/estabelecimento/EditarPerfilEst
 import PublicarVaga from '@/pages/estabelecimento/PublicarVaga'
 import PagamentoChamada from '@/pages/estabelecimento/PagamentoChamada'
 
+// Páginas da Pessoa Física
+import PainelPessoaFisica from '@/pages/pf/PainelPessoaFisica'
+import BuscarFreelas from '@/pages/pf/BuscarFreelas'
+import CandidaturasPF from '@/pages/pf/CandidaturasPF'
+import AgendaEventosPF from '@/pages/pf/AgendaEventosPF'
+
+
 export default function App() {
   return (
     <AuthProvider>
@@ -69,6 +76,12 @@ export default function App() {
           <Route path="/estabelecimento/editarperfil" element={<EditarPerfilEstabelecimento />} />
           <Route path="/publicarvaga" element={<PublicarVaga />} />
           <Route path="/pagamento-chamada/:id" element={<PagamentoChamada />} />
+
+          {/* Pessoa Fisica */}
+          <Route path="/pf" element={<PainelPessoaFisica />} />
+          <Route path="/pf/buscar" element={<BuscarFreelas />} />
+          <Route path="/pf/candidaturas" element={<CandidaturasPF />} />
+          <Route path="/pf/agenda" element={<AgendaEventosPF />} />
 
           {/* ✅ Redirecionamento alternativo se quiser acessar chamadas diretamente */}
           <Route path="/painel-estabelecimento/chamadas" element={<Navigate to="/painelestabelecimento/ativas" />} />
