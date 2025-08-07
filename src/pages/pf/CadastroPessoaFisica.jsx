@@ -1,123 +1,82 @@
-import React, { useState } from 'react'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc, serverTimestamp, GeoPoint } from 'firebase/firestore'
-import { auth, db } from '@/firebase'
-import { useNavigate } from 'react-router-dom'
-import { toast } from 'react-hot-toast'
+// ✅ CadastroPessoaFisica.jsx corrigido
+import React, { useState } from 'react';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth, db } from '@/firebase';
+import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 
 export default function CadastroPessoaFisica() {
-  const navigate = useNavigate()
+  const [form, setForm] = useState({ nome: '', email: '', senha: '', telefone: '', endereco: '', foto: '' });
+  const [carregando, setCarregando] = useState(false);
+  const navigate = useNavigate();
 
-  const [nome, setNome] = useState('')
-  const [email, setEmail] = useState('')
-  const [senha, setSenha] = useState('')
-  const [celular, setCelular] = useState('')
-  const [endereco, setEndereco] = useState('')
-  const [coordenadas, setCoordenadas] = useState({ lat: null, lon: null })
-  const [carregando, setCarregando] = useState(false)
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
-  const geolocalizarEndereco = async (enderecoTexto) => {
+  const handleFoto = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'preset-publico');
+
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoTexto)}`
-      )
-      const data = await response.json()
-      if (data.length > 0) {
-        return {
-          lat: parseFloat(data[0].lat),
-          lon: parseFloat(data[0].lon),
-        }
-      }
-      return null
+      const res = await fetch('https://api.cloudinary.com/v1_1/dbemvuau3/image/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (data.secure_url) setForm({ ...form, foto: data.secure_url });
     } catch (error) {
-      console.error('Erro ao geolocalizar endereço:', error)
-      return null
+      toast.error('Erro ao enviar foto');
     }
-  }
+  };
 
-  const handleCadastro = async (e) => {
-    e.preventDefault()
-    setCarregando(true)
-
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setCarregando(true);
     try {
-      const coords = await geolocalizarEndereco(endereco)
-      if (!coords) throw new Error('Endereço não encontrado.')
-
-      const userCredential = await createUserWithEmailAndPassword(auth, email, senha)
-      const user = userCredential.user
-
-      await setDoc(doc(db, 'usuarios', user.uid), {
-        uid: user.uid,
-        nome,
-        email,
-        celular,
-        endereco,
+      const credenciais = await createUserWithEmailAndPassword(auth, form.email, form.senha);
+      await setDoc(doc(db, 'usuarios', credenciais.user.uid), {
+        uid: credenciais.user.uid,
+        nome: form.nome,
+        email: form.email,
+        telefone: form.telefone,
+        endereco: form.endereco,
+        foto: form.foto || '',
         tipo: 'pessoa_fisica',
-        localizacao: new GeoPoint(coords.lat, coords.lon),
-        criadoEm: serverTimestamp()
-      })
-
-      toast.success('Cadastro realizado com sucesso!')
-      navigate('/painelpf')
-    } catch (error) {
-      console.error(error)
-      toast.error('Erro ao cadastrar: ' + error.message)
+        criadoEm: serverTimestamp(),
+      });
+      toast.success('Cadastro realizado com sucesso!');
+      navigate('/pf');
+    } catch (err) {
+      toast.error('Erro ao cadastrar: ' + err.message);
     } finally {
-      setCarregando(false)
+      setCarregando(false);
     }
-  }
+  };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-xl shadow border space-y-4">
-      <h2 className="text-xl font-bold text-orange-600 text-center">Cadastro Pessoa Física</h2>
-      <form onSubmit={handleCadastro} className="space-y-4">
-        <input
-          type="text"
-          placeholder="Nome completo"
-          className="w-full p-2 border rounded"
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          required
-        />
-        <input
-          type="email"
-          placeholder="E-mail"
-          className="w-full p-2 border rounded"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Senha"
-          className="w-full p-2 border rounded"
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Celular"
-          className="w-full p-2 border rounded"
-          value={celular}
-          onChange={(e) => setCelular(e.target.value)}
-        />
-        <input
-          type="text"
-          placeholder="Endereço (completo)"
-          className="w-full p-2 border rounded"
-          value={endereco}
-          onChange={(e) => setEndereco(e.target.value)}
-          required
-        />
-        <button
-          type="submit"
-          className="w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700"
-          disabled={carregando}
-        >
+    <div className="min-h-screen bg-cover bg-center flex items-center justify-center" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1600891964599-f61ba0e24092)' }}>
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-md w-full max-w-md">
+        <h1 className="text-xl font-bold mb-4 text-center">Cadastro Pessoa Física</h1>
+
+        <input type="text" name="nome" placeholder="Nome completo" className="campo" onChange={handleChange} required />
+        <input type="email" name="email" placeholder="Email" className="campo" onChange={handleChange} required />
+        <input type="password" name="senha" placeholder="Senha" className="campo" onChange={handleChange} required />
+        <input type="text" name="telefone" placeholder="Telefone" className="campo" onChange={handleChange} required />
+        <input type="text" name="endereco" placeholder="Endereço" className="campo" onChange={handleChange} required />
+
+        <label className="block text-sm mt-4 mb-1 font-medium text-gray-700">Foto de Perfil:</label>
+        <input type="file" accept="image/*" onChange={handleFoto} className="mb-4" />
+        {form.foto && <img src={form.foto} alt="Prévia da foto" className="w-24 h-24 object-cover rounded-full border mx-auto" />}
+
+        <button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded mt-4" disabled={carregando}>
           {carregando ? 'Cadastrando...' : 'Cadastrar'}
         </button>
       </form>
     </div>
-  )
+  );
 }
