@@ -1,6 +1,4 @@
-// ✅ PainelPessoaFisica.jsx completo e corrigido com carregamento seguro
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -33,12 +31,6 @@ export default function PainelPessoaFisica() {
   }, [usuario]);
 
   const renderizarConteudo = () => {
-    if (!dados) {
-      console.log('Usuário:', usuario);
-      console.log('Dados carregando...');
-      return <p className="text-white text-center">Carregando dados...</p>;
-    }
-
     if (abaAtiva === 'inicio') {
       return (
         <div>
@@ -48,11 +40,19 @@ export default function PainelPessoaFisica() {
             </h2>
             <p><strong>Nome:</strong> {dados?.nome}</p>
             <p><strong>Email:</strong> {dados?.email}</p>
-            <p><strong>Telefone:</strong> {dados?.telefone || 'Não informado'}</p>
+            <p><strong>Telefone:</strong> {dados?.telefone || dados?.celular || 'Não informado'}</p>
             <p><strong>Endereço:</strong> {dados?.endereco || 'Não informado'}</p>
-            {dados?.foto && <img src={dados.foto} alt="Foto de perfil" className="w-24 h-24 rounded-full mt-2 border border-orange-400 object-cover" />}
+            {dados?.foto && (
+              <img
+                src={dados.foto}
+                alt="Foto de perfil"
+                className="w-24 h-24 rounded-full mt-2 border border-orange-400 object-cover"
+              />
+            )}
           </div>
+
           <AvaliacoesRecebidasPF />
+
           <div className="mt-4 text-center">
             <a
               href="/cadastro-evento"
@@ -64,9 +64,20 @@ export default function PainelPessoaFisica() {
         </div>
       );
     }
-    if (abaAtiva === 'buscar') return <BuscarFreelas usuario={usuario} tipoChamador="pessoa_fisica" />;
-    if (abaAtiva === 'candidatos') return <ChamadasPessoaFisica usuario={usuario} />;
-    if (abaAtiva === 'agenda') return <AgendaEventosPF usuario={usuario} />;
+
+    if (abaAtiva === 'buscar') {
+      return <BuscarFreelas usuario={usuario} tipoChamador="pessoa_fisica" />;
+    }
+
+    if (abaAtiva === 'candidaturas') {
+      return <ChamadasPessoaFisica usuario={usuario} />;
+    }
+
+    if (abaAtiva === 'agenda') {
+      return <AgendaEventosPF usuario={usuario} />;
+    }
+
+    return <p className="text-white">Carregando conteúdo...</p>;
   };
 
   return (
