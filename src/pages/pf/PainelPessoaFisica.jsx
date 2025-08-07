@@ -1,15 +1,15 @@
 
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/firebase';
-import MenuInferiorPF from '@/components/MenuInferiorPF';
-import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF';
-import BuscarFreelas from '@/components/BuscarFreelas';
-import ChamadasPessoaFisica from './ChamadasPessoaFisica';
-import AgendaEventosPF from './AgendaEventosPF';
-import { UserIcon } from '@heroicons/react/24/solid';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react'
+import { useAuth } from '@/context/AuthContext'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '@/firebase'
+import MenuInferiorPF from '@/components/MenuInferiorPF'
+import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF'
+import BuscarFreelas from '@/components/BuscarFreelas'
+import ChamadasPessoaFisica from './ChamadasPessoaFisica'
+import AgendaEventosPF from './AgendaEventosPF'
+import { UserIcon } from '@heroicons/react/24/solid'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 export default function PainelPessoaFisica() {
   const { usuario, carregando } = useAuth();
@@ -59,7 +59,7 @@ export default function PainelPessoaFisica() {
   const renderConteudo = () => {
     switch (abaSelecionada) {
       case 'buscar':
-        return <BuscarFreelas estabelecimento={estabelecimento} usuariosOnline={usuariosOnline} />
+        return <BuscarFreelas usuario={usuario} tipoChamador="pessoa_fisica" />;
       case 'candidaturas':
         return <ChamadasPessoaFisica usuario={usuario} />;
       case 'agenda':

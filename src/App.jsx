@@ -18,6 +18,7 @@ import BuscarEventos from '@/pages/freela/BuscarEventos'
 import CadastroPessoaFisica from '@/pages/pf/CadastroPessoaFisica'
 import PagamentoPix from '@/pages/gerais/PagamentoPix'
 import DashboardAdmin from '@/components/DashboardAdmin'
+import BuscarFreelas from '@/components/BuscarFreelas';
 
 // Freela
 import CadastroFreela from '@/pages/freela/CadastroFreela'
@@ -79,6 +80,7 @@ export default function App() {
           <Route path="/pf" element={<PainelPessoaFisica />} />
           <Route path="/pf/candidaturas" element={<CandidaturasPF />} />
           <Route path="/pf/agenda" element={<AgendaEventosPF />} />
+          <Route path="/pf/buscar" element={<BuscarFreelas />} />
 
           {/* ✅ Redirecionamento alternativo se quiser acessar chamadas diretamente */}
           <Route path="/painel-estabelecimento/chamadas" element={<Navigate to="/painelestabelecimento/ativas" />} />
