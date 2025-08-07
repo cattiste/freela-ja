@@ -10,6 +10,7 @@ import ChamadasPessoaFisica from './ChamadasPessoaFisica'
 import AgendaEventosPF from './AgendaEventosPF'
 import { UserIcon } from '@heroicons/react/24/solid'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
 
 export default function PainelPessoaFisica() {
   const { usuario, carregando } = useAuth();
