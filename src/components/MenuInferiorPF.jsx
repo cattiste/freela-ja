@@ -1,18 +1,12 @@
+
 import React from 'react'
 import {
-  UserCircle,
-  Search,
-  CalendarDays,
-  Briefcase,
-  Star,
-  ScrollText,
-  Settings,
-  Signal,
-  Home,  // Adicionado
-  Users2, // Adicionado
-  ClipboardList // Adicionado
+  Home,
+  Users2,
+  ClipboardList,
+  CalendarDays
 } from 'lucide-react'
-import { useNavigate, useLocation } from 'react-router-dom' // Adicionado
+import { useNavigate, useLocation } from 'react-router-dom'
 import '@/styles/menuInferior.css'
 
 export default function MenuInferiorPF() {
