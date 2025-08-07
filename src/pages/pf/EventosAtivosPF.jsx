@@ -1,42 +1,41 @@
-import React, { useEffect, useState } from 'react'
-import { collection, query, where, onSnapshot } from 'firebase/firestore'
-import { db } from '@/firebase'
-import { useAuth } from '@/context/AuthContext'
+// ✅ AgendaEventosPF.jsx — versão para Pessoa Física
+import React, { useEffect, useState } from 'react';
+import { db } from '@/firebase';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 
-export default function EventosAtivosPF() {
-  const { usuario } = useAuth()
-  const [eventos, setEventos] = useState([])
+export default function AgendaEventosPF({ usuario }) {
+  const [eventos, setEventos] = useState([]);
 
   useEffect(() => {
-    if (!usuario?.uid) return
+    if (!usuario?.uid) return;
 
     const q = query(
-      collection(db, 'eventos'),
-      where('criadorUid', '==', usuario.uid)
-    )
+      collection(db, 'chamadas'),
+      where('pessoaFisicaUid', '==', usuario.uid),
+      where('status', 'in', ['aceita', 'checkin_freela', 'checkout_freela', 'concluido']),
+      orderBy('criadoEm', 'desc')
+    );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      setEventos(lista)
-    })
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const lista = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setEventos(lista);
+    });
 
-    return () => unsubscribe()
-  }, [usuario])
-
-  if (!eventos.length) {
-    return <div className="text-center text-gray-500 mt-6">Nenhum evento encontrado.</div>
-  }
+    return () => unsubscribe();
+  }, [usuario]);
 
   return (
     <div className="space-y-4">
-      {eventos.map((evento) => (
-        <div key={evento.id} className="bg-white rounded-xl shadow p-4 border border-orange-100">
-          <h3 className="text-lg font-bold text-orange-600">{evento.titulo}</h3>
-          <p className="text-sm text-gray-600">📅 {evento.data}</p>
-          <p className="text-sm text-gray-600">📍 {evento.endereco}</p>
-          <p className="text-sm text-gray-600">🎯 Status: <span className="font-semibold">{evento.status || 'pendente'}</span></p>
+      {eventos.length === 0 && <p className="text-sm text-center text-gray-500 mt-4">Nenhum evento agendado.</p>}
+
+      {eventos.map(evento => (
+        <div key={evento.id} className="bg-white rounded-xl p-4 shadow border border-orange-100">
+          <p><strong>Data:</strong> {evento.data}</p>
+          <p><strong>Função:</strong> {evento.funcao}</p>
+          <p><strong>Freela:</strong> {evento.freelaNome || 'Não informado'}</p>
+          <p><strong>Status:</strong> {evento.status}</p>
         </div>
       ))}
     </div>
-  )
+  );
 }
