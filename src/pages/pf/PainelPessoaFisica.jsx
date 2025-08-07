@@ -4,7 +4,7 @@ import PublicarEvento from './PublicarEvento'
 import EventosAtivosPF from './EventosAtivosPF'
 import CandidaturasPF from './CandidaturasPF'
 import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF'
-import BuscarFreelas from '@/pages/estabelecimento/BuscarFreelas'
+import BuscarFreelas from '@/components/BuscarFreelas'
 import ConfigPF from './ConfigPF'
 import PagamentoEvento from './PagamentoEvento' // novo import
 
