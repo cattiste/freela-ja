@@ -61,7 +61,7 @@ export default function PainelPessoaFisica() {
         </div>
       );
     }
-
+    
     if (abaAtiva === 'buscar') return <BuscarFreelas usuario={usuario} tipoChamador="pessoa_fisica" />;
     if (abaAtiva === 'candidatos') return <ChamadasPessoaFisica usuario={usuario} />;
     if (abaAtiva === 'agenda') return <AgendaEventosPF usuario={usuario} />;
