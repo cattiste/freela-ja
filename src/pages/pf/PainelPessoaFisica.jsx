@@ -40,19 +40,11 @@ export default function PainelPessoaFisica() {
             </h2>
             <p><strong>Nome:</strong> {dados?.nome}</p>
             <p><strong>Email:</strong> {dados?.email}</p>
-            <p><strong>Telefone:</strong> {dados?.telefone || dados?.celular || 'Não informado'}</p>
+            <p><strong>Telefone:</strong> {dados?.telefone || 'Não informado'}</p>
             <p><strong>Endereço:</strong> {dados?.endereco || 'Não informado'}</p>
-            {dados?.foto && (
-              <img
-                src={dados.foto}
-                alt="Foto de perfil"
-                className="w-24 h-24 rounded-full mt-2 border border-orange-400 object-cover"
-              />
-            )}
+            {dados?.foto && <img src={dados.foto} alt="Foto de perfil" className="w-24 h-24 rounded-full mt-2 border border-orange-400 object-cover" />}
           </div>
-
           <AvaliacoesRecebidasPF />
-
           <div className="mt-4 text-center">
             <a
               href="/cadastro-evento"
@@ -64,20 +56,9 @@ export default function PainelPessoaFisica() {
         </div>
       );
     }
-
-    if (abaAtiva === 'buscar') {
-      return <BuscarFreelas usuario={usuario} tipoChamador="pessoa_fisica" />;
-    }
-
-    if (abaAtiva === 'candidaturas') {
-      return <ChamadasPessoaFisica usuario={usuario} />;
-    }
-
-    if (abaAtiva === 'agenda') {
-      return <AgendaEventosPF usuario={usuario} />;
-    }
-
-    return <p className="text-white">Carregando conteúdo...</p>;
+    if (abaAtiva === 'buscar') return <BuscarFreelas usuario={usuario} tipoChamador="pessoa_fisica" />;
+    if (abaAtiva === 'candidatos') return <ChamadasPessoaFisica usuario={usuario} />;
+    if (abaAtiva === 'agenda') return <AgendaEventosPF usuario={usuario} />;
   };
 
   return (
@@ -90,10 +71,10 @@ export default function PainelPessoaFisica() {
         backgroundSize: 'cover',
       }}
     >
-      <div className="pb-24">
-        {renderizarConteudo()}
-      </div>
-      <MenuInferiorPF abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} />
+        <div className="pb-24">
+      {renderizarConteudo()}
     </div>
-  );
+    <MenuInferiorPF abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} />
+  </div>
+);
 }
