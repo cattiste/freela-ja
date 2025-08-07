@@ -5,8 +5,8 @@ import EventosAtivosPF from './EventosAtivosPF'
 import CandidaturasPF from './CandidaturasPF'
 import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF'
 import BuscarFreelas from '@/components/BuscarFreelas'
-import ConfigPF from './ConfigPF'
-import PagamentoEvento from './PagamentoEvento' // novo import
+//import ConfigPF from './ConfigPF'//
+//import PagamentoEvento from './PagamentoEvento' // novo import
 
 export default function PainelPessoaFisica() {
   const [aba, setAba] = useState('perfil')
