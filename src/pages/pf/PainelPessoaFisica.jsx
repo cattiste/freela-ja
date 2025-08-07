@@ -1,55 +1,50 @@
-import React, { useState } from 'react'
-import PerfilPF from './PerfilPF'
-import PublicarEvento from './PublicarEvento'
-import EventosAtivosPF from './EventosAtivosPF'
-import CandidaturasPF from './CandidaturasPF'
+import React, { useEffect, useState } from 'react'
+import { useAuth } from '@/context/AuthContext'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '@/firebase'
+
+import MenuInferiorPF from '@/components/MenuInferiorPF'
+import BuscarFreelas from '@/pages/estabelecimento/BuscarFreelas'
 import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF'
-import BuscarFreelas from '@/components/BuscarFreelas'
-//import ConfigPF from './ConfigPF'//
-//import PagamentoEvento from './PagamentoEvento' // novo import
+import AgendaEventosPF from './AgendaEventosPF'
+import ChamadasPessoaFisica from './ChamadasPessoaFisica'
 
 export default function PainelPessoaFisica() {
-  const [aba, setAba] = useState('perfil')
-  const [eventoId, setEventoId] = useState(null)
+  const { usuario } = useAuth()
+  const [dados, setDados] = useState(null)
 
-  const renderizaAba = () => {
-    switch (aba) {
-      case 'perfil':
-        return <PerfilPF />
-      case 'eventos':
-        return <EventosAtivosPF />
-      case 'publicar':
-        return <PublicarEvento setAba={setAba} setEventoId={setEventoId} />
-      case 'pagamento':
-        return <PagamentoEvento eventoId={eventoId} />
-      case 'candidaturas':
-        return <CandidaturasPF />
-      case 'avaliacoes':
-        return <AvaliacoesRecebidasPF />
-      case 'buscar':
-        return <BuscarFreelas tipoContratante="pf" />
-      case 'config':
-        return <ConfigPF />
-      default:
-        return <PerfilPF />
+  useEffect(() => {
+    if (!usuario?.uid) return
+    const carregar = async () => {
+      const ref = doc(db, 'usuarios', usuario.uid)
+      const snap = await getDoc(ref)
+      if (snap.exists()) {
+        setDados(snap.data())
+      }
     }
+    carregar()
+  }, [usuario])
+
+  if (!usuario || !dados) {
+    return <div className="p-4">Carregando...</div>
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-4">
-        {renderizaAba()}
+    <div className="pb-24 p-4 space-y-6">
+      <div className="bg-white rounded-xl shadow p-4 border border-orange-100">
+        <h2 className="text-xl font-bold text-orange-700 mb-2">👤 Meus Dados</h2>
+        <p><strong>Nome:</strong> {dados.nome}</p>
+        <p><strong>Email:</strong> {dados.email}</p>
+        <p><strong>Telefone:</strong> {dados.telefone}</p>
+        <p><strong>Endereço:</strong> {dados.endereco}</p>
       </div>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-md flex justify-around py-2 z-50 text-xs">
-        <button onClick={() => setAba('perfil')} className={aba === 'perfil' ? 'text-orange-600' : 'text-gray-500'}>Perfil</button>
-        <button onClick={() => setAba('eventos')} className={aba === 'eventos' ? 'text-orange-600' : 'text-gray-500'}>Eventos</button>
-        <button onClick={() => setAba('publicar')} className={aba === 'publicar' ? 'text-orange-600' : 'text-gray-500'}>Publicar</button>
-        <button onClick={() => setAba('buscar')} className={aba === 'buscar' ? 'text-orange-600' : 'text-gray-500'}>Buscar Freela</button>
-        <button onClick={() => setAba('candidaturas')} className={aba === 'candidaturas' ? 'text-orange-600' : 'text-gray-500'}>Candidatos</button>
-        <button onClick={() => setAba('avaliacoes')} className={aba === 'avaliacoes' ? 'text-orange-600' : 'text-gray-500'}>Avaliações</button>
-        <button onClick={() => setAba('config')} className={aba === 'config' ? 'text-orange-600' : 'text-gray-500'}>Configurações</button>
-      </nav>
+      <AgendaEventosPF />
+      <ChamadasPessoaFisica />
+      <AvaliacoesRecebidasPF />
+      <BuscarFreelas />
+
+      <MenuInferiorPF />
     </div>
   )
 }
