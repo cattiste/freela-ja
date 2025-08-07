@@ -7,8 +7,12 @@ import {
   Star,
   ScrollText,
   Settings,
-  Signal
+  Signal,
+  Home,  // Adicionado
+  Users2, // Adicionado
+  ClipboardList // Adicionado
 } from 'lucide-react'
+import { useNavigate, useLocation } from 'react-router-dom' // Adicionado
 import '@/styles/menuInferior.css'
 
 export default function MenuInferiorPF() {
