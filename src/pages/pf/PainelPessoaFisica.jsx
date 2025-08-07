@@ -8,7 +8,6 @@ import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF';
 import BuscarFreelas from '../estabelecimento/BuscarFreelas';
 import ChamadasPessoaFisica from './ChamadasPessoaFisica';
 import AgendaPessoaFisica from './AgendaPessoaFisica';
-import { UserIcon } from '@heroicons/react/24/solid';
 import { useLocation } from 'react-router-dom';
 
 export default function PainelPessoaFisica() {

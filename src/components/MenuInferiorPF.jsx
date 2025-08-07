@@ -1,6 +1,15 @@
 import React from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
-import { Home, CalendarDays, Users2, ClipboardList } from 'lucide-react'
+import {
+  UserCircle,
+  Search,
+  CalendarDays,
+  Briefcase,
+  Star,
+  ScrollText,
+  Settings,
+  Signal
+} from 'lucide-react'
+import '@/styles/menuInferior.css'
 
 export default function MenuInferiorPF() {
   const navigate = useNavigate()
