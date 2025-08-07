@@ -63,20 +63,17 @@ export default function PainelPessoaFisica() {
   };
 
   return (
-  <div
-    className="min-h-screen bg-cover bg-center p-4 pb-20"
-    style={{
-      backgroundImage: `url('/img/fundo-login.jpg')`,
-      backgroundAttachment: 'fixed',
-      backgroundRepeat: 'no-repeat',
-      backgroundSize: 'cover',
-    }}
-  >
-    <div className="pb-24">
-      {renderizarConteudo()}
+    <div
+      className="min-h-screen bg-cover bg-center p-4 pb-20"
+      style={{
+        backgroundImage: `url('/img/fundo-login.jpg')`,
+        backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+      }}
+    >
+      {renderConteudo()}
+      <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
     </div>
-
-    <MenuInferiorPF abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} />
-  </div>
-);
-
+  )
+}
