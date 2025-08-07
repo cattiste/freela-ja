@@ -1,4 +1,4 @@
-// ✅ ChamadasPessoaFisica.jsx com proteção para carregamento e usuário null
+// ✅ ChamadasPessoaFisica.jsx com visual alinhado ao painel do estabelecimento
 import React, { useEffect, useState } from 'react';
 import { collection, query, where, onSnapshot, orderBy, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -43,6 +43,20 @@ export default function ChamadasPessoaFisica() {
     });
   };
 
+  const badgeStatus = (status) => {
+    const cores = {
+      aceita: 'bg-yellow-200 text-yellow-700',
+      checkin_freela: 'bg-purple-200 text-purple-700',
+      checkout_freela: 'bg-blue-200 text-blue-700',
+      concluido: 'bg-gray-200 text-gray-700'
+    };
+    return (
+      <span className={`px-2 py-1 rounded text-xs font-semibold ${cores[status] || 'bg-gray-200 text-gray-700'}`}>
+        {status.replace('_', ' ')}
+      </span>
+    );
+  };
+
   if (carregando) {
     return <p className="text-center text-white mt-10">Carregando usuário...</p>;
   }
@@ -58,32 +72,28 @@ export default function ChamadasPessoaFisica() {
       )}
 
       {chamadas.map((chamada) => (
-        <div key={chamada.id} className="bg-white rounded-xl shadow p-4 border border-orange-100">
-          <div className="flex items-center gap-4">
+        <div key={chamada.id} className="bg-white rounded-xl p-4 shadow border border-orange-100 space-y-2">
+          <div className="flex items-center gap-3">
             <img
-              src={chamada.freelaFoto || 'https://via.placeholder.com/100'}
+              src={chamada.freelaFoto || 'https://placehold.co/100x100'}
               alt={chamada.freelaNome}
-              className="w-16 h-16 rounded-full object-cover border border-orange-300"
+              className="w-10 h-10 rounded-full border border-orange-300 object-cover"
             />
-            <div>
-              <p className="text-lg font-bold text-orange-700">{chamada.freelaNome}</p>
-              <p className="text-sm text-gray-600">Status: <span className="capitalize">{chamada.status}</span></p>
+            <div className="flex-1">
+              <p className="font-bold text-orange-600">{chamada.freelaNome}</p>
               {chamada.valorDiaria && (
-                <p className="text-sm text-gray-600">💰 Diária: R$ {chamada.valorDiaria}</p>
+                <p className="text-xs text-gray-500">💰 R$ {chamada.valorDiaria} / diária</p>
               )}
+              <p className="text-sm mt-1">📌 Status: {badgeStatus(chamada.status)}</p>
+              {chamada.observacao && (
+                <p className="text-xs text-gray-700 mt-1"><strong>Instruções:</strong> {chamada.observacao}</p>
+              )}
+              <MensagensRecebidasEstabelecimento chamadaId={chamada.id} />
             </div>
           </div>
 
-          {chamada.observacao && (
-            <p className="text-sm text-gray-700 mt-2">
-              <strong>Instruções:</strong> {chamada.observacao}
-            </p>
-          )}
-
-          <MensagensRecebidasEstabelecimento chamadaId={chamada.id} />
-
           {chamada.status === 'pendente' && (
-            <p className="text-sm text-yellow-600 mt-2">⏳ Aguardando aceitação do freela...</p>
+            <p className="text-sm text-yellow-600">⏳ Aguardando aceitação do freela...</p>
           )}
 
           {chamada.status === 'aceita' && (
@@ -101,7 +111,7 @@ export default function ChamadasPessoaFisica() {
           {chamada.status === 'checkin_freela' && (
             <button
               onClick={() => handleCheckOut(chamada.id)}
-              className="w-full mt-2 bg-purple-500 text-white py-2 rounded hover:bg-purple-600"
+              className="w-full bg-purple-500 text-white py-2 rounded hover:bg-purple-600"
             >
               📤 Fazer Check-out
             </button>
