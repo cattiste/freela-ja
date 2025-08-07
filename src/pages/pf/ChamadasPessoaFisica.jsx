@@ -1,112 +1,50 @@
-import React, { useEffect, useState } from 'react'
-import { db } from '@/firebase'
-import { useAuth } from '@/context/AuthContext'
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  doc,
-  updateDoc,
-  serverTimestamp
-} from 'firebase/firestore'
-import AvaliacaoInline from '@/components/AvaliacaoInline'
-import MensagensRecebidasEstabelecimento from '@/components/MensagensRecebidasEstabelecimento'
+// ✅ ChamadasPessoaFisica.jsx
+import React, { useEffect, useState } from 'react';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { db } from '@/firebase';
+import MensagensRecebidasEstabelecimento from '@/components/MensagensRecebidasEstabelecimento';
+import AvaliacaoInline from '@/components/AvaliacaoInline';
+import PagamentoChamada from '@/pages/estabelecimento/PagamentoChamada';
 
-export default function ChamadasPessoaFisica() {
-  const { usuario } = useAuth()
-  const [chamadas, setChamadas] = useState([])
+export default function ChamadasPessoaFisica({ usuario }) {
+  const [chamadas, setChamadas] = useState([]);
 
   useEffect(() => {
-    if (!usuario?.uid) return
-
+    if (!usuario?.uid) return;
     const q = query(
       collection(db, 'chamadas'),
-      where('pessoaFisicaUid', '==', usuario.uid)
-    )
-
-    const unsub = onSnapshot(q, (snap) => {
-      const lista = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      setChamadas(lista)
-    })
-
-    return () => unsub()
-  }, [usuario])
-
-  const confirmarCheckIn = async (chamada) => {
-    await updateDoc(doc(db, 'chamadas', chamada.id), {
-      checkInEstabelecimento: true,
-      checkInEstabelecimentoHora: serverTimestamp(),
-      status: 'checkin_estabelecimento'
-    })
-  }
-
-  const confirmarCheckOut = async (chamada) => {
-    await updateDoc(doc(db, 'chamadas', chamada.id), {
-      checkOutEstabelecimento: true,
-      checkOutEstabelecimentoHora: serverTimestamp(),
-      status: 'concluido'
-    })
-  }
+      where('pessoaFisicaUid', '==', usuario.uid),
+      orderBy('criadoEm', 'desc')
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const chamadasData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setChamadas(chamadasData);
+    });
+    return () => unsubscribe();
+  }, [usuario]);
 
   return (
     <div className="space-y-4">
+      {chamadas.length === 0 && <p className="text-center text-sm text-gray-500 mt-4">Nenhuma chamada registrada.</p>}
       {chamadas.map((chamada) => (
-        <div key={chamada.id} className="bg-white p-4 rounded-xl shadow border border-orange-200">
-          <div className="flex items-center gap-4">
-            <img
-              src={chamada.fotoFreela || 'https://via.placeholder.com/100'}
-              className="w-20 h-20 rounded-full object-cover border"
-            />
-            <div>
-              <h2 className="font-bold text-lg text-orange-700">{chamada.nomeFreela}</h2>
-              <p className="text-sm text-gray-600">Função: {chamada.funcao}</p>
-              <p className="text-sm text-gray-600">Valor diária: R$ {chamada.valorDiaria}</p>
-              <p className="text-xs text-gray-500">Status: {chamada.status}</p>
-            </div>
-          </div>
+        <div key={chamada.id} className="bg-white rounded-xl shadow p-4 border border-orange-100">
+          <ChamadaInline chamada={chamada} usuario={usuario} tipo="pessoa_fisica" />
 
           {chamada.observacao && (
-            <div className="mt-2 text-sm text-gray-700">
-              <span className="font-semibold">🔎 Observação:</span> {chamada.observacao}
-            </div>
+            <p className="text-sm text-gray-600 mt-2"><strong>Instruções:</strong> {chamada.observacao}</p>
           )}
 
-          <div className="mt-4 space-y-2">
-            {!chamada.pagamentoConfirmado && (
-              <button className="bg-green-600 text-white px-4 py-2 rounded shadow">
-                Aguardando Pagamento...
-              </button>
-            )}
+          <MensagensRecebidasEstabelecimento chamadaId={chamada.id} />
 
-            {chamada.checkInFreela && !chamada.checkInEstabelecimento && (
-              <button
-                onClick={() => confirmarCheckIn(chamada)}
-                className="bg-blue-600 text-white px-4 py-2 rounded shadow"
-              >
-                Confirmar Check-in
-              </button>
-            )}
+          {chamada.status === 'concluido' && (
+            <AvaliacaoInline chamada={chamada} tipo="freela" />
+          )}
 
-            {chamada.checkOutFreela && !chamada.checkOutEstabelecimento && (
-              <button
-                onClick={() => confirmarCheckOut(chamada)}
-                className="bg-red-600 text-white px-4 py-2 rounded shadow"
-              >
-                Confirmar Check-out
-              </button>
-            )}
-
-            {chamada.status === 'concluido' && (
-              <AvaliacaoInline chamada={chamada} tipo="pf" />
-            )}
-          </div>
-
-          <div className="mt-2">
-            <MensagensRecebidasEstabelecimento chamada={chamada} />
-          </div>
+          {chamada.status === 'aceita' && (
+            <PagamentoChamada chamada={chamada} usuario={usuario} tipoChamador="pessoa_fisica" />
+          )}
         </div>
       ))}
     </div>
-  )
+  );
 }
