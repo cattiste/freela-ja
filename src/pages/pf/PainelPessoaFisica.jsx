@@ -4,7 +4,7 @@ import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 import MenuInferiorPF from '@/components/MenuInferiorPF'
-import BuscarFreelas from '@/pages/estabelecimento/BuscarFreelas'
+import BuscarFreelas from '@/components/BuscarFreelas'
 import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF'
 import AgendaEventosPF from './AgendaEventosPF'
 import ChamadasPessoaFisica from './ChamadasPessoaFisica'
