@@ -1,6 +1,5 @@
 
-import React, { useEffect, useState } from 'react'
-import { useAuth } from '@/context/AuthContext'
+import React, { useState, useEffect } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
 import {
   doc, getDoc, updateDoc, serverTimestamp,
@@ -65,7 +64,7 @@ export default function PainelPessoaFisica() {
   const renderConteudo = () => {
     switch (abaSelecionada) {
       case 'buscar':
-        return <BuscarFreelas estabelecimento={estabelecimento} usuariosOnline={usuariosOnline} />
+        return <BuscarFreelas usuario={usuario} tipoChamador="pessoa_fisica" />;
       case 'candidaturas':
         return <ChamadasPessoaFisica usuario={usuario} />;
       case 'agenda':
