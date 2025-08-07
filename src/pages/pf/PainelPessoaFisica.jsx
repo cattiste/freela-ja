@@ -7,7 +7,7 @@ import MenuInferiorPF from '@/components/MenuInferiorPF';
 import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF';
 import BuscarFreelas from '@/components/BuscarFreelas';
 import ChamadasPessoaFisica from './ChamadasPessoaFisica';
-import AgendaPessoaFisica from './AgendaPessoaFisica';
+import AgendaEventosPF from './AgendaEventosPF';
 import { useLocation } from 'react-router-dom';
 
 export default function PainelPessoaFisica() {
@@ -58,7 +58,7 @@ export default function PainelPessoaFisica() {
     }
     if (abaAtiva === 'buscar') return <BuscarFreelas usuario={usuario} tipoChamador="pessoa_fisica" />;
     if (abaAtiva === 'candidatos') return <ChamadasPessoaFisica usuario={usuario} />;
-    if (abaAtiva === 'agenda') return <AgendaPessoaFisica usuario={usuario} />;
+    if (abaAtiva === 'agenda') return <AgendaEventosPF usuario={usuario} />;
   };
 
   return (
