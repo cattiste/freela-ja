@@ -1,13 +1,16 @@
-// ✅ ChamadasPessoaFisica.jsx
+// ✅ ChamadasPessoaFisica.jsx com useNavigate importado corretamente
 import React, { useEffect, useState } from 'react';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { db } from '@/firebase';
+import ChamadaInline from '@/components/ChamadaInline';
 import MensagensRecebidasEstabelecimento from '@/components/MensagensRecebidasEstabelecimento';
 import AvaliacaoInline from '@/components/AvaliacaoInline';
 import PagamentoChamada from '@/pages/estabelecimento/PagamentoChamada';
+import { useNavigate } from 'react-router-dom';
 
 export default function ChamadasPessoaFisica({ usuario }) {
   const [chamadas, setChamadas] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!usuario?.uid) return;
