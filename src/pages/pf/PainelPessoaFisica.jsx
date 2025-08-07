@@ -72,8 +72,11 @@ export default function PainelPessoaFisica() {
         backgroundSize: 'cover',
       }}
     >
-      {renderConteudo()}
-      <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
+        <div className="pb-24">
+      {renderizarConteudo()}
     </div>
-  )
+
+    <MenuInferiorPF abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} />
+  </div>
+);
 }
