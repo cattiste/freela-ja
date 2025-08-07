@@ -59,7 +59,7 @@ export default function PainelPessoaFisica() {
   const renderConteudo = () => {
     switch (abaSelecionada) {
       case 'buscar':
-        return <BuscarFreelas tipoChamador={pessoa_fisica} usuariosOnline={usuariosOnline} />
+        return <BuscarFreelas estabelecimento={estabelecimento} usuariosOnline={usuariosOnline} />
       case 'candidaturas':
         return <ChamadasPessoaFisica usuario={usuario} />;
       case 'agenda':
