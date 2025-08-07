@@ -1,4 +1,4 @@
-// ✅ PainelPessoaFisica.jsx completo e corrigido
+// ✅ PainelPessoaFisica.jsx completo e corrigido com carregamento seguro
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -33,6 +33,12 @@ export default function PainelPessoaFisica() {
   }, [usuario]);
 
   const renderizarConteudo = () => {
+    if (!dados) {
+      console.log('Usuário:', usuario);
+      console.log('Dados carregando...');
+      return <p className="text-white text-center">Carregando dados...</p>;
+    }
+
     if (abaAtiva === 'inicio') {
       return (
         <div>
@@ -73,11 +79,10 @@ export default function PainelPessoaFisica() {
         backgroundSize: 'cover',
       }}
     >
-        <div className="pb-24">
-      {renderizarConteudo()}
+      <div className="pb-24">
+        {renderizarConteudo()}
+      </div>
+      <MenuInferiorPF abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} />
     </div>
-
-    <MenuInferiorPF abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} />
-  </div>
-);
+  );
 }
