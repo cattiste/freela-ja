@@ -1,5 +1,6 @@
 // ✅ PainelPessoaFisica.jsx completo e corrigido
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
