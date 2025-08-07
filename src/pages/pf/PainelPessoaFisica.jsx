@@ -72,7 +72,7 @@ export default function PainelPessoaFisica() {
         backgroundSize: 'cover',
       }}
     >
-      </div>
+      <div>
       <MenuInferiorPF abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} />
     </div>
   );
