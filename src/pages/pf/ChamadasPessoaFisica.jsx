@@ -1,4 +1,4 @@
-// ✅ ChamadasPessoaFisica.jsx sem ChamadaInline, com card direto
+// ✅ ChamadasPessoaFisica.jsx com proteção para carregamento e usuário null
 import React, { useEffect, useState } from 'react';
 import { collection, query, where, onSnapshot, orderBy, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -6,8 +6,10 @@ import MensagensRecebidasEstabelecimento from '@/components/MensagensRecebidasEs
 import AvaliacaoInline from '@/components/AvaliacaoInline';
 import PagamentoChamada from '@/pages/estabelecimento/PagamentoChamada';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 
-export default function ChamadasPessoaFisica({ usuario }) {
+export default function ChamadasPessoaFisica() {
+  const { usuario, carregando } = useAuth();
   const [chamadas, setChamadas] = useState([]);
   const navigate = useNavigate();
 
@@ -40,6 +42,14 @@ export default function ChamadasPessoaFisica({ usuario }) {
       checkOutFreelaHora: serverTimestamp()
     });
   };
+
+  if (carregando) {
+    return <p className="text-center text-white mt-10">Carregando usuário...</p>;
+  }
+
+  if (!usuario) {
+    return <p className="text-center text-red-500 mt-10">Erro: Usuário não logado.</p>;
+  }
 
   return (
     <div className="space-y-4">
