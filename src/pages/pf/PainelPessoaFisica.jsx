@@ -1,18 +1,15 @@
 // ✅ PainelPessoaFisica.jsx completo e corrigido
-import React, { useState, useEffect } from 'react'
-import { onAuthStateChanged } from 'firebase/auth'
-import {
-  doc, getDoc, updateDoc, serverTimestamp,
-  collection, query, where, getDocs
-} from 'firebase/firestore'
-import { auth, db } from '@/firebase'
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/firebase';
 import MenuInferiorPF from '@/components/MenuInferiorPF';
 import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF';
 import BuscarFreelas from '@/components/BuscarFreelas';
 import ChamadasPessoaFisica from './ChamadasPessoaFisica';
 import AgendaEventosPF from './AgendaEventosPF';
+import { UserIcon } from '@heroicons/react/24/solid';
 import { useLocation } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext'
 
 export default function PainelPessoaFisica() {
   const { usuario } = useAuth();
@@ -75,6 +72,7 @@ export default function PainelPessoaFisica() {
         backgroundSize: 'cover',
       }}
     >
+      </div>
       <MenuInferiorPF abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} />
     </div>
   );
