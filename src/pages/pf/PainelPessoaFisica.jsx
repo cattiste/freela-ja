@@ -1,14 +1,18 @@
 // ✅ PainelPessoaFisica.jsx completo e corrigido
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import React, { useState, useEffect } from 'react'
+import { onAuthStateChanged } from 'firebase/auth'
+import {
+  doc, getDoc, updateDoc, serverTimestamp,
+  collection, query, where, getDocs
+} from 'firebase/firestore'
+import { auth, db } from '@/firebase'
 import MenuInferiorPF from '@/components/MenuInferiorPF';
 import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF';
 import BuscarFreelas from '@/components/BuscarFreelas';
 import ChamadasPessoaFisica from './ChamadasPessoaFisica';
 import AgendaEventosPF from './AgendaEventosPF';
 import { useLocation } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext'
 
 export default function PainelPessoaFisica() {
   const { usuario } = useAuth();
@@ -62,10 +66,15 @@ export default function PainelPessoaFisica() {
   };
 
   return (
-    <div className="min-h-screen bg-cover bg-center" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1600891964599-f61ba0e24092)' }}>
-      <div className="p-4 pb-24">
-        {renderizarConteudo()}
-      </div>
+    <div
+      className="min-h-screen bg-cover bg-center p-4 pb-20"
+      style={{
+        backgroundImage: `url('/img/fundo-login.jpg')`,
+        backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+      }}
+    >
       <MenuInferiorPF abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} />
     </div>
   );
