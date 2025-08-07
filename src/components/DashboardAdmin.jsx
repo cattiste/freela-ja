@@ -1,4 +1,4 @@
-// DashboardAdmin.jsx – com proteção por senha e painel completo
+// DashboardAdmin.jsx – painel completo com senha + faturamento + usuários + chamadas
 
 import React, { useEffect, useState } from 'react'
 import { collection, onSnapshot } from 'firebase/firestore'
@@ -31,6 +31,10 @@ export default function DashboardAdmin() {
 
   const chamadasAtivas = chamadas.filter(c => ['pendente', 'aceita', 'checkin_freela', 'em_andamento'].includes(c.status))
 
+  const chamadasFaturadas = chamadas.filter(c => c.status === 'concluido' && typeof c.valorDiaria === 'number')
+  const faturamentoBruto = chamadasFaturadas.reduce((acc, cur) => acc + cur.valorDiaria, 0)
+  const faturamentoLiquido = faturamentoBruto * 0.2
+
   if (!acessoLiberado) {
     return (
       <div className="max-w-sm mx-auto mt-20 text-center space-y-4">
@@ -54,10 +58,10 @@ export default function DashboardAdmin() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-3xl font-bold text-orange-700 mb-6">📊 Painel Administrativo</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-white p-4 rounded-xl shadow border border-orange-200">
           <h2 className="text-xl font-semibold text-orange-600">Total de Chamadas</h2>
           <p className="text-3xl font-bold text-gray-800">{chamadas.length}</p>
@@ -65,6 +69,21 @@ export default function DashboardAdmin() {
         <div className="bg-white p-4 rounded-xl shadow border border-green-200">
           <h2 className="text-xl font-semibold text-green-600">Chamadas Ativas</h2>
           <p className="text-3xl font-bold text-gray-800">{chamadasAtivas.length}</p>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow border border-blue-300">
+          <h2 className="text-xl font-semibold text-blue-700">Chamadas Faturadas</h2>
+          <p className="text-3xl font-bold text-gray-800">{chamadasFaturadas.length}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="bg-white p-4 rounded-xl shadow border border-yellow-300">
+          <h2 className="text-xl font-semibold text-yellow-700">💰 Faturamento Bruto</h2>
+          <p className="text-3xl font-bold text-gray-800">R$ {faturamentoBruto.toFixed(2)}</p>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow border border-indigo-300">
+          <h2 className="text-xl font-semibold text-indigo-700">🧾 Comissão da Plataforma (20%)</h2>
+          <p className="text-3xl font-bold text-gray-800">R$ {faturamentoLiquido.toFixed(2)}</p>
         </div>
       </div>
 
