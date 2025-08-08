@@ -151,7 +151,7 @@ export default function PainelPessoaFisica() {
       case 'perfil':
         return renderPerfil()
       case 'buscar':
-        return <BuscarFreelasPF usuario={usuario} usuariosOnline={usuariosOnline} />
+        return <BuscarFreelasPF usuario={pessoa} usuariosOnline={usuariosOnline} />
       case 'agenda':
         return <AgendaEventosPF usuario={pessoa} />
       case 'candidatos':
