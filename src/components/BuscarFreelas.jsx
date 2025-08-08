@@ -124,8 +124,9 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
           foto: freela.foto || '',
           funcao: freela.funcao || ''
         },
-        estabelecimentoUid: usuario.uid,
-        estabelecimentoNome: usuario.nome,
+        chamadorUid: usuario.uid,
+        chamadorNome: usuario.nome,
+        tipoChamador: usuario.tipo, // útil pra controle futuro
         valorDiaria: freela.valorDiaria || null,
         status: 'pendente',
         observacao: obs,
@@ -165,7 +166,7 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         return { ...f, distanciaKm }
       })
       .sort((a, b) => (a.distanciaKm || Infinity) - (b.distanciaKm || Infinity))
-  }, [freelas, usuariosOnline, filtroFuncao, estabelecimento])
+  }, [freelas, usuariosOnline, filtroFuncao, usuario])
 
   return (
     <div className="min-h-screen bg-cover bg-center p-4 pb-20"
