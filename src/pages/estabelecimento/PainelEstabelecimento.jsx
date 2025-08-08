@@ -160,7 +160,7 @@ export default function PainelEstabelecimento() {
       case 'perfil':
         return renderPerfil()
       case 'buscar':
-        return <BuscarFreelas estabelecimento={estabelecimento} usuariosOnline={usuariosOnline} />
+        return <BuscarFreelas usuario={estabelecimento} usuariosOnline={usuariosOnline} />
       case 'agendas':
         return <AgendasContratadas estabelecimento={estabelecimento} />
       case 'vagas':

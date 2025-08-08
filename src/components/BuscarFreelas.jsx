@@ -76,7 +76,7 @@ function FreelaCard({ freela, distanciaKm, onChamar, chamando, observacao, setOb
   )
 }
 
-export default function BuscarFreelas({ estabelecimento, pessoa_fisica, usuariosOnline = {} }) {
+export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
   const [freelas, setFreelas] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [chamando, setChamando] = useState(null)
@@ -100,7 +100,7 @@ export default function BuscarFreelas({ estabelecimento, pessoa_fisica, usuarios
   }, [])
 
   const chamarFreela = async (freela) => {
-    if (!estabelecimento?.uid) return
+    if (!usuario?.uid) return
     setChamando(freela.id)
 
     const obs = observacao[freela.id] || ''
@@ -124,8 +124,8 @@ export default function BuscarFreelas({ estabelecimento, pessoa_fisica, usuarios
           foto: freela.foto || '',
           funcao: freela.funcao || ''
         },
-        estabelecimentoUid: estabelecimento.uid,
-        estabelecimentoNome: estabelecimento.nome,
+        estabelecimentoUid: usuario.uid,
+        estabelecimentoNome: usuario.nome,
         valorDiaria: freela.valorDiaria || null,
         status: 'pendente',
         observacao: obs,
@@ -153,10 +153,10 @@ export default function BuscarFreelas({ estabelecimento, pessoa_fisica, usuarios
       })
       .map((f) => {
         const distanciaKm =
-          f.coordenadas && estabelecimento?.coordenadas
+          f.coordenadas && usuario?.coordenadas
             ? calcularDistancia(
-                estabelecimento.coordenadas.latitude,
-                estabelecimento.coordenadas.longitude,
+                usuario.coordenadas.latitude,
+                usuario.coordenadas.longitude,
                 f.coordenadas.latitude,
                 f.coordenadas.longitude
               )
