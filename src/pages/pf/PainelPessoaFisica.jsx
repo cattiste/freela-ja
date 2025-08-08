@@ -1,42 +1,39 @@
-
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/firebase';
-import MenuInferiorPF from '@/components/MenuInferiorPF';
-import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF';
-import BuscarFreelas from '@/components/BuscarFreelas';
-import ChamadasPessoaFisica from './ChamadasPessoaFisica';
-import AgendaEventosPF from './AgendaEventosPF';
-import { UserIcon } from '@heroicons/react/24/solid';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useRealtimePresence } from '@/hooks/useRealtimePresence';
-import { onAuthStateChanged } from 'firebase/auth'
-import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
+import React, { useEffect, useState } from 'react'
+import { useAuth } from '@/context/AuthContext'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '@/firebase'
+import MenuInferiorPF from '@/components/MenuInferiorPF'
+import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF'
+import BuscarFreelas from '@/components/BuscarFreelas'
+import ChamadasPessoaFisica from './ChamadasPessoaFisica'
+import AgendaEventosPF from './AgendaEventosPF'
+import { UserIcon } from '@heroicons/react/24/solid'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { useUsuariosOnline } from '@/hooks/useUsuariosOnline' // ✅ IMPORTADO AQUI
 
 export default function PainelPessoaFisica() {
-  const { usuario, carregando } = useAuth();
-  const [abaAtiva, setAbaAtiva] = useState('inicio');
-  const [dados, setDados] = useState(null);
-  const location = useLocation();
-  const navigate = useNavigate();
-  const usuariosOnline = useRealtimePresence(); // Adicionado
+  const { usuario, carregando } = useAuth()
+  const [abaAtiva, setAbaAtiva] = useState('inicio')
+  const [dados, setDados] = useState(null)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const usuariosOnline = useUsuariosOnline() // ✅ USANDO HOOK
 
   useEffect(() => {
-    if (location?.state?.aba) setAbaAtiva(location.state.aba);
-  }, [location]);
+    if (location?.state?.aba) setAbaAtiva(location.state.aba)
+  }, [location])
 
   useEffect(() => {
-    if (!usuario?.uid) return;
+    if (!usuario?.uid) return
     const carregar = async () => {
-      const ref = doc(db, 'usuarios', usuario.uid);
-      const snap = await getDoc(ref);
-      if (snap.exists()) setDados(snap.data());
-    };
-    carregar();
-  }, [usuario]);
+      const ref = doc(db, 'usuarios', usuario.uid)
+      const snap = await getDoc(ref)
+      if (snap.exists()) setDados(snap.data())
+    }
+    carregar()
+  }, [usuario])
 
-  if (carregando) return <p className="text-center mt-10 text-orange-600">Carregando painel...</p>;
+  if (carregando) return <p className="text-center mt-10 text-orange-600">Carregando painel...</p>
 
   const renderizarConteudo = () => {
     if (abaAtiva === 'inicio') {
@@ -64,13 +61,28 @@ export default function PainelPessoaFisica() {
             </a>
           </div>
         </div>
-      );
+      )
     }
-    
-    if (abaAtiva === 'buscar') return <BuscarFreelas usuario={usuario} usuariosOnline={usuariosOnline} tipoChamador="pessoa_fisica" />;
-    if (abaAtiva === 'candidatos') return <ChamadasPessoaFisica usuario={usuario} />;
-    if (abaAtiva === 'agenda') return <AgendaEventosPF usuario={usuario} />;
-  };
+
+    if (abaAtiva === 'buscar') {
+      return (
+        <BuscarFreelas
+          usuario={usuario}
+          usuariosOnline={usuariosOnline} // ✅ USANDO STATUS ONLINE
+        />
+      )
+    }
+
+    if (abaAtiva === 'candidatos') {
+      return <ChamadasPessoaFisica usuario={usuario} />
+    }
+
+    if (abaAtiva === 'agenda') {
+      return <AgendaEventosPF usuario={usuario} />
+    }
+
+    return null
+  }
 
   return (
     <div
@@ -85,5 +97,5 @@ export default function PainelPessoaFisica() {
       <div className="pb-24">{renderizarConteudo()}</div>
       <MenuInferiorPF abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} />
     </div>
-  );
+  )
 }
