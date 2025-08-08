@@ -1,12 +1,7 @@
-// 📁 src/components/BuscarFreelasPF.jsx
+// ✅ BuscarFreelasPF.jsx (versão exclusiva para PainelPessoaFisica)
 import React, { useEffect, useState, useMemo } from 'react'
 import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  addDoc,
-  serverTimestamp
+  collection, query, where, onSnapshot, addDoc, serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 
@@ -63,7 +58,7 @@ function FreelaCard({ freela, distanciaKm, onChamar, chamando, observacao, setOb
           onChange={(e) =>
             setObservacao((prev) => ({ ...prev, [freela.id]: e.target.value }))
           }
-          placeholder="Ex: Use roupa preta, chegar 19h..."
+          placeholder="Ex: Use roupa preta, falar com gerente João..."
           className="w-full p-2 border rounded text-sm"
           rows={2}
           maxLength={200}
@@ -86,18 +81,13 @@ export default function BuscarFreelasPF({ usuario, usuariosOnline = {} }) {
   const [freelas, setFreelas] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [chamando, setChamando] = useState(null)
+  const [filtroFuncao, setFiltroFuncao] = useState('')
   const [observacao, setObservacao] = useState({})
 
   useEffect(() => {
     const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const todos = snapshot.docs.map(doc => {
-        const data = doc.data()
-        return {
-          ...data,
-          id: doc.id
-        }
-      })
+      const todos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
       setFreelas(todos)
       setCarregando(false)
     })
@@ -109,8 +99,7 @@ export default function BuscarFreelasPF({ usuario, usuariosOnline = {} }) {
     setChamando(freela.id)
 
     const obs = observacao[freela.id] || ''
-
-    const contemContato = /(\d{4,}|\b(zap|whats|telefone|email|contato|instagram|arroba)\b)/i
+    const contemContato = /\d{4,}|\b(zap|whats|telefone|email|contato|instagram|arroba)\b/i
     if (contemContato.test(obs)) {
       alert('🚫 Não inclua telefone, e-mail ou redes sociais nas instruções.')
       setChamando(null)
@@ -129,14 +118,13 @@ export default function BuscarFreelasPF({ usuario, usuariosOnline = {} }) {
           foto: freela.foto || '',
           funcao: freela.funcao || ''
         },
-        pessoa_fisicaUid: usuario.uid,
-        pessoa_fisicaNome: usuario.nome,
+        pessoaFisicaUid: usuario.uid,
+        pessoaFisicaNome: usuario.nome,
         valorDiaria: freela.valorDiaria || null,
         status: 'pendente',
         observacao: obs,
         criadoEm: serverTimestamp()
       })
-
       alert(`Freelancer ${freela.nome} foi chamado com sucesso.`)
     } catch (err) {
       console.error('Erro ao chamar freela:', err)
@@ -150,7 +138,9 @@ export default function BuscarFreelasPF({ usuario, usuariosOnline = {} }) {
     return freelas
       .filter((f) => {
         const status = usuariosOnline[f.id]
-        return status?.online === true
+        const online = status?.online === true
+        const funcaoMatch = !filtroFuncao || f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
+        return online && funcaoMatch
       })
       .map((f) => {
         const distanciaKm =
@@ -162,11 +152,10 @@ export default function BuscarFreelasPF({ usuario, usuariosOnline = {} }) {
                 f.coordenadas.longitude
               )
             : null
-
         return { ...f, distanciaKm }
       })
       .sort((a, b) => (a.distanciaKm || Infinity) - (b.distanciaKm || Infinity))
-  }, [freelas, usuariosOnline, usuario])
+  }, [freelas, usuariosOnline, filtroFuncao, usuario])
 
   return (
     <div className="min-h-screen bg-cover bg-center p-4 pb-20"
@@ -174,13 +163,23 @@ export default function BuscarFreelasPF({ usuario, usuariosOnline = {} }) {
         backgroundImage: `url('/img/fundo-login.jpg')`,
         backgroundAttachment: 'fixed',
         backgroundRepeat: 'no-repeat',
-        backgroundSize: 'cover',
+        backgroundSize: 'cover'
       }}
     >
+      <div className="max-w-6xl mx-auto mb-6">
+        <input
+          type="text"
+          placeholder="Buscar por função..."
+          value={filtroFuncao}
+          onChange={(e) => setFiltroFuncao(e.target.value)}
+          className="w-full px-4 py-2 rounded-lg shadow-sm border border-gray-300 focus:ring-2 focus:ring-orange-400"
+        />
+      </div>
+
       {carregando ? (
         <p className="text-center text-white">Carregando freelancers...</p>
       ) : freelasFiltrados.length === 0 ? (
-        <p className="text-center text-white">Nenhum freelancer online no momento.</p>
+        <p className="text-center text-white">Nenhum freelancer online com essa função.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
           {freelasFiltrados.map((freela) => (
