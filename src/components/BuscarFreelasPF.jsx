@@ -1,4 +1,4 @@
-// ✅ BuscarFreelasPF.jsx (versão exclusiva para PainelPessoaFisica)
+// 📄 src/components/BuscarFreelasPF.jsx
 import React, { useEffect, useState, useMemo } from 'react'
 import {
   collection, query, where, onSnapshot, addDoc, serverTimestamp
@@ -46,8 +46,10 @@ function FreelaCard({ freela, distanciaKm, onChamar, chamando, observacao, setOb
           </p>
         )}
         <div className="flex items-center gap-2 mt-1">
-          <span className="w-2 h-2 rounded-full bg-green-500" />
-          <span className="text-xs text-green-700">🟢 Online agora</span>
+          <span className={`w-2 h-2 rounded-full ${freela.online ? 'bg-green-500' : 'bg-gray-400'}`} />
+          <span className={`text-xs ${freela.online ? 'text-green-700' : 'text-gray-500'}`}>
+            {freela.online ? '🟢 Online agora' : '🔘 Offline'}
+          </span>
         </div>
       </div>
 
@@ -87,7 +89,13 @@ export default function BuscarFreelasPF({ usuario, usuariosOnline = {} }) {
   useEffect(() => {
     const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const todos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      const todos = snapshot.docs.map(doc => {
+        const data = doc.data()
+        return {
+          ...data,
+          id: doc.id
+        }
+      })
       setFreelas(todos)
       setCarregando(false)
     })
@@ -99,7 +107,8 @@ export default function BuscarFreelasPF({ usuario, usuariosOnline = {} }) {
     setChamando(freela.id)
 
     const obs = observacao[freela.id] || ''
-    const contemContato = /\d{4,}|\b(zap|whats|telefone|email|contato|instagram|arroba)\b/i
+
+    const contemContato = /(\d{4,}|(zap|whats|telefone|email|contato|instagram|arroba))/i
     if (contemContato.test(obs)) {
       alert('🚫 Não inclua telefone, e-mail ou redes sociais nas instruções.')
       setChamando(null)
@@ -125,6 +134,7 @@ export default function BuscarFreelasPF({ usuario, usuariosOnline = {} }) {
         observacao: obs,
         criadoEm: serverTimestamp()
       })
+
       alert(`Freelancer ${freela.nome} foi chamado com sucesso.`)
     } catch (err) {
       console.error('Erro ao chamar freela:', err)
@@ -137,12 +147,14 @@ export default function BuscarFreelasPF({ usuario, usuariosOnline = {} }) {
   const freelasFiltrados = useMemo(() => {
     return freelas
       .filter((f) => {
-        const status = usuariosOnline[f.id]
-        const online = status?.online === true
-        const funcaoMatch = !filtroFuncao || f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
-        return online && funcaoMatch
+        const funcaoMatch =
+          !filtroFuncao || f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
+        return funcaoMatch
       })
       .map((f) => {
+        const status = usuariosOnline[f.id]
+        const online = status?.online === true
+
         const distanciaKm =
           f.coordenadas && usuario?.coordenadas
             ? calcularDistancia(
@@ -152,9 +164,14 @@ export default function BuscarFreelasPF({ usuario, usuariosOnline = {} }) {
                 f.coordenadas.longitude
               )
             : null
-        return { ...f, distanciaKm }
+
+        return { ...f, distanciaKm, online }
       })
-      .sort((a, b) => (a.distanciaKm || Infinity) - (b.distanciaKm || Infinity))
+      .sort((a, b) => {
+        if (a.online && !b.online) return -1
+        if (!a.online && b.online) return 1
+        return (a.distanciaKm || Infinity) - (b.distanciaKm || Infinity)
+      })
   }, [freelas, usuariosOnline, filtroFuncao, usuario])
 
   return (
@@ -163,7 +180,7 @@ export default function BuscarFreelasPF({ usuario, usuariosOnline = {} }) {
         backgroundImage: `url('/img/fundo-login.jpg')`,
         backgroundAttachment: 'fixed',
         backgroundRepeat: 'no-repeat',
-        backgroundSize: 'cover'
+        backgroundSize: 'cover',
       }}
     >
       <div className="max-w-6xl mx-auto mb-6">
@@ -179,7 +196,7 @@ export default function BuscarFreelasPF({ usuario, usuariosOnline = {} }) {
       {carregando ? (
         <p className="text-center text-white">Carregando freelancers...</p>
       ) : freelasFiltrados.length === 0 ? (
-        <p className="text-center text-white">Nenhum freelancer online com essa função.</p>
+        <p className="text-center text-white">Nenhum freelancer encontrado.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
           {freelasFiltrados.map((freela) => (
