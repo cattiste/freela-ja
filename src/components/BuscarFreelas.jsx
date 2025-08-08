@@ -76,7 +76,7 @@ function FreelaCard({ freela, distanciaKm, onChamar, chamando, observacao, setOb
   )
 }
 
-export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) {
+export default function BuscarFreelas({ estabelecimento, pessoa_fisica, usuariosOnline = {} }) {
   const [freelas, setFreelas] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [chamando, setChamando] = useState(null)
