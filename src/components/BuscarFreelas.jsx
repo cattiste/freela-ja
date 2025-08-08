@@ -1,9 +1,8 @@
-// 📄 src/pages/[...]/BuscarFreelas.jsx
+// src/components/BuscarFreelas.jsx
 import React, { useEffect, useState } from 'react'
 import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/firebase'
-import ProfissionalCard from '@/components/ProfissionalCard'
-import { toast } from 'react-hot-toast'
+import ProfissionalCard from './ProfissionalCard'
 import { haversineDistance } from '@/utils/haversine'
 
 export default function BuscarFreelas({ usuario, usuariosOnline }) {
@@ -11,77 +10,75 @@ export default function BuscarFreelas({ usuario, usuariosOnline }) {
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    if (!usuario?.localizacao) return
+    const buscar = async () => {
+      if (!usuario?.localizacao) return
 
-    const buscarFreelas = async () => {
       setCarregando(true)
-      try {
-        const ref = collection(db, 'usuarios')
-        const q = query(ref, where('tipo', '==', 'freela'))
-        const snap = await getDocs(q)
 
-        const resultados = []
+      let q = query(
+        collection(db, 'usuarios'),
+        where('tipo', '==', 'freela')
+      )
 
-        snap.forEach((doc) => {
-          const freela = doc.data()
-          const uid = doc.id
+      const snap = await getDocs(q)
+      let lista = []
 
-          // Verifica se está online
-          const online = usuariosOnline?.[uid]?.online
-          if (!freela.localizacao) return
+      snap.forEach(doc => {
+        const dados = doc.data()
+        const id = doc.id
 
-          // Calcula distância
-          const distancia = haversineDistance(
+        // Remove o próprio usuário
+        if (id === usuario.uid) return
+
+        // 🔍 Filtra por função somente se for um estabelecimento
+        if (usuario.tipo === 'estabelecimento' && dados.funcao !== usuario.funcaoDesejada) {
+          return
+        }
+
+        // Distância em km
+        let distancia = 0
+        if (dados.localizacao && usuario.localizacao) {
+          distancia = haversineDistance(
             usuario.localizacao,
-            freela.localizacao
+            dados.localizacao
           )
+        }
 
-          resultados.push({
-            ...freela,
-            id: uid,
-            online,
-            distancia
-          })
+        const online = usuariosOnline?.[id]?.online === true
+
+        lista.push({
+          id,
+          ...dados,
+          distancia,
+          online,
         })
+      })
 
-        // Ordena: online primeiro, depois por distância
-        resultados.sort((a, b) => {
-          if (a.online && !b.online) return -1
-          if (!a.online && b.online) return 1
-          return a.distancia - b.distancia
-        })
+      // Ordena: online primeiro, depois por distância
+      lista.sort((a, b) => {
+        if (a.online && !b.online) return -1
+        if (!a.online && b.online) return 1
+        return a.distancia - b.distancia
+      })
 
-        setFreelas(resultados)
-      } catch (error) {
-        console.error('Erro ao buscar freelas:', error)
-        toast.error('Erro ao buscar freelancers')
-      } finally {
-        setCarregando(false)
-      }
+      setFreelas(lista)
+      setCarregando(false)
     }
 
-    buscarFreelas()
+    buscar()
   }, [usuario, usuariosOnline])
 
-  if (carregando) {
-    return <p className="text-center mt-4">Carregando freelancers...</p>
-  }
-
-  if (freelas.length === 0) {
-    return <p className="text-center mt-4">Nenhum freelancer disponível no momento.</p>
-  }
+  if (carregando) return <p className="p-4">Carregando freelancers...</p>
 
   return (
-    <div className="p-4 space-y-4 pb-24">
-      {freelas.map((freela) => (
-        <ProfissionalCard
-          key={freela.id}
-          freela={freela}
-          usuario={usuario}
-          distancia={freela.distancia}
-          online={freela.online}
-        />
-      ))}
+    <div className="p-4 space-y-4">
+      {freelas.length === 0 ? (
+        <p className="text-center text-gray-500">Nenhum freelancer disponível.</p>
+      ) : (
+        freelas.map(f => (
+          <ProfissionalCard key={f.id} freela={f} estabelecimento={usuario} />
+        ))
+      )}
     </div>
   )
 }
