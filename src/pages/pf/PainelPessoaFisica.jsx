@@ -70,24 +70,24 @@ export default function PainelPessoaFisica() {
     setAgendaPerfil(datas)
   }
 
-  const carregarAvaliacoesPendentes = async () => {
-    try {
-      const ref = collection(db, 'chamadas')
-      const q = query(
-        ref,
-        where('estabelecimentoUid', '==', pessoa.uid),
-        where('status', '==', 'concluido')
-      )
+   const carregarAvaliacoesPendentes = async () => {
+     try {
+       const ref = collection(db, 'chamadas')
+       const q = query(
+         ref,
+         where('freelaUid', '==', pessoa.uid),  // Alterado de estabelecimentoUid para freelaUid
+         where('status', '==', 'concluido')
+       )
 
-      const snap = await getDocs(q)
-      const pendentes = snap.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(chamada => !chamada.avaliacaoFreela?.nota)
+        const snap = await getDocs(q)
+        const pendentes = snap.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(chamada => !chamada.avaliacaoFreela?.nota)
 
-      setAvaliacoesPendentes(pendentes)
-    } catch (err) {
-      console.error('Erro ao buscar chamadas pendentes de avaliação:', err)
-    }
+        setAvaliacoesPendentes(pendentes)
+      } catch (err) {
+        console.error('Erro ao buscar chamadas pendentes de avaliação:', err)
+      }
   }
 
   const renderPerfil = () => (
