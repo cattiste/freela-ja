@@ -8,7 +8,7 @@ import {
 import { auth, db } from '@/firebase'
 
 import MenuInferiorPF from '@/components/MenuInferiorPF'
-import BuscarFreelas from '@/components/BuscarFreelas'
+import BuscarFreelasPF from '@/components/BuscarFreelasPF'
 import AgendaEventosPF from './AgendaEventosPF'
 import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF'
 import ChamadasPessoaFisica from './ChamadasPessoaFisica'
@@ -151,7 +151,7 @@ export default function PainelPessoaFisica() {
       case 'perfil':
         return renderPerfil()
       case 'buscar':
-        return <BuscarFreelas usuario={usuario} usuariosOnline={usuariosOnline} />
+        return <BuscarFreelasPF usuario={usuario} usuariosOnline={usuariosOnline} />
       case 'agenda':
         return <AgendaEventosPF usuario={pessoa} />
       case 'candidatos':
