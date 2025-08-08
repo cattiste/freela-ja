@@ -1,37 +1,63 @@
 import React, { useEffect, useState } from 'react'
-import { useAuth } from '@/context/AuthContext'
-import { doc, getDoc } from 'firebase/firestore'
-import { db } from '@/firebase'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { onAuthStateChanged } from 'firebase/auth'
+import { auth, db } from '@/firebase'
+
 import MenuInferiorPF from '@/components/MenuInferiorPF'
 import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF'
-import BuscarFreelas from '@/components/BuscarFreelas'
 import ChamadasPessoaFisica from './ChamadasPessoaFisica'
 import AgendaEventosPF from './AgendaEventosPF'
+import BuscarFreelas from '@/components/BuscarFreelas'
+
+import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
 import { UserIcon } from '@heroicons/react/24/solid'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { useUsuariosOnline } from '@/hooks/useUsuariosOnline' // ✅ IMPORTADO AQUI
 
 export default function PainelPessoaFisica() {
-  const { usuario, carregando } = useAuth()
   const [abaAtiva, setAbaAtiva] = useState('inicio')
+  const [usuario, setUsuario] = useState(null)
   const [dados, setDados] = useState(null)
+  const [carregando, setCarregando] = useState(true)
+
   const location = useLocation()
   const navigate = useNavigate()
-  const usuariosOnline = useUsuariosOnline() // ✅ USANDO HOOK
+
+  const usuariosOnline = useUsuariosOnline()
 
   useEffect(() => {
-    if (location?.state?.aba) setAbaAtiva(location.state.aba)
+    if (location?.state?.aba) {
+      setAbaAtiva(location.state.aba)
+    }
   }, [location])
 
   useEffect(() => {
-    if (!usuario?.uid) return
-    const carregar = async () => {
-      const ref = doc(db, 'usuarios', usuario.uid)
-      const snap = await getDoc(ref)
-      if (snap.exists()) setDados(snap.data())
-    }
-    carregar()
-  }, [usuario])
+    const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
+      if (!usuario) {
+        setUsuario(null)
+        setDados(null)
+        setCarregando(false)
+        return
+      }
+
+      try {
+        const ref = doc(db, 'usuarios', usuario.uid)
+        const snap = await getDoc(ref)
+
+        if (snap.exists() && snap.data().tipo === 'pessoa_fisica') {
+          const dados = snap.data()
+          setUsuario({ uid: usuario.uid, ...dados })
+          setDados(dados)
+          await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
+        }
+      } catch (err) {
+        console.error('Erro ao carregar dados da pessoa física:', err)
+      }
+
+      setCarregando(false)
+    })
+
+    return () => unsubscribe()
+  }, [])
 
   if (carregando) return <p className="text-center mt-10 text-orange-600">Carregando painel...</p>
 
@@ -66,10 +92,7 @@ export default function PainelPessoaFisica() {
 
     if (abaAtiva === 'buscar') {
       return (
-        <BuscarFreelas
-          usuario={usuario}
-          usuariosOnline={usuariosOnline} // ✅ USANDO STATUS ONLINE
-        />
+        <BuscarFreelas usuario={usuario} usuariosOnline={usuariosOnline} />
       )
     }
 
