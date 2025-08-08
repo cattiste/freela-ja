@@ -1,16 +1,17 @@
 
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/firebase';
-import MenuInferiorPF from '@/components/MenuInferiorPF';
-import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF';
-import BuscarFreelas from '@/components/BuscarFreelas';
-import ChamadasPessoaFisica from './ChamadasPessoaFisica';
-import AgendaEventosPF from './AgendaEventosPF';
-import { UserIcon } from '@heroicons/react/24/solid';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useRealtimePresence } from '@/hooks/useRealtimePresence';
+import React, { useEffect, useState } from 'react'
+import { useAuth } from '@/context/AuthContext'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '@/firebase'
+import MenuInferiorPF from '@/components/MenuInferiorPF'
+import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF'
+import BuscarFreelas from '@/components/BuscarFreelas'
+import ChamadasPessoaFisica from './ChamadasPessoaFisica'
+import AgendaEventosPF from './AgendaEventosPF'
+import { UserIcon } from '@heroicons/react/24/solid'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { useRealtimePresence } from '@/hooks/useRealtimePresence'
+import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
 
 export default function PainelPessoaFisica() {
   const { usuario, carregando } = useAuth();
