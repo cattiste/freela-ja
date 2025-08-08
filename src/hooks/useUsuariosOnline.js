@@ -1,13 +1,13 @@
-// 📄 src/hooks/useUsuariosOnline.js
+// src/hooks/useUsuariosOnline.js
 import { useEffect, useState } from 'react'
 import { getDatabase, ref, onValue } from 'firebase/database'
-import { app } from '@/firebase' // ✅ importa o app configurado corretamente
+import { app } from '@/firebase'
 
 export function useUsuariosOnline() {
   const [usuariosOnline, setUsuariosOnline] = useState({})
 
   useEffect(() => {
-    const db = getDatabase(app) // ✅ usa o app com databaseURL
+    const db = getDatabase(app)
     const usersRef = ref(db, 'users')
 
     const unsubscribe = onValue(usersRef, (snapshot) => {
