@@ -11,7 +11,6 @@ import MenuInferiorPF from '@/components/MenuInferiorPF'
 
 import BuscarFreelasPF from '@/components/BuscarFreelasPF'
 
-// ❗ Import correto do hook: export default (sem chaves)
 import useUsuariosOnline from '@/hooks/useUsuariosOnline'
 
 import AgendaEventosPF from './AgendaEventosPF'
