@@ -13,7 +13,7 @@ import ServicosPessoaFisica from '@/components/ServicosPessoaFisica'
 import AvaliacoesRecebidasPessoaFisica from '@/pages/pf/AvaliacoesRecebidasPessoaFisica'
 import HistoricoChamadasPessoaFisica from '@/components/HistoricoChamadasPessoaFisica'
 import ChamadasPessoaFisica from '@/pages/pf/ChamadasPessoaFisica'
-import useUsuariosOnline from '@/hooks/useUsuariosOnline'
+import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
 import CardAvaliacaoFreela from '@/components/CardAvaliacaoFreela'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
@@ -26,7 +26,7 @@ export default function PainelPessoaFisica() {
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
   const [agendaPerfil, setAgendaPerfil] = useState({})
 
-  const usuariosOnline = useUsuariosOnline()
+  const { usuariosOnline } = useUsuariosOnline()
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
