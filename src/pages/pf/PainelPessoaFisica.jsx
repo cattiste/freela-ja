@@ -12,6 +12,8 @@ import MenuInferiorPF from '@/components/MenuInferiorPF'
 import BuscarFreelasPF from '@/pages/pf/BuscarFreelasPF'
 
 import useUsuariosOnlinePF from '@/hooks/pf/useUsuariosOnlinePF'
+import BuscarFreelasPF_RTDbonly from '@/pages/pf/BuscarFreelasPF_RTDbonly'
+import BuscarFreelasPF_IndexRTDB from '@/pages/pf/BuscarFreelasPF_IndexRTDB'
 
 import AgendaEventosPF from './AgendaEventosPF'
 import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF'
@@ -168,8 +170,12 @@ export default function PainelPessoaFisica() {
             usuariosOnline={usuariosOnline}
           />
         )
+      case 'buscar':
+        return <BuscarFreelasPF_RTDbonly usuarioPF={pessoa} />
       case 'agenda':
         return <AgendaEventosPF usuario={pessoa} />
+      case 'buscar':
+        return <BuscarFreelasPF_IndexRTDB usuarioPF={pessoa} />
       case 'candidatos':
         return <ChamadasPessoaFisica usuario={pessoa} />
       default:
