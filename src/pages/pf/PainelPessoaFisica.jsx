@@ -8,13 +8,13 @@ import { auth, db } from '@/firebase'
 
 import MenuInferiorPessoaFisica from '@/components/MenuInferiorPessoaFisica'
 import BuscarFreelas from '@/components/BuscarFreelas'
-import AgendasContratadas from '@/components/AgendasContratadas'
+import AgendaEventosPF from '@/components/AgendaEventosPF'
 import ServicosPessoaFisica from '@/components/ServicosPessoaFisica'
 import AvaliacoesRecebidasPessoaFisica from '@/pages/pf/AvaliacoesRecebidasPessoaFisica'
 import HistoricoChamadasPessoaFisica from '@/components/HistoricoChamadasPessoaFisica'
 import ChamadasPessoaFisica from '@/pages/pf/ChamadasPessoaFisica'
 import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
-import CardAvaliacaoFreela from '@/components/CardAvaliacaoFreela'
+import CardAvaliacaoFreelaPF from '@/components/CardAvaliacaoFreelaPF'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
@@ -162,7 +162,7 @@ export default function PainelPessoaFisica() {
       case 'buscar':
         return <BuscarFreelas usuario={pessoaFisica} usuariosOnline={usuariosOnline} />
       case 'agendas':
-        return <AgendasContratadas pessoaFisica={pessoaFisica} />
+        return <AgendaEventosPF />
       case 'vagas':
         return <ServicosPessoaFisica pessoaFisica={pessoaFisica} />
       case 'avaliacao':
@@ -170,7 +170,6 @@ export default function PainelPessoaFisica() {
       case 'historico':
         return <HistoricoChamadasPessoaFisica pessoaFisica={pessoaFisica} />
       case 'ativas':
-        return <ChamadasPessoaFisica pessoaFisica={pessoaFisica} />
       case 'chamadas':
         return <ChamadasPessoaFisica pessoaFisica={pessoaFisica} />
       default:

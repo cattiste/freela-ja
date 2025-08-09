@@ -1,7 +1,7 @@
 // CadastroPessoaFisica.jsx
 import React, { useState } from 'react'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { collection, addDoc } from 'firebase/firestore'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
 
@@ -46,13 +46,19 @@ export default function CadastroPessoaFisica() {
     setLoading(true)
     
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.senha)
-      
-      await addDoc(collection(db, 'usuarios'), {
-        uid: userCredential.user.uid,
-        ...formData,
+      const cred = await createUserWithEmailAndPassword(auth, formData.email, formData.senha)
+
+      // ✅ IMPORTANTE: criar documento com ID = uid
+      await setDoc(doc(db, 'usuarios', cred.user.uid), {
+        uid: cred.user.uid,
+        nome: formData.nome,
+        cpf: formData.cpf,
+        telefone: formData.telefone,
+        email: formData.email,
+        endereco: formData.endereco,
         tipo: 'pessoa_fisica',
-        criadoEm: new Date()
+        criadoEm: serverTimestamp(),
+        ultimaAtividade: serverTimestamp()
       })
 
       navigate('/login')
