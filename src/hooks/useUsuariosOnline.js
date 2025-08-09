@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { getDatabase, ref, onValue, off } from 'firebase/database'
 
-export default function useUsuariosOnline() {
+export function useUsuariosOnline() {
   const [usuariosOnline, setUsuariosOnline] = useState({})
 
   useEffect(() => {
