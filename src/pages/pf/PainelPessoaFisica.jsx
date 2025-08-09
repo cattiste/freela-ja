@@ -9,10 +9,7 @@ import { auth, db } from '@/firebase'
 
 import MenuInferiorPF from '@/components/MenuInferiorPF'
 
-// 👉 Ajuste o caminho conforme onde você salvou o BuscarFreelasPF
-// Se você colocou em src/pages/pf/BuscarFreelasPF.jsx, use a linha abaixo:
-import BuscarFreelasPF from '@/pages/pf/BuscarFreelasPF'
-// Se estiver mesmo em components, volte para: '@/components/BuscarFreelasPF'
+import BuscarFreelasPF from '@/components/BuscarFreelasPF'
 
 // ❗ Import correto do hook: export default (sem chaves)
 import useUsuariosOnline from '@/hooks/useUsuariosOnline'
