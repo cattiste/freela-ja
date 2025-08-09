@@ -1,22 +1,26 @@
-// 📄 src/hooks/useUsuariosOnline.js
 import { useEffect, useState } from 'react'
-import { getDatabase, ref, onValue } from 'firebase/database'
-import { app } from '@/firebase' // ✅ importa o app configurado corretamente
+import { collection, onSnapshot } from 'firebase/firestore'
+import { db } from '@/firebase'
 
+/**
+ * Lê /status no Firestore e entrega { [uid]: { online: true|false, state: 'online'|'offline' } }
+ * Compatível com o seu filtro: usuariosOnline[f.id]?.online === true
+ */
 export function useUsuariosOnline() {
   const [usuariosOnline, setUsuariosOnline] = useState({})
 
   useEffect(() => {
-    const db = getDatabase(app) // ✅ usa o app com databaseURL
-    const usersRef = ref(db, 'users')
-
-    const unsubscribe = onValue(usersRef, (snapshot) => {
-      const data = snapshot.val() || {}
-      setUsuariosOnline(data)
+    const unsub = onSnapshot(collection(db, 'status'), (snap) => {
+      const map = {}
+      snap.forEach((docu) => {
+        const data = docu.data()
+        const online = data?.state === 'online'
+        map[docu.id] = { online, state: data?.state || 'offline' }
+      })
+      setUsuariosOnline(map)
     })
-
-    return () => unsubscribe()
+    return () => unsub()
   }, [])
 
-  return usuariosOnline
+  return { usuariosOnline }
 }

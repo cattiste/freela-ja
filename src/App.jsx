@@ -38,6 +38,10 @@ import PagamentoChamada from '@/pages/estabelecimento/PagamentoChamada'
 import PainelPessoaFisica from '@/pages/pf/PainelPessoaFisica'
 import CandidaturasPF from '@/pages/pf/CandidaturasPF'
 import AgendaEventosPF from '@/pages/pf/AgendaEventosPF'
+import useSetupPresence from '@/hooks/useSetupPresence'
+
+export default function App() {
+  useSetupPresence() // <- adiciona aqui, uma única vez
 
 
 export default function App() {
