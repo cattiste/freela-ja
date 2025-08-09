@@ -1,200 +1,238 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { collection, query, where, onSnapshot, doc } from 'firebase/firestore'
+// src/pages/pf/BuscarFreelasPF.jsx
+import React, { useEffect, useState, useMemo } from 'react'
+import {
+  collection, query, where, onSnapshot, addDoc, serverTimestamp
+} from 'firebase/firestore'
 import { db } from '@/firebase'
-import { getDatabase, ref as rtdbRef, onValue, off } from 'firebase/database'
-import { useAuth } from '@/context/AuthContext'
 
-import ProfissionalCard from '@/components/ProfissionalCard'
-
-// --- Util: distância Haversine (km)
-function haversineKm(a, b) {
-  if (!a || !b) return null
-  const toRad = (deg) => (deg * Math.PI) / 180
-  const R = 6371 // km
-  const lat1 = a.latitude ?? a.lat ?? a._lat
-  const lon1 = a.longitude ?? a.lng ?? a._long
-  const lat2 = b.latitude ?? b.lat ?? b._lat
-  const lon2 = b.longitude ?? b.lng ?? b._long
-  if ([lat1, lon1, lat2, lon2].some((v) => typeof v !== 'number')) return null
+function calcularDistancia(lat1, lon1, lat2, lon2) {
+  const toRad = (x) => (x * Math.PI) / 180
+  const R = 6371
   const dLat = toRad(lat2 - lat1)
   const dLon = toRad(lon2 - lon1)
-  const s1 =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2)
-  const c = 2 * Math.atan2(Math.sqrt(s1), Math.sqrt(1 - s1))
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   return R * c
 }
 
-function InitialsAvatar({ nome }) {
-  const initials = (nome || '?')
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(s => s[0]?.toUpperCase())
-    .join('') || '?'
+function normalizarCoordenadas(doc) {
+  // Aceita `doc.coordenadas` (lat/long) OU `doc.localizacao` (GeoPoint)
+  if (doc?.coordenadas?.latitude && doc?.coordenadas?.longitude) return doc
+  if (doc?.localizacao?.latitude != null && doc?.localizacao?.longitude != null) {
+    return {
+      ...doc,
+      coordenadas: {
+        latitude: doc.localizacao.latitude,
+        longitude: doc.localizacao.longitude
+      }
+    }
+  }
+  return doc
+}
+
+function FreelaCard({ freela, distanciaKm, onChamar, chamando, observacao, setObservacao, online }) {
   return (
-    <div className="w-16 h-16 rounded-full bg-orange-100 border border-orange-300 flex items-center justify-center text-orange-700 font-bold">
-      {initials}
+    <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100 hover:shadow-xl transition">
+      <div className="flex flex-col items-center mb-3">
+        <img
+          src={freela.foto || 'https://via.placeholder.com/80'}
+          alt={freela.nome}
+          className="w-20 h-20 rounded-full object-cover border-2 border-orange-400"
+        />
+        <h3 className="mt-2 text-lg font-bold text-orange-700 text-center">{freela.nome}</h3>
+        <p className="text-sm text-gray-600 text-center">{freela.funcao}</p>
+        {freela.especialidades && (
+          <p className="text-sm text-gray-500 text-center">
+            {Array.isArray(freela.especialidades)
+              ? freela.especialidades.join(', ')
+              : freela.especialidades}
+          </p>
+        )}
+        {freela.valorDiaria && (
+          <p className="text-sm font-semibold text-orange-700 mt-1">
+            💰 R$ {freela.valorDiaria} / diária
+          </p>
+        )}
+        {distanciaKm != null && (
+          <p className="text-sm text-gray-600 mt-1">
+            📍 Aprox. {distanciaKm.toFixed(1)} km do local
+          </p>
+        )}
+        <div className="flex items-center gap-2 mt-1">
+          <span className={`w-2 h-2 rounded-full ${online ? 'bg-green-500' : 'bg-gray-400'}`} />
+          <span className={`text-xs ${online ? 'text-green-700' : 'text-gray-600'}`}>
+            {online ? '🟢 Online agora' : '⚪ Offline'}
+          </span>
+        </div>
+      </div>
+
+      <div className="mb-2">
+        <label className="block text-sm font-medium text-gray-700 mb-1">📝 Observações para o freela</label>
+        <textarea
+          value={observacao[freela.id] || ''}
+          onChange={(e) =>
+            setObservacao((prev) => ({ ...prev, [freela.id]: e.target.value }))
+          }
+          placeholder="Ex: Use roupa preta, falar com gerente João..."
+          className="w-full p-2 border rounded text-sm"
+          rows={2}
+          maxLength={200}
+        />
+        <p className="text-xs text-gray-500 mt-1">⚠️ Não inclua telefone, e-mail ou redes sociais.</p>
+      </div>
+
+      <button
+        onClick={() => onChamar(freela)}
+        disabled={chamando === freela.id || !online}
+        className={`w-full py-2 px-4 rounded-lg font-semibold transition text-white ${
+          chamando === freela.id
+            ? 'bg-orange-400'
+            : online
+            ? 'bg-orange-500 hover:bg-orange-600'
+            : 'bg-gray-400 cursor-not-allowed'
+        }`}
+        title={online ? '' : 'Chamada disponível apenas quando o freela estiver online'}
+      >
+        {chamando === freela.id ? 'Chamando...' : '📞 Chamar'}
+      </button>
     </div>
   )
 }
 
-export default function BuscarFreelasPF() {
-  const { usuario } = useAuth()
-  const [pfDoc, setPfDoc] = useState(null)
+export default function BuscarFreelasPF({ usuario, usuariosOnline = {} }) {
   const [freelas, setFreelas] = useState([])
-  const [statusMap, setStatusMap] = useState({})
   const [carregando, setCarregando] = useState(true)
+  const [chamando, setChamando] = useState(null)
   const [filtroFuncao, setFiltroFuncao] = useState('')
+  const [observacao, setObservacao] = useState({})
 
-  // 1) Carrega dados da pessoa física (para obter localizacao)
-  useEffect(() => {
-    if (!usuario?.uid) return
-    const unsub = onSnapshot(doc(db, 'usuarios', usuario.uid), (snap) => {
-      setPfDoc(snap.exists() ? { id: snap.id, ...snap.data() } : null)
-    })
-    return () => unsub && unsub()
-  }, [usuario?.uid])
+  // Normaliza coordenadas do PF (aceita localizacao GeoPoint)
+  const usuarioNorm = useMemo(() => normalizarCoordenadas(usuario), [usuario])
 
-  // 2) Ouve os freelas do Firestore
   useEffect(() => {
-    setCarregando(true)
     const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
-    const unsub = onSnapshot(q, (snap) => {
-      const itens = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      setFreelas(itens)
-      setCarregando(false)
-    }, (err) => {
-      console.error('Erro buscando freelas:', err)
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const todos = snapshot.docs.map(doc => {
+        const data = normalizarCoordenadas(doc.data())
+        return { ...data, id: doc.id }
+      })
+      setFreelas(todos)
       setCarregando(false)
     })
-    return () => unsub && unsub()
+    return () => unsubscribe()
   }, [])
 
-  // 3) Ouve o /status do RTDB (presença em tempo real)
-  useEffect(() => {
-    const dbR = getDatabase()
-    const ref = rtdbRef(dbR, 'status')
-    const handler = (snap) => setStatusMap(snap.val() || {})
-    onValue(ref, handler)
-    return () => off(ref, 'value', handler)
-  }, [])
+  const chamarFreela = async (freela) => {
+    if (!usuarioNorm?.uid) return
+    setChamando(freela.id)
 
-  // 4) Merge + filtros + ordenação
-  const lista = useMemo(() => {
-    const base = freelas
-      // filtro por função: tenta campo 'funcao' (string) ou 'funcoes' (array)
-      .filter(f => {
-        if (!filtroFuncao?.trim()) return true
-        const alvo = filtroFuncao.trim().toLowerCase()
-        const f1 = (f.funcao || '').toLowerCase()
-        const f2 = Array.isArray(f.funcoes) ? f.funcoes.map(x => String(x).toLowerCase()) : []
-        return f1.includes(alvo) || f2.some(x => x.includes(alvo))
+    const obs = (observacao[freela.id] || '').trim()
+
+    const contemContato = /(\d{4,}|\b(zap|whats|telefone|email|contato|instagram|arroba)\b)/i
+    if (contemContato.test(obs)) {
+      alert('🚫 Não inclua telefone, e-mail ou redes sociais nas instruções.')
+      setChamando(null)
+      return
+    }
+
+    try {
+      await addDoc(collection(db, 'chamadas'), {
+        freelaUid: freela.id,
+        freelaNome: freela.nome || '',
+        freelaFoto: freela.foto || '',
+        freelaFuncao: freela.funcao || '',
+        freela: {
+          uid: freela.id,
+          nome: freela.nome || '',
+          foto: freela.foto || '',
+          funcao: freela.funcao || ''
+        },
+        chamadorUid: usuarioNorm.uid,
+        chamadorNome: usuarioNorm.nome || '',
+        tipoChamador: 'pessoa_fisica',
+        valorDiaria: freela.valorDiaria || null,
+        observacao: obs,
+        status: 'pendente',
+        criadoEm: serverTimestamp()
       })
-      .map(f => {
-        const s = statusMap[f.id] || statusMap[f.uid] || {} // garante por id ou uid
-        const online = !!s.online
-        const ultimaAtividade = s.ultimaAtividade || null
-        const distanciaKm = pfDoc?.localizacao && f.localizacao
-          ? haversineKm(pfDoc.localizacao, f.localizacao)
-          : null
-        return { ...f, online, ultimaAtividade, distanciaKm }
+
+      alert(`Freelancer ${freela.nome} foi chamado com sucesso.`)
+    } catch (err) {
+      console.error('Erro ao chamar freela:', err)
+      alert('Erro ao chamar freelancer.')
+    }
+
+    setChamando(null)
+  }
+
+  const freelasFiltrados = useMemo(() => {
+    return freelas
+      .map((f) => {
+        const status = usuariosOnline[f.id]
+        const online = status?.online === true
+
+        const distanciaKm =
+          f.coordenadas && usuarioNorm?.coordenadas
+            ? calcularDistancia(
+                f.coordenadas.latitude,
+                f.coordenadas.longitude,
+                usuarioNorm.coordenadas.latitude,
+                usuarioNorm.coordenadas.longitude
+              )
+            : null
+
+        return { ...f, online, distanciaKm }
       })
-
-    // Ordena: online primeiro; depois menor distância; depois por nome
-    return base.sort((a, b) => {
-      if (a.online !== b.online) return a.online ? -1 : 1
-      const da = a.distanciaKm ?? Number.POSITIVE_INFINITY
-      const db = b.distanciaKm ?? Number.POSITIVE_INFINITY
-      if (da !== db) return da - db
-      return (a.nome || '').localeCompare(b.nome || '')
-    })
-  }, [freelas, statusMap, pfDoc, filtroFuncao])
-
-  const total = freelas.length
-  const onlines = lista.filter(f => f.online).length
+      .filter((f) => {
+        const funcaoMatch =
+          !filtroFuncao ||
+          (f.funcao || '').toLowerCase().includes(filtroFuncao.toLowerCase())
+        return f.online && funcaoMatch
+      })
+      .sort((a, b) => (a.distanciaKm || Infinity) - (b.distanciaKm || Infinity))
+  }, [freelas, usuariosOnline, filtroFuncao, usuarioNorm])
 
   return (
-    <div className="p-4 space-y-4">
-      <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <h1 className="text-xl font-bold text-orange-700">Buscar Freelas (Pessoa Física)</h1>
-        <div className="flex items-center gap-2">
-          <input
-            value={filtroFuncao}
-            onChange={(e) => setFiltroFuncao(e.target.value)}
-            placeholder="Filtrar por função (ex.: churrasqueiro, garçom)"
-            className="px-3 py-2 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-orange-400"
-          />
-          <span className="text-sm text-gray-600">
-            {onlines}/{total} online
-          </span>
-        </div>
-      </header>
-
-      {carregando && (
-        <div className="text-gray-600">Carregando freelas…</div>
-      )}
-
-      {!carregando && lista.length === 0 && (
-        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-800">
-          Nenhum freelancer {filtroFuncao ? `para "${filtroFuncao}" ` : ''}no momento.
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {lista.map((freela) => (
-          // Se já tiver um ProfissionalCard pronto, substitua este bloco pelo componente:
-          // <ProfissionalCard key={freela.id} freela={freela} distanceKm={freela.distanciaKm} online={freela.online} />
-          <div
-            key={freela.id}
-            className={`p-4 rounded-2xl border shadow-sm hover:shadow-md transition ${
-              freela.online ? 'border-green-300 bg-white' : 'border-gray-200 bg-white'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              {freela.foto ? (
-                <img
-                  src={freela.foto}
-                  alt={freela.nome || 'Freela'}
-                  className="w-16 h-16 rounded-full object-cover border"
-                />
-              ) : (
-                <InitialsAvatar nome={freela.nome} />
-              )}
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-gray-900">{freela.nome || 'Freelancer'}</h3>
-                  <span
-                    className={`px-2 py-0.5 text-xs rounded-full ${
-                      freela.online ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {freela.online ? 'Online' : 'Offline'}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-600">
-                  {freela.funcao || (Array.isArray(freela.funcoes) ? freela.funcoes.join(', ') : 'Função não informada')}
-                </p>
-                {typeof freela.valorDiaria === 'number' && (
-                  <p className="text-sm text-gray-700">Diária: R$ {freela.valorDiaria.toFixed(2)}</p>
-                )}
-                {freela.distanciaKm != null && (
-                  <p className="text-xs text-gray-500">
-                    Distância: {freela.distanciaKm < 1 ? `${Math.round(freela.distanciaKm * 1000)} m` : `${freela.distanciaKm.toFixed(1)} km`}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {freela.especialidade && (
-              <div className="mt-3 text-sm text-gray-700">
-                <strong>Especialidade:</strong> {freela.especialidade}
-              </div>
-            )}
-          </div>
-        ))}
+    <div className="min-h-screen bg-cover bg-center p-4 pb-20"
+      style={{
+        backgroundImage: `url('/img/fundo-login.jpg')`,
+        backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+      }}
+    >
+      <div className="max-w-6xl mx-auto mb-6">
+        <input
+          type="text"
+          placeholder="Buscar por função..."
+          value={filtroFuncao}
+          onChange={(e) => setFiltroFuncao(e.target.value)}
+          className="w-full px-4 py-2 rounded-lg shadow-sm border border-gray-300 focus:ring-2 focus:ring-orange-400"
+        />
       </div>
+
+      {carregando ? (
+        <p className="text-center text-white">Carregando freelancers...</p>
+      ) : freelasFiltrados.length === 0 ? (
+        <p className="text-center text-white">Nenhum freelancer online com essa função.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
+          {freelasFiltrados.map((freela) => (
+            <FreelaCard
+              key={freela.id}
+              freela={freela}
+              distanciaKm={freela.distanciaKm}
+              onChamar={chamarFreela}
+              chamando={chamando}
+              observacao={observacao}
+              setObservacao={setObservacao}
+              online={freela.online}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
