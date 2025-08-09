@@ -3,11 +3,9 @@ import { signInWithEmailAndPassword } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
 import { doc, getDoc } from 'firebase/firestore'
-import { useAuth } from '@/context/AuthContext'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { setUser } = useAuth()
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [loading, setLoading] = useState(false)
@@ -19,62 +17,50 @@ export default function Login() {
     setError(null)
 
     try {
-      // 1. Autenticação com Firebase Auth
       const credenciais = await signInWithEmailAndPassword(auth, email, senha)
       const usuario = credenciais.user
-
-      // 2. Buscar dados adicionais no Firestore
       const docRef = doc(db, 'usuarios', usuario.uid)
       const docSnap = await getDoc(docRef)
 
       if (!docSnap.exists()) {
-        throw new Error('Usuário não encontrado no banco de dados')
+        setError('Seu cadastro ainda não foi finalizado. Tente novamente em alguns segundos.')
+        setLoading(false)
+        return
       }
 
       const dadosUsuario = docSnap.data()
 
-      // 3. Montar objeto do usuário para o contexto
-      const userData = {
+      const usuarioLocal = {
         uid: usuario.uid,
         email: usuario.email,
-        nome: dadosUsuario.nome || '',
-        tipo: dadosUsuario.tipo || '',
-        foto: dadosUsuario.foto || '',
+        nome: dadosUsuario.nome,
+        tipo: dadosUsuario.tipo,
+        funcao: dadosUsuario.funcao || '',
+        endereco: dadosUsuario.endereco || '',
+        foto: dadosUsuario.foto || ''
       }
 
-      // 4. Atualizar contexto e localStorage
-      setUser(userData)
-      localStorage.setItem('usuarioLogado', JSON.stringify(userData))
+      localStorage.setItem('usuarioLogado', JSON.stringify(usuarioLocal))
 
-      // 5. Redirecionar conforme tipo de usuário
-      const tipoUsuario = dadosUsuario.tipo?.toLowerCase()
-      if (tipoUsuario === 'freela' || tipoUsuario === 'freelancer') {
+      const perfilIncompleto = !dadosUsuario.nome || !dadosUsuario.funcao
+      if (dadosUsuario.tipo === 'freela' && perfilIncompleto) {
+        navigate('/editarperfilfreela')
+        return
+      }
+
+      if (dadosUsuario.tipo === 'freela') {
         navigate('/painelfreela')
-      } else if (tipoUsuario === 'estabelecimento' || tipoUsuario === 'empresa') {
+      } else if (dadosUsuario.tipo === 'estabelecimento') {
         navigate('/painelestabelecimento')
-      } else if (tipoUsuario === 'pessoa_fisica' || tipoUsuario === 'pf') {
+      } else if (dadosUsuario.tipo === 'pessoa_fisica') {
         navigate('/pf')
       } else {
-        navigate('/') // Página inicial padrão
+        throw new Error('Tipo de usuário não reconhecido.')
       }
 
     } catch (err) {
-      console.error('Erro no login:', err)
-      
-      // Tratamento de erro simplificado e seguro
-      let mensagemErro = 'Erro ao fazer login. Tente novamente'
-      
-      if (err.code === 'auth/user-not-found') {
-        mensagemErro = 'E-mail não cadastrado'
-      } else if (err.code === 'auth/wrong-password') {
-        mensagemErro = 'Senha incorreta'
-      } else if (err.code === 'auth/too-many-requests') {
-        mensagemErro = 'Muitas tentativas. Tente novamente mais tarde'
-      } else if (err.message === 'Usuário não encontrado no banco de dados') {
-        mensagemErro = 'Cadastro incompleto. Por favor, complete seu cadastro.'
-      }
-      
-      setError(mensagemErro)
+      console.error(err)
+      setError('E-mail, senha ou tipo de usuário inválido.')
     } finally {
       setLoading(false)
     }
