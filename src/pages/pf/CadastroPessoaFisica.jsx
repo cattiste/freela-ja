@@ -47,8 +47,6 @@ export default function CadastroPessoaFisica() {
     
     try {
       const cred = await createUserWithEmailAndPassword(auth, formData.email, formData.senha)
-
-      // ✅ IMPORTANTE: criar documento com ID = uid
       await setDoc(doc(db, 'usuarios', cred.user.uid), {
         uid: cred.user.uid,
         nome: formData.nome,
@@ -60,7 +58,6 @@ export default function CadastroPessoaFisica() {
         criadoEm: serverTimestamp(),
         ultimaAtividade: serverTimestamp()
       })
-
       navigate('/login')
     } catch (err) {
       setError(err.message)
@@ -76,122 +73,47 @@ export default function CadastroPessoaFisica() {
           <h2 className="text-2xl font-bold text-center text-orange-600 mb-6">Cadastro Pessoa Física</h2>
           
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Campos básicos */}
             <div className="space-y-2">
               <label className="block text-sm font-medium">Nome Completo</label>
-              <input
-                name="nome"
-                value={formData.nome}
-                onChange={handleChange}
-                required
-                className="w-full p-2 border rounded"
-              />
+              <input name="nome" value={formData.nome} onChange={handleChange} required className="w-full p-2 border rounded" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="block text-sm font-medium">CPF</label>
-                <input
-                  name="cpf"
-                  value={formData.cpf}
-                  onChange={handleChange}
-                  required
-                  className="w-full p-2 border rounded"
-                />
+                <input name="cpf" value={formData.cpf} onChange={handleChange} required className="w-full p-2 border rounded" />
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium">Telefone</label>
-                <input
-                  name="telefone"
-                  value={formData.telefone}
-                  onChange={handleChange}
-                  required
-                  className="w-full p-2 border rounded"
-                />
+                <input name="telefone" value={formData.telefone} onChange={handleChange} required className="w-full p-2 border rounded" />
               </div>
             </div>
 
-            {/* Email e Senha */}
             <div className="space-y-2">
               <label className="block text-sm font-medium">E-mail</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                className="w-full p-2 border rounded"
-              />
+              <input type="email" name="email" value={formData.email} onChange={handleChange} required className="w-full p-2 border rounded" />
             </div>
 
             <div className="space-y-2">
               <label className="block text-sm font-medium">Senha</label>
-              <input
-                type="password"
-                name="senha"
-                value={formData.senha}
-                onChange={handleChange}
-                required
-                className="w-full p-2 border rounded"
-              />
+              <input type="password" name="senha" value={formData.senha} onChange={handleChange} required className="w-full p-2 border rounded" />
             </div>
 
-            {/* Endereço */}
             <div className="space-y-2">
               <h3 className="font-medium">Endereço</h3>
               <div className="grid grid-cols-2 gap-2">
-                <input
-                  name="endereco.cep"
-                  value={formData.endereco.cep}
-                  onChange={handleChange}
-                  placeholder="CEP"
-                  className="p-2 border rounded"
-                />
-                <input
-                  name="endereco.numero"
-                  value={formData.endereco.numero}
-                  onChange={handleChange}
-                  placeholder="Número"
-                  className="p-2 border rounded"
-                />
+                <input name="endereco.cep" value={formData.endereco.cep} onChange={handleChange} placeholder="CEP" className="p-2 border rounded" />
+                <input name="endereco.numero" value={formData.endereco.numero} onChange={handleChange} placeholder="Número" className="p-2 border rounded" />
               </div>
-              <input
-                name="endereco.rua"
-                value={formData.endereco.rua}
-                onChange={handleChange}
-                placeholder="Rua"
-                className="w-full p-2 border rounded"
-              />
-              <input
-                name="endereco.complemento"
-                value={formData.endereco.complemento}
-                onChange={handleChange}
-                placeholder="Complemento"
-                className="w-full p-2 border rounded"
-              />
+              <input name="endereco.rua" value={formData.endereco.rua} onChange={handleChange} placeholder="Rua" className="w-full p-2 border rounded" />
+              <input name="endereco.complemento" value={formData.endereco.complemento} onChange={handleChange} placeholder="Complemento" className="w-full p-2 border rounded" />
               <div className="grid grid-cols-2 gap-2">
-                <input
-                  name="endereco.cidade"
-                  value={formData.endereco.cidade}
-                  onChange={handleChange}
-                  placeholder="Cidade"
-                  className="p-2 border rounded"
-                />
-                <input
-                  name="endereco.estado"
-                  value={formData.endereco.estado}
-                  onChange={handleChange}
-                  placeholder="Estado"
-                  className="p-2 border rounded"
-                />
+                <input name="endereco.cidade" value={formData.endereco.cidade} onChange={handleChange} placeholder="Cidade" className="p-2 border rounded" />
+                <input name="endereco.estado" value={formData.endereco.estado} onChange={handleChange} placeholder="Estado" className="p-2 border rounded" />
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700 transition"
-            >
+            <button type="submit" disabled={loading} className="w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700 transition">
               {loading ? 'Cadastrando...' : 'Finalizar Cadastro'}
             </button>
 

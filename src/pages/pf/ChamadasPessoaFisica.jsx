@@ -9,7 +9,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/firebase'
-import { toast } from 'react-hot-toast'
+  import { toast } from 'react-hot-toast'
 import AvaliacaoInline from '@/components/AvaliacaoInline'
 import MensagensRecebidasPF from '@/components/MensagensRecebidasPF'
 
@@ -86,7 +86,7 @@ export default function ChamadasPessoaFisica({ pessoaFisica }) {
                   <p className="text-xs text-gray-500">💰 R$ {chamada.valorDiaria} / diária</p>
                 )}
                 <p className="text-sm mt-1">📌 Status: {badgeStatus(chamada.status)}</p>
-                {/* FIX: usar o componente correto */}
+                {/* FIX: componente correto */}
                 <MensagensRecebidasPF />
               </div>
             </div>

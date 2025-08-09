@@ -23,12 +23,12 @@ export default function CandidaturasPessoaFisica({ pessoaFisicaUid }) {
           snapshot.docs.map(async docSnap => {
             const data = docSnap.data()
 
-            // Buscar dados do freela
+            // Freela
             const freelaRef = doc(db, 'usuarios', data.freelaUid)
             const freelaSnap = await getDoc(freelaRef)
 
-            // Buscar dados do serviço
-            const servicoRef = doc(db, 'servicosPF', data.servicoId)
+            // FIX: coleção do serviço
+            const servicoRef = doc(db, 'servicos', data.servicoId)
             const servicoSnap = await getDoc(servicoRef)
 
             return {

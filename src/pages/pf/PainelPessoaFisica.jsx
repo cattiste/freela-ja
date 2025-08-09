@@ -8,13 +8,19 @@ import { auth, db } from '@/firebase'
 
 import MenuInferiorPessoaFisica from '@/components/MenuInferiorPessoaFisica'
 import BuscarFreelas from '@/components/BuscarFreelas'
+
+// FIX: usar o componente que você criou para PF
 import AgendaEventosPF from '@/components/AgendaEventosPF'
+
 import ServicosPessoaFisica from '@/components/ServicosPessoaFisica'
 import AvaliacoesRecebidasPessoaFisica from '@/pages/pf/AvaliacoesRecebidasPessoaFisica'
 import HistoricoChamadasPessoaFisica from '@/components/HistoricoChamadasPessoaFisica'
 import ChamadasPessoaFisica from '@/pages/pf/ChamadasPessoaFisica'
 import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
+
+// FIX: usar o card PF
 import CardAvaliacaoFreelaPF from '@/components/CardAvaliacaoFreelaPF'
+
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
@@ -40,7 +46,8 @@ export default function PainelPessoaFisica() {
         const ref = doc(db, 'usuarios', usuario.uid)
         const snap = await getDoc(ref)
 
-        if (snap.exists() && snap.data().tipo === 'pessoaFisica') {
+        // FIX: tipo padronizado
+        if (snap.exists() && snap.data().tipo === 'pessoa_fisica') {
           const dados = snap.data()
           setPessoaFisica({ uid: usuario.uid, ...dados })
           await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
@@ -143,7 +150,7 @@ export default function PainelPessoaFisica() {
             <p className="text-sm text-gray-500">Nenhum freela para avaliar no momento.</p>
           ) : (
             avaliacoesPendentes.map((chamada) => (
-              <CardAvaliacaoFreela
+              <CardAvaliacaoFreelaPF
                 key={chamada.id}
                 chamada={chamada}
                 onAvaliado={() => carregarAvaliacoesPendentes()}
