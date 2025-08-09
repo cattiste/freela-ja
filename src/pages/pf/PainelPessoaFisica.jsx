@@ -159,29 +159,20 @@ export default function PainelPessoaFisica() {
     </div>
   )
 
-  const renderConteudo = () => {
-    switch (abaSelecionada) {
-      case 'perfil':
-        return renderPerfil()
-      case 'buscar':
-        return (
-          <BuscarFreelasPF
-            usuario={pessoa}
-            usuariosOnline={usuariosOnline}
-          />
-        )
-      case 'buscar':
-        return <BuscarFreelasPF_RTDbonly usuarioPF={pessoa} />
-      case 'agenda':
-        return <AgendaEventosPF usuario={pessoa} />
-      case 'buscar':
-        return <BuscarFreelasPF_IndexRTDB usuarioPF={pessoa} />
-      case 'candidatos':
-        return <ChamadasPessoaFisica usuario={pessoa} />
-      default:
-        return null
-    }
+const renderConteudo = () => {
+  switch (abaSelecionada) {
+    case 'perfil':
+      return renderPerfil()
+    case 'buscar':
+      return <BuscarFreelasPF usuario={pessoa} />
+    case 'agenda':
+      return <AgendaEventosPF usuario={pessoa} />
+    case 'chamadas': // <- use 'chamadas' para bater com o MenuInferiorPF
+      return <ChamadasPessoaFisica usuario={pessoa} />
+    default:
+      return null
   }
+}
 
   if (carregando) return <div className="text-center text-orange-600 mt-8">Carregando painel...</div>
   if (!pessoa) return <div className="text-center text-red-600 mt-8">Acesso não autorizado.</div>
