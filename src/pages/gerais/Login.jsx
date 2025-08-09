@@ -40,7 +40,6 @@ export default function Login() {
         nome: dadosUsuario.nome || '',
         tipo: dadosUsuario.tipo || '',
         foto: dadosUsuario.foto || '',
-        // outros campos necessários
       }
 
       // 4. Atualizar contexto e localStorage
@@ -48,41 +47,36 @@ export default function Login() {
       localStorage.setItem('usuarioLogado', JSON.stringify(userData))
 
       // 5. Redirecionar conforme tipo de usuário
-      switch(dadosUsuario.tipo?.toLowerCase()) {
-        case 'freela':
-        case 'freelancer':
-          navigate('/painelfreela')
-          break
-        case 'estabelecimento':
-        case 'empresa':
-          navigate('/painelestabelecimento')
-          break
-        case 'pessoa_fisica':
-        case 'pf':
-          navigate('/pf')
-          break
-        default:
-          navigate('/') // Página inicial padrão
+      const tipoUsuario = dadosUsuario.tipo?.toLowerCase()
+      if (tipoUsuario === 'freela' || tipoUsuario === 'freelancer') {
+        navigate('/painelfreela')
+      } else if (tipoUsuario === 'estabelecimento' || tipoUsuario === 'empresa') {
+        navigate('/painelestabelecimento')
+      } else if (tipoUsuario === 'pessoa_fisica' || tipoUsuario === 'pf') {
+        navigate('/pf')
+      } else {
+        navigate('/') // Página inicial padrão
       }
 
     } catch (err) {
       console.error('Erro no login:', err)
-      setError(formatError(err))
+      
+      // Tratamento de erro simplificado e seguro
+      let mensagemErro = 'Erro ao fazer login. Tente novamente'
+      
+      if (err.code === 'auth/user-not-found') {
+        mensagemErro = 'E-mail não cadastrado'
+      } else if (err.code === 'auth/wrong-password') {
+        mensagemErro = 'Senha incorreta'
+      } else if (err.code === 'auth/too-many-requests') {
+        mensagemErro = 'Muitas tentativas. Tente novamente mais tarde'
+      } else if (err.message === 'Usuário não encontrado no banco de dados') {
+        mensagemErro = 'Cadastro incompleto. Por favor, complete seu cadastro.'
+      }
+      
+      setError(mensagemErro)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const formatError = (error) => {
-    switch(error.code) {
-      case 'auth/user-not-found':
-        return 'E-mail não cadastrado'
-      case 'auth/wrong-password':
-        return 'Senha incorreta'
-      case 'auth/too-many-requests':
-        return 'Muitas tentativas. Tente novamente mais tarde'
-      default:
-        return 'Erro ao fazer login. Tente novamente'
     }
   }
 
