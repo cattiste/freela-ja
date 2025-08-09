@@ -8,11 +8,18 @@ import {
 import { auth, db } from '@/firebase'
 
 import MenuInferiorPF from '@/components/MenuInferiorPF'
-import BuscarFreelasPF from '@/components/BuscarFreelasPF'
+
+// 👉 Ajuste o caminho conforme onde você salvou o BuscarFreelasPF
+// Se você colocou em src/pages/pf/BuscarFreelasPF.jsx, use a linha abaixo:
+import BuscarFreelasPF from '@/pages/pf/BuscarFreelasPF'
+// Se estiver mesmo em components, volte para: '@/components/BuscarFreelasPF'
+
+// ❗ Import correto do hook: export default (sem chaves)
+import useUsuariosOnline from '@/hooks/useUsuariosOnline'
+
 import AgendaEventosPF from './AgendaEventosPF'
 import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF'
 import ChamadasPessoaFisica from './ChamadasPessoaFisica'
-import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
 import CardAvaliacaoFreela from '@/components/CardAvaliacaoFreela'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
@@ -43,9 +50,12 @@ export default function PainelPessoaFisica() {
           const dados = snap.data()
           setPessoa({ uid: usuario.uid, ...dados })
           await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
+        } else {
+          setPessoa(null)
         }
       } catch (err) {
         console.error('[Auth] Erro ao buscar dados da pessoa física:', err)
+        setPessoa(null)
       } finally {
         setCarregando(false)
       }
@@ -58,36 +68,41 @@ export default function PainelPessoaFisica() {
     if (!pessoa?.uid) return
     carregarAgenda()
     carregarAvaliacoesPendentes()
-  }, [pessoa])
+  }, [pessoa?.uid])
 
   const carregarAgenda = async () => {
-    const ref = collection(db, 'usuarios', pessoa.uid, 'agenda')
-    const snap = await getDocs(ref)
-    const datas = {}
-    snap.docs.forEach(doc => {
-      datas[doc.id] = doc.data()
-    })
-    setAgendaPerfil(datas)
+    try {
+      const ref = collection(db, 'usuarios', pessoa.uid, 'agenda')
+      const snap = await getDocs(ref)
+      const datas = {}
+      snap.docs.forEach(doc => {
+        datas[doc.id] = doc.data()
+      })
+      setAgendaPerfil(datas)
+    } catch (e) {
+      console.error('Erro ao carregar agenda PF:', e)
+    }
   }
 
-   const carregarAvaliacoesPendentes = async () => {
-     try {
-       const ref = collection(db, 'chamadas')
-       const q = query(
-         ref,
-         where('freelaUid', '==', pessoa.uid),  // Alterado de estabelecimentoUid para freelaUid
-         where('status', '==', 'concluido')
-       )
+  // ✅ PF avaliando freelas: filtra por chamadorUid == pessoa.uid
+  const carregarAvaliacoesPendentes = async () => {
+    try {
+      const ref = collection(db, 'chamadas')
+      const q = query(
+        ref,
+        where('chamadorUid', '==', pessoa.uid),
+        where('status', '==', 'concluido')
+      )
 
-        const snap = await getDocs(q)
-        const pendentes = snap.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(chamada => !chamada.avaliacaoFreela?.nota)
+      const snap = await getDocs(q)
+      const pendentes = snap.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(chamada => !chamada.avaliacaoFreela?.nota)
 
-        setAvaliacoesPendentes(pendentes)
-      } catch (err) {
-        console.error('Erro ao buscar chamadas pendentes de avaliação:', err)
-      }
+      setAvaliacoesPendentes(pendentes)
+    } catch (err) {
+      console.error('Erro ao buscar chamadas pendentes de avaliação:', err)
+    }
   }
 
   const renderPerfil = () => (
@@ -151,7 +166,12 @@ export default function PainelPessoaFisica() {
       case 'perfil':
         return renderPerfil()
       case 'buscar':
-        return <BuscarFreelasPF usuario={pessoa} usuariosOnline={usuariosOnline} />
+        return (
+          <BuscarFreelasPF
+            usuario={pessoa}
+            usuariosOnline={usuariosOnline}
+          />
+        )
       case 'agenda':
         return <AgendaEventosPF usuario={pessoa} />
       case 'candidatos':
