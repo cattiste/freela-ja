@@ -1,8 +1,7 @@
-// src/hooks/useUsuariosOnline.js
 import { useEffect, useState } from 'react'
 import { getDatabase, ref, onValue, off } from 'firebase/database'
 
-export function useUsuariosOnline() {
+export default function useUsuariosOnline() {
   const [usuariosOnline, setUsuariosOnline] = useState({})
 
   useEffect(() => {
