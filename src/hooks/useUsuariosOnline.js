@@ -1,21 +1,16 @@
 // src/hooks/useUsuariosOnline.js
 import { useEffect, useState } from 'react'
-import { getDatabase, ref, onValue } from 'firebase/database'
-import { app } from '@/firebase'
+import { getDatabase, ref, onValue, off } from 'firebase/database'
 
-export function useUsuariosOnline() {
+export default function useUsuariosOnline() {
   const [usuariosOnline, setUsuariosOnline] = useState({})
 
   useEffect(() => {
-    const db = getDatabase(app)
-    const usersRef = ref(db, 'users')
-
-    const unsubscribe = onValue(usersRef, (snapshot) => {
-      const data = snapshot.val() || {}
-      setUsuariosOnline(data)
-    })
-
-    return () => unsubscribe()
+    const db = getDatabase()
+    const refStatus = ref(db, 'status')
+    const handler = (snap) => setUsuariosOnline(snap.val() || {})
+    onValue(refStatus, handler)
+    return () => off(refStatus, 'value', handler)
   }, [])
 
   return usuariosOnline
