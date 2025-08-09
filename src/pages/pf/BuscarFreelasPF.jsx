@@ -96,6 +96,11 @@ export default function BuscarFreelasPF({ usuario, usuariosOnline = {} }) {
     return () => unsubscribe()
   }, [])
 
+  const temPresenca = useMemo(
+    () => Object.keys(usuariosOnline || {}).length > 0,
+    [usuariosOnline]
+  )
+
   const chamarFreela = async (freela) => {
     if (!usuario?.uid) return
     setChamando(freela.id)
@@ -140,16 +145,16 @@ export default function BuscarFreelasPF({ usuario, usuariosOnline = {} }) {
     return freelas
       .map((f) => {
         const status = usuariosOnline[f.id]
-        const online = status?.online === true
+        const online = temPresenca ? status?.online === true : true
         const coordsF = normalizarCoord(f)
         const distanciaKm =
           origem && coordsF ? calcularDistancia(origem.latitude, origem.longitude, coordsF.latitude, coordsF.longitude) : null
         return { ...f, online, distanciaKm }
       })
-      .filter((f) => f.online)
+      .filter((f) => (temPresenca ? f.online : true))
       .filter((f) => !filtroFuncao || (f.funcao || '').toLowerCase().includes(filtroFuncao.toLowerCase()))
       .sort((a, b) => (a.distanciaKm ?? Infinity) - (b.distanciaKm ?? Infinity))
-  }, [freelas, usuariosOnline, filtroFuncao, usuario])
+  }, [freelas, usuariosOnline, temPresenca, filtroFuncao, usuario])
 
   return (
     <div className="p-4 pb-24">{/* pb-24 pra não cobrir a barra */}
@@ -162,6 +167,12 @@ export default function BuscarFreelasPF({ usuario, usuariosOnline = {} }) {
           className="w-full px-4 py-2 rounded-lg shadow-sm border border-gray-300 focus:ring-2 focus:ring-orange-400"
         />
       </div>
+
+      {!temPresenca && (
+        <div className="max-w-6xl mx-auto mb-3 text-xs text-gray-500">
+          ⏳ Carregando status online… mostrando todos temporariamente.
+        </div>
+      )}
 
       {carregando ? (
         <p className="text-center text-gray-700">Carregando freelancers...</p>
