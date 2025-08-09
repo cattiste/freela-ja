@@ -13,7 +13,7 @@ import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompl
 import AvaliacoesRecebidasEstabelecimento from '@/pages/estabelecimento/AvaliacoesRecebidasEstabelecimento'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
 import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
-import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
+import useUsuariosOnline from '@/hooks/useUsuariosOnline'
 import CardAvaliacaoFreela from '@/components/CardAvaliacaoFreela'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
