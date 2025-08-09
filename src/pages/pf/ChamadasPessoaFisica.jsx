@@ -11,7 +11,7 @@ import {
 import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
 import AvaliacaoInline from '@/components/AvaliacaoInline'
-import MensagensRecebidas from '@/components/MensagensRecebidas'
+import MensagensRecebidasPF from '@/components/MensagensRecebidasPF'
 
 export default function ChamadasPessoaFisica({ pessoaFisica }) {
   const [chamadas, setChamadas] = useState([])
