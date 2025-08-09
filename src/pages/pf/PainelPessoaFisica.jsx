@@ -9,9 +9,9 @@ import { auth, db } from '@/firebase'
 
 import MenuInferiorPF from '@/components/MenuInferiorPF'
 
-import BuscarFreelasPF from '@/components/BuscarFreelasPF'
+import BuscarFreelasPF from '@/pages/pf/BuscarFreelasPF'
 
-import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
+import useUsuariosOnlinePF from '@/hooks/pf/useUsuariosOnlinePF'
 
 import AgendaEventosPF from './AgendaEventosPF'
 import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF'
@@ -28,7 +28,7 @@ export default function PainelPessoaFisica() {
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
   const [agendaPerfil, setAgendaPerfil] = useState({})
 
-  const usuariosOnline = useUsuariosOnline()
+  const usuariosOnline = useUsuariosOnlinePF()
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
