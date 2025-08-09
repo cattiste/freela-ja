@@ -1,214 +1,185 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { getDatabase, ref as rtdbRef, onValue, off } from 'firebase/database'
-import { addDoc, collection, serverTimestamp, doc, getDoc } from 'firebase/firestore'
+import React, { useEffect, useState, useMemo } from 'react'
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 
-function distKm(a, b) {
-  if (!a || !b) return null
-  const toRad = (x)=>x*Math.PI/180, R=6371
-  const dLat = toRad(b.latitude - a.latitude)
-  const dLon = toRad(b.longitude - a.longitude)
-  const s = Math.sin(dLat/2)**2 + Math.cos(toRad(a.latitude))*Math.cos(toRad(b.latitude))*Math.sin(dLon/2)**2
-  return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1-s))
+function calcularDistancia(lat1, lon1, lat2, lon2) {
+  const toRad = (x) => (x * Math.PI) / 180
+  const R = 6371
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
 }
 
-function origemPF(usuarioPF) {
+function normalizarCoord(obj) {
+  if (obj?.coordenadas?.latitude != null && obj?.coordenadas?.longitude != null) return obj.coordenadas
+  if (obj?.localizacao?.latitude != null && obj?.localizacao?.longitude != null)
+    return { latitude: obj.localizacao.latitude, longitude: obj.localizacao.longitude }
+  return null
+}
+
+function FreelaCard({ freela, distanciaKm, onChamar, chamando, observacao, setObservacao, online }) {
   return (
-    usuarioPF?.coordenadas ||
-    (usuarioPF?.localizacao && {
-      latitude: usuarioPF.localizacao.latitude,
-      longitude: usuarioPF.localizacao.longitude
-    }) ||
-    null
+    <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100 hover:shadow-xl transition">
+      <div className="flex flex-col items-center mb-3">
+        <img
+          src={freela.foto || 'https://via.placeholder.com/80'}
+          alt={freela.nome}
+          className="w-20 h-20 rounded-full object-cover border-2 border-orange-400"
+        />
+        <h3 className="mt-2 text-lg font-bold text-orange-700 text-center">{freela.nome}</h3>
+        <p className="text-sm text-gray-600 text-center">{freela.funcao}</p>
+        {freela.especialidades && (
+          <p className="text-sm text-gray-500 text-center">
+            {Array.isArray(freela.especialidades) ? freela.especialidades.join(', ') : freela.especialidades}
+          </p>
+        )}
+        {freela.valorDiaria && (
+          <p className="text-sm font-semibold text-orange-700 mt-1">💰 R$ {freela.valorDiaria} / diária</p>
+        )}
+        {distanciaKm != null && (
+          <p className="text-sm text-gray-600 mt-1">📍 Aprox. {distanciaKm.toFixed(1)} km do local</p>
+        )}
+        <div className="flex items-center gap-2 mt-1">
+          <span className={`w-2 h-2 rounded-full ${online ? 'bg-green-500' : 'bg-gray-400'}`} />
+          <span className={`text-xs ${online ? 'text-green-700' : 'text-gray-600'}`}>
+            {online ? '🟢 Online agora' : '⚪ Offline'}
+          </span>
+        </div>
+      </div>
+
+      <div className="mb-2">
+        <label className="block text-sm font-medium text-gray-700 mb-1">📝 Observações para o freela</label>
+        <textarea
+          value={observacao[freela.id] || ''}
+          onChange={(e) => setObservacao((prev) => ({ ...prev, [freela.id]: e.target.value }))}
+          placeholder="Ex: Use roupa preta, falar com gerente João..."
+          className="w-full p-2 border rounded text-sm"
+          rows={2}
+          maxLength={200}
+        />
+        <p className="text-xs text-gray-500 mt-1">⚠️ Não inclua telefone, e-mail ou redes sociais.</p>
+      </div>
+
+      <button
+        onClick={() => onChamar(freela)}
+        disabled={chamando === freela.id || !online}
+        className={`w-full py-2 px-4 rounded-lg font-semibold transition text-white ${
+          chamando === freela.id ? 'bg-orange-400'
+          : online ? 'bg-orange-500 hover:bg-orange-600'
+          : 'bg-gray-400 cursor-not-allowed'
+        }`}
+      >
+        {chamando === freela.id ? 'Chamando...' : '📞 Chamar'}
+      </button>
+    </div>
   )
 }
 
-export default function BuscarFreelasPF({ usuario }) {
-  const dbR = getDatabase()
-  const [idxMap, setIdxMap] = useState({})
-  const [fallbackMap, setFallbackMap] = useState({})
-  const [usandoFallback, setUsandoFallback] = useState(false)
-  const [filtro, setFiltro] = useState('')
+// 👉 Este componente espera receber `usuariosOnline` já pronto (mapa { uid: {online:true} })
+export default function BuscarFreelasPF({ usuario, usuariosOnline = {} }) {
+  const [freelas, setFreelas] = useState([])
+  const [carregando, setCarregando] = useState(true)
   const [chamando, setChamando] = useState(null)
+  const [filtroFuncao, setFiltroFuncao] = useState('')
   const [observacao, setObservacao] = useState({})
-  const timer = useRef(null)
 
-  // 1) Ouve o índice público
   useEffect(() => {
-    const ref = rtdbRef(dbR, 'public/onlineFreelas')
-    const handler = (snap) => setIdxMap(snap.val() || {})
-    onValue(ref, handler)
-    return () => off(ref, 'value', handler)
-  }, [dbR])
+    const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const todos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }))
+      setFreelas(todos)
+      setCarregando(false)
+    })
+    return () => unsubscribe()
+  }, [])
 
-  // 2) Se o índice ficar vazio por 3s, liga o fallback (/status + Firestore)
-  useEffect(() => {
-    if (timer.current) clearTimeout(timer.current)
-    timer.current = setTimeout(() => {
-      const vazio = !idxMap || Object.keys(idxMap).length === 0
-      setUsandoFallback(vazio)
-    }, 3000)
-    return () => timer.current && clearTimeout(timer.current)
-  }, [idxMap])
-
-  // 3) Fallback: lê /status e busca perfis dos UIDs online
-  useEffect(() => {
-    if (!usandoFallback) return
-    const ref = rtdbRef(dbR, 'status')
-    let cancel = false
-
-    const handler = async (snap) => {
-      const status = snap.val() || {}
-      const uidsOnline = Object.entries(status).filter(([,v]) => v?.online === true).map(([uid]) => uid)
-      const perfis = {}
-      await Promise.all(uidsOnline.map(async (uid) => {
-        const d = await getDoc(doc(db, 'usuarios', uid))
-        if (!d.exists()) return
-        const data = d.data()
-        if (data?.tipo !== 'freela') return
-        let coord = data.coordenadas
-        if (!coord && data.localizacao) {
-          coord = { latitude: data.localizacao.latitude, longitude: data.localizacao.longitude }
-        }
-        perfis[uid] = {
-          uid,
-          nome: data.nome || '',
-          funcao: data.funcao || (Array.isArray(data.funcoes) ? data.funcoes.join(', ') : ''),
-          foto: data.foto || '',
-          valorDiaria: typeof data.valorDiaria === 'number' ? data.valorDiaria : null,
-          coordenadas: coord,
-          online: true,
-        }
-      }))
-      if (!cancel) setFallbackMap(perfis)
-    }
-
-    onValue(ref, handler)
-    return () => {
-      off(ref, 'value', handler)
-      cancel = true
-    }
-  }, [dbR, usandoFallback])
-
-  const origem = origemPF(usuario)
-  const lista = useMemo(() => {
-    const source = usandoFallback ? fallbackMap : idxMap
-    const arr = Object.values(source || {})
-      .filter(f => f.online === true)
-      .map(f => {
-        const d = (origem && f.coordenadas?.latitude != null && f.coordenadas?.longitude != null)
-          ? distKm(origem, f.coordenadas) : null
-        return { ...f, distanciaKm: d }
-      })
-      .filter(f => !filtro || (f.funcao || '').toLowerCase().includes(filtro.toLowerCase()))
-      .sort((a,b) => (a.distanciaKm ?? Infinity) - (b.distanciaKm ?? Infinity))
-    return arr
-  }, [idxMap, fallbackMap, filtro, origem, usandoFallback])
-
-  // DEBUG opcional
-  useEffect(() => {
-    console.log('[PF] usandoFallback?', usandoFallback, 'idx keys:', Object.keys(idxMap||{}), 'fb keys:', Object.keys(fallbackMap||{}))
-  }, [usandoFallback, idxMap, fallbackMap])
-
-  const chamar = async (f) => {
+  const chamarFreela = async (freela) => {
     if (!usuario?.uid) return
-    setChamando(f.uid)
-    const obs = (observacao[f.uid] || '').trim()
-    const proib = /(\d{4,}|\b(zap|whats|telefone|email|contato|instagram|arroba)\b)/i
-    if (proib.test(obs)) {
-      alert('🚫 Não inclua telefone, e-mail ou redes sociais.')
+    setChamando(freela.id)
+    const obs = (observacao[freela.id] || '').trim()
+
+    const contemContato = /(\d{4,}|\b(zap|whats|telefone|email|contato|instagram|arroba)\b)/i
+    if (contemContato.test(obs)) {
+      alert('🚫 Não inclua telefone, e-mail ou redes sociais nas instruções.')
       setChamando(null)
       return
     }
+
     try {
       await addDoc(collection(db, 'chamadas'), {
-        freelaUid: f.uid,
-        freelaNome: f.nome || '',
-        freelaFoto: f.foto || '',
-        freelaFuncao: f.funcao || '',
-        freela: { uid: f.uid, nome: f.nome || '', foto: f.foto || '', funcao: f.funcao || '' },
+        freelaUid: freela.id,
+        freelaNome: freela.nome || '',
+        freelaFoto: freela.foto || '',
+        freelaFuncao: freela.funcao || '',
+        freela: { uid: freela.id, nome: freela.nome || '', foto: freela.foto || '', funcao: freela.funcao || '' },
 
+        // 🔑 PF chamando
         chamadorUid: usuario.uid,
         chamadorTipo: 'pessoa_fisica',
-        pessoaFisicaUid: usuario.uid, // ESSENCIAL p/ PF ler depois
+        pessoaFisicaUid: usuario.uid, // ESSENCIAL p/ leitura nas regras
 
-        valorDiaria: f.valorDiaria ?? null,
+        valorDiaria: freela.valorDiaria ?? null,
         observacao: obs,
         status: 'pendente',
         criadoEm: serverTimestamp()
       })
-      alert(`Freelancer ${f.nome} foi chamado com sucesso.`)
-    } catch (e) {
-      console.error(e)
+      alert(`Freelancer ${freela.nome} foi chamado com sucesso.`)
+    } catch (err) {
+      console.error('Erro ao chamar freela:', err)
       alert('Erro ao chamar freelancer.')
     }
+
     setChamando(null)
   }
 
+  const lista = useMemo(() => {
+    const origem = normalizarCoord(usuario)
+    return freelas
+      .map((f) => {
+        const status = usuariosOnline[f.id]
+        const online = status?.online === true
+        const coordsF = normalizarCoord(f)
+        const distanciaKm =
+          origem && coordsF ? calcularDistancia(origem.latitude, origem.longitude, coordsF.latitude, coordsF.longitude) : null
+        return { ...f, online, distanciaKm }
+      })
+      .filter((f) => f.online)
+      .filter((f) => !filtroFuncao || (f.funcao || '').toLowerCase().includes(filtroFuncao.toLowerCase()))
+      .sort((a, b) => (a.distanciaKm ?? Infinity) - (b.distanciaKm ?? Infinity))
+  }, [freelas, usuariosOnline, filtroFuncao, usuario])
+
   return (
-    <div className="p-4 pb-24"> {/** pb-24 pra não cobrir a barra */}
-      <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
-        <h1 className="text-xl font-bold text-orange-700">
-          Buscar Freelas (PF {usandoFallback ? '· Fallback' : '· RTDB Índice'})
-        </h1>
+    <div className="p-4 pb-24">{/* pb-24 pra não cobrir a barra */}
+      <div className="max-w-6xl mx-auto mb-6">
         <input
-          value={filtro}
-          onChange={(e)=>setFiltro(e.target.value)}
-          placeholder="Filtrar por função (ex.: churrasqueiro)"
-          className="px-3 py-2 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-orange-400"
+          type="text"
+          placeholder="Buscar por função..."
+          value={filtroFuncao}
+          onChange={(e) => setFiltroFuncao(e.target.value)}
+          className="w-full px-4 py-2 rounded-lg shadow-sm border border-gray-300 focus:ring-2 focus:ring-orange-400"
         />
-      </header>
+      </div>
 
-      {lista.length === 0 ? (
-        <div className="p-3 rounded bg-yellow-50 border border-yellow-200 text-yellow-800">
-          Nenhum freelancer online com essa função agora.
-        </div>
+      {carregando ? (
+        <p className="text-center text-gray-700">Carregando freelancers...</p>
+      ) : lista.length === 0 ? (
+        <p className="text-center text-gray-700">Nenhum freelancer online com essa função.</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {lista.map((f) => (
-            <div key={f.uid} className="p-4 bg-white rounded-2xl shadow border hover:shadow-md">
-              <div className="flex items-center gap-3">
-                <img src={f.foto || 'https://placehold.co/80x80'} alt={f.nome || 'Freela'} className="w-16 h-16 rounded-full object-cover border" />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">{f.nome || 'Freelancer'}</h3>
-                    <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">Online</span>
-                  </div>
-                  <p className="text-sm text-gray-600">{f.funcao || 'Função não informada'}</p>
-                  {typeof f.valorDiaria === 'number' && (
-                    <p className="text-sm text-gray-700">Diária: R$ {f.valorDiaria.toFixed(2)}</p>
-                  )}
-                  {f.distanciaKm != null && (
-                    <p className="text-xs text-gray-500">
-                      Distância: {f.distanciaKm < 1 ? `${Math.round(f.distanciaKm*1000)} m` : `${f.distanciaKm.toFixed(1)} km`}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-3">
-                <label className="block text-sm font-medium text-gray-700 mb-1">📝 Observações</label>
-                <textarea
-                  value={observacao[f.uid] || ''}
-                  onChange={(e)=>setObservacao(prev=>({ ...prev, [f.uid]: e.target.value }))}
-                  placeholder="Ex: Use roupa preta, falar com João..."
-                  className="w-full p-2 border rounded text-sm"
-                  rows={2}
-                  maxLength={200}
-                />
-                <p className="text-xs text-gray-500 mt-1">⚠️ Não inclua telefone, e-mail ou redes sociais.</p>
-              </div>
-
-              <button
-                onClick={()=>chamar(f)}
-                disabled={chamando === f.uid}
-                className={`w-full mt-2 py-2 rounded-lg font-semibold text-white ${
-                  chamando === f.uid ? 'bg-orange-400' : 'bg-orange-500 hover:bg-orange-600'
-                }`}
-              >
-                {chamando === f.uid ? 'Chamando...' : '📞 Chamar'}
-              </button>
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
+          {lista.map((freela) => (
+            <FreelaCard
+              key={freela.id}
+              freela={freela}
+              distanciaKm={freela.distanciaKm}
+              online={freela.online}
+              onChamar={chamarFreela}
+              chamando={chamando}
+              observacao={observacao}
+              setObservacao={setObservacao}
+            />
           ))}
         </div>
       )}
