@@ -1,215 +1,197 @@
+// CadastroPessoaFisica.jsx
 import React, { useState } from 'react'
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
-import { doc, setDoc } from 'firebase/firestore'
-import { auth, db } from '@/firebase'
+import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { collection, addDoc } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'react-hot-toast'
+import { auth, db } from '@/firebase'
 
 export default function CadastroPessoaFisica() {
-  const [form, setForm] = useState({
+  const navigate = useNavigate()
+  const [formData, setFormData] = useState({
     nome: '',
+    cpf: '',
+    telefone: '',
     email: '',
     senha: '',
-    confirmarSenha: '',
-    cpf: '',
-    celular: '',
-    endereco: '',
-    foto: ''
+    endereco: {
+      cep: '',
+      rua: '',
+      numero: '',
+      complemento: '',
+      cidade: '',
+      estado: ''
+    }
   })
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const navigate = useNavigate()
+  const [error, setError] = useState(null)
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setForm(prev => ({ ...prev, [name]: value }))
+    if (name.includes('.')) {
+      const [parent, child] = name.split('.')
+      setFormData(prev => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent],
+          [child]: value
+        }
+      }))
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }))
+    }
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError('')
-    
-    // Validações
-    if (form.senha !== form.confirmarSenha) {
-      return setError('As senhas não coincidem')
-    }
-    if (!form.cpf || form.cpf.length !== 11) {
-      return setError('CPF inválido (deve ter 11 dígitos)')
-    }
-
     setLoading(true)
+    
     try {
-      // 1. Criar usuário no Authentication
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        form.email,
-        form.senha
-      )
-
-      // 2. Atualizar perfil com nome
-      await updateProfile(userCredential.user, {
-        displayName: form.nome
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.senha)
+      
+      await addDoc(collection(db, 'usuarios'), {
+        uid: userCredential.user.uid,
+        ...formData,
+        tipo: 'pessoa_fisica',
+        criadoEm: new Date()
       })
 
-      // 3. Salvar dados adicionais no Firestore
-      const userDoc = {
-        uid: userCredential.user.uid,
-        nome: form.nome,
-        email: form.email,
-        cpf: form.cpf,
-        celular: form.celular,
-        endereco: form.endereco,
-        foto: form.foto || '',
-        tipo: 'pessoa_fisica',
-        criadoEm: new Date().toISOString()
-      }
-
-      await setDoc(doc(db, 'usuarios', userCredential.user.uid), userDoc)
-
-      toast.success('Cadastro realizado com sucesso!')
-      navigate('/painelpessoafisica')
+      navigate('/login')
     } catch (err) {
-      console.error('Erro no cadastro:', err)
-      setError(err.message || 'Erro ao realizar cadastro')
+      setError(err.message)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-orange-50 flex items-center justify-center p-4">
-      <div className="bg-white p-6 rounded-2xl shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold text-orange-700 mb-4 text-center">
-          Cadastro de Pessoa Física
-        </h2>
-        <p className="text-sm text-gray-600 mb-4 text-center">
-          Para contratar freelancers para seus eventos pessoais
-        </p>
+    <div className="min-h-screen bg-cover bg-center" style={{ backgroundImage: "url('/img/fundo-login.jpg')" }}>
+      <div className="bg-black bg-opacity-50 min-h-screen flex items-center justify-center p-4">
+        <div className="bg-white bg-opacity-90 backdrop-blur-sm rounded-xl shadow-lg p-6 w-full max-w-md">
+          <h2 className="text-2xl font-bold text-center text-orange-600 mb-6">Cadastro Pessoa Física</h2>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Campos básicos */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">Nome Completo</label>
+              <input
+                name="nome"
+                value={formData.nome}
+                onChange={handleChange}
+                required
+                className="w-full p-2 border rounded"
+              />
+            </div>
 
-        {error && <p className="text-red-600 mb-4 text-center">{error}</p>}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">CPF</label>
+                <input
+                  name="cpf"
+                  value={formData.cpf}
+                  onChange={handleChange}
+                  required
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">Telefone</label>
+                <input
+                  name="telefone"
+                  value={formData.telefone}
+                  onChange={handleChange}
+                  required
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+            </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nome Completo *</label>
-            <input
-              type="text"
-              name="nome"
-              value={form.nome}
-              onChange={handleChange}
-              className="w-full border px-3 py-2 rounded"
-              required
-            />
-          </div>
+            {/* Email e Senha */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">E-mail</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                className="w-full p-2 border rounded"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">E-mail *</label>
-            <input
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              className="w-full border px-3 py-2 rounded"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Senha *</label>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">Senha</label>
               <input
                 type="password"
                 name="senha"
-                value={form.senha}
+                value={formData.senha}
                 onChange={handleChange}
-                className="w-full border px-3 py-2 rounded"
                 required
-                minLength={6}
+                className="w-full p-2 border rounded"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar Senha *</label>
+
+            {/* Endereço */}
+            <div className="space-y-2">
+              <h3 className="font-medium">Endereço</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  name="endereco.cep"
+                  value={formData.endereco.cep}
+                  onChange={handleChange}
+                  placeholder="CEP"
+                  className="p-2 border rounded"
+                />
+                <input
+                  name="endereco.numero"
+                  value={formData.endereco.numero}
+                  onChange={handleChange}
+                  placeholder="Número"
+                  className="p-2 border rounded"
+                />
+              </div>
               <input
-                type="password"
-                name="confirmarSenha"
-                value={form.confirmarSenha}
+                name="endereco.rua"
+                value={formData.endereco.rua}
                 onChange={handleChange}
-                className="w-full border px-3 py-2 rounded"
-                required
+                placeholder="Rua"
+                className="w-full p-2 border rounded"
               />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">CPF *</label>
               <input
-                type="text"
-                name="cpf"
-                value={form.cpf}
+                name="endereco.complemento"
+                value={formData.endereco.complemento}
                 onChange={handleChange}
-                className="w-full border px-3 py-2 rounded"
-                placeholder="Somente números"
-                required
-                pattern="\d{11}"
+                placeholder="Complemento"
+                className="w-full p-2 border rounded"
               />
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  name="endereco.cidade"
+                  value={formData.endereco.cidade}
+                  onChange={handleChange}
+                  placeholder="Cidade"
+                  className="p-2 border rounded"
+                />
+                <input
+                  name="endereco.estado"
+                  value={formData.endereco.estado}
+                  onChange={handleChange}
+                  placeholder="Estado"
+                  className="p-2 border rounded"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Celular *</label>
-              <input
-                type="tel"
-                name="celular"
-                value={form.celular}
-                onChange={handleChange}
-                className="w-full border px-3 py-2 rounded"
-                placeholder="(00) 00000-0000"
-                required
-              />
-            </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Endereço *</label>
-            <input
-              type="text"
-              name="endereco"
-              value={form.endereco}
-              onChange={handleChange}
-              className="w-full border px-3 py-2 rounded"
-              placeholder="Rua, número, bairro - Cidade/UF"
-              required
-            />
-          </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700 transition"
+            >
+              {loading ? 'Cadastrando...' : 'Finalizar Cadastro'}
+            </button>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">URL da Foto (opcional)</label>
-            <input
-              type="url"
-              name="foto"
-              value={form.foto}
-              onChange={handleChange}
-              className="w-full border px-3 py-2 rounded"
-              placeholder="https://..."
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-orange-600 text-white py-2 px-4 rounded hover:bg-orange-700 transition disabled:opacity-50"
-          >
-            {loading ? 'Cadastrando...' : 'Finalizar Cadastro'}
-          </button>
-        </form>
-
-        <p className="mt-4 text-center text-sm text-gray-600">
-          Já tem uma conta?{' '}
-          <button 
-            onClick={() => navigate('/login')} 
-            className="text-orange-600 hover:underline"
-          >
-            Faça login
-          </button>
-        </p>
+            {error && <p className="text-red-500 text-center">{error}</p>}
+          </form>
+        </div>
       </div>
     </div>
   )
