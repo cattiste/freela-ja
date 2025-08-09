@@ -14,7 +14,7 @@ import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
 
 // Hook PF de online
-import useOnlineFreelasPF from '@/hooks/pf/useOnlineFreelasPF'
+import useUsuariosOnlinePF from '@/hooks/pf/useUsuariosOnlinePF'
 
 export default function PainelPessoaFisica() {
   const [pessoa, setPessoa] = useState(null)
@@ -158,7 +158,7 @@ export default function PainelPessoaFisica() {
       }}
     >
       {renderConteudo()}
-      <MenuInferiorPF />
+      <MenuInferiorPF onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
     </div>
   )
 }
