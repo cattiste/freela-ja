@@ -11,7 +11,7 @@ import MenuInferiorPF from '@/components/MenuInferiorPF'
 
 import BuscarFreelasPF from '@/components/BuscarFreelasPF'
 
-import useUsuariosOnline from '@/hooks/useUsuariosOnline'
+import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
 
 import AgendaEventosPF from './AgendaEventosPF'
 import AvaliacoesRecebidasPF from './AvaliacoesRecebidasPF'
