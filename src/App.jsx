@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 // Contexto de autenticação
 import { AuthProvider } from '@/context/AuthContext'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/AuthContext' // precisa existir no seu contexto
 
 // Gerais
 import Home from '@/pages/gerais/Home'
@@ -41,20 +41,25 @@ import PagamentoChamada from '@/pages/estabelecimento/PagamentoChamada'
 import PainelPessoaFisica from '@/pages/pf/PainelPessoaFisica'
 import CandidaturasPF from '@/pages/pf/CandidaturasPF'
 import AgendaEventosPF from '@/pages/pf/AgendaEventosPF'
-import usePresenceMap from '@/hooks/usePresenceMap'
-import useSetupPresence from '@/hooks/useSetupPresence'
 
+// Presença (RTDB)
+import useSetupPresence from '@/hooks/useSetupPresence'
+import usePresenceMap from '@/hooks/usePresenceMap'
+
+// Wrapper para injetar usuario + usuariosOnline no BuscarFreelas
 function BuscarFreelasRoute() {
-  const { usuario } = useAuth() || {}   // ajuste se no seu contexto o nome for diferente
+  const { usuario } = useAuth() || {}     // ajuste se seu contexto expõe com outro nome
   const usuariosOnline = usePresenceMap(120_000)
   return <BuscarFreelas usuario={usuario} usuariosOnline={usuariosOnline} />
 }
 
- useSetupPresence({
-   gateByRoute: (path) =>
-     /^\/(pf(\/|$)|painelfreela|painelestabelecimento|pf\/buscar|publicarvaga)/i.test(path),
-   gateByVisibility: true, // desliga se a aba não estiver visível
- })
+export default function App() {
+  // Marca presença só em rotas “ativas” e quando a aba está visível
+  useSetupPresence({
+    gateByRoute: (path) =>
+      /^\/(pf(\/|$)|painelfreela|painelestabelecimento|pf\/buscar|publicarvaga)/i.test(path),
+    gateByVisibility: true,
+  })
 
   return (
     <AuthProvider>
@@ -97,7 +102,6 @@ function BuscarFreelasRoute() {
           <Route path="/pf" element={<PainelPessoaFisica />} />
           <Route path="/pf/candidaturas" element={<CandidaturasPF />} />
           <Route path="/pf/agenda" element={<AgendaEventosPF />} />
-          <Route path="/pf/buscar" element={<BuscarFreelas />} />
           <Route path="/pf/buscar" element={<BuscarFreelasRoute />} />
 
           {/* ✅ Redirecionamento alternativo se quiser acessar chamadas diretamente */}
