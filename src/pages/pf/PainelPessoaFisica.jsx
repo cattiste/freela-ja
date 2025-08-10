@@ -15,16 +15,14 @@ import ServicosPessoaFisica from '@/components/ServicosPessoaFisica'
 import AvaliacoesRecebidasPessoaFisica from '@/pages/pf/AvaliacoesRecebidasPessoaFisica'
 import HistoricoChamadasPessoaFisica from '@/components/HistoricoChamadasPessoaFisica'
 import ChamadasPessoaFisica from '@/pages/pf/ChamadasPessoaFisica'
-import useUsuariosOnlinePF from '@/hooks/pf/useUsuariosOnlinePF'
+import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
 
+// usar o card PF
 import CardAvaliacaoFreelaPF from '@/components/CardAvaliacaoFreelaPF'
 
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
-import { normalizeUserTypes } from '@/utils/normalizeUserTypes'
-import { bootPresence } from '@/utils/bootPresence'
-
 
 export default function PainelPessoaFisica() {
   const [pessoaFisica, setPessoaFisica] = useState(null)
@@ -33,9 +31,7 @@ export default function PainelPessoaFisica() {
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
   const [agendaPerfil, setAgendaPerfil] = useState({})
 
-  const usuariosOnline = useUsuariosOnlinePF()
-
-  
+  const { usuariosOnline } = useUsuariosOnline()
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
@@ -48,8 +44,6 @@ export default function PainelPessoaFisica() {
       try {
         const ref = doc(db, 'usuarios', usuario.uid)
         const snap = await getDoc(ref)
-
-        
 
         // aceitar 'pessoa_fisica' e 'pessoaFisica'
         if (snap.exists() && (snap.data().tipo === 'pessoa_fisica' || snap.data().tipo === 'pessoaFisica')) {
@@ -176,8 +170,7 @@ export default function PainelPessoaFisica() {
       case 'perfil':
         return renderPerfil()
       case 'buscar':
-        return <BuscarFreelasPF usuario={pessoa} usuariosOnline={usuariosOnline} />
-        console.log('PF online ->', Object.keys(usuariosOnline).length, usuariosOnline)
+        return <BuscarFreelas usuario={pessoaFisica} usuariosOnline={usuariosOnline} />
       case 'agendas':
         return <AgendaEventosPF />
       case 'vagas':
