@@ -18,7 +18,7 @@ import BuscarEventos from '@/pages/freela/BuscarEventos'
 import CadastroPessoaFisica from '@/pages/pf/CadastroPessoaFisica'
 import PagamentoPix from '@/pages/gerais/PagamentoPix'
 import DashboardAdmin from '@/components/DashboardAdmin'
-import BuscarFreelas from '@/components/buscarfreelas' // <- minúsculo
+import BuscarFreelas from '@/components/BuscarFreelas'
 
 // Freela
 import CadastroFreela from '@/pages/freela/CadastroFreela'
