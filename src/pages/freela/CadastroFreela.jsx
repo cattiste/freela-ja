@@ -1,7 +1,12 @@
 // src/pages/freela/CadastroFreela.jsx
 import React, { useEffect, useState } from 'react'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
-import { onAuthStateChanged, createUserWithEmailAndPassword } from 'firebase/auth'
+import {
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  fetchSignInMethodsForEmail,
+} from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
 import { uploadFoto } from '@/utils/uploadFoto'
@@ -25,6 +30,7 @@ export default function CadastroFreela() {
 
   const [form, setForm] = useState({
     nome: '',
+    cpf: '',                 // 👈 novo
     funcao: '',
     especialidades: '',
     valorDiaria: '',
@@ -45,6 +51,7 @@ export default function CadastroFreela() {
             const u = snap.data()
             setForm({
               nome: u.nome || '',
+              cpf: u.cpf || '', // 👈 carrega cpf
               funcao: u.funcao || '',
               especialidades: Array.isArray(u.especialidades) ? u.especialidades.join(', ') : (u.especialidades || ''),
               valorDiaria: u.valorDiaria || '',
@@ -103,25 +110,64 @@ export default function CadastroFreela() {
       }
 
       if (wantsNewAccount) {
-        if (!cred.email.trim()) return alert('Informe o e-mail.')
-        if (!cred.senha || cred.senha.length < 6) return alert('Senha deve ter ao menos 6 caracteres.')
-        const userCred = await createUserWithEmailAndPassword(auth, cred.email.trim(), cred.senha)
-        uid = userCred.user.uid
+        const email = cred.email.trim()
+        const senha = cred.senha
+
+        if (!email) {
+          alert('Informe o e-mail.')
+          setSalvando(false)
+          return
+        }
+        if (!senha || senha.length < 6) {
+          alert('Senha deve ter ao menos 6 caracteres.')
+          setSalvando(false)
+          return
+        }
+
+        // evita "email-already-in-use": tenta detectar e logar
+        const methods = await fetchSignInMethodsForEmail(auth, email)
+        if (methods.length > 0) {
+          if (!methods.includes('password')) {
+            alert('Este e-mail já está cadastrado por outro método (ex.: Google). Entre pelo mesmo método ou use outro e-mail.')
+            setSalvando(false)
+            return
+          }
+          try {
+            const userCred = await signInWithEmailAndPassword(auth, email, senha)
+            uid = userCred.user.uid
+          } catch (err) {
+            if (err?.code === 'auth/wrong-password') {
+              alert('Este e-mail já está cadastrado e a senha informada não confere.')
+            } else {
+              alert(`Não foi possível entrar com este e-mail (${err?.code || 'erro'}).`)
+            }
+            setSalvando(false)
+            return
+          }
+        } else {
+          const userCred = await createUserWithEmailAndPassword(auth, email, senha)
+          uid = userCred.user.uid
+        }
       }
 
+      // validações obrigatórias
       if (!form.nome?.trim()) return alert('Informe seu nome.')
       if (!form.funcao?.trim()) return alert('Informe sua função.')
+      const cpfNum = (form.cpf || '').replace(/\D/g, '')
+      if (!cpfNum || cpfNum.length !== 11) return alert('Informe um CPF válido (11 dígitos).')
 
       if (!uid) {
-        alert('Não foi possível identificar o usuário. Faça login ou preencha e-mail e senha para criar uma conta.')
+        alert('Não foi possível identificar o usuário.')
         setSalvando(false)
         return
-      }      
+      }
+
       const ref = doc(db, 'usuarios', uid)
       const payload = {
         uid,
         email: auth.currentUser?.email || cred.email || '',
         nome: form.nome.trim(),
+        cpf: cpfNum, // 👈 salva cpf numérico
         funcao: form.funcao.trim(),
         especialidades: form.especialidades
           ? form.especialidades.split(',').map((s) => s.trim()).filter(Boolean)
@@ -165,7 +211,7 @@ export default function CadastroFreela() {
           )}
         </div>
 
-        {/* Campos SEMPRE visíveis */}
+        {/* Campos de conta SEMPRE visíveis */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1">E-mail {(!modoEdicao || forcarCriacao) && '*'}</label>
@@ -195,9 +241,23 @@ export default function CadastroFreela() {
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Nome *</label>
-          <input name="nome" value={form.nome} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
+        {/* Dados do freela */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="col-span-1">
+            <label className="block text-sm font-medium mb-1">Nome *</label>
+            <input name="nome" value={form.nome} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
+          </div>
+          <div className="col-span-1">
+            <label className="block text-sm font-medium mb-1">CPF *</label>
+            <input
+              name="cpf"
+              value={form.cpf}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
+              placeholder="000.000.000-00"
+              required
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
