@@ -35,11 +35,7 @@ export default function PainelPessoaFisica() {
 
   const usuariosOnline = useUsuariosOnlinePF()
 
-  if (snap.exists()) {  
-  await normalizeUserTypes()
-  await normalizeUserTypes()
-  await bootPresence()
-}
+  
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
