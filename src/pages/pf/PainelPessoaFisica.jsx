@@ -7,7 +7,7 @@ import {
 import { auth, db } from '@/firebase'
 
 import MenuInferiorPessoaFisica from '@/components/MenuInferiorPessoaFisica'
-import BuscarFreelasPF from '@/components/BuscarFreelasPF'
+import BuscarFreelas from '@/components/BuscarFreelas'
 
 import AgendaEventosPF from './AgendaEventosPF'
 
