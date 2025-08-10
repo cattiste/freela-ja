@@ -1,260 +1,210 @@
-// ChamadasEstabelecimento.jsx atualizado com exibição de QR Code + código Pix (mantendo estrutura original)
-
+// src/pages/estabelecimento/CadastroEstabelecimento.jsx
 import React, { useEffect, useState } from 'react'
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  updateDoc,
-  doc,
-  serverTimestamp
-} from 'firebase/firestore'
-import { db } from '@/firebase'
-import { toast } from 'react-hot-toast'
-import AvaliacaoInline from '@/components/AvaliacaoInline'
-import MensagensRecebidasEstabelecimento from '@/components/MensagensRecebidasEstabelecimento'
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { onAuthStateChanged } from 'firebase/auth'
+import { useNavigate } from 'react-router-dom'
+import { auth, db } from '@/firebase'
 
-export default function ChamadasEstabelecimento({ estabelecimento }) {
-  const [chamadas, setChamadas] = useState([])
-  const [loadingId, setLoadingId] = useState(null)
-  const [qrcodes, setQrcodes] = useState({})
-  const [cpfManual, setCpfManual] = useState({})
-  const [confirmarDados, setConfirmarDados] = useState({})
+export default function CadastroEstabelecimento() {
+  const navigate = useNavigate()
+  const [carregando, setCarregando] = useState(true)
+  const [salvando, setSalvando] = useState(false)
 
+  const [form, setForm] = useState({
+    nome: '',
+    cnpj: '',
+    celular: '',
+    endereco: '',
+    especialidade: '',
+    foto: ''
+  })
+
+  // carrega dados se já existir doc do usuário
   useEffect(() => {
-    if (!estabelecimento?.uid) return
-
-    const q = query(
-      collection(db, 'chamadas'),
-      where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', 'in', ['pendente', 'aceita', 'pago', 'checkin_freela', 'em_andamento', 'checkout_freela', 'concluido'])
-    )
-
-    const unsub = onSnapshot(q, (snap) => {
-      const todasChamadas = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-
-      const unicas = {}
-      todasChamadas.forEach((chamada) => {
-        const existente = unicas[chamada.freelaUid]
-        const novaData = chamada.criadoEm?.toMillis?.() || 0
-        const dataExistente = existente?.criadoEm?.toMillis?.() || 0
-
-        if (!existente || novaData > dataExistente) {
-          unicas[chamada.freelaUid] = chamada
-        }
-      })
-
-      setChamadas(Object.values(unicas))
-    })
-
-    return () => unsub()
-  }, [estabelecimento])
-
-  const pagarChamada = async (chamada) => {
-    const valorNumerico = Number(chamada.valorDiaria)
-    const cnpjLimpo = estabelecimento.cnpj?.replace(/[^0-9]/g, '')
-    const documentoManual = cpfManual[chamada.id]?.replace(/[^0-9]/g, '') || ''
-
-    const payload = {
-      chamadaId: chamada.id,
-      valorDiaria: valorNumerico,
-      nomeEstabelecimento: estabelecimento.nome,
-      cpfEstabelecimento: estabelecimento.cpf,
-      cnpjEstabelecimento: cnpjLimpo,
-      cpfResponsavel: estabelecimento.cpfResponsavel,
-      documentoManual
-    }
-
-    if (!payload.valorDiaria || !payload.nomeEstabelecimento || (!documentoManual && !payload.cpfEstabelecimento && !payload.cnpjEstabelecimento)) {
-      toast.error('⚠️ Preencha um CPF ou CNPJ válido')
-      return
-    }
-
-    try {
-      const res = await fetch('https://us-central1-freelaja-web-50254.cloudfunctions.net/api/cobraChamadaAoAceitar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-      const data = await res.json()
-      if (res.ok) {
-        toast.success('✅ Pix gerado com sucesso!')
-        setQrcodes(prev => ({ ...prev, [chamada.id]: data.imagem }))
-      } else {
-        throw new Error(data.error || 'Erro desconhecido')
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        navigate('/login')
+        return
       }
-    } catch (err) {
-      console.error(err)
-      toast.error('Erro ao gerar Pix')
-    }
+
+      try {
+        const ref = doc(db, 'usuarios', user.uid)
+        const snap = await getDoc(ref)
+
+        if (snap.exists()) {
+          const u = snap.data()
+          setForm((prev) => ({
+            ...prev,
+            nome: u.nome || '',
+            cnpj: u.cnpj || '',
+            celular: u.celular || '',
+            endereco: u.endereco || '',
+            especialidade: u.especialidade || '',
+            foto: u.foto || ''
+          }))
+        } else {
+          // pré-preenche com email quando novo
+          setForm((prev) => ({
+            ...prev,
+            nome: user.displayName || '',
+          }))
+        }
+      } catch (e) {
+        console.error('Erro ao carregar usuário:', e)
+      } finally {
+        setCarregando(false)
+      }
+    })
+    return () => unsub()
+  }, [navigate])
+
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setForm((prev) => ({ ...prev, [name]: value }))
   }
 
-  const atualizarChamada = async (id, dados) => {
+  const salvar = async (e) => {
+    e.preventDefault()
+    if (!auth.currentUser?.uid) return
+
+    // validações básicas
+    if (!form.nome?.trim()) return alert('Informe o nome do estabelecimento.')
+    if (!form.cnpj?.trim()) return alert('Informe o CNPJ.')
+    if (!form.endereco?.trim()) return alert('Informe o endereço.')
+
+    setSalvando(true)
     try {
-      setLoadingId(id)
-      const ref = doc(db, 'chamadas', id)
-      await updateDoc(ref, dados)
-      toast.success('✅ Ação realizada com sucesso!')
-    } catch (err) {
-      console.error('Erro ao atualizar chamada:', err)
-      toast.error('Erro ao atualizar chamada.')
+      const uid = auth.currentUser.uid
+      const ref = doc(db, 'usuarios', uid)
+
+      // payload no novo modelo
+      const payload = {
+        uid,
+        email: auth.currentUser.email || '',
+        nome: form.nome.trim(),
+        cnpj: form.cnpj.trim(),
+        celular: form.celular.trim(),
+        endereco: form.endereco.trim(),
+        especialidade: form.especialidade.trim(),
+        foto: form.foto || '',
+
+        // 🔐 novo modelo de tipagem
+        tipoConta: 'comercial',
+        subtipoComercial: 'estabelecimento',
+
+        // metadados
+        atualizadoEm: serverTimestamp(),
+        criadoEm: serverTimestamp()
+      }
+
+      await setDoc(ref, payload, { merge: true })
+      alert('✅ Cadastro salvo com sucesso!')
+      navigate('/painelestabelecimento')
+    } catch (e) {
+      console.error('Erro ao salvar cadastro:', e)
+      alert('Erro ao salvar cadastro.')
     } finally {
-      setLoadingId(null)
+      setSalvando(false)
     }
   }
 
-  const badgeStatus = (status) => {
-    const cores = {
-      aceita: 'bg-yellow-200 text-yellow-700',
-      checkin_freela: 'bg-purple-200 text-purple-700',
-      em_andamento: 'bg-green-200 text-green-700',
-      checkout_freela: 'bg-blue-200 text-blue-700',
-      concluido: 'bg-gray-200 text-gray-700'
-    }
-    return (
-      <span className={`px-2 py-1 rounded text-xs font-semibold ${cores[status] || 'bg-gray-200 text-gray-700'}`}>
-        {status.replace('_', ' ')}
-      </span>
-    )
-  }
-
-  const copiarCodigoPix = (codigo) => {
-    navigator.clipboard.writeText(codigo)
-    toast.success('Código Pix copiado!')
-  }
-
-  if (!chamadas.length) {
-    return <div className="text-center mt-6 text-gray-500">Nenhuma chamada ativa no momento.</div>
+  if (carregando) {
+    return <div className="p-6 text-center text-orange-600">Carregando...</div>
   }
 
   return (
-    <div className="space-y-4">
-      {chamadas.map((chamada) => {
-        if (chamada.status === 'concluido' && chamada.avaliacaoFreela?.nota) {
-          return null
-        }
+    <div className="min-h-screen p-6 bg-orange-50 flex justify-center items-center">
+      <form
+        onSubmit={salvar}
+        className="bg-white w-full max-w-xl rounded-2xl shadow p-6 space-y-4"
+      >
+        <h1 className="text-2xl font-bold text-orange-700 text-center">
+          🏪 Cadastro do Estabelecimento
+        </h1>
 
-        const confirmar = confirmarDados[chamada.id] === true
+        <div>
+          <label className="block text-sm font-medium mb-1">Nome *</label>
+          <input
+            name="nome"
+            value={form.nome}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2"
+            placeholder="Ex: Churrascaria Boi na Brasa"
+            required
+          />
+        </div>
 
-        const foto =
-          chamada.freelaFoto ||
-          chamada.freela?.foto ||
-          'https://placehold.co/100x100'
-
-        const nome =
-          chamada.freelaNome ||
-          chamada.freela?.nome ||
-          'Nome não informado'
-
-        return (
-          <div key={chamada.id} className="bg-white rounded-xl p-3 shadow border border-orange-100 space-y-2">
-            <div className="flex items-center gap-3">
-              <img
-                src={foto}
-                alt={nome}
-                className="w-10 h-10 rounded-full border border-orange-300 object-cover"
-              />
-              <div className="flex-1">
-                <p className="font-bold text-orange-600">{nome}</p>
-                {chamada.valorDiaria && (
-                  <p className="text-xs text-gray-500">💰 R$ {chamada.valorDiaria} / diária</p>
-                )}
-                <p className="text-sm mt-1">📌 Status: {badgeStatus(chamada.status)}</p>
-                <MensagensRecebidasEstabelecimento chamadaId={chamada.id} />
-              </div>
-            </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium mb-1">CNPJ *</label>
             <input
-              type="text"
-              placeholder="Digite CPF ou CNPJ para pagamento"
-              value={cpfManual[chamada.id] || ''}
-              onChange={(e) => setCpfManual(prev => ({ ...prev, [chamada.id]: e.target.value }))}
-              className="w-full border rounded px-3 py-2 text-sm"
+              name="cnpj"
+              value={form.cnpj}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
+              placeholder="00.000.000/0000-00"
+              required
             />
-
-            {!confirmar && (
-              <button
-                onClick={() => setConfirmarDados(prev => ({ ...prev, [chamada.id]: true }))}
-                className="w-full bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300"
-              >
-                🧾 Confirmar dados de pagamento
-              </button>
-            )}
-
-            {confirmar && (
-              <>
-                <div className="bg-gray-50 border border-gray-200 p-2 rounded text-sm text-gray-700">
-                  <p><strong>Estabelecimento:</strong> {estabelecimento.nome}</p>
-                  {cpfManual[chamada.id] && (
-                    <p><strong>Documento informado:</strong> {cpfManual[chamada.id]}</p>
-                  )}
-                  <p><strong>Valor da diária:</strong> <input type="text" value={chamada.valorDiaria} disabled className="w-full bg-transparent text-gray-700" /></p>
-                </div>
-                <button
-                  onClick={() => pagarChamada(chamada)}
-                  className="w-full mt-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition"
-                >
-                  💳 Efetuar Pagamento Pix
-                </button>
-                {qrcodes[chamada.id] && (
-                  <div className="mt-2 text-center">
-                    <img src={qrcodes[chamada.id]} alt="QR Code Pix" className="w-48 mx-auto" />
-                    <p className="text-xs text-gray-500">Escaneie para pagar</p>
-                    {chamada.brCode && (
-                      <div className="mt-2">
-                        <p className="text-xs break-words text-gray-600 mb-1">{chamada.brCode}</p>
-                        <button
-                          onClick={() => copiarCodigoPix(chamada.brCode)}
-                          className="bg-orange-600 text-white px-3 py-1 rounded text-sm hover:bg-orange-700"
-                        >
-                          📋 Copiar código Pix
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-
-            {chamada.checkInFreela === true && !chamada.checkInEstabelecimento && (
-              <button
-                onClick={() =>
-                  atualizarChamada(chamada.id, {
-                    checkInEstabelecimento: true,
-                    checkInEstabelecimentoHora: serverTimestamp(),
-                    status: 'em_andamento'
-                  })
-                }
-                disabled={loadingId === chamada.id}
-                className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
-              >
-                {loadingId === chamada.id ? 'Confirmando...' : '✅ Confirmar Check-in'}
-              </button>
-            )}
-
-            {chamada.checkOutFreela === true && !chamada.checkOutEstabelecimento && (
-              <button
-                onClick={() =>
-                  atualizarChamada(chamada.id, {
-                    checkOutEstabelecimento: true,
-                    checkOutEstabelecimentoHora: serverTimestamp(),
-                    status: 'concluido'
-                  })
-                }
-                disabled={loadingId === chamada.id}
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-              >
-                {loadingId === chamada.id ? 'Confirmando...' : '📤 Confirmar Check-out'}
-              </button>
-            )}
-
-            {chamada.status === 'concluido' && (
-              <AvaliacaoInline chamada={chamada} tipo="estabelecimento" />
-            )}
           </div>
-        )
-      })}
+          <div>
+            <label className="block text-sm font-medium mb-1">Celular</label>
+            <input
+              name="celular"
+              value={form.celular}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
+              placeholder="(11) 9 9999-9999"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Endereço *</label>
+          <input
+            name="endereco"
+            value={form.endereco}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2"
+            placeholder="Rua Exemplo, 123 - Centro - São Paulo/SP"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Especialidade</label>
+          <input
+            name="especialidade"
+            value={form.especialidade}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2"
+            placeholder="Ex: Churrasco, Cozinha Brasileira, Pizzaria"
+          />
+        </div>
+
+        {/* Campo de foto simples (URL). Se preferir, troque por upload com Cloudinary/S3 depois */}
+        <div>
+          <label className="block text-sm font-medium mb-1">URL da Foto (opcional)</label>
+          <input
+            name="foto"
+            value={form.foto}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2"
+            placeholder="https://..."
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={salvando}
+          className="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition disabled:opacity-50"
+        >
+          {salvando ? 'Salvando...' : 'Salvar cadastro'}
+        </button>
+
+        <p className="text-xs text-gray-500 text-center">
+          Seus dados ficam visíveis para freelancers quando você abrir chamadas e vagas.
+        </p>
+      </form>
     </div>
   )
 }

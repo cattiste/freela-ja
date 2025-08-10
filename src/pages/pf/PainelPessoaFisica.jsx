@@ -7,7 +7,7 @@ import {
 import { auth, db } from '@/firebase'
 
 import MenuInferiorPessoaFisica from '@/components/MenuInferiorPessoaFisica'
-import BuscarFreelas from '@/components/BuscarFreelas'
+import BuscarFreelasPF from '@/components/BuscarFreelasPF'
 
 import AgendaEventosPF from './AgendaEventosPF'
 
@@ -22,6 +22,9 @@ import CardAvaliacaoFreelaPF from '@/components/CardAvaliacaoFreelaPF'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
+import { normalizeUserTypes } from '@/utils/normalizeUserTypes'
+import { bootPresence } from '@/utils/bootPresence'
+
 
 export default function PainelPessoaFisica() {
   const [pessoaFisica, setPessoaFisica] = useState(null)
@@ -31,6 +34,12 @@ export default function PainelPessoaFisica() {
   const [agendaPerfil, setAgendaPerfil] = useState({})
 
   const usuariosOnline = useUsuariosOnlinePF()
+
+  if (snap.exists()) {  
+  await normalizeUserTypes()
+  await normalizeUserTypes()
+  await bootPresence()
+}
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
