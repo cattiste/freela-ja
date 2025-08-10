@@ -1,6 +1,8 @@
-import React, { useEffect, useState, useMemo } from 'react'
+// src/components/buscarfreelas/index.jsx
+import React, { useEffect, useMemo, useState } from 'react'
 import {
-  collection, query, where, onSnapshot, addDoc, serverTimestamp
+  collection, query, where, onSnapshot, addDoc, serverTimestamp,
+  getDocs, doc, getDoc
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 
@@ -17,7 +19,7 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
   return R * c
 }
 
-// --- card do freela
+// --- card
 function FreelaCard({
   freela,
   distanciaKm,
@@ -27,8 +29,7 @@ function FreelaCard({
   setObservacao,
   isOnline
 }) {
-  const freelaId = freela.uid || freela.id
-
+  const freelaKey = freela.uid || freela.id
   return (
     <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100 hover:shadow-xl transition">
       <div className="flex flex-col items-center mb-3">
@@ -42,25 +43,18 @@ function FreelaCard({
 
         {freela.especialidades && (
           <p className="text-sm text-gray-500 text-center">
-            {Array.isArray(freela.especialidades)
-              ? freela.especialidades.join(', ')
-              : freela.especialidades}
+            {Array.isArray(freela.especialidades) ? freela.especialidades.join(', ') : freela.especialidades}
           </p>
         )}
 
         {freela.valorDiaria && (
-          <p className="text-sm font-semibold text-orange-700 mt-1">
-            💰 R$ {freela.valorDiaria} / diária
-          </p>
+          <p className="text-sm font-semibold text-orange-700 mt-1">💰 R$ {freela.valorDiaria} / diária</p>
         )}
 
         {distanciaKm != null && (
-          <p className="text-sm text-gray-600 mt-1">
-            📍 Aprox. {distanciaKm.toFixed(1)} km do local
-          </p>
+          <p className="text-sm text-gray-600 mt-1">📍 Aprox. {distanciaKm.toFixed(1)} km do local</p>
         )}
 
-        {/* mostra status online só se estiver realmente online */}
         {isOnline && (
           <div className="flex items-center gap-2 mt-1">
             <span className="w-2 h-2 rounded-full bg-green-500" />
@@ -70,14 +64,10 @@ function FreelaCard({
       </div>
 
       <div className="mb-2 w-full">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          📝 Observações para o freela
-        </label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">📝 Observações para o freela</label>
         <textarea
-          value={observacao[freelaId] || ''}
-          onChange={(e) =>
-            setObservacao((prev) => ({ ...prev, [freelaId]: e.target.value }))
-          }
+          value={observacao[freelaKey] || ''}
+          onChange={(e) => setObservacao((prev) => ({ ...prev, [freelaKey]: e.target.value }))}
           placeholder="Ex: Use roupa preta, falar com gerente João..."
           className="w-full p-2 border rounded text-sm"
           rows={2}
@@ -88,102 +78,92 @@ function FreelaCard({
 
       <button
         onClick={() => onChamar(freela)}
-        disabled={chamando === freelaId}
+        disabled={chamando === freelaKey}
         className="w-full py-2 px-4 rounded-lg font-semibold transition bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50"
       >
-        {chamando === freelaId ? 'Chamando...' : '📞 Chamar'}
+        {chamando === freelaKey ? 'Chamando...' : '📞 Chamar'}
       </button>
     </div>
   )
 }
 
-// --- lista/busca
+// --- componente principal
 export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
-  const [freelas, setFreelas] = useState([])
+  const [onlineUids, setOnlineUids] = useState([])            // ['uid1','uid2',...]
+  const [perfis, setPerfis] = useState([])                    // perfis resolvidos a partir dos UIDs online
   const [carregando, setCarregando] = useState(true)
   const [chamando, setChamando] = useState(null)
   const [filtroFuncao, setFiltroFuncao] = useState('')
   const [observacao, setObservacao] = useState({})
 
-  // carrega freelas
+  // 1) extrai UIDs realmente online do mapa
   useEffect(() => {
-    const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const todos = snapshot.docs.map(doc => {
-        const data = doc.data()
-        return { ...data, id: doc.id } // doc.id geralmente == uid
-      })
-      setFreelas(todos)
+    const uids = Object.entries(usuariosOnline)
+      .filter(([_, v]) => v?.online === true || v?.state === 'online')
+      .map(([k]) => k)
+    setOnlineUids(uids)
+  }, [usuariosOnline])
+
+  // 2) carrega perfis dos UIDs online (em lotes por campo uid; fallback por docId)
+  useEffect(() => {
+    let cancelado = false
+    async function resolverPerfis() {
+      try {
+        setCarregando(true)
+        const resultado = []
+
+        // a) primeiro tenta por campo uid (em lotes de 10)
+        const chunks = []
+        for (let i = 0; i < onlineUids.length; i += 10) chunks.push(onlineUids.slice(i, i + 10))
+
+        const encontradosPorUid = new Set()
+        for (const arr of chunks) {
+          // se não tiver campo uid em nenhum doc, essa etapa só não retorna nada – sem erro
+          const q = query(collection(db, 'usuarios'), where('uid', 'in', arr))
+          const snap = await getDocs(q)
+          snap.forEach(d => {
+            const data = d.data()
+            if (data?.tipo === 'freela') {
+              resultado.push({ id: d.id, ...data })
+            }
+            if (data?.uid) encontradosPorUid.add(data.uid)
+          })
+        }
+
+        // b) fallback: para UIDs que não vieram via campo uid, tenta docId === uid
+        const faltantes = onlineUids.filter(u => !encontradosPorUid.has(u))
+        for (const uid of faltantes) {
+          const dref = doc(db, 'usuarios', uid)
+          const dsnap = await getDoc(dref)
+          if (dsnap.exists()) {
+            const data = dsnap.data()
+            if (data?.tipo === 'freela') {
+              resultado.push({ id: dsnap.id, ...data, uid: data.uid || uid })
+            }
+          }
+        }
+
+        if (!cancelado) setPerfis(resultado)
+      } catch (e) {
+        console.error('[buscarfreelas] erro ao resolver perfis online:', e)
+        if (!cancelado) setPerfis([])
+      } finally {
+        if (!cancelado) setCarregando(false)
+      }
+    }
+
+    if (onlineUids.length > 0) resolverPerfis()
+    else {
+      setPerfis([])
       setCarregando(false)
-    })
-    return () => unsubscribe()
-  }, [])
-
-  // chamar freela
-  const chamarFreela = async (freela) => {
-    if (!usuario?.uid) return
-    const freelaId = freela.uid || freela.id
-    setChamando(freelaId)
-
-    const obs = (observacao[freelaId] || '').trim()
-
-    // bloqueio de contato direto no texto
-    const contemContato = /(\d{4,}|\b(zap|whats|telefone|email|contato|instagram|arroba)\b)/i
-    if (contemContato.test(obs)) {
-      alert('🚫 Não inclua telefone, e-mail ou redes sociais nas instruções.')
-      setChamando(null)
-      return
     }
 
-    try {
-      await addDoc(collection(db, 'chamadas'), {
-        freelaUid: freelaId,
-        freelaNome: freela.nome,
-        freelaFoto: freela.foto || '',
-        freelaFuncao: freela.funcao || '',
-        freela: {
-          uid: freelaId,
-          nome: freela.nome,
-          foto: freela.foto || '',
-          funcao: freela.funcao || ''
-        },
-        // chamador pode ser estabelecimento OU pessoa_fisica (suas regras permitem ambos)
-        chamadorUid: usuario.uid,
-        chamadorNome: usuario.nome,
-        tipoChamador: usuario.tipo,
-        // conveniência para seus cards
-        pessoaFisicaUid: usuario.tipo === 'pessoa_fisica' ? usuario.uid : null,
-        estabelecimentoUid: usuario.tipo === 'estabelecimento' ? usuario.uid : null,
+    return () => { cancelado = true }
+  }, [onlineUids])
 
-        valorDiaria: freela.valorDiaria || null,
-        observacao: obs,
-        status: 'pendente',
-        criadoEm: serverTimestamp()
-      })
-      
-      alert(`Freelancer ${freela.nome} foi chamado com sucesso.`)
-    } catch (err) {
-      console.error('Erro ao chamar freela:', err)
-      alert('Erro ao chamar freelancer.')
-    } finally {
-      setChamando(null)
-    }
-  }
-
-  // filtra + ordena
+  // 3) calcula distância e aplica filtro por função
   const freelasFiltrados = useMemo(() => {
-    return freelas
-      .filter((f) => {
-        const uid = f.uid || f.id
-        const status = usuariosOnline[uid]
-        // compat: aceita { online: true } ou { state: 'online' }
-        const online = status?.online === true || status?.state === 'online'
-
-        const funcaoMatch =
-          !filtroFuncao || f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
-
-        return online && funcaoMatch
-      })
+    return perfis
       .map((f) => {
         const distanciaKm =
           f.coordenadas && usuario?.coordenadas
@@ -194,11 +174,56 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
                 f.coordenadas.longitude
               )
             : null
-
         return { ...f, distanciaKm }
       })
+      .filter((f) =>
+        !filtroFuncao || f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
+      )
       .sort((a, b) => (a.distanciaKm || Infinity) - (b.distanciaKm || Infinity))
-  }, [freelas, usuariosOnline, filtroFuncao, usuario])
+  }, [perfis, filtroFuncao, usuario])
+
+  // 4) chamar freela
+  const chamarFreela = async (freela) => {
+    if (!usuario?.uid) return
+    const freelaUid = freela.uid || freela.id
+    setChamando(freelaUid)
+
+    const obs = (observacao[freelaUid] || '').trim()
+    const contemContato = /(\d{4,}|\b(zap|whats|telefone|email|contato|instagram|arroba)\b)/i
+    if (contemContato.test(obs)) {
+      alert('🚫 Não inclua telefone, e-mail ou redes sociais nas instruções.')
+      setChamando(null)
+      return
+    }
+
+    try {
+      await addDoc(collection(db, 'chamadas'), {
+        freelaUid,
+        freelaNome: freela.nome,
+        freelaFoto: freela.foto || '',
+        freelaFuncao: freela.funcao || '',
+        freela: { uid: freelaUid, nome: freela.nome, foto: freela.foto || '', funcao: freela.funcao || '' },
+
+        chamadorUid: usuario.uid,
+        chamadorNome: usuario.nome,
+        tipoChamador: usuario.tipo,
+        pessoaFisicaUid: usuario.tipo === 'pessoa_fisica' ? usuario.uid : null,
+        estabelecimentoUid: usuario.tipo === 'estabelecimento' ? usuario.uid : null,
+
+        valorDiaria: freela.valorDiaria || null,
+        observacao: obs,
+        status: 'pendente',
+        criadoEm: serverTimestamp()
+      })
+
+      alert(`Freelancer ${freela.nome} foi chamado com sucesso.`)
+    } catch (err) {
+      console.error('Erro ao chamar freela:', err)
+      alert('Erro ao chamar freelancer.')
+    } finally {
+      setChamando(null)
+    }
+  }
 
   return (
     <div
@@ -228,9 +253,7 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
           {freelasFiltrados.map((freela) => {
             const uid = freela.uid || freela.id
-            const status = usuariosOnline[uid]
-            const isOnline = status?.online === true || status?.state === 'online'
-
+            const isOnline = !!usuariosOnline[uid] && (usuariosOnline[uid].online === true || usuariosOnline[uid].state === 'online')
             return (
               <FreelaCard
                 key={uid}
