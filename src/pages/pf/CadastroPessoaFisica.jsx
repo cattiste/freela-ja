@@ -87,10 +87,16 @@ export default function CadastroPessoaFisica() {
     if (!contratoOk) return
     setSalvando(true)
     try {
+      const wantsNewAccount = forcarCriacao || (!!cred.email.trim() || !!cred.senha)
       let uid = auth.currentUser?.uid
 
-      // 🔸 cria a conta mesmo logado quando forcarCriacao = true
-      if (!uid || forcarCriacao) {
+      if (!uid && !wantsNewAccount) {
+        alert('Informe e-mail e senha para criar a conta.')
+        setSalvando(false)
+        return
+      }
+
+      if (wantsNewAccount) {
         if (!cred.email.trim()) return alert('Informe o e-mail.')
         if (!cred.senha || cred.senha.length < 6) return alert('Senha deve ter ao menos 6 caracteres.')
         const userCred = await createUserWithEmailAndPassword(auth, cred.email.trim(), cred.senha)
@@ -100,7 +106,7 @@ export default function CadastroPessoaFisica() {
       if (!form.nome?.trim()) return alert('Informe o nome.')
       if (!form.endereco?.trim()) return alert('Informe o endereço.')
 
-      const ref = doc(db, 'usuarios', uid)
+      const ref = doc(db, 'usuarios', uid!)
       const payload = {
         uid,
         email: auth.currentUser?.email || cred.email || '',
@@ -139,24 +145,40 @@ export default function CadastroPessoaFisica() {
           <h1 className="text-2xl font-bold text-orange-700">👤 Cadastro Pessoa Física</h1>
           {modoEdicao && !forcarCriacao && (
             <button type="button" onClick={() => setForcarCriacao(true)} className="text-sm underline text-orange-700">
-              Criar nova conta (usar outro e‑mail)
+              Criar nova conta (usar outro e-mail)
             </button>
           )}
         </div>
 
-        {(!modoEdicao || forcarCriacao) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">E-mail *</label>
-              <input name="email" type="email" value={cred.email} onChange={handleCred} className="w-full border rounded px-3 py-2" required />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Senha *</label>
-              <input name="senha" type="password" value={cred.senha} onChange={handleCred} className="w-full border rounded px-3 py-2" required />
-              <p className="text-xs text-gray-500 mt-1">Mínimo 6 caracteres</p>
-            </div>
+        {/* Campos SEMPRE visíveis */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium mb-1">E-mail {(!modoEdicao || forcarCriacao) && '*'}</label>
+            <input
+              name="email"
+              type="email"
+              value={cred.email}
+              onChange={handleCred}
+              className="w-full border rounded px-3 py-2"
+              required={!modoEdicao || forcarCriacao}
+            />
+            {modoEdicao && !forcarCriacao && (
+              <p className="text-xs text-gray-500 mt-1">Opcional em modo edição. Preencha para criar outra conta.</p>
+            )}
           </div>
-        )}
+          <div>
+            <label className="block text-sm font-medium mb-1">Senha {(!modoEdicao || forcarCriacao) && '*'}</label>
+            <input
+              name="senha"
+              type="password"
+              value={cred.senha}
+              onChange={handleCred}
+              className="w-full border rounded px-3 py-2"
+              required={!modoEdicao || forcarCriacao}
+            />
+            <p className="text-xs text-gray-500 mt-1">Mínimo 6 caracteres</p>
+          </div>
+        </div>
 
         <div>
           <label className="block text-sm font-medium mb-1">Nome *</label>
