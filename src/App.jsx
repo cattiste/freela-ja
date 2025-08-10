@@ -19,6 +19,8 @@ import CadastroPessoaFisica from '@/pages/pf/CadastroPessoaFisica'
 import PagamentoPix from '@/pages/gerais/PagamentoPix'
 import DashboardAdmin from '@/components/DashboardAdmin'
 import BuscarFreelas from '@/components/BuscarFreelas'
+import Privacidade from '@/pages/gerais/Privacidade'
+import Termos from '@/pages/gerais/Termos'
 
 // Freela
 import CadastroFreela from '@/pages/freela/CadastroFreela'
@@ -63,6 +65,8 @@ export default function App() {
           <Route path="/cadastropf" element={<CadastroPessoaFisica />} />
           <Route path="/pagamento-pix" element={<PagamentoPix />} />
           <Route path="/admin" element={<DashboardAdmin />} />
+          <Route path="/privacidade" element={<Privacidade />} />
+          <Route path="/termos" element={<Termos />} />
 
           {/* 👤 Freela */}
           <Route path="/cadastrofreela" element={<CadastroFreela />} />
