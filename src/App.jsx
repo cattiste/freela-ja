@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 // Contexto de autenticação
 import { AuthProvider } from '@/context/AuthContext'
-import { useAuth } from '@/context/AuthContext' // precisa existir no seu contexto
+import { useAuth } from '@/context/AuthContext' // ajuste se seu contexto exporta diferente
 
 // Gerais
 import Home from '@/pages/gerais/Home'
@@ -46,26 +46,31 @@ import AgendaEventosPF from '@/pages/pf/AgendaEventosPF'
 import useSetupPresence from '@/hooks/useSetupPresence'
 import usePresenceMap from '@/hooks/usePresenceMap'
 
-// Wrapper para injetar usuario + usuariosOnline no BuscarFreelas
-function BuscarFreelasRoute() {
-  const { usuario } = useAuth() || {}     // ajuste se seu contexto expõe com outro nome
-  const usuariosOnline = usePresenceMap(120_000)
-  return <BuscarFreelas usuario={usuario} usuariosOnline={usuariosOnline} />
-}
-
-export default function App() {
-  // Marca presença só em rotas “ativas” e quando a aba está visível
+// Componente que roda o hook DENTRO do BrowserRouter
+function PresenceManager() {
   useSetupPresence({
     gateByRoute: (path) =>
       /^\/(pf(\/|$)|painelfreela|painelestabelecimento|pf\/buscar|publicarvaga)/i.test(path),
     gateByVisibility: true,
   })
+  return null
+}
 
+// Wrapper para injetar usuario + usuariosOnline no BuscarFreelas
+function BuscarFreelasRoute() {
+  const { usuario } = useAuth() || {}   // ajuste conforme seu contexto
+  const usuariosOnline = usePresenceMap(120_000)
+  return <BuscarFreelas usuario={usuario} usuariosOnline={usuariosOnline} />
+}
+
+export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
+        {/* Hook de presença dentro do Router */}
+        <PresenceManager />
 
+        <Routes>
           {/* 🌐 Gerais */}
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Home />} />
@@ -104,9 +109,8 @@ export default function App() {
           <Route path="/pf/agenda" element={<AgendaEventosPF />} />
           <Route path="/pf/buscar" element={<BuscarFreelasRoute />} />
 
-          {/* ✅ Redirecionamento alternativo se quiser acessar chamadas diretamente */}
+          {/* ✅ Redirecionamento alternativo */}
           <Route path="/painel-estabelecimento/chamadas" element={<Navigate to="/painelestabelecimento/ativas" />} />
-
         </Routes>
       </BrowserRouter>
     </AuthProvider>
