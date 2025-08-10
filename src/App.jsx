@@ -37,7 +37,7 @@ import PagamentoChamada from '@/pages/estabelecimento/PagamentoChamada'
 // Páginas da Pessoa Física
 import PainelPessoaFisica from '@/pages/pf/PainelPessoaFisica'
 import CandidaturasPF from '@/pages/pf/CandidaturasPF'
-import AgendaEventosPF from '@/components/AgendaEventosPF' // <- estava importado de pages
+import AgendaEventosPF from '@/pages/pf/AgendaEventosPF'
 import useSetupPresence from '@/hooks/useSetupPresence'
 
 export default function App() {
