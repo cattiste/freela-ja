@@ -49,6 +49,12 @@ export default function PainelPessoaFisica() {
         const ref = doc(db, 'usuarios', usuario.uid)
         const snap = await getDoc(ref)
 
+        if (snap.exists()) {  
+          await normalizeUserTypes()
+          await normalizeUserTypes()
+          await bootPresence()
+        }
+
         // aceitar 'pessoa_fisica' e 'pessoaFisica'
         if (snap.exists() && (snap.data().tipo === 'pessoa_fisica' || snap.data().tipo === 'pessoaFisica')) {
           const dados = snap.data()
