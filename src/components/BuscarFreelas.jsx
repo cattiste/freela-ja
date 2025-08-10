@@ -37,6 +37,41 @@ function ehFreela(data) {
 }
 
 // ---------------------------------------------
+// presença com TTL
+const TTL_PADRAO_MS = 120_000 // 2 minutos
+
+function toMillis(v) {
+  if (!v) return null
+  if (typeof v === 'number') return v
+  if (typeof v === 'string') {
+    // aceita ISO (Date.parse) e "epoch" em string
+    const parsed = Date.parse(v)
+    if (!Number.isNaN(parsed)) return parsed
+    if (/^\d+$/.test(v)) return Number(v)
+    return null
+  }
+  // Firestore Timestamp
+  if (typeof v === 'object') {
+    if (typeof v.toMillis === 'function') return v.toMillis()
+    if (typeof v.seconds === 'number') return v.seconds * 1000
+    if (typeof v._seconds === 'number') return v._seconds * 1000
+  }
+  return null
+}
+
+function estaOnline(rec, nowMs, ttlMs) {
+  if (!rec) return false
+  const flag = rec.online === true || rec.state === 'online'
+  const ts =
+    toMillis(rec.lastSeen) ??
+    toMillis(rec.ts) ??
+    toMillis(rec.updatedAt) ??
+    toMillis(rec.last_changed)
+  if (ts == null) return flag // sem ts → usa flag (compat)
+  return flag && nowMs - ts <= ttlMs
+}
+
+// ---------------------------------------------
 // card de freela
 function FreelaCard({
   freela,
@@ -119,7 +154,11 @@ function FreelaCard({
 
 // ---------------------------------------------
 // componente principal
-export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
+export default function BuscarFreelas({
+  usuario,
+  usuariosOnline = {},
+  ttlMs = TTL_PADRAO_MS, // <<< pode ajustar via props se quiser
+}) {
   const [onlineUids, setOnlineUids] = useState([]) // ['uid1','uid2',...]
   const [perfisOnline, setPerfisOnline] = useState([]) // perfis resolvidos a partir dos UIDs online
   const [perfisTodos, setPerfisTodos] = useState([]) // lista (limitada) de todos freelas
@@ -129,13 +168,14 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
   const [observacao, setObservacao] = useState({})
   const [mostrarTodos, setMostrarTodos] = useState(false) // alternar entre "online" e "todos"
 
-  // 1) extrai UIDs realmente online do mapa
+  // 1) extrai UIDs realmente online do mapa (considera TTL)
   useEffect(() => {
+    const now = Date.now()
     const uids = Object.entries(usuariosOnline)
-      .filter(([_, v]) => v?.online === true || v?.state === 'online')
+      .filter(([_, v]) => estaOnline(v, now, ttlMs))
       .map(([k]) => k)
     setOnlineUids(uids)
-  }, [usuariosOnline])
+  }, [usuariosOnline, ttlMs])
 
   // 2) carrega perfis dos UIDs online (em lotes por campo uid; fallback por docId)
   useEffect(() => {
@@ -383,10 +423,7 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
           {freelasFiltrados.map((freela) => {
             const uid = freela.uid || freela.id
-            const isOnline =
-              !!usuariosOnline[uid] &&
-              (usuariosOnline[uid].online === true ||
-                usuariosOnline[uid].state === 'online')
+            const isOnline = estaOnline(usuariosOnline[uid], Date.now(), ttlMs)
 
             return (
               <FreelaCard
