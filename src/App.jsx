@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 // Contexto de autenticação
 import { AuthProvider } from '@/context/AuthContext'
+import { useAuth } from '@/context/AuthContext'
 
 // Gerais
 import Home from '@/pages/gerais/Home'
@@ -41,6 +42,13 @@ import PainelPessoaFisica from '@/pages/pf/PainelPessoaFisica'
 import CandidaturasPF from '@/pages/pf/CandidaturasPF'
 import AgendaEventosPF from '@/pages/pf/AgendaEventosPF'
 import useSetupPresence from '@/hooks/useSetupPresence'
+import usePresenceMap from '@/hooks/usePresenceMap'
+
+function BuscarFreelasRoute() {
+  const { usuario } = useAuth() || {}   // ajuste se no seu contexto o nome for diferente
+  const usuariosOnline = usePresenceMap(120_000)
+  return <BuscarFreelas usuario={usuario} usuariosOnline={usuariosOnline} />
+}
 
 export default function App() {
   useSetupPresence() // inicializa presença (RTDB -> Firestore)
@@ -87,6 +95,7 @@ export default function App() {
           <Route path="/pf/candidaturas" element={<CandidaturasPF />} />
           <Route path="/pf/agenda" element={<AgendaEventosPF />} />
           <Route path="/pf/buscar" element={<BuscarFreelas />} />
+          <Route path="/pf/buscar" element={<BuscarFreelasRoute />} />
 
           {/* ✅ Redirecionamento alternativo se quiser acessar chamadas diretamente */}
           <Route path="/painel-estabelecimento/chamadas" element={<Navigate to="/painelestabelecimento/ativas" />} />

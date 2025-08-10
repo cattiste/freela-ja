@@ -63,10 +63,11 @@ function estaOnline(rec, nowMs, ttlMs) {
   if (!rec) return false
   const flag = rec.online === true || rec.state === 'online'
   const ts =
-    toMillis(rec.lastSeen) ??
-    toMillis(rec.ts) ??
-    toMillis(rec.updatedAt) ??
-    toMillis(rec.last_changed)
+   toMillis(rec.lastSeen) ??
+   toMillis(rec.ts) ??
+   toMillis(rec.updatedAt) ??
+   toMillis(rec.last_changed) ??
+   toMillis(rec.last_seen)
   if (ts == null) return flag // sem ts → usa flag (compat)
   return flag && nowMs - ts <= ttlMs
 }
