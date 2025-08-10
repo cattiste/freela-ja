@@ -22,6 +22,7 @@ import DashboardAdmin from '@/components/DashboardAdmin'
 import BuscarFreelas from '@/components/BuscarFreelas'
 import Privacidade from '@/pages/gerais/Privacidade'
 import Termos from '@/pages/gerais/Termos'
+import RequireRole from '@/components/RequireRole'
 
 // Freela
 import CadastroFreela from '@/pages/freela/CadastroFreela'
@@ -88,23 +89,30 @@ export default function App() {
           <Route path="/admin" element={<DashboardAdmin />} />
           <Route path="/privacidade" element={<Privacidade />} />
           <Route path="/termos" element={<Termos />} />
+          
 
           {/* 👤 Freela */}
           <Route path="/cadastrofreela" element={<CadastroFreela />} />
           <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
-          <Route path="/painelfreela" element={<PainelFreela />} />
+          <Route path="/painelfreela" element={
+          <RequireRole allow={['freela','admin']}><PainelFreela/></RequireRole>
+          } />
           <Route path="/freela/editarfreela" element={<EditarFreela />} />
 
           {/* 🏢 Estabelecimento */}
           <Route path="/cadastroestabelecimento" element={<CadastroEstabelecimento />} />
           <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
-          <Route path="/painelestabelecimento/:rota?" element={<PainelEstabelecimento />} />
+          <Route path="/painelestabelecimento/:rota?" element={
+          <RequireRole allow={['estabelecimento','admin']}><PainelEstabelecimento/></RequireRole>
+          } />
           <Route path="/estabelecimento/editarperfil" element={<EditarPerfilEstabelecimento />} />
           <Route path="/publicarvaga" element={<PublicarVaga />} />
           <Route path="/pagamento-chamada/:id" element={<PagamentoChamada />} />
 
           {/* 👤 Pessoa Física */}
-          <Route path="/pf" element={<PainelPessoaFisica />} />
+          <Route path="/pf" element={
+          <RequireRole allow={['pessoa_fisica','admin']}><PainelPessoaFisica/></RequireRole>
+          } />
           <Route path="/pf/candidaturas" element={<CandidaturasPF />} />
           <Route path="/pf/agenda" element={<AgendaEventosPF />} />
           <Route path="/pf/buscar" element={<BuscarFreelasRoute />} />

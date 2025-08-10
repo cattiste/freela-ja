@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { auth, db } from '../firebase'
+import { auth, db } from '@/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
+import { resolveRole } from '@/utils/role'
 
 const AuthContext = createContext()
 
@@ -10,46 +11,59 @@ export function AuthProvider({ children }) {
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
-      if (usuario) {
-        try {
-          await usuario.getIdToken(true) // força renovação
-          const docRef = doc(db, 'usuarios', usuario.uid)
-          const docSnap = await getDoc(docRef)
-
-          const dados = docSnap.exists()
-            ? { uid: usuario.uid, ...docSnap.data() }
-            : { uid: usuario.uid, email: usuario.email }
-
-          setUsuario(dados)
-          localStorage.setItem('usuarioLogado', JSON.stringify(dados)) // ✅ salva no localStorage
-
-        } catch (erro) {
-          console.error('Erro ao buscar dados do usuário:', erro)
-          const fallback = { uid: usuario.uid, email: usuario.email }
-          setUsuario(fallback)
-          localStorage.setItem('usuarioLogado', JSON.stringify(fallback)) // ✅ fallback
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      try {
+        if (!fbUser) {
+          setUsuario(null)
+          localStorage.removeItem('usuarioLogado')
+          setCarregando(false)
+          return
         }
-      } else {
-        setUsuario(null)
-        localStorage.removeItem('usuarioLogado') // ✅ remove ao deslogar
+
+        // força renovar token (evita permission_denied no RTDB)
+        try { await fbUser.getIdToken(true) } catch {}
+
+        // busca perfil no Firestore
+        const ref = doc(db, 'usuarios', fbUser.uid)
+        const snap = await getDoc(ref)
+
+        const base = { uid: fbUser.uid, email: fbUser.email || '' }
+        const perfil = snap.exists() ? { ...base, ...snap.data() } : base
+
+        // 🔑 papel normalizado (novo/legado) — nunca lança erro
+        const role = resolveRole(perfil)
+        const usuarioFmt = { ...perfil, role }
+
+        setUsuario(usuarioFmt)
+        localStorage.setItem('usuarioLogado', JSON.stringify(usuarioFmt))
+      } catch (erro) {
+        console.error('Erro ao buscar dados do usuário:', erro)
+        // fallback seguro
+        const fbUser = auth.currentUser
+        const base = fbUser ? { uid: fbUser.uid, email: fbUser.email || '' } : null
+        const role = resolveRole(base || {})
+        const fallback = base ? { ...base, role } : null
+        setUsuario(fallback)
+        if (fallback) localStorage.setItem('usuarioLogado', JSON.stringify(fallback))
+      } finally {
+        setCarregando(false)
       }
-      setCarregando(false)
     })
 
     return () => unsubscribe()
   }, [])
 
+  // Atualiza dados do perfil sem mexer no Auth
   const atualizarUsuario = async () => {
-    const usuario = auth.currentUser
-    if (usuario) {
-      const docSnap = await getDoc(doc(db, 'usuarios', usuario.uid))
-      if (docSnap.exists()) {
-        const dados = { uid: usuario.uid, ...docSnap.data() }
-        setUsuario(dados)
-        localStorage.setItem('usuarioLogado', JSON.stringify(dados))
-      }
-    }
+    const fbUser = auth.currentUser
+    if (!fbUser) return
+    const snap = await getDoc(doc(db, 'usuarios', fbUser.uid))
+    const base = { uid: fbUser.uid, email: fbUser.email || '' }
+    const perfil = snap.exists() ? { ...base, ...snap.data() } : base
+    const role = resolveRole(perfil)
+    const usuarioFmt = { ...perfil, role }
+    setUsuario(usuarioFmt)
+    localStorage.setItem('usuarioLogado', JSON.stringify(usuarioFmt))
   }
 
   return (
