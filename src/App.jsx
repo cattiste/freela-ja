@@ -18,7 +18,7 @@ import BuscarEventos from '@/pages/freela/BuscarEventos'
 import CadastroPessoaFisica from '@/pages/pf/CadastroPessoaFisica'
 import PagamentoPix from '@/pages/gerais/PagamentoPix'
 import DashboardAdmin from '@/components/DashboardAdmin'
-import BuscarFreelas from '@/components/BuscarFreelas';
+import BuscarFreelas from '@/components/buscarfreelas' // <- minúsculo
 
 // Freela
 import CadastroFreela from '@/pages/freela/CadastroFreela'
@@ -37,14 +37,12 @@ import PagamentoChamada from '@/pages/estabelecimento/PagamentoChamada'
 // Páginas da Pessoa Física
 import PainelPessoaFisica from '@/pages/pf/PainelPessoaFisica'
 import CandidaturasPF from '@/pages/pf/CandidaturasPF'
-import AgendaEventosPF from '@/pages/pf/AgendaEventosPF'
+import AgendaEventosPF from '@/components/AgendaEventosPF' // <- estava importado de pages
 import useSetupPresence from '@/hooks/useSetupPresence'
 
 export default function App() {
-  useSetupPresence() // <- adiciona aqui, uma única vez
+  useSetupPresence() // inicializa presença (RTDB -> Firestore)
 
-
-export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
@@ -80,7 +78,7 @@ export default function App() {
           <Route path="/publicarvaga" element={<PublicarVaga />} />
           <Route path="/pagamento-chamada/:id" element={<PagamentoChamada />} />
 
-          {/* Pessoa Fisica */}
+          {/* 👤 Pessoa Física */}
           <Route path="/pf" element={<PainelPessoaFisica />} />
           <Route path="/pf/candidaturas" element={<CandidaturasPF />} />
           <Route path="/pf/agenda" element={<AgendaEventosPF />} />
