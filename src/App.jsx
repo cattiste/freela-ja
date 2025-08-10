@@ -41,8 +41,8 @@ import PagamentoChamada from '@/pages/estabelecimento/PagamentoChamada'
 import PainelPessoaFisica from '@/pages/pf/PainelPessoaFisica'
 import CandidaturasPF from '@/pages/pf/CandidaturasPF'
 import AgendaEventosPF from '@/pages/pf/AgendaEventosPF'
-import useSetupPresence from '@/hooks/useSetupPresence'
 import usePresenceMap from '@/hooks/usePresenceMap'
+import useSetupPresence from '@/hooks/useSetupPresence'
 
 function BuscarFreelasRoute() {
   const { usuario } = useAuth() || {}   // ajuste se no seu contexto o nome for diferente
@@ -50,8 +50,11 @@ function BuscarFreelasRoute() {
   return <BuscarFreelas usuario={usuario} usuariosOnline={usuariosOnline} />
 }
 
-export default function App() {
-  useSetupPresence() // inicializa presença (RTDB -> Firestore)
+ useSetupPresence({
+   gateByRoute: (path) =>
+     /^\/(pf(\/|$)|painelfreela|painelestabelecimento|pf\/buscar|publicarvaga)/i.test(path),
+   gateByVisibility: true, // desliga se a aba não estiver visível
+ })
 
   return (
     <AuthProvider>
