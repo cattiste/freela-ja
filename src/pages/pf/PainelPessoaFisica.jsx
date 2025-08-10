@@ -15,9 +15,8 @@ import ServicosPessoaFisica from '@/components/ServicosPessoaFisica'
 import AvaliacoesRecebidasPessoaFisica from '@/pages/pf/AvaliacoesRecebidasPessoaFisica'
 import HistoricoChamadasPessoaFisica from '@/components/HistoricoChamadasPessoaFisica'
 import ChamadasPessoaFisica from '@/pages/pf/ChamadasPessoaFisica'
-import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
+import useUsuariosOnlinePF from '@/hooks/pf/useUsuariosOnlinePF'
 
-// usar o card PF
 import CardAvaliacaoFreelaPF from '@/components/CardAvaliacaoFreelaPF'
 
 import Calendar from 'react-calendar'
@@ -31,7 +30,7 @@ export default function PainelPessoaFisica() {
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
   const [agendaPerfil, setAgendaPerfil] = useState({})
 
-  const { usuariosOnline } = useUsuariosOnline()
+  const usuariosOnline = useUsuariosOnlinePF()
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
@@ -170,7 +169,8 @@ export default function PainelPessoaFisica() {
       case 'perfil':
         return renderPerfil()
       case 'buscar':
-        return <BuscarFreelas usuario={pessoaFisica} usuariosOnline={usuariosOnline} />
+        return <BuscarFreelasPF usuario={pessoa} usuariosOnline={usuariosOnline} />
+        console.log('PF online ->', Object.keys(usuariosOnline).length, usuariosOnline)
       case 'agendas':
         return <AgendaEventosPF />
       case 'vagas':
