@@ -108,8 +108,12 @@ export default function CadastroEstabelecimento() {
       if (!form.nome?.trim()) return alert('Informe o nome do estabelecimento.')
       if (!form.cnpj?.trim()) return alert('Informe o CNPJ.')
       if (!form.endereco?.trim()) return alert('Informe o endereço.')
-
-      const ref = doc(db, 'usuarios', uid!)
+      if (!uid) {
+        alert('Não foi possível identificar o usuário. Faça login ou preencha e-mail e senha para criar uma conta.')
+        setSalvando(false)
+        return
+      }      
+      const ref = doc(db, 'usuarios', uid)
       const payload = {
         uid,
         email: auth.currentUser?.email || cred.email || '',

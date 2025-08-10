@@ -105,8 +105,12 @@ export default function CadastroPessoaFisica() {
 
       if (!form.nome?.trim()) return alert('Informe o nome.')
       if (!form.endereco?.trim()) return alert('Informe o endereço.')
-
-      const ref = doc(db, 'usuarios', uid!)
+      if (!uid) {
+        alert('Não foi possível identificar o usuário. Faça login ou preencha e-mail e senha para criar uma conta.')
+        setSalvando(false)
+        return
+      }      
+      const ref = doc(db, 'usuarios', uid)      
       const payload = {
         uid,
         email: auth.currentUser?.email || cred.email || '',
