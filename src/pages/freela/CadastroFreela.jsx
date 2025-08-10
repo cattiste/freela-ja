@@ -10,6 +10,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
 import { uploadFoto } from '@/utils/uploadFoto'
+import { formatarCPF, validarCPF, apenasNumeros } from '@/utils/cpf'
 import ContratoPrestacaoServico from '@/components/ContratoPrestacaoServico'
 
 const VERSAO_CONTRATO = '1.0.0'
@@ -27,10 +28,11 @@ export default function CadastroFreela() {
   const [contratoDefaultChecked, setContratoDefaultChecked] = useState(false)
 
   const [cred, setCred] = useState({ email: '', senha: '' })
+  const [cpfErro, setCpfErro] = useState('')
 
   const [form, setForm] = useState({
     nome: '',
-    cpf: '',                 // 👈 novo
+    cpf: '',
     funcao: '',
     especialidades: '',
     valorDiaria: '',
@@ -51,7 +53,7 @@ export default function CadastroFreela() {
             const u = snap.data()
             setForm({
               nome: u.nome || '',
-              cpf: u.cpf || '', // 👈 carrega cpf
+              cpf: u.cpf ? formatarCPF(u.cpf) : '',
               funcao: u.funcao || '',
               especialidades: Array.isArray(u.especialidades) ? u.especialidades.join(', ') : (u.especialidades || ''),
               valorDiaria: u.valorDiaria || '',
@@ -79,6 +81,23 @@ export default function CadastroFreela() {
 
   const handleChange = (e) => setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   const handleCred = (e) => setCred((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+
+  // máscara + validação leve onChange / onBlur
+  const handleCpfChange = (e) => {
+    const mascarado = formatarCPF(e.target.value)
+    setForm((prev) => ({ ...prev, cpf: mascarado }))
+    const dig = apenasNumeros(mascarado)
+    if (dig.length === 11) {
+      setCpfErro(validarCPF(dig) ? '' : 'CPF inválido')
+    } else {
+      setCpfErro('')
+    }
+  }
+  const handleCpfBlur = () => {
+    const dig = apenasNumeros(form.cpf)
+    if (!dig) return setCpfErro('') // vazio tratado na validação final
+    setCpfErro(validarCPF(dig) ? '' : 'CPF inválido')
+  }
 
   const onSelectFoto = async (e) => {
     const file = e.target.files?.[0]
@@ -124,7 +143,6 @@ export default function CadastroFreela() {
           return
         }
 
-        // evita "email-already-in-use": tenta detectar e logar
         const methods = await fetchSignInMethodsForEmail(auth, email)
         if (methods.length > 0) {
           if (!methods.includes('password')) {
@@ -153,8 +171,13 @@ export default function CadastroFreela() {
       // validações obrigatórias
       if (!form.nome?.trim()) return alert('Informe seu nome.')
       if (!form.funcao?.trim()) return alert('Informe sua função.')
-      const cpfNum = (form.cpf || '').replace(/\D/g, '')
-      if (!cpfNum || cpfNum.length !== 11) return alert('Informe um CPF válido (11 dígitos).')
+
+      const cpfNum = apenasNumeros(form.cpf)
+      if (!cpfNum || cpfNum.length !== 11 || !validarCPF(cpfNum)) {
+        alert('Informe um CPF válido.')
+        setSalvando(false)
+        return
+      }
 
       if (!uid) {
         alert('Não foi possível identificar o usuário.')
@@ -167,12 +190,12 @@ export default function CadastroFreela() {
         uid,
         email: auth.currentUser?.email || cred.email || '',
         nome: form.nome.trim(),
-        cpf: cpfNum, // 👈 salva cpf numérico
+        cpf: cpfNum,
         funcao: form.funcao.trim(),
         especialidades: form.especialidades
           ? form.especialidades.split(',').map((s) => s.trim()).filter(Boolean)
           : [],
-        valorDiaria: form.valorDiaria ? Number(form.valorDiaria) : null,
+        valorDiaria: form.valorDiaria !== '' ? Number(form.valorDiaria) : null,
         celular: form.celular.trim(),
         cidade: form.cidade.trim(),
         endereco: form.endereco.trim(),
@@ -211,7 +234,7 @@ export default function CadastroFreela() {
           )}
         </div>
 
-        {/* Campos de conta SEMPRE visíveis */}
+        {/* Conta */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1">E-mail {(!modoEdicao || forcarCriacao) && '*'}</label>
@@ -222,6 +245,7 @@ export default function CadastroFreela() {
               onChange={handleCred}
               className="w-full border rounded px-3 py-2"
               required={!modoEdicao || forcarCriacao}
+              autoComplete="email"
             />
             {modoEdicao && !forcarCriacao && (
               <p className="text-xs text-gray-500 mt-1">Opcional em modo edição. Preencha para criar outra conta.</p>
@@ -236,6 +260,7 @@ export default function CadastroFreela() {
               onChange={handleCred}
               className="w-full border rounded px-3 py-2"
               required={!modoEdicao || forcarCriacao}
+              autoComplete="new-password"
             />
             <p className="text-xs text-gray-500 mt-1">Mínimo 6 caracteres</p>
           </div>
@@ -252,11 +277,16 @@ export default function CadastroFreela() {
             <input
               name="cpf"
               value={form.cpf}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
+              onChange={handleCpfChange}
+              onBlur={handleCpfBlur}
+              className={`w-full border rounded px-3 py-2 ${cpfErro ? 'border-red-500' : ''}`}
               placeholder="000.000.000-00"
+              inputMode="numeric"
+              autoComplete="cpf"
+              maxLength={14}
               required
             />
+            {cpfErro && <p className="text-xs text-red-600 mt-1">{cpfErro}</p>}
           </div>
         </div>
 
