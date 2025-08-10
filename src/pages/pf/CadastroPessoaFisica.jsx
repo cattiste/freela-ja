@@ -4,29 +4,20 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { onAuthStateChanged, createUserWithEmailAndPassword } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
+import { uploadFoto } from '@/utils/uploadFoto'
 import ContratoPrestacaoServico from '@/components/ContratoPrestacaoServico'
 
 const VERSAO_CONTRATO = '1.0.0'
-const CLOUD_NAME = 'dbemvuau3'
-const UPLOAD_PRESET = 'preset-publico'
-
-async function uploadFoto(file) {
-  const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`
-  const fd = new FormData()
-  fd.append('file', file)
-  fd.append('upload_preset', UPLOAD_PRESET)
-  const res = await fetch(url, { method: 'POST', body: fd })
-  if (!res.ok) throw new Error('Falha no upload da imagem')
-  const data = await res.json()
-  return data.secure_url
-}
 
 export default function CadastroPessoaFisica() {
   const navigate = useNavigate()
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [uploading, setUploading] = useState(false)
+
   const [modoEdicao, setModoEdicao] = useState(false)
+  const [forcarCriacao, setForcarCriacao] = useState(false)
+
   const [contratoOk, setContratoOk] = useState(false)
   const [contratoDefaultChecked, setContratoDefaultChecked] = useState(false)
 
@@ -56,13 +47,10 @@ export default function CadastroPessoaFisica() {
               endereco: u.endereco || '',
               foto: u.foto || ''
             })
-            // se já aceitou a mesma versão, libera direto
             if (u.aceitouContrato && u.versaoContrato === VERSAO_CONTRATO) {
               setContratoOk(true)
               setContratoDefaultChecked(true)
             }
-          } else {
-            setForm((p) => ({ ...p, nome: user.displayName || '' }))
           }
         } else {
           setModoEdicao(false)
@@ -100,7 +88,9 @@ export default function CadastroPessoaFisica() {
     setSalvando(true)
     try {
       let uid = auth.currentUser?.uid
-      if (!uid) {
+
+      // 🔸 cria a conta mesmo logado quando forcarCriacao = true
+      if (!uid || forcarCriacao) {
         if (!cred.email.trim()) return alert('Informe o e-mail.')
         if (!cred.senha || cred.senha.length < 6) return alert('Senha deve ter ao menos 6 caracteres.')
         const userCred = await createUserWithEmailAndPassword(auth, cred.email.trim(), cred.senha)
@@ -145,9 +135,16 @@ export default function CadastroPessoaFisica() {
   return (
     <div className="min-h-screen p-6 bg-orange-50 flex justify-center items-center">
       <form onSubmit={salvar} className="bg-white w-full max-w-xl rounded-2xl shadow p-6 space-y-4">
-        <h1 className="text-2xl font-bold text-orange-700 text-center">👤 Cadastro Pessoa Física</h1>
+        <div className="flex items-start justify-between">
+          <h1 className="text-2xl font-bold text-orange-700">👤 Cadastro Pessoa Física</h1>
+          {modoEdicao && !forcarCriacao && (
+            <button type="button" onClick={() => setForcarCriacao(true)} className="text-sm underline text-orange-700">
+              Criar nova conta (usar outro e‑mail)
+            </button>
+          )}
+        </div>
 
-        {!modoEdicao && (
+        {(!modoEdicao || forcarCriacao) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium mb-1">E-mail *</label>
@@ -197,18 +194,14 @@ export default function CadastroPessoaFisica() {
           {uploading && <p className="text-xs text-orange-600">Enviando foto...</p>}
         </div>
 
-        <ContratoPrestacaoServico
-          versao={VERSAO_CONTRATO}
-          defaultChecked={contratoDefaultChecked}
-          onChange={setContratoOk}
-        />
+        <ContratoPrestacaoServico versao={VERSAO_CONTRATO} defaultChecked={contratoDefaultChecked} onChange={setContratoOk} />
 
         <button
           type="submit"
           disabled={salvando || uploading || !contratoOk}
           className="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition disabled:opacity-50"
         >
-          {salvando ? 'Salvando...' : modoEdicao ? 'Salvar alterações' : 'Criar conta e salvar'}
+          {salvando ? 'Salvando...' : (!modoEdicao || forcarCriacao) ? 'Criar conta e salvar' : 'Salvar alterações'}
         </button>
       </form>
     </div>
