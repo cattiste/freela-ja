@@ -9,7 +9,6 @@ import { auth, db } from '@/firebase'
 import MenuInferiorPessoaFisica from '@/components/MenuInferiorPessoaFisica'
 import BuscarFreelas from '@/components/BuscarFreelas'
 
-// usar o componente que você criou para PF (fica em components)
 import AgendaEventosPF from './AgendaEventosPF'
 
 import ServicosPessoaFisica from '@/components/ServicosPessoaFisica'

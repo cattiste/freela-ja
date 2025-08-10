@@ -11,7 +11,7 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  databaseURL: 'https://freelaja-web-50254-default-rtdb.firebaseio.com'
+  databaseURL: 'https://freelaja-web-50254-default-rtdb.firebaseio.com/'
 }
 
 // Verificação básica das configurações
