@@ -4,7 +4,9 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { onAuthStateChanged, createUserWithEmailAndPassword } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
+import ContratoPrestacaoServico from '@/components/ContratoPrestacaoServico'
 
+const VERSAO_CONTRATO = '1.0.0'
 const CLOUD_NAME = 'dbemvuau3'
 const UPLOAD_PRESET = 'preset-publico'
 
@@ -25,6 +27,8 @@ export default function CadastroPessoaFisica() {
   const [salvando, setSalvando] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [modoEdicao, setModoEdicao] = useState(false)
+  const [contratoOk, setContratoOk] = useState(false)
+  const [contratoDefaultChecked, setContratoDefaultChecked] = useState(false)
 
   const [cred, setCred] = useState({ email: '', senha: '' })
 
@@ -52,11 +56,16 @@ export default function CadastroPessoaFisica() {
               endereco: u.endereco || '',
               foto: u.foto || ''
             })
+            // se já aceitou a mesma versão, libera direto
+            if (u.aceitouContrato && u.versaoContrato === VERSAO_CONTRATO) {
+              setContratoOk(true)
+              setContratoDefaultChecked(true)
+            }
           } else {
             setForm((p) => ({ ...p, nome: user.displayName || '' }))
           }
         } else {
-          setModoEdicao(false) // sem login → cadastro novo
+          setModoEdicao(false)
         }
       } catch (e) {
         console.error('Erro ao carregar usuário:', e)
@@ -67,15 +76,8 @@ export default function CadastroPessoaFisica() {
     return () => unsub()
   }, [])
 
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setForm((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleCred = (e) => {
-    const { name, value } = e.target
-    setCred((prev) => ({ ...prev, [name]: value }))
-  }
+  const handleChange = (e) => setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  const handleCred = (e) => setCred((prev) => ({ ...prev, [e.target.name]: e.target.value }))
 
   const onSelectFoto = async (e) => {
     const file = e.target.files?.[0]
@@ -94,11 +96,10 @@ export default function CadastroPessoaFisica() {
 
   const salvar = async (e) => {
     e.preventDefault()
+    if (!contratoOk) return
     setSalvando(true)
     try {
       let uid = auth.currentUser?.uid
-
-      // Se não está logado, cria a conta primeiro
       if (!uid) {
         if (!cred.email.trim()) return alert('Informe o e-mail.')
         if (!cred.senha || cred.senha.length < 6) return alert('Senha deve ter ao menos 6 caracteres.')
@@ -121,6 +122,9 @@ export default function CadastroPessoaFisica() {
         tipo: 'pessoa_fisica',
         tipoConta: 'comercial',
         subtipoComercial: 'pf',
+        aceitouContrato: true,
+        versaoContrato: VERSAO_CONTRATO,
+        dataAceiteContrato: serverTimestamp(),
         atualizadoEm: serverTimestamp(),
         criadoEm: serverTimestamp()
       }
@@ -136,9 +140,7 @@ export default function CadastroPessoaFisica() {
     }
   }
 
-  if (carregando) {
-    return <div className="p-6 text-center text-orange-600">Carregando...</div>
-  }
+  if (carregando) return <div className="p-6 text-center text-orange-600">Carregando...</div>
 
   return (
     <div className="min-h-screen p-6 bg-orange-50 flex justify-center items-center">
@@ -195,7 +197,17 @@ export default function CadastroPessoaFisica() {
           {uploading && <p className="text-xs text-orange-600">Enviando foto...</p>}
         </div>
 
-        <button type="submit" disabled={salvando || uploading} className="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition disabled:opacity-50">
+        <ContratoPrestacaoServico
+          versao={VERSAO_CONTRATO}
+          defaultChecked={contratoDefaultChecked}
+          onChange={setContratoOk}
+        />
+
+        <button
+          type="submit"
+          disabled={salvando || uploading || !contratoOk}
+          className="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition disabled:opacity-50"
+        >
           {salvando ? 'Salvando...' : modoEdicao ? 'Salvar alterações' : 'Criar conta e salvar'}
         </button>
       </form>
