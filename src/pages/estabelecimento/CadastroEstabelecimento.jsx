@@ -19,7 +19,6 @@ export default function CadastroEstabelecimento() {
     foto: ''
   })
 
-  // carrega dados se já existir doc do usuário
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -43,11 +42,7 @@ export default function CadastroEstabelecimento() {
             foto: u.foto || ''
           }))
         } else {
-          // pré-preenche com email quando novo
-          setForm((prev) => ({
-            ...prev,
-            nome: user.displayName || '',
-          }))
+          setForm((prev) => ({ ...prev, nome: user.displayName || '' }))
         }
       } catch (e) {
         console.error('Erro ao carregar usuário:', e)
@@ -67,7 +62,6 @@ export default function CadastroEstabelecimento() {
     e.preventDefault()
     if (!auth.currentUser?.uid) return
 
-    // validações básicas
     if (!form.nome?.trim()) return alert('Informe o nome do estabelecimento.')
     if (!form.cnpj?.trim()) return alert('Informe o CNPJ.')
     if (!form.endereco?.trim()) return alert('Informe o endereço.')
@@ -77,7 +71,6 @@ export default function CadastroEstabelecimento() {
       const uid = auth.currentUser.uid
       const ref = doc(db, 'usuarios', uid)
 
-      // payload no novo modelo
       const payload = {
         uid,
         email: auth.currentUser.email || '',
@@ -87,12 +80,8 @@ export default function CadastroEstabelecimento() {
         endereco: form.endereco.trim(),
         especialidade: form.especialidade.trim(),
         foto: form.foto || '',
-
-        // 🔐 novo modelo de tipagem
         tipoConta: 'comercial',
         subtipoComercial: 'estabelecimento',
-
-        // metadados
         atualizadoEm: serverTimestamp(),
         criadoEm: serverTimestamp()
       }
@@ -114,96 +103,45 @@ export default function CadastroEstabelecimento() {
 
   return (
     <div className="min-h-screen p-6 bg-orange-50 flex justify-center items-center">
-      <form
-        onSubmit={salvar}
-        className="bg-white w-full max-w-xl rounded-2xl shadow p-6 space-y-4"
-      >
-        <h1 className="text-2xl font-bold text-orange-700 text-center">
-          🏪 Cadastro do Estabelecimento
-        </h1>
+      <form onSubmit={salvar} className="bg-white w-full max-w-xl rounded-2xl shadow p-6 space-y-4">
+        <h1 className="text-2xl font-bold text-orange-700 text-center">🏪 Cadastro do Estabelecimento</h1>
 
         <div>
           <label className="block text-sm font-medium mb-1">Nome *</label>
-          <input
-            name="nome"
-            value={form.nome}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-            placeholder="Ex: Churrascaria Boi na Brasa"
-            required
-          />
+          <input name="nome" value={form.nome} onChange={handleChange} className="w-full border rounded px-3 py-2" placeholder="Ex: Churrascaria Boi na Brasa" required />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1">CNPJ *</label>
-            <input
-              name="cnpj"
-              value={form.cnpj}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
-              placeholder="00.000.000/0000-00"
-              required
-            />
+            <input name="cnpj" value={form.cnpj} onChange={handleChange} className="w-full border rounded px-3 py-2" placeholder="00.000.000/0000-00" required />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Celular</label>
-            <input
-              name="celular"
-              value={form.celular}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
-              placeholder="(11) 9 9999-9999"
-            />
+            <input name="celular" value={form.celular} onChange={handleChange} className="w-full border rounded px-3 py-2" placeholder="(11) 9 9999-9999" />
           </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium mb-1">Endereço *</label>
-          <input
-            name="endereco"
-            value={form.endereco}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-            placeholder="Rua Exemplo, 123 - Centro - São Paulo/SP"
-            required
-          />
+          <input name="endereco" value={form.endereco} onChange={handleChange} className="w-full border rounded px-3 py-2" placeholder="Rua Exemplo, 123 - Centro - São Paulo/SP" required />
         </div>
 
         <div>
           <label className="block text-sm font-medium mb-1">Especialidade</label>
-          <input
-            name="especialidade"
-            value={form.especialidade}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-            placeholder="Ex: Churrasco, Cozinha Brasileira, Pizzaria"
-          />
+          <input name="especialidade" value={form.especialidade} onChange={handleChange} className="w-full border rounded px-3 py-2" placeholder="Ex: Churrasco, Cozinha Brasileira, Pizzaria" />
         </div>
 
-        {/* Campo de foto simples (URL). Se preferir, troque por upload com Cloudinary/S3 depois */}
         <div>
           <label className="block text-sm font-medium mb-1">URL da Foto (opcional)</label>
-          <input
-            name="foto"
-            value={form.foto}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-            placeholder="https://..."
-          />
+          <input name="foto" value={form.foto} onChange={handleChange} className="w-full border rounded px-3 py-2" placeholder="https://..." />
         </div>
 
-        <button
-          type="submit"
-          disabled={salvando}
-          className="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition disabled:opacity-50"
-        >
+        <button type="submit" disabled={salvando} className="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition disabled:opacity-50">
           {salvando ? 'Salvando...' : 'Salvar cadastro'}
         </button>
 
-        <p className="text-xs text-gray-500 text-center">
-          Seus dados ficam visíveis para freelancers quando você abrir chamadas e vagas.
-        </p>
+        <p className="text-xs text-gray-500 text-center">Seus dados ficam visíveis para freelancers quando você abrir chamadas e vagas.</p>
       </form>
     </div>
   )
