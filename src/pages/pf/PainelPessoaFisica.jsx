@@ -7,10 +7,10 @@ import {
 import { auth, db } from '@/firebase'
 
 import MenuInferiorPessoaFisica from '@/components/MenuInferiorPessoaFisica'
-import BuscarFreelas from '@/components/BuscarFreelas'
+import BuscarFreelas from '@/components/buscarfreelas' // <- caminho correto (minúsculo)
 
-// FIX: usar o componente que você criou para PF
-import AgendaEventosPF from './AgendaEventosPF'
+// usar o componente que você criou para PF (fica em components)
+import AgendaEventosPF from '@/components/AgendaEventosPF'
 
 import ServicosPessoaFisica from '@/components/ServicosPessoaFisica'
 import AvaliacoesRecebidasPessoaFisica from '@/pages/pf/AvaliacoesRecebidasPessoaFisica'
@@ -18,7 +18,7 @@ import HistoricoChamadasPessoaFisica from '@/components/HistoricoChamadasPessoaF
 import ChamadasPessoaFisica from '@/pages/pf/ChamadasPessoaFisica'
 import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
 
-// FIX: usar o card PF
+// usar o card PF
 import CardAvaliacaoFreelaPF from '@/components/CardAvaliacaoFreelaPF'
 
 import Calendar from 'react-calendar'
@@ -46,11 +46,13 @@ export default function PainelPessoaFisica() {
         const ref = doc(db, 'usuarios', usuario.uid)
         const snap = await getDoc(ref)
 
-        // FIX: tipo padronizado
-        if (snap.exists() && snap.data().tipo === 'pessoa_fisica') {
+        // aceitar 'pessoa_fisica' e 'pessoaFisica'
+        if (snap.exists() && (snap.data().tipo === 'pessoa_fisica' || snap.data().tipo === 'pessoaFisica')) {
           const dados = snap.data()
           setPessoaFisica({ uid: usuario.uid, ...dados })
           await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
+        } else {
+          setPessoaFisica(null)
         }
       } catch (err) {
         console.error('[Auth] Erro ao buscar dados:', err)
@@ -72,8 +74,8 @@ export default function PainelPessoaFisica() {
     const ref = collection(db, 'usuarios', pessoaFisica.uid, 'agenda')
     const snap = await getDocs(ref)
     const datas = {}
-    snap.docs.forEach(doc => {
-      datas[doc.id] = doc.data()
+    snap.docs.forEach(docu => {
+      datas[docu.id] = docu.data()
     })
     setAgendaPerfil(datas)
   }
@@ -89,7 +91,7 @@ export default function PainelPessoaFisica() {
 
       const snap = await getDocs(q)
       const pendentes = snap.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .map(docu => ({ id: docu.id, ...docu.data() }))
         .filter(chamada => !chamada.avaliacaoFreela?.nota)
 
       setAvaliacoesPendentes(pendentes)
@@ -119,7 +121,7 @@ export default function PainelPessoaFisica() {
           </div>
 
           <button
-            onClick={() => window.location.href = '/pessoa-fisica/editarperfil'}
+            onClick={() => (window.location.href = '/pessoa-fisica/editarperfil')}
             className="mt-4 w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition"
           >
             ✏️ Editar Perfil
@@ -141,7 +143,9 @@ export default function PainelPessoaFisica() {
               return null
             }}
           />
-          <p className="text-xs text-gray-500 mt-2">Clique em uma data na aba "Agendas" para adicionar ou remover compromissos.</p>
+          <p className="text-xs text-gray-500 mt-2">
+            Clique em uma data na aba "Agendas" para adicionar ou remover compromissos.
+          </p>
         </div>
 
         <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
