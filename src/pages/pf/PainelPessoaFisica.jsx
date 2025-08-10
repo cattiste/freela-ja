@@ -10,7 +10,7 @@ import MenuInferiorPessoaFisica from '@/components/MenuInferiorPessoaFisica'
 import BuscarFreelas from '@/components/BuscarFreelas'
 
 // usar o componente que você criou para PF (fica em components)
-import AgendaEventosPF from '@/components/AgendaEventosPF'
+import AgendaEventosPF from './AgendaEventosPF'
 
 import ServicosPessoaFisica from '@/components/ServicosPessoaFisica'
 import AvaliacoesRecebidasPessoaFisica from '@/pages/pf/AvaliacoesRecebidasPessoaFisica'
