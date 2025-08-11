@@ -1,5 +1,12 @@
+// src/pages/estabelecimento/PainelEstabelecimento.jsx
 import React, { useEffect, useMemo, useState, Suspense, lazy } from 'react'
 import { Navigate, useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '@/context/AuthContext'
+import {
+  doc, updateDoc, serverTimestamp,
+  collection, getDocs, query, where
+} from 'firebase/firestore'
+import { db } from '@/firebase'
 
 // helper: lazy com fallback visível se o import falhar
 const SafeLazy = (loader, FallbackName) =>
@@ -15,7 +22,6 @@ const SafeLazy = (loader, FallbackName) =>
     })
   )
 
-// troque seus imports assim:
 const MenuInferiorEstabelecimento = SafeLazy(() => import('@/components/MenuInferiorEstabelecimento'), 'MenuInferiorEstabelecimento')
 const BuscarFreelas = SafeLazy(() => import('@/components/BuscarFreelas'), 'BuscarFreelas')
 const AgendasContratadas = SafeLazy(() => import('@/components/AgendasContratadas'), 'AgendasContratadas')
@@ -58,7 +64,7 @@ export default function PainelEstabelecimento() {
   const nav = useNavigate()
   const location = useLocation()
 
-  // >>> lê ?tab=perfil|buscar|agendas|vagas|avaliacao|historico|ativas|chamadas
+  // lê ?tab=perfil|buscar|agendas|vagas|avaliacao|historico|ativas|chamadas
   const getTabFromURL = () => {
     const p = new URLSearchParams(location.search)
     return p.get('tab') || 'perfil'
@@ -71,13 +77,11 @@ export default function PainelEstabelecimento() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search])
 
-
   const estabelecimento = useMemo(
     () => (usuario?.tipo === 'estabelecimento' ? usuario : null),
     [usuario]
   )
 
-  const [abaSelecionada, setAbaSelecionada] = useState('perfil')
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
   const [agendaPerfil, setAgendaPerfil] = useState({})
 
@@ -127,6 +131,14 @@ export default function PainelEstabelecimento() {
     } catch (err) {
       console.error('[PainelEstabelecimento] erro aval pendentes:', err)
     }
+  }
+
+  // atualizar URL ao trocar de aba (opcional, mas bom pra debug)
+  const handleSelectAba = (aba) => {
+    const params = new URLSearchParams(location.search)
+    params.set('tab', aba)
+    nav(`${location.pathname}?${params.toString()}`, { replace: true })
+    setAbaSelecionada(aba)
   }
 
   function renderPerfil() {
@@ -288,7 +300,10 @@ export default function PainelEstabelecimento() {
         <Suspense fallback={<div className="p-4">Carregando painel…</div>}>
           {renderConteudo()}
           <Suspense fallback={<div className="p-4">Carregando menu…</div>}>
-            <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
+            <MenuInferiorEstabelecimento
+              onSelect={handleSelectAba}      // <— atualiza URL e state
+              abaAtiva={abaSelecionada}
+            />
           </Suspense>
         </Suspense>
       </ErrorBoundary>
