@@ -1,3 +1,4 @@
+// src/pages/gerais/Login.jsx
 import React, { useState } from 'react'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { useNavigate, Link } from 'react-router-dom'
@@ -12,20 +13,9 @@ export default function Login() {
   const [error, setError] = useState('')
 
   const resolverTipo = (u = {}) => {
-    // tenta o campo novo
     let t = u.tipo || ''
-
-    // compatibilidade com estruturas antigas
-    if (!t && u.tipoConta === 'comercial' && u.subtipoComercial) {
-      // esperado: 'estabelecimento' | 'pf'
-      t = u.subtipoComercial
-    }
-    if (!t && u.tipoUsuario) {
-      // esperado: 'freela'
-      t = u.tipoUsuario
-    }
-
-    // normaliza
+    if (!t && u.tipoConta === 'comercial' && u.subtipoComercial) t = u.subtipoComercial
+    if (!t && u.tipoUsuario) t = u.tipoUsuario
     if (t === 'pf') t = 'pessoa_fisica'
     return t
   }
@@ -39,14 +29,10 @@ export default function Login() {
     try {
       const emailNorm = email.trim().toLowerCase()
       const cred = await signInWithEmailAndPassword(auth, emailNorm, senha)
-
-      // tenta refrescar token silenciosamente
       try { await cred.user.getIdToken(true) } catch {}
 
-      // busca doc do usuário
       const ref = doc(db, 'usuarios', cred.user.uid)
       const snap = await getDoc(ref)
-
       if (!snap.exists()) {
         setError('Seu cadastro ainda não foi finalizado. Tente novamente em alguns segundos.')
         setLoading(false)
@@ -65,41 +51,29 @@ export default function Login() {
         endereco: u.endereco || '',
         foto: u.foto || cred.user.photoURL || ''
       }
-      try {
-        localStorage.setItem('usuarioLogado', JSON.stringify(usuarioLocal))
-      } catch {}
+      try { localStorage.setItem('usuarioLogado', JSON.stringify(usuarioLocal)) } catch {}
 
       const nomeOk = !!usuarioLocal.nome?.trim()
 
       if (tipo === 'freela') {
         const funcaoOk = !!usuarioLocal.funcao?.trim()
-        if (!nomeOk || !funcaoOk) {
-          navigate('/freela/editarfreela', { replace: true })
-        } else {
-          navigate('/painelfreela', { replace: true })
-        }
+        if (!nomeOk || !funcaoOk) navigate('/freela/editarfreela', { replace: true })
+        else navigate('/painel/freela', { replace: true })           // ✅ corrigido
         return
       }
 
       if (tipo === 'estabelecimento') {
-        if (!nomeOk) {
-          navigate('/estabelecimento/editarperfil', { replace: true })
-        } else {
-          navigate('/painelestabelecimento', { replace: true })
-        }
+        if (!nomeOk) navigate('/estabelecimento/editarperfil', { replace: true })
+        else navigate('/painel/estabelecimento', { replace: true })  // ✅ corrigido
         return
       }
 
       if (tipo === 'pessoa_fisica') {
-        if (!nomeOk) {
-          navigate('/cadastropf', { replace: true })
-        } else {
-          navigate('/pf', { replace: true })
-        }
+        if (!nomeOk) navigate('/cadastropf', { replace: true })
+        else navigate('/painel/pf', { replace: true })               // ✅ corrigido
         return
       }
 
-      // fallback
       navigate('/', { replace: true })
     } catch (err) {
       console.error(err)
@@ -158,7 +132,7 @@ export default function Login() {
         </form>
 
         <p className="text-center mt-4 text-sm text-white">
-          <Link to="/esquecisenha" className="text-blue-200 hover:underline">
+          <Link to="/esquecisenha" className="text-blue-2 00 hover:underline">
             Esqueci minha senha
           </Link>
         </p>

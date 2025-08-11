@@ -1,11 +1,11 @@
 // src/pages/estabelecimento/PainelEstabelecimento.jsx
 import React, { useState, useEffect } from 'react'
-import { onAuthStateChanged } from 'firebase/auth'
+import { Navigate, useNavigate } from 'react-router-dom'
 import {
-  doc, getDoc, updateDoc, serverTimestamp,
-  collection, query, where, getDocs
+  doc, getDocs, collection, query, where, updateDoc, serverTimestamp
 } from 'firebase/firestore'
-import { auth, db } from '@/firebase'
+import { db } from '@/firebase'
+import { useAuth } from '@/context/AuthContext'
 
 import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
 import BuscarFreelas from '@/components/BuscarFreelas'
@@ -20,71 +20,63 @@ import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
 
 export default function PainelEstabelecimento() {
-  const [estabelecimento, setEstabelecimento] = useState(null)
-  const [carregando, setCarregando] = useState(true)
+  const { usuario, carregando } = useAuth()
+  const nav = useNavigate()
+
+  // garante que só estabelecimentos acessem
+  const estabelecimento = usuario?.tipo === 'estabelecimento' ? usuario : null
+
   const [abaSelecionada, setAbaSelecionada] = useState('perfil')
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
   const [agendaPerfil, setAgendaPerfil] = useState({})
 
-  // ❌ removido useUsuariosOnlineEstab
-  const usuariosOnline = {} // opcional: se no futuro voltar presença, injetar aqui
+  // placeholder se quiser reativar presença no futuro
+  const usuariosOnline = {}
 
+  // Atualiza última atividade quando entrar no painel
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
-      if (!usuario) {
-        setEstabelecimento(null)
-        setCarregando(false)
-        return
-      }
-
+    const marcarUltimaAtividade = async () => {
       try {
-        const ref = doc(db, 'usuarios', usuario.uid)
-        const snap = await getDoc(ref)
-
-        if (snap.exists()) {
-          const dados = snap.data()
-          // ✅ aceita tanto modelo antigo quanto novo
-          const tipo = dados.tipo || dados.tipoUsuario || dados.subtipoComercial
-          if (tipo === 'estabelecimento') {
-            setEstabelecimento({ uid: usuario.uid, ...dados })
-            await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
-          }
-        }
+        if (!estabelecimento?.uid) return
+        await updateDoc(doc(db, 'usuarios', estabelecimento.uid), {
+          ultimaAtividade: serverTimestamp()
+        })
       } catch (err) {
-        console.error('[Auth] Erro ao buscar dados do estabelecimento:', err)
-      } finally {
-        setCarregando(false)
+        console.warn('[PainelEstabelecimento] Não foi possível marcar ultimaAtividade:', err)
       }
-    })
+    }
+    marcarUltimaAtividade()
+  }, [estabelecimento?.uid])
 
-    return () => unsubscribe()
-  }, [])
-
+  // Carrega dados dependentes do uid
   useEffect(() => {
     if (!estabelecimento?.uid) return
-    carregarAgenda()
-    carregarAvaliacoesPendentes()
-  }, [estabelecimento])
+    carregarAgenda(estabelecimento.uid)
+    carregarAvaliacoesPendentes(estabelecimento.uid)
+  }, [estabelecimento?.uid])
 
-  const carregarAgenda = async () => {
-    const ref = collection(db, 'usuarios', estabelecimento.uid, 'agenda')
-    const snap = await getDocs(ref)
-    const datas = {}
-    snap.docs.forEach(doc => {
-      datas[doc.id] = doc.data()
-    })
-    setAgendaPerfil(datas)
+  const carregarAgenda = async (uid) => {
+    try {
+      const ref = collection(db, 'usuarios', uid, 'agenda')
+      const snap = await getDocs(ref)
+      const datas = {}
+      snap.docs.forEach(d => {
+        datas[d.id] = d.data()
+      })
+      setAgendaPerfil(datas)
+    } catch (err) {
+      console.error('Erro ao carregar agenda do perfil:', err)
+    }
   }
 
-  const carregarAvaliacoesPendentes = async () => {
+  const carregarAvaliacoesPendentes = async (uid) => {
     try {
       const ref = collection(db, 'chamadas')
       const q = query(
         ref,
-        where('estabelecimentoUid', '==', estabelecimento.uid),
+        where('estabelecimentoUid', '==', uid),
         where('status', '==', 'concluido')
       )
-
       const snap = await getDocs(q)
       const pendentes = snap.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
@@ -101,20 +93,22 @@ export default function PainelEstabelecimento() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
           <img
-            src={estabelecimento?.foto || 'https://placehold.co/100x100'}
-            alt={estabelecimento?.nome}
+            src={estabelecimento?.foto || '/img/placeholder-100.png'}
+            alt={estabelecimento?.nome || 'Estabelecimento'}
             className="w-24 h-24 rounded-full object-cover mb-2 border-2 border-orange-500 mx-auto"
           />
-          <h2 className="text-center text-xl font-bold text-orange-700">{estabelecimento?.nome}</h2>
+          <h2 className="text-center text-xl font-bold text-orange-700">
+            {estabelecimento?.nome || 'Sem nome'}
+          </h2>
           <div className="text-sm text-gray-700 space-y-1 mt-3">
             <p>📞 {estabelecimento?.celular || 'Telefone não informado'}</p>
             <p>📧 {estabelecimento?.email}</p>
-            <p>📍 {estabelecimento?.endereco}</p>
-            <p>🧾 {estabelecimento?.cnpj}</p>
+            <p>📍 {estabelecimento?.endereco || 'Endereço não informado'} </p>
+            <p>🧾 {estabelecimento?.cnpj || 'CNPJ não informado'}</p>
           </div>
 
           <button
-            onClick={() => (window.location.href = '/estabelecimento/editarperfil')}
+            onClick={() => nav('/estabelecimento/editarperfil')}
             className="mt-4 w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition"
           >
             ✏️ Editar Perfil
@@ -136,7 +130,9 @@ export default function PainelEstabelecimento() {
               return null
             }}
           />
-          <p className="text-xs text-gray-500 mt-2">Clique em uma data na aba "Agendas" para adicionar ou remover compromissos.</p>
+          <p className="text-xs text-gray-500 mt-2">
+            Clique em uma data na aba "Agendas" para adicionar ou remover compromissos.
+          </p>
         </div>
 
         <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
@@ -148,7 +144,7 @@ export default function PainelEstabelecimento() {
               <CardAvaliacaoFreela
                 key={chamada.id}
                 chamada={chamada}
-                onAvaliado={() => carregarAvaliacoesPendentes()}
+                onAvaliado={() => carregarAvaliacoesPendentes(estabelecimento.uid)}
               />
             ))
           )}
@@ -179,8 +175,22 @@ export default function PainelEstabelecimento() {
     }
   }
 
-  if (carregando) return <div className="text-center text-orange-600 mt-8">Carregando painel...</div>
-  if (!estabelecimento) return <div className="text-center text-red-600 mt-8">Acesso não autorizado.</div>
+  // Estados de carregamento/segurança
+  if (carregando) {
+    return <div className="text-center text-orange-600 mt-8">Carregando painel...</div>
+  }
+
+  // Se logado mas não é estabelecimento, manda pro painel correto
+  if (usuario?.uid && usuario?.tipo !== 'estabelecimento') {
+    if (usuario?.tipo === 'freela') return <Navigate to="/painel/freela" replace />
+    if (usuario?.tipo === 'pessoa_fisica') return <Navigate to="/painel/pf" replace />
+    return <Navigate to="/" replace />
+  }
+
+  // Não logado
+  if (!usuario?.uid) {
+    return <Navigate to="/login" replace />
+  }
 
   return (
     <div
