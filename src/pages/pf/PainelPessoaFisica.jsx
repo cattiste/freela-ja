@@ -1,3 +1,4 @@
+// src/pages/pf/PainelPessoaFisica.jsx
 import React, { useState, useEffect } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
 import {
@@ -10,19 +11,23 @@ import MenuInferiorPessoaFisica from '@/components/MenuInferiorPessoaFisica'
 import BuscarFreelas from '@/components/BuscarFreelas'
 
 import AgendaEventosPF from './AgendaEventosPF'
-
 import ServicosPessoaFisica from '@/components/ServicosPessoaFisica'
 import AvaliacoesRecebidasPessoaFisica from '@/pages/pf/AvaliacoesRecebidasPessoaFisica'
 import HistoricoChamadasPessoaFisica from '@/components/HistoricoChamadasPessoaFisica'
 import ChamadasPessoaFisica from '@/pages/pf/ChamadasPessoaFisica'
-import { useUsuariosOnline } from '@/hooks/useUsuariosOnline'
-
-// usar o card PF
 import CardAvaliacaoFreelaPF from '@/components/CardAvaliacaoFreelaPF'
 
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
+
+const AVATAR_PLACEHOLDER =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+  <rect width="100%" height="100%" fill="#f3f4f6"/>
+  <circle cx="50" cy="38" r="18" fill="#d1d5db"/>
+  <rect x="20" y="66" width="60" height="18" rx="9" fill="#d1d5db"/>
+</svg>`)
 
 export default function PainelPessoaFisica() {
   const [pessoaFisica, setPessoaFisica] = useState(null)
@@ -30,8 +35,6 @@ export default function PainelPessoaFisica() {
   const [abaSelecionada, setAbaSelecionada] = useState('perfil')
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
   const [agendaPerfil, setAgendaPerfil] = useState({})
-
-  const { usuariosOnline } = useUsuariosOnline()
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
@@ -45,7 +48,6 @@ export default function PainelPessoaFisica() {
         const ref = doc(db, 'usuarios', usuario.uid)
         const snap = await getDoc(ref)
 
-        // aceitar 'pessoa_fisica' e 'pessoaFisica'
         if (snap.exists() && (snap.data().tipo === 'pessoa_fisica' || snap.data().tipo === 'pessoaFisica')) {
           const dados = snap.data()
           setPessoaFisica({ uid: usuario.uid, ...dados })
@@ -104,13 +106,13 @@ export default function PainelPessoaFisica() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
           <img
-            src={pessoaFisica?.foto || 'https://placehold.co/100x100'}
+            src={pessoaFisica?.foto || AVATAR_PLACEHOLDER}
             alt={pessoaFisica?.nome}
             className="w-24 h-24 rounded-full object-cover mb-2 border-2 border-orange-500 mx-auto"
           />
           <h2 className="text-center text-xl font-bold text-orange-700">{pessoaFisica?.nome}</h2>
           <p className="text-center text-sm text-gray-600 mb-4">
-            {pessoaFisica?.profissao} — {pessoaFisica?.especialidade}
+            {pessoaFisica?.profissao || '—'} {pessoaFisica?.especialidade ? `— ${pessoaFisica.especialidade}` : ''}
           </p>
           <div className="text-sm text-gray-700 space-y-1">
             <p>📞 {pessoaFisica?.celular || 'Telefone não informado'}</p>
@@ -120,7 +122,7 @@ export default function PainelPessoaFisica() {
           </div>
 
           <button
-            onClick={() => (window.location.href = '/pessoa-fisica/editarperfil')}
+            onClick={() => (window.location.href = '/pf/editarperfil')}
             className="mt-4 w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition"
           >
             ✏️ Editar Perfil
@@ -170,7 +172,7 @@ export default function PainelPessoaFisica() {
       case 'perfil':
         return renderPerfil()
       case 'buscar':
-        return <BuscarFreelas usuario={pessoaFisica} usuariosOnline={usuariosOnline} />
+        return <BuscarFreelas usuario={pessoaFisica} />
       case 'agendas':
         return <AgendaEventosPF />
       case 'vagas':
