@@ -25,7 +25,6 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
           id: doc.id,
           ...doc.data(),
         }))
-        
         setAvaliacoes(lista)
       } catch (err) {
         console.error('Erro ao buscar avaliações:', err)

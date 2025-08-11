@@ -1,38 +1,64 @@
-// src/context/AuthContext.jsx
-import { onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth'
-import { auth, db } from '@/firebase'
-import { doc, getDoc } from 'firebase/firestore'
 import { createContext, useContext, useEffect, useState } from 'react'
+import { auth, db } from '../firebase'
+import { onAuthStateChanged } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
 
-const Ctx = createContext(null)
-export const useAuth = () => useContext(Ctx)
+const AuthContext = createContext()
 
 export function AuthProvider({ children }) {
-  const [usuario, setUsuario] = useState(null)           // perfil + auth
+  const [usuario, setUsuario] = useState(null)
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    setPersistence(auth, browserLocalPersistence)
+    const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
+      if (usuario) {
+        try {
+          await usuario.getIdToken(true) // força renovação
+          const docRef = doc(db, 'usuarios', usuario.uid)
+          const docSnap = await getDoc(docRef)
 
-    const unsub = onAuthStateChanged(auth, async (u) => {
-      if (!u) {
+          const dados = docSnap.exists()
+            ? { uid: usuario.uid, ...docSnap.data() }
+            : { uid: usuario.uid, email: usuario.email }
+
+          setUsuario(dados)
+          localStorage.setItem('usuarioLogado', JSON.stringify(dados)) // ✅ salva no localStorage
+
+        } catch (erro) {
+          console.error('Erro ao buscar dados do usuário:', erro)
+          const fallback = { uid: usuario.uid, email: usuario.email }
+          setUsuario(fallback)
+          localStorage.setItem('usuarioLogado', JSON.stringify(fallback)) // ✅ fallback
+        }
+      } else {
         setUsuario(null)
-        setCarregando(false)
-        return
+        localStorage.removeItem('usuarioLogado') // ✅ remove ao deslogar
       }
-      try {
-        const snap = await getDoc(doc(db, 'usuarios', u.uid))
-        const perfil = snap.exists() ? snap.data() : {}
-        setUsuario({ uid: u.uid, email: u.email, ...perfil })
-      } catch (e) {
-        console.error('[Auth] erro ao carregar perfil:', e)
-        setUsuario({ uid: u.uid, email: u.email }) // fallback
-      } finally {
-        setCarregando(false)
-      }
+      setCarregando(false)
     })
-    return () => unsub()
+
+    return () => unsubscribe()
   }, [])
 
-  return <Ctx.Provider value={{ usuario, carregando }}>{children}</Ctx.Provider>
+  const atualizarUsuario = async () => {
+    const usuario = auth.currentUser
+    if (usuario) {
+      const docSnap = await getDoc(doc(db, 'usuarios', usuario.uid))
+      if (docSnap.exists()) {
+        const dados = { uid: usuario.uid, ...docSnap.data() }
+        setUsuario(dados)
+        localStorage.setItem('usuarioLogado', JSON.stringify(dados))
+      }
+    }
+  }
+
+  return (
+    <AuthContext.Provider value={{ usuario, carregando, atualizarUsuario }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth() {
+  return useContext(AuthContext)
 }

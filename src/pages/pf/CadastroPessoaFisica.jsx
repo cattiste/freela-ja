@@ -1,234 +1,118 @@
-// src/pages/pf/CadastroPessoaFisica.jsx
-import React, { useEffect, useState } from 'react'
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
-import { onAuthStateChanged, createUserWithEmailAndPassword } from 'firebase/auth'
-import { useNavigate } from 'react-router-dom'
+import React, { useState } from 'react'
 import { auth, db } from '@/firebase'
-import { uploadFoto } from '@/utils/uploadFoto'
-import ContratoPrestacaoServico from '@/components/ContratoPrestacaoServico'
+import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-hot-toast'
+import { doc, setDoc } from 'firebase/firestore'
 
-const VERSAO_CONTRATO = '1.0.0'
+function validarCPF(cpf) {
+  cpf = cpf.replace(/[^\d]+/g, '')
+  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false
+  let soma = 0
+  for (let i = 0; i < 9; i++) soma += parseInt(cpf.charAt(i)) * (10 - i)
+  let resto = (soma * 10) % 11
+  if (resto === 10 || resto === 11) resto = 0
+  if (resto !== parseInt(cpf.charAt(9))) return false
+  soma = 0
+  for (let i = 0; i < 10; i++) soma += parseInt(cpf.charAt(i)) * (11 - i)
+  resto = (soma * 10) % 11
+  if (resto === 10 || resto === 11) resto = 0
+  return resto === parseInt(cpf.charAt(10))
+}
 
 export default function CadastroPessoaFisica() {
   const navigate = useNavigate()
-  const [carregando, setCarregando] = useState(true)
-  const [salvando, setSalvando] = useState(false)
-  const [uploading, setUploading] = useState(false)
-
-  const [modoEdicao, setModoEdicao] = useState(false)
-  const [forcarCriacao, setForcarCriacao] = useState(false)
-
-  const [contratoOk, setContratoOk] = useState(false)
-  const [contratoDefaultChecked, setContratoDefaultChecked] = useState(false)
-
-  const [cred, setCred] = useState({ email: '', senha: '' })
-
   const [form, setForm] = useState({
     nome: '',
-    cpf: '',
+    email: '',
+    senha: '',
     celular: '',
+    cpf: '',
     endereco: '',
     foto: ''
   })
 
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      try {
-        if (user) {
-          setModoEdicao(true)
-          const ref = doc(db, 'usuarios', user.uid)
-          const snap = await getDoc(ref)
-          if (snap.exists()) {
-            const u = snap.data()
-            setForm({
-              nome: u.nome || '',
-              cpf: u.cpf || '',
-              celular: u.celular || '',
-              endereco: u.endereco || '',
-              foto: u.foto || ''
-            })
-            if (u.aceitouContrato && u.versaoContrato === VERSAO_CONTRATO) {
-              setContratoOk(true)
-              setContratoDefaultChecked(true)
-            }
-          }
-        } else {
-          setModoEdicao(false)
-        }
-      } catch (e) {
-        console.error('Erro ao carregar usuário:', e)
-      } finally {
-        setCarregando(false)
+  const [loading, setLoading] = useState(false)
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setForm((prev) => ({ ...prev, foto: reader.result }))
       }
-    })
-    return () => unsub()
-  }, [])
+      reader.readAsDataURL(file)
+    }
+  }
 
-  const handleChange = (e) => setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
-  const handleCred = (e) => setCred((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  const handleSubmit = async (e) => {
+    e.preventDefault()
 
-  const onSelectFoto = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    if (!validarCPF(form.cpf)) {
+      toast.error('CPF inválido')
+      return
+    }
+
+    setLoading(true)
+
     try {
-      setUploading(true)
-      const url = await uploadFoto(file)
-      setForm((p) => ({ ...p, foto: url }))
+      const { usuario } = await createUserWithEmailAndPassword(auth, form.email, form.senha)
+
+      await setDoc(doc(db, 'pessoasFisicas', usuario.uid), {
+        uid: usuario.uid,
+        nome: form.nome,
+        email: form.email,
+        celular: form.celular,
+        cpf: form.cpf,
+        endereco: form.endereco,
+        foto: form.foto || '',
+        criadoEm: new Date()
+      })
+
+      toast.success('Cadastro realizado com sucesso!')
+      navigate('/painelpf')
     } catch (err) {
       console.error(err)
-      alert('Não foi possível enviar a foto.')
+      if (err.code === 'auth/email-already-in-use') {
+        toast.error('Este e-mail já está em uso. Faça login ou use outro e-mail.')
+      } else {
+        toast.error('Erro ao cadastrar')
+      }
     } finally {
-      setUploading(false)
+      setLoading(false)
     }
   }
-
-  const salvar = async (e) => {
-    e.preventDefault()
-    if (!contratoOk) return
-    setSalvando(true)
-    try {
-      const wantsNewAccount = forcarCriacao || (!!cred.email.trim() || !!cred.senha)
-      let uid = auth.currentUser?.uid
-
-      if (!uid && !wantsNewAccount) {
-        alert('Informe e-mail e senha para criar a conta.')
-        setSalvando(false)
-        return
-      }
-
-      if (wantsNewAccount) {
-        if (!cred.email.trim()) return alert('Informe o e-mail.')
-        if (!cred.senha || cred.senha.length < 6) return alert('Senha deve ter ao menos 6 caracteres.')
-        const userCred = await createUserWithEmailAndPassword(auth, cred.email.trim(), cred.senha)
-        uid = userCred.user.uid
-      }
-
-      if (!form.nome?.trim()) return alert('Informe o nome.')
-      if (!form.endereco?.trim()) return alert('Informe o endereço.')
-      if (!uid) {
-        alert('Não foi possível identificar o usuário. Faça login ou preencha e-mail e senha para criar uma conta.')
-        setSalvando(false)
-        return
-      }      
-      const ref = doc(db, 'usuarios', uid)      
-      const payload = {
-        uid,
-        email: auth.currentUser?.email || cred.email || '',
-        nome: form.nome.trim(),
-        cpf: form.cpf.trim(),
-        celular: form.celular.trim(),
-        endereco: form.endereco.trim(),
-        foto: form.foto || '',
-        tipo: 'pessoa_fisica',
-        tipoConta: 'comercial',
-        subtipoComercial: 'pf',
-        aceitouContrato: true,
-        versaoContrato: VERSAO_CONTRATO,
-        dataAceiteContrato: serverTimestamp(),
-        atualizadoEm: serverTimestamp(),
-        criadoEm: serverTimestamp()
-      }
-
-      await setDoc(ref, payload, { merge: true })
-      alert('✅ Cadastro salvo com sucesso!')
-      navigate('/pf')
-    } catch (e2) {
-      console.error('Erro ao salvar cadastro:', e2)
-      alert('Erro ao salvar cadastro.')
-    } finally {
-      setSalvando(false)
-    }
-  }
-
-  if (carregando) return <div className="p-6 text-center text-orange-600">Carregando...</div>
 
   return (
-    <div className="min-h-screen p-6 bg-orange-50 flex justify-center items-center">
-      <form onSubmit={salvar} className="bg-white w-full max-w-xl rounded-2xl shadow p-6 space-y-4">
-        <div className="flex items-start justify-between">
-          <h1 className="text-2xl font-bold text-orange-700">👤 Cadastro Pessoa Física</h1>
-          {modoEdicao && !forcarCriacao && (
-            <button type="button" onClick={() => setForcarCriacao(true)} className="text-sm underline text-orange-700">
-              Criar nova conta (usar outro e-mail)
-            </button>
-          )}
-        </div>
+    <div
+      className="min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center px-4"
+      style={{ backgroundImage: "url('/img/fundo-login.jpg')" }}
+    >
+      <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
+        <h1 className="text-xl font-bold text-orange-700 mb-4 text-center">Cadastro - Pessoa Física</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium mb-1">E-mail {(!modoEdicao || forcarCriacao) && '*'}</label>
-            <input
-              name="email"
-              type="email"
-              value={cred.email}
-              onChange={handleCred}
-              className="w-full border rounded px-3 py-2"
-              required={!modoEdicao || forcarCriacao}
-            />
-            {modoEdicao && !forcarCriacao && (
-              <p className="text-xs text-gray-500 mt-1">Opcional em modo edição. Preencha para criar outra conta.</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Senha {(!modoEdicao || forcarCriacao) && '*'}</label>
-            <input
-              name="senha"
-              type="password"
-              value={cred.senha}
-              onChange={handleCred}
-              className="w-full border rounded px-3 py-2"
-              required={!modoEdicao || forcarCriacao}
-            />
-            <p className="text-xs text-gray-500 mt-1">Mínimo 6 caracteres</p>
-          </div>
-        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input name="nome" value={form.nome} onChange={handleChange} className="w-full p-2 border rounded" placeholder="Nome completo" required />
+          <input type="email" name="email" value={form.email} onChange={handleChange} className="w-full p-2 border rounded" placeholder="E-mail" required />
+          <input type="password" name="senha" value={form.senha} onChange={handleChange} className="w-full p-2 border rounded" placeholder="Senha" required />
+          <input name="celular" value={form.celular} onChange={handleChange} className="w-full p-2 border rounded" placeholder="Celular com DDD" required />
+          <input name="cpf" value={form.cpf} onChange={handleChange} className="w-full p-2 border rounded" placeholder="CPF" required />
+          <input name="endereco" value={form.endereco} onChange={handleChange} className="w-full p-2 border rounded" placeholder="Endereço completo" required />
+          <input type="file" accept="image/*" onChange={handleFileChange} className="w-full" />
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Nome *</label>
-          <input name="nome" value={form.nome} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium mb-1">CPF</label>
-            <input name="cpf" value={form.cpf} onChange={handleChange} className="w-full border rounded px-3 py-2" placeholder="000.000.000-00" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Celular</label>
-            <input name="celular" value={form.celular} onChange={handleChange} className="w-full border rounded px-3 py-2" placeholder="(11) 9 9999-9999" />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Endereço *</label>
-          <input name="endereco" value={form.endereco} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
-        </div>
-
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">Foto de perfil</label>
-          {form.foto ? (
-            <div className="flex items-center gap-3">
-              <img src={form.foto} alt="preview" className="w-16 h-16 rounded-full object-cover border" />
-              <button type="button" onClick={() => setForm((p) => ({ ...p, foto: '' }))} className="px-3 py-1 text-sm rounded bg-gray-100 hover:bg-gray-200">
-                Trocar foto
-              </button>
-            </div>
-          ) : (
-            <input type="file" accept="image/*" onChange={onSelectFoto} className="w-full" />
-          )}
-          {uploading && <p className="text-xs text-orange-600">Enviando foto...</p>}
-        </div>
-
-        <ContratoPrestacaoServico versao={VERSAO_CONTRATO} defaultChecked={contratoDefaultChecked} onChange={setContratoOk} />
-
-        <button
-          type="submit"
-          disabled={salvando || uploading || !contratoOk}
-          className="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition disabled:opacity-50"
-        >
-          {salvando ? 'Salvando...' : (!modoEdicao || forcarCriacao) ? 'Criar conta e salvar' : 'Salvar alterações'}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700"
+          >
+            {loading ? 'Cadastrando...' : 'Cadastrar'}
+          </button>
+        </form>
+      </div>
     </div>
   )
 }

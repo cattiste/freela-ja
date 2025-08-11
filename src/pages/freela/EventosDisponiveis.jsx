@@ -1,13 +1,7 @@
 import React, { useEffect, useState } from 'react'
+import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore'
+import { useAuth } from '@/context/AuthContext'
 import { db } from '@/firebase'
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  addDoc,
-  Timestamp,
-} from 'firebase/firestore'
 
 export default function EventosDisponiveis({ freela }) {
   const { usuario } = useAuth()

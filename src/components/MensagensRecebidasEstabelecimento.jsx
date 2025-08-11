@@ -2,16 +2,6 @@ import React, { useEffect, useState } from 'react'
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
 
-function toDateLike(ts) {
-  try {
-    if (!ts) return null
-    if (typeof ts?.toDate === 'function') return ts.toDate()
-    if (typeof ts?.seconds === 'number') return new Date(ts.seconds * 1000)
-    if (typeof ts === 'number') return new Date(ts)
-    return null
-  } catch { return null }
-}
-
 export default function MensagensRecebidasEstabelecimento({ chamadaId }) {
   const [mensagens, setMensagens] = useState([])
 
@@ -20,19 +10,11 @@ export default function MensagensRecebidasEstabelecimento({ chamadaId }) {
 
     const q = query(
       collection(db, 'chamadas', chamadaId, 'mensagens'),
-      orderBy('criadoEm', 'asc') // se algumas tiverem createdAt, ainda funciona; as sem field vão primeiro
+      orderBy('criadoEm', 'asc')
     )
 
     const unsub = onSnapshot(q, (snap) => {
-      const lista = snap.docs.map(doc => {
-        const data = doc.data()
-        const quando = toDateLike(data.criadoEm ?? data.createdAt)
-        return {
-          id: doc.id,
-          texto: data.texto ?? data.mensagem ?? '',
-          quando
-        }
-      })
+      const lista = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
       setMensagens(lista)
     })
 
@@ -47,10 +29,10 @@ export default function MensagensRecebidasEstabelecimento({ chamadaId }) {
       <ul className="space-y-1 text-sm text-gray-800">
         {mensagens.map((msg) => (
           <li key={msg.id}>
-            • {msg.texto}
-            {msg.quando && (
+            • {msg.mensagem}
+            {msg.criadoEm?.toDate && (
               <span className="text-xs text-gray-500 ml-2">
-                ({msg.quando.toLocaleTimeString('pt-BR')})
+                ({msg.criadoEm.toDate().toLocaleTimeString('pt-BR')})
               </span>
             )}
           </li>

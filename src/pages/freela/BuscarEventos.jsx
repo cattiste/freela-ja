@@ -1,6 +1,5 @@
-// src/pages/freela/BuscarEventos.jsx
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, onSnapshot, doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc, setDoc } from 'firebase/firestore'
 import { db, auth } from '@/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { toast } from 'react-hot-toast'
@@ -11,7 +10,9 @@ export default function BuscarEventos() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (usuario) => {
-      if (usuario) setUsuario(usuario)
+      if (usuario) {
+        setUsuario(usuario)
+      }
     })
     return () => unsub()
   }, [])
@@ -30,26 +31,21 @@ export default function BuscarEventos() {
       toast.error('Você precisa estar logado para se candidatar.')
       return
     }
+
     try {
       const ref = doc(db, 'eventos', eventoId, 'candidatos', usuario.uid)
       await setDoc(ref, {
         uid: usuario.uid,
-        nome: usuario.displayName || 'Freela',
+        nome: usuario.displayName || 'Freela Anônimo',
         email: usuario.email || '',
         status: 'pendente',
-        criadoEm: serverTimestamp()
-      }, { merge: true })
+        criadoEm: new Date()
+      })
       toast.success('Candidatura enviada!')
     } catch (err) {
       console.error(err)
       toast.error('Erro ao se candidatar.')
     }
-  }
-
-  const fmtValor = (v) => {
-    const n = Number(v)
-    if (!Number.isFinite(n)) return '—'
-    return `R$ ${n.toFixed(2)}`
   }
 
   return (
@@ -64,7 +60,7 @@ export default function BuscarEventos() {
               <p><strong>{evento.titulo}</strong></p>
               <p>{evento.descricao}</p>
               <p className="text-sm text-gray-500">Cidade: {evento.cidade}</p>
-              <p className="text-sm">Valor: {fmtValor(evento.valor)}</p>
+              <p className="text-sm">Valor: R$ {parseFloat(evento.valor).toFixed(2)}</p>
               <button
                 onClick={() => seCandidatar(evento.id)}
                 className="mt-2 bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700"

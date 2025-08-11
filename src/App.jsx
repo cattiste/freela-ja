@@ -2,7 +2,8 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
-// ⚠️ Não precisa importar AuthProvider aqui (já está em main.jsx)
+// Contexto de autenticação
+import { AuthProvider } from '@/context/AuthContext'
 
 // Gerais
 import Home from '@/pages/gerais/Home'
@@ -17,10 +18,6 @@ import BuscarEventos from '@/pages/freela/BuscarEventos'
 import CadastroPessoaFisica from '@/pages/pf/CadastroPessoaFisica'
 import PagamentoPix from '@/pages/gerais/PagamentoPix'
 import DashboardAdmin from '@/components/DashboardAdmin'
-import BuscarFreelas from '@/components/BuscarFreelas'
-import Privacidade from '@/pages/gerais/Privacidade'
-import Termos from '@/pages/gerais/Termos'
-import RequireRole from '@/components/RequireRole'
 
 // Freela
 import CadastroFreela from '@/pages/freela/CadastroFreela'
@@ -36,94 +33,61 @@ import EditarPerfilEstabelecimento from '@/pages/estabelecimento/EditarPerfilEst
 import PublicarVaga from '@/pages/estabelecimento/PublicarVaga'
 import PagamentoChamada from '@/pages/estabelecimento/PagamentoChamada'
 
-// Pessoa Física
+// Páginas da Pessoa Física
 import PainelPessoaFisica from '@/pages/pf/PainelPessoaFisica'
 import CandidaturasPF from '@/pages/pf/CandidaturasPF'
 import AgendaEventosPF from '@/pages/pf/AgendaEventosPF'
-import EditarPerfilPessoaFisica from '@/pages/pf/EditarPerfilPessoaFisica'
-import PerfilPessoaFisica from '@/pages/pf/PerfilPessoaFisica'
+
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* 🌐 Gerais */}
-        <Route path="/" element={<Home />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/sobre" element={<Sobre />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/esquecisenha" element={<EsqueciSenha />} />
-        <Route path="/oportunidades" element={<Oportunidades />} />
-        <Route path="/pagamento-evento/:id" element={<PagamentoEvento />} />
-        <Route path="/evento-confirmado" element={<EventoConfirmado />} />
-        <Route path="/meuseventos" element={<EventosPendentes />} />
-        <Route path="/freela/buscareventos" element={<BuscarEventos />} />
-        <Route path="/cadastropf" element={<CadastroPessoaFisica />} />
-        <Route path="/pagamento-pix" element={<PagamentoPix />} />
-        <Route path="/admin" element={<DashboardAdmin />} />
-        <Route path="/privacidade" element={<Privacidade />} />
-        <Route path="/termos" element={<Termos />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
 
-        {/* 👤 Freela */}
-        <Route path="/cadastrofreela" element={<CadastroFreela />} />
-        <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
-        <Route
-          path="/painelfreela"
-          element={
-            <RequireRole allow={['freela','admin']}>
-              <PainelFreela/>
-            </RequireRole>
-          }
-        />
-        <Route path="/freela/editarfreela" element={<EditarFreela />} />
+          {/* 🌐 Gerais */}
+          <Route path="/" element={<Home />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/sobre" element={<Sobre />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/esquecisenha" element={<EsqueciSenha />} />
+          <Route path="/oportunidades" element={<Oportunidades />} />
+          <Route path="/pagamento-evento/:id" element={<PagamentoEvento />} />
+          <Route path="/evento-confirmado" element={<EventoConfirmado />} />
+          <Route path="/meuseventos" element={<EventosPendentes />} />
+          <Route path="/freela/buscareventos" element={<BuscarEventos />} />
+          <Route path="/painelpf" element={<PainelPessoaFisica />} />
+          <Route path="/cadastropf" element={<CadastroPessoaFisica />} />
+          <Route path="/pagamento-pix" element={<PagamentoPix />} />
+          <Route path="/admin" element={<DashboardAdmin />} />
 
-        {/* 🏢 Estabelecimento */}
-        <Route path="/cadastroestabelecimento" element={<CadastroEstabelecimento />} />
-        <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
-        <Route
-          path="/painelestabelecimento/:rota?"
-          element={
-            <RequireRole allow={['estabelecimento','admin']}>
-              <PainelEstabelecimento/>
-            </RequireRole>
-          }
-        />
-        <Route path="/estabelecimento/editarperfil" element={<EditarPerfilEstabelecimento />} />
-        <Route path="/publicarvaga" element={<PublicarVaga />} />
-        <Route path="/pagamento-chamada/:id" element={<PagamentoChamada />} />
+          {/* 👤 Freela */}
+          <Route path="/cadastrofreela" element={<CadastroFreela />} />
+          <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
+          <Route path="/painelfreela" element={<PainelFreela />} />
+          <Route path="/freela/editarfreela" element={<EditarFreela />} />
 
-        {/* 👤 Pessoa Física */}
-        <Route
-          path="/pf"
-          element={
-            <RequireRole allow={['pessoa_fisica','admin']}>
-              <PainelPessoaFisica/>
-            </RequireRole>
-          }
-        />
-        <Route
-          path="/pf/editarperfil"
-          element={
-            <RequireRole allow={['pessoa_fisica','admin']}>
-              <EditarPerfilPessoaFisica/>
-            </RequireRole>
-          }
-        />
-        <Route path="/pf/candidaturas" element={<CandidaturasPF />} />
-        <Route path="/pf/agenda" element={<AgendaEventosPF />} />
-        <Route path="/pf/buscar" element={<BuscarFreelas />} />
+          {/* 🏢 Estabelecimento */}
+          <Route path="/cadastroestabelecimento" element={<CadastroEstabelecimento />} />
+          <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
+          <Route path="/painelestabelecimento/:rota?" element={<PainelEstabelecimento />} />
+          <Route path="/estabelecimento/editarperfil" element={<EditarPerfilEstabelecimento />} />
+          <Route path="/publicarvaga" element={<PublicarVaga />} />
+          <Route path="/pagamento-chamada/:id" element={<PagamentoChamada />} />
 
-        {/* Perfil público da Pessoa Física (opcional, útil pra compartilhamento) */}
-        <Route path="/perfilpessoafisica/:uid" element={<PerfilPessoaFisica />} />
+          {/* Pessoa Fisica */}
+          <Route path="/pf" element={<PainelPessoaFisica />} />
+          <Route path="/pf/candidaturas" element={<CandidaturasPF />} />
+          <Route path="/pf/agenda" element={<AgendaEventosPF />} />
 
-        {/* ✅ Redirecionamentos/ajustes */}
-        {/* Antiga rota duplicada do painel PF → agora redireciona para /pf */}
-        <Route path="/painelpf" element={<Navigate to="/pf" replace />} />
-        <Route path="/painel-estabelecimento/chamadas" element={<Navigate to="/painelestabelecimento/ativas" />} />
+          {/* ✅ Redirecionamento alternativo se quiser acessar chamadas diretamente */}
+          <Route path="/painel-estabelecimento/chamadas" element={<Navigate to="/painelestabelecimento/ativas" />} />
 
-        {/* 404 opcional: */}
-        {/* <Route path="*" element={<NotFound />} /> */}
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }
+
+// Projeto original FreelaJá - Código registrado e rastreável
+// Assinatura interna: 𝙁𝙅-𝟮𝟬𝟮𝟱-𝘽𝘾-𝘾𝙃𝘼𝙏𝙂𝙋𝙏
