@@ -8,14 +8,14 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 
-// helper: lazy com fallback visível se o import falhar
-const SafeLazy = (loader, FallbackName) =>
+// lazy seguro com fallback visual no caso de erro de import
+const SafeLazy = (loader, name) =>
   lazy(() =>
     loader().catch((err) => {
-      console.error(`[PainelEstabelecimento] Falha ao carregar ${FallbackName}:`, err)
+      console.error(`[PainelEstabelecimento] Falha ao carregar ${name}:`, err)
       const Fallback = () => (
         <div className="p-4 rounded-lg border border-red-300 bg-red-50 text-red-700">
-          {`Falha ao carregar ${FallbackName}. Veja o console para detalhes.`}
+          {`Falha ao carregar ${name}. Veja o console para detalhes.`}
         </div>
       )
       return { default: Fallback }
@@ -29,15 +29,16 @@ const VagasEstabelecimentoCompleto = SafeLazy(() => import('@/components/VagasEs
 const AvaliacoesRecebidasEstabelecimento = SafeLazy(() => import('@/pages/estabelecimento/AvaliacoesRecebidasEstabelecimento'), 'AvaliacoesRecebidasEstabelecimento')
 const HistoricoChamadasEstabelecimento = SafeLazy(() => import('@/components/HistoricoChamadasEstabelecimento'), 'HistoricoChamadasEstabelecimento')
 const ChamadasEstabelecimento = SafeLazy(() => import('@/pages/estabelecimento/ChamadasEstabelecimento'), 'ChamadasEstabelecimento')
+const CardAvaliacaoFreela = SafeLazy(() => import('@/components/CardAvaliacaoFreela'), 'CardAvaliacaoFreela')
 const Calendar = SafeLazy(() => import('react-calendar'), 'react-calendar')
 
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
 
-// ErrorBoundary simples para evitar tela branca
+// ErrorBoundary simples para impedir tela branca
 class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props)
+  constructor(p) {
+    super(p)
     this.state = { hasError: false, error: null }
   }
   static getDerivedStateFromError(error) {
@@ -72,7 +73,6 @@ export default function PainelEstabelecimento() {
   const [abaSelecionada, setAbaSelecionada] = useState(getTabFromURL())
 
   useEffect(() => {
-    // atualiza quando a URL muda
     setAbaSelecionada(getTabFromURL())
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search])
@@ -133,7 +133,7 @@ export default function PainelEstabelecimento() {
     }
   }
 
-  // atualizar URL ao trocar de aba (opcional, mas bom pra debug)
+  // atualizar URL ao trocar de aba — sincroniza state + query string
   const handleSelectAba = (aba) => {
     const params = new URLSearchParams(location.search)
     params.set('tab', aba)
@@ -275,15 +275,13 @@ export default function PainelEstabelecimento() {
     }
   }
 
-  // Estados de carregamento/segurança
+  // estados de carregamento/segurança
   if (carregando) return <div className="text-center text-orange-600 mt-8">Carregando painel…</div>
-
   if (usuario?.uid && usuario?.tipo !== 'estabelecimento') {
     if (usuario?.tipo === 'freela') return <Navigate to="/painel/freela" replace />
     if (usuario?.tipo === 'pessoa_fisica') return <Navigate to="/painel/pf" replace />
     return <Navigate to="/" replace />
   }
-
   if (!usuario?.uid) return <Navigate to="/login" replace />
 
   return (
@@ -301,7 +299,7 @@ export default function PainelEstabelecimento() {
           {renderConteudo()}
           <Suspense fallback={<div className="p-4">Carregando menu…</div>}>
             <MenuInferiorEstabelecimento
-              onSelect={handleSelectAba}      // <— atualiza URL e state
+              onSelect={handleSelectAba}
               abaAtiva={abaSelecionada}
             />
           </Suspense>
