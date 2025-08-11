@@ -1,20 +1,30 @@
-// src/pages/estabelecimento/PainelEstabelecimento.jsx
 import React, { useEffect, useMemo, useState, Suspense, lazy } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
-import { doc, getDocs, collection, query, where, updateDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/firebase'
-import { useAuth } from '@/context/AuthContext'
+import { Navigate, useNavigate, useLocation } from 'react-router-dom'
 
-// ⚠️ Lazy load: se algum quebrar, o resto do painel segue
-const MenuInferiorEstabelecimento = lazy(() => import('@/components/MenuInferiorEstabelecimento'))
-const BuscarFreelas = lazy(() => import('@/components/BuscarFreelas'))
-const AgendasContratadas = lazy(() => import('@/components/AgendasContratadas'))
-const VagasEstabelecimentoCompleto = lazy(() => import('@/components/VagasEstabelecimentoCompleto'))
-const AvaliacoesRecebidasEstabelecimento = lazy(() => import('@/pages/estabelecimento/AvaliacoesRecebidasEstabelecimento'))
-const HistoricoChamadasEstabelecimento = lazy(() => import('@/components/HistoricoChamadasEstabelecimento'))
-const ChamadasEstabelecimento = lazy(() => import('@/pages/estabelecimento/ChamadasEstabelecimento'))
-const CardAvaliacaoFreela = lazy(() => import('@/components/CardAvaliacaoFreela'))
-const Calendar = lazy(() => import('react-calendar'))
+// helper: lazy com fallback visível se o import falhar
+const SafeLazy = (loader, FallbackName) =>
+  lazy(() =>
+    loader().catch((err) => {
+      console.error(`[PainelEstabelecimento] Falha ao carregar ${FallbackName}:`, err)
+      const Fallback = () => (
+        <div className="p-4 rounded-lg border border-red-300 bg-red-50 text-red-700">
+          {`Falha ao carregar ${FallbackName}. Veja o console para detalhes.`}
+        </div>
+      )
+      return { default: Fallback }
+    })
+  )
+
+// troque seus imports assim:
+const MenuInferiorEstabelecimento = SafeLazy(() => import('@/components/MenuInferiorEstabelecimento'), 'MenuInferiorEstabelecimento')
+const BuscarFreelas = SafeLazy(() => import('@/components/BuscarFreelas'), 'BuscarFreelas')
+const AgendasContratadas = SafeLazy(() => import('@/components/AgendasContratadas'), 'AgendasContratadas')
+const VagasEstabelecimentoCompleto = SafeLazy(() => import('@/components/VagasEstabelecimentoCompleto'), 'VagasEstabelecimentoCompleto')
+const AvaliacoesRecebidasEstabelecimento = SafeLazy(() => import('@/pages/estabelecimento/AvaliacoesRecebidasEstabelecimento'), 'AvaliacoesRecebidasEstabelecimento')
+const HistoricoChamadasEstabelecimento = SafeLazy(() => import('@/components/HistoricoChamadasEstabelecimento'), 'HistoricoChamadasEstabelecimento')
+const ChamadasEstabelecimento = SafeLazy(() => import('@/pages/estabelecimento/ChamadasEstabelecimento'), 'ChamadasEstabelecimento')
+const Calendar = SafeLazy(() => import('react-calendar'), 'react-calendar')
+
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
 
@@ -46,6 +56,21 @@ class ErrorBoundary extends React.Component {
 export default function PainelEstabelecimento() {
   const { usuario, carregando } = useAuth()
   const nav = useNavigate()
+  const location = useLocation()
+
+  // >>> lê ?tab=perfil|buscar|agendas|vagas|avaliacao|historico|ativas|chamadas
+  const getTabFromURL = () => {
+    const p = new URLSearchParams(location.search)
+    return p.get('tab') || 'perfil'
+  }
+  const [abaSelecionada, setAbaSelecionada] = useState(getTabFromURL())
+
+  useEffect(() => {
+    // atualiza quando a URL muda
+    setAbaSelecionada(getTabFromURL())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search])
+
 
   const estabelecimento = useMemo(
     () => (usuario?.tipo === 'estabelecimento' ? usuario : null),
