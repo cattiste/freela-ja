@@ -11,15 +11,39 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const resolverTipo = (u = {}) => {
+    // tenta o campo novo
+    let t = u.tipo || ''
+
+    // compatibilidade com estruturas antigas
+    if (!t && u.tipoConta === 'comercial' && u.subtipoComercial) {
+      // esperado: 'estabelecimento' | 'pf'
+      t = u.subtipoComercial
+    }
+    if (!t && u.tipoUsuario) {
+      // esperado: 'freela'
+      t = u.tipoUsuario
+    }
+
+    // normaliza
+    if (t === 'pf') t = 'pessoa_fisica'
+    return t
+  }
+
   const handleLogin = async (e) => {
     e.preventDefault()
+    if (loading) return
     setLoading(true)
     setError('')
 
     try {
-      const cred = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), senha)
+      const emailNorm = email.trim().toLowerCase()
+      const cred = await signInWithEmailAndPassword(auth, emailNorm, senha)
+
+      // tenta refrescar token silenciosamente
       try { await cred.user.getIdToken(true) } catch {}
 
+      // busca doc do usuário
       const ref = doc(db, 'usuarios', cred.user.uid)
       const snap = await getDoc(ref)
 
@@ -30,43 +54,53 @@ export default function Login() {
       }
 
       const u = snap.data() || {}
-      // ✅ Compat: tenta novo, mas prioriza o ANTIGO
-      const tipo =
-        u.tipo ||
-        (u.tipoConta === 'comercial' && u.subtipoComercial) || // 'estabelecimento' | 'pf'
-        u.tipoUsuario || // 'freela' em alguns docs
-        ''
+      const tipo = resolverTipo(u)
 
       const usuarioLocal = {
         uid: cred.user.uid,
-        email: cred.user.email || email,
-        nome: u.nome || '',
-        tipo, // legado continua mandatório
+        email: cred.user.email || emailNorm,
+        nome: u.nome || cred.user.displayName || '',
+        tipo,
         funcao: u.funcao || '',
         endereco: u.endereco || '',
-        foto: u.foto || ''
+        foto: u.foto || cred.user.photoURL || ''
       }
-      localStorage.setItem('usuarioLogado', JSON.stringify(usuarioLocal))
+      try {
+        localStorage.setItem('usuarioLogado', JSON.stringify(usuarioLocal))
+      } catch {}
 
       const nomeOk = !!usuarioLocal.nome?.trim()
 
       if (tipo === 'freela') {
         const funcaoOk = !!usuarioLocal.funcao?.trim()
-        if (!nomeOk || !funcaoOk) return navigate('/freela/editarfreela')
-        return navigate('/painelfreela')
+        if (!nomeOk || !funcaoOk) {
+          navigate('/freela/editarfreela', { replace: true })
+        } else {
+          navigate('/painelfreela', { replace: true })
+        }
+        return
       }
+
       if (tipo === 'estabelecimento') {
-        if (!nomeOk) return navigate('/estabelecimento/editarperfil')
-        return navigate('/painelestabelecimento')
-      }
-      if (tipo === 'pessoa_fisica' || tipo === 'pf') {
-        if (!nomeOk) return navigate('/cadastropf')
-        return navigate('/pf')
+        if (!nomeOk) {
+          navigate('/estabelecimento/editarperfil', { replace: true })
+        } else {
+          navigate('/painelestabelecimento', { replace: true })
+        }
+        return
       }
 
-      // fallback: manda pra home
-      navigate('/')
+      if (tipo === 'pessoa_fisica') {
+        if (!nomeOk) {
+          navigate('/cadastropf', { replace: true })
+        } else {
+          navigate('/pf', { replace: true })
+        }
+        return
+      }
 
+      // fallback
+      navigate('/', { replace: true })
     } catch (err) {
       console.error(err)
       const code = err?.code || ''
@@ -81,22 +115,52 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-cover bg-center bg-no-repeat relative" style={{ backgroundImage: "url('/img/fundo-login.jpg')" }}>
+    <div
+      className="min-h-screen bg-cover bg-center bg-no-repeat relative"
+      style={{ backgroundImage: "url('/img/fundo-login.jpg')" }}
+    >
       <div className="absolute inset-0 bg-black bg-opacity-50 z-0" />
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-6">
         <h2 className="text-3xl font-bold text-white mb-6 drop-shadow">Entrar na Plataforma</h2>
 
-        <form onSubmit={handleLogin} className="w-full max-w-md bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg space-y-4">
-          <input type="email" placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          <input type="password" placeholder="Senha" value={senha} onChange={e => setSenha(e.target.value)} required autoComplete="current-password" className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          <button type="submit" disabled={loading} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition duration-300 disabled:opacity-60">
+        <form
+          onSubmit={handleLogin}
+          className="w-full max-w-md bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg space-y-4"
+        >
+          <input
+            type="email"
+            placeholder="E-mail"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+            className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
+          />
+          <input
+            type="password"
+            placeholder="Senha"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            required
+            autoComplete="current-password"
+            className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
+          />
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition duration-300 disabled:opacity-60"
+          >
             {loading ? 'Carregando...' : 'Entrar'}
           </button>
+
           {error && <p className="text-red-600 text-sm text-center">{error}</p>}
         </form>
 
         <p className="text-center mt-4 text-sm text-white">
-          <Link to="/esquecisenha" className="text-blue-200 hover:underline">Esqueci minha senha</Link>
+          <Link to="/esquecisenha" className="text-blue-200 hover:underline">
+            Esqueci minha senha
+          </Link>
         </p>
       </div>
     </div>
