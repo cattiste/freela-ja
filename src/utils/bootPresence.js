@@ -1,6 +1,6 @@
 // src/utils/bootPresence.js
 // Grava presença do usuário logado no RTDB em /status/{uid}
-// Inclui tipoConta/tipoUsuario para permitir o índice de freelas nas Functions
+// Inclui tipoConta/tipoUsuario/subtipoComercial (compat legado)
 import { auth, db } from '@/firebase'
 import { getDatabase, ref, set, onDisconnect } from 'firebase/database'
 import { doc, getDoc } from 'firebase/firestore'
@@ -10,24 +10,22 @@ export async function bootPresence() {
   if (!user) return
 
   const rtdb = getDatabase()
-
-  // Carrega dados normalizados do Firestore
   const uref = doc(db, 'usuarios', user.uid)
   const snap = await getDoc(uref)
   const u = snap.exists() ? snap.data() : {}
 
+  const tipoConta = u?.tipoConta ?? (u?.tipo === 'freela' ? 'funcional' : u?.tipo ? 'comercial' : null)
+  const tipoUsuario = u?.tipoUsuario ?? (u?.tipo === 'freela' ? 'freela' : null)
+  const subtipoComercial =
+    u?.subtipoComercial ?? (u?.tipo === 'estabelecimento' ? 'estabelecimento' : u?.tipo === 'pessoa_fisica' ? 'pf' : null)
+
   const statusRef = ref(rtdb, `status/${user.uid}`)
-  const payload = {
+  const base = {
     online: true,
     ultimaAtividade: Date.now(),
-    tipoConta: u?.tipoConta || null,
-    tipoUsuario: u?.tipoUsuario || null
+    tipoConta, tipoUsuario, subtipoComercial,
   }
 
-  await set(statusRef, payload)
-  onDisconnect(statusRef).set({
-    ...payload,
-    online: false,
-    ultimaAtividade: Date.now()
-  })
+  await set(statusRef, base)
+  onDisconnect(statusRef).set({ ...base, online: false, ultimaAtividade: Date.now() })
 }

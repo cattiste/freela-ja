@@ -1,10 +1,7 @@
 // src/utils/normalizeUserTypes.js
-// Migra documentos antigos (campo 'tipo') para o novo modelo:
-// - freela           -> tipoConta: 'funcional', tipoUsuario: 'freela'
-// - estabelecimento  -> tipoConta: 'comercial', subtipoComercial: 'estabelecimento'
-// - pessoa_fisica    -> tipoConta: 'comercial', subtipoComercial: 'pf'
+// Migra documentos antigos (campo 'tipo') para o novo modelo
 import { auth, db } from '@/firebase'
-import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 
 export async function normalizeUserTypes() {
   const uid = auth.currentUser?.uid
@@ -15,8 +12,6 @@ export async function normalizeUserTypes() {
   if (!snap.exists()) return
 
   const u = snap.data()
-
-  // Já normalizado?
   if (u?.tipoConta || u?.tipoUsuario || u?.subtipoComercial) return
 
   const patch = {}
@@ -34,13 +29,11 @@ export async function normalizeUserTypes() {
       patch.subtipoComercial = 'pf'
       break
     default:
-      // Se não tiver 'tipo' antigo, não força nada
       return
   }
 
   try {
-    await updateDoc(ref, patch)
-    // console.log('normalizeUserTypes ok', patch)
+    await updateDoc(ref, { ...patch, normalizadoEm: serverTimestamp() })
   } catch (e) {
     console.error('normalizeUserTypes error:', e)
   }

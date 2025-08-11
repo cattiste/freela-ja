@@ -1,6 +1,7 @@
 // src/utils/uploadFoto.js
 const CLOUD_NAME = 'dbemvuau3'
 const UPLOAD_PRESET = 'preset-publico'
+const FOLDER = 'freelaja/perfis'
 
 export async function uploadFoto(file) {
   if (!file) throw new Error('Arquivo inválido')
@@ -8,13 +9,15 @@ export async function uploadFoto(file) {
   const fd = new FormData()
   fd.append('file', file)
   fd.append('upload_preset', UPLOAD_PRESET)
+  fd.append('folder', FOLDER)
 
   const res = await fetch(url, { method: 'POST', body: fd })
-  if (!res.ok) {
-    const txt = await res.text().catch(() => '')
-    throw new Error(`Falha no upload da imagem. ${txt}`)
+  let data
+  try { data = await res.json() } catch { /* ignore */ }
+
+  if (!res.ok || !data?.secure_url) {
+    const reason = data?.error?.message || data?.message || 'Falha no upload'
+    throw new Error(reason)
   }
-  const data = await res.json()
-  if (!data?.secure_url) throw new Error('Upload sem URL de retorno')
   return data.secure_url
 }
