@@ -1,3 +1,4 @@
+// src/pages/estabelecimento/PainelEstabelecimento.jsx
 import React, { useState, useEffect } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
 import {
@@ -13,7 +14,6 @@ import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompl
 import AvaliacoesRecebidasEstabelecimento from '@/pages/estabelecimento/AvaliacoesRecebidasEstabelecimento'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
 import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
-import useUsuariosOnlineEstab from '@/hooks/estab/useUsuariosOnlineEstab'
 import CardAvaliacaoFreela from '@/components/CardAvaliacaoFreela'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
@@ -26,7 +26,8 @@ export default function PainelEstabelecimento() {
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
   const [agendaPerfil, setAgendaPerfil] = useState({})
 
-  const usuariosOnline = useUsuariosOnlineEstab()
+  // ❌ removido useUsuariosOnlineEstab
+  const usuariosOnline = {} // opcional: se no futuro voltar presença, injetar aqui
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
@@ -40,10 +41,14 @@ export default function PainelEstabelecimento() {
         const ref = doc(db, 'usuarios', usuario.uid)
         const snap = await getDoc(ref)
 
-        if (snap.exists() && snap.data().tipo === 'estabelecimento') {
+        if (snap.exists()) {
           const dados = snap.data()
-          setEstabelecimento({ uid: usuario.uid, ...dados })
-          await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
+          // ✅ aceita tanto modelo antigo quanto novo
+          const tipo = dados.tipo || dados.tipoUsuario || dados.subtipoComercial
+          if (tipo === 'estabelecimento') {
+            setEstabelecimento({ uid: usuario.uid, ...dados })
+            await updateDoc(ref, { ultimaAtividade: serverTimestamp() })
+          }
         }
       } catch (err) {
         console.error('[Auth] Erro ao buscar dados do estabelecimento:', err)
@@ -101,10 +106,7 @@ export default function PainelEstabelecimento() {
             className="w-24 h-24 rounded-full object-cover mb-2 border-2 border-orange-500 mx-auto"
           />
           <h2 className="text-center text-xl font-bold text-orange-700">{estabelecimento?.nome}</h2>
-          <p className="text-center text-sm text-gray-600 mb-4">
-            {estabelecimento?.funcao} — {estabelecimento?.especialidade}
-          </p>
-          <div className="text-sm text-gray-700 space-y-1">
+          <div className="text-sm text-gray-700 space-y-1 mt-3">
             <p>📞 {estabelecimento?.celular || 'Telefone não informado'}</p>
             <p>📧 {estabelecimento?.email}</p>
             <p>📍 {estabelecimento?.endereco}</p>
@@ -112,13 +114,13 @@ export default function PainelEstabelecimento() {
           </div>
 
           <button
-            onClick={() => window.location.href = '/estabelecimento/editarperfil'}
+            onClick={() => (window.location.href = '/estabelecimento/editarperfil')}
             className="mt-4 w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition"
           >
             ✏️ Editar Perfil
           </button>
         </div>
-        
+
         <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
           <h3 className="text-lg font-bold text-orange-700 mb-2">Minha Agenda</h3>
           <Calendar
@@ -170,7 +172,6 @@ export default function PainelEstabelecimento() {
       case 'historico':
         return <HistoricoChamadasEstabelecimento estabelecimento={estabelecimento} />
       case 'ativas':
-        return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
       case 'chamadas':
         return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
       default:

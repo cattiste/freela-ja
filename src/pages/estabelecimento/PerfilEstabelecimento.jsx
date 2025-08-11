@@ -111,7 +111,8 @@ export default function PerfilEstabelecimento() {
           </div>
         )}
 
-        {usuario && usuario.tipo === 'freela' && usuario.uid !== uid && (
+        const papel = usuario?.role || usuario?.tipo || usuario?.tipoUsuario
+        {usuario && papel === 'freela' && usuario.uid !== uid && (
           <button
             onClick={() => navigate(`/avaliacao/estabelecimento/${uid}`)}
             className="mt-4 px-4 py-2 bg-yellow-600 text-white rounded-full hover:bg-yellow-700 transition"

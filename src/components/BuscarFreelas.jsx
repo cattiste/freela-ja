@@ -1,5 +1,5 @@
 // src/components/BuscarFreelas.jsx
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   collection, query, where, addDoc, serverTimestamp,
   getDocs, doc, getDoc, limit
@@ -27,7 +27,8 @@ function toMillis(v) {
   if (typeof v === 'number') return v
   if (typeof v === 'string') {
     if (/^\d+$/.test(v)) return Number(v) // epoch em string
-    const p = Date.parse(v); return Number.isNaN(p) ? null : p
+    const p = Date.parse(v)
+    return Number.isNaN(p) ? null : p
   }
   if (typeof v === 'object') {
     if (typeof v.toMillis === 'function') return v.toMillis()
@@ -95,19 +96,20 @@ function FreelaCard({
           </p>
         )}
 
-        {typeof distanciaKm === 'number' && (
+        {/* distância */}
+        {Number.isFinite(distanciaKm) && (
           <p className="text-sm text-gray-600 mt-1">
-            📍 Aprox. {distanciaKm.toFixed(1)} km do local
+            📍 Aprox. {Number(distanciaKm).toFixed(1)} km do local
           </p>
-          
         )}
 
-        {isOnline && (
+        {/* online */}
+        {isOnline ? (
           <div className="flex items-center gap-2 mt-1">
             <span className="w-2 h-2 rounded-full bg-green-500" />
             <span className="text-xs text-green-700">🟢 Online agora</span>
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="mb-2 w-full">
@@ -149,7 +151,9 @@ export default function BuscarFreelas({ usuario: usuarioProp, usuariosOnline = {
       try {
         const raw = localStorage.getItem('usuarioLogado')
         if (raw) setUsuario(JSON.parse(raw))
-      } catch {}
+      } catch (e) {
+        console.error('[BuscarFreelas] erro ao ler usuarioLogado do localStorage:', e)
+      }
     } else {
       setUsuario(usuarioProp)
     }
@@ -165,12 +169,10 @@ export default function BuscarFreelas({ usuario: usuarioProp, usuariosOnline = {
   }, [usuariosOnline])
 
   // helper: fallback para listar freelas quando não há presença
-  const carregarFreelasFallback = async () => {
-    // duas queries (modelo antigo e novo), limitadas para evitar custo
+  const carregarFreelasFallback = useCallback(async () => {
     const resultado = []
     const seen = new Set()
 
-    // tipo === 'freela'
     try {
       const q1 = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'), limit(60))
       const s1 = await getDocs(q1)
@@ -180,9 +182,10 @@ export default function BuscarFreelas({ usuario: usuarioProp, usuariosOnline = {
           seen.add(d.id)
         }
       })
-    } catch {}
+    } catch (e) {
+      console.error('[BuscarFreelas] fallback (tipo=freela) falhou:', e)
+    }
 
-    // tipoUsuario === 'freela'
     try {
       const q2 = query(collection(db, 'usuarios'), where('tipoUsuario', '==', 'freela'), limit(60))
       const s2 = await getDocs(q2)
@@ -192,10 +195,12 @@ export default function BuscarFreelas({ usuario: usuarioProp, usuariosOnline = {
           seen.add(d.id)
         }
       })
-    } catch {}
+    } catch (e) {
+      console.error('[BuscarFreelas] fallback (tipoUsuario=freela) falhou:', e)
+    }
 
     return resultado
-  }
+  }, [])
 
   // 2) carrega perfis: se tiver online → resolve por UIDs; senão → fallback geral
   useEffect(() => {
@@ -204,7 +209,6 @@ export default function BuscarFreelas({ usuario: usuarioProp, usuariosOnline = {
       try {
         setCarregando(true)
 
-        // tem online → busca só os online
         if (onlineUids.length > 0) {
           const resultado = []
           const chunks = []
@@ -222,7 +226,6 @@ export default function BuscarFreelas({ usuario: usuarioProp, usuariosOnline = {
             })
           }
 
-          // fallback docId === uid
           const faltantes = onlineUids.filter(u => !encontradosPorUid.has(u))
           for (const uid of faltantes) {
             const dref = doc(db, 'usuarios', uid)
@@ -237,7 +240,6 @@ export default function BuscarFreelas({ usuario: usuarioProp, usuariosOnline = {
           return
         }
 
-        // não tem online → lista geral (offline)
         const fallback = await carregarFreelasFallback()
         if (!cancelado) setPerfis(fallback)
       } catch (e) {
@@ -250,7 +252,7 @@ export default function BuscarFreelas({ usuario: usuarioProp, usuariosOnline = {
 
     carregar()
     return () => { cancelado = true }
-  }, [onlineUids])
+  }, [onlineUids, carregarFreelasFallback])
 
   // 3) calcula distância e aplica filtro por função
   const freelasFiltrados = useMemo(() => {
