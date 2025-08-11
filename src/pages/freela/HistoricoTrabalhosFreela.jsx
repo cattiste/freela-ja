@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore'
 import { db } from '@/firebase'
 
-export default function RecebimentosFreela({ freelaUid }) {
+export default function HistoricoTrabalhosFreela({ freelaUid }) {
   const [historico, setHistorico] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [totalRecebido, setTotalRecebido] = useState(0)
@@ -21,12 +21,9 @@ export default function RecebimentosFreela({ freelaUid }) {
 
         const lista = snapshot.docs.map(doc => {
           const data = doc.data()
-          return {
-            id: doc.id,
-            valorPago: data.valorPago || 0,
-            ...data
-          }
+          return { id: doc.id, valorPago: data.valorPago || 0, ...data }
         })
+      }
 
         setHistorico(lista)
 
