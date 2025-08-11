@@ -6,7 +6,7 @@ import {
 } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 
-import MenuInferiorPessoaFisica from '@/components/MenuInferiorPessoaFisica'
+import MenuInferiorPessoaFisica from '@/components/MenuInferiorPF'
 import BuscarFreelas from '@/components/BuscarFreelas'
 import AgendasContratadas from '@/components/AgendasContratadas'
 import ServicosPessoaFisica from '@/components/ServicosPessoaFisica'
