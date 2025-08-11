@@ -1,3 +1,4 @@
+// src/components/ServicosPessoaFisica.jsx
 import React, { useEffect, useState } from 'react'
 import { collection, query, where, getDocs, doc, deleteDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -11,15 +12,11 @@ export default function ServicosPessoaFisica({ pessoaFisica }) {
 
   useEffect(() => {
     if (!pessoaFisica?.uid) return
-
     const buscarServicos = async () => {
       try {
-        const q = query(
-          collection(db, 'servicos'),
-          where('pessoaFisicaUid', '==', pessoaFisica.uid)
-        )
+        const q = query(collection(db, 'servicos'), where('pessoaFisicaUid', '==', pessoaFisica.uid))
         const snapshot = await getDocs(q)
-        setServicos(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+        setServicos(snapshot.docs.map(d => ({ id: d.id, ...d.data() })))
       } catch (err) {
         console.error('Erro ao buscar serviços:', err)
         toast.error('Erro ao carregar serviços')
@@ -27,26 +24,22 @@ export default function ServicosPessoaFisica({ pessoaFisica }) {
         setCarregando(false)
       }
     }
-
     buscarServicos()
-  }, [pessoaFisica])
+  }, [pessoaFisica?.uid])
 
   const excluirServico = async (id) => {
-    if (window.confirm('Tem certeza que deseja excluir este serviço?')) {
-      try {
-        await deleteDoc(doc(db, 'servicos', id))
-        setServicos(prev => prev.filter(s => s.id !== id))
-        toast.success('Serviço excluído com sucesso!')
-      } catch (err) {
-        console.error('Erro ao excluir serviço:', err)
-        toast.error('Erro ao excluir serviço')
-      }
+    if (!window.confirm('Tem certeza que deseja excluir este serviço?')) return
+    try {
+      await deleteDoc(doc(db, 'servicos', id))
+      setServicos(prev => prev.filter(s => s.id !== id))
+      toast.success('Serviço excluído com sucesso!')
+    } catch (err) {
+      console.error('Erro ao excluir serviço:', err)
+      toast.error('Erro ao excluir serviço')
     }
   }
 
-  if (carregando) {
-    return <div className="text-center text-orange-600 mt-10">Carregando serviços...</div>
-  }
+  if (carregando) return <div className="text-center text-orange-600 mt-10">Carregando serviços...</div>
 
   return (
     <div className="space-y-6">
@@ -77,25 +70,19 @@ export default function ServicosPessoaFisica({ pessoaFisica }) {
               <h3 className="text-lg font-bold text-orange-700">{servico.titulo}</h3>
               <p className="text-gray-600 text-sm mt-1">{servico.funcao}</p>
               <p className="text-gray-700 mt-2">{servico.descricao}</p>
-              
-              {servico.valorDiaria && (
-                <p className="text-orange-700 font-semibold mt-2">
-                  💰 R$ {servico.valorDiaria} / diária
-                </p>
-              )}
 
-              <div className="flex gap-2 mt-4">
+              <div className="mt-3 flex gap-2">
                 <button
-                  onClick={() => navigate(`/pessoa-fisica/editarservico/${servico.id}`)}
-                  className="flex-1 bg-blue-600 text-white py-1 rounded hover:bg-blue-700"
+                  onClick={() => navigate(`/pessoa-fisica/servico/${servico.id}`)}
+                  className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
                 >
-                  Editar
+                  ✏️ Editar
                 </button>
                 <button
                   onClick={() => excluirServico(servico.id)}
-                  className="flex-1 bg-red-600 text-white py-1 rounded hover:bg-red-700"
+                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
                 >
-                  Excluir
+                  🗑️ Excluir
                 </button>
               </div>
             </div>
