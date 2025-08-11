@@ -1,3 +1,4 @@
+// src/pages/pf/CandidaturasPF.jsx
 import React, { useEffect, useState } from 'react'
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -23,11 +24,9 @@ export default function CandidaturasPessoaFisica({ pessoaFisicaUid }) {
           snapshot.docs.map(async docSnap => {
             const data = docSnap.data()
 
-            // Freela
             const freelaRef = doc(db, 'usuarios', data.freelaUid)
             const freelaSnap = await getDoc(freelaRef)
 
-            // FIX: coleção do serviço
             const servicoRef = doc(db, 'servicos', data.servicoId)
             const servicoSnap = await getDoc(servicoRef)
 

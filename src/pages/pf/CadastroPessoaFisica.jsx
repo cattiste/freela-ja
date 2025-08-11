@@ -154,7 +154,6 @@ export default function CadastroPessoaFisica() {
           )}
         </div>
 
-        {/* Campos SEMPRE visíveis */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1">E-mail {(!modoEdicao || forcarCriacao) && '*'}</label>

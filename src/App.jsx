@@ -40,6 +40,8 @@ import PagamentoChamada from '@/pages/estabelecimento/PagamentoChamada'
 import PainelPessoaFisica from '@/pages/pf/PainelPessoaFisica'
 import CandidaturasPF from '@/pages/pf/CandidaturasPF'
 import AgendaEventosPF from '@/pages/pf/AgendaEventosPF'
+import EditarPerfilPessoaFisica from '@/pages/pf/EditarPerfilPessoaFisica'
+import PerfilPessoaFisica from '@/pages/pf/PerfilPessoaFisica'
 
 export default function App() {
   return (
@@ -56,7 +58,6 @@ export default function App() {
         <Route path="/evento-confirmado" element={<EventoConfirmado />} />
         <Route path="/meuseventos" element={<EventosPendentes />} />
         <Route path="/freela/buscareventos" element={<BuscarEventos />} />
-        <Route path="/painelpf" element={<PainelPessoaFisica />} />
         <Route path="/cadastropf" element={<CadastroPessoaFisica />} />
         <Route path="/pagamento-pix" element={<PagamentoPix />} />
         <Route path="/admin" element={<DashboardAdmin />} />
@@ -100,12 +101,28 @@ export default function App() {
             </RequireRole>
           }
         />
+        <Route
+          path="/pf/editarperfil"
+          element={
+            <RequireRole allow={['pessoa_fisica','admin']}>
+              <EditarPerfilPessoaFisica/>
+            </RequireRole>
+          }
+        />
         <Route path="/pf/candidaturas" element={<CandidaturasPF />} />
         <Route path="/pf/agenda" element={<AgendaEventosPF />} />
         <Route path="/pf/buscar" element={<BuscarFreelas />} />
 
-        {/* ✅ Redirecionamento alternativo */}
+        {/* Perfil público da Pessoa Física (opcional, útil pra compartilhamento) */}
+        <Route path="/perfilpessoafisica/:uid" element={<PerfilPessoaFisica />} />
+
+        {/* ✅ Redirecionamentos/ajustes */}
+        {/* Antiga rota duplicada do painel PF → agora redireciona para /pf */}
+        <Route path="/painelpf" element={<Navigate to="/pf" replace />} />
         <Route path="/painel-estabelecimento/chamadas" element={<Navigate to="/painelestabelecimento/ativas" />} />
+
+        {/* 404 opcional: */}
+        {/* <Route path="*" element={<NotFound />} /> */}
       </Routes>
     </BrowserRouter>
   )

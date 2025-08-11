@@ -1,3 +1,4 @@
+// src/pages/pf/AgendaEventosPF.jsx
 import React, { useState, useEffect } from 'react'
 import { 
   collection, 
@@ -16,6 +17,17 @@ import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
 import { toast } from 'react-hot-toast'
+
+const toDateSafe = (v) => {
+  try {
+    if (!v) return null
+    if (typeof v?.toDate === 'function') return v.toDate()
+    const d = new Date(v)
+    return Number.isFinite(d?.getTime()) ? d : null
+  } catch {
+    return null
+  }
+}
 
 export default function AgendaEventosPF() {
   const { usuario } = useAuth()
@@ -40,12 +52,14 @@ export default function AgendaEventosPF() {
           where('pessoaFisicaUid', '==', usuario.uid)
         )
         const querySnapshot = await getDocs(q)
-        const eventosData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          // Converter Firestore Timestamp para Date
-          data: doc.data().data.toDate()
-        }))
+        const eventosData = querySnapshot.docs.map(docu => {
+          const data = docu.data()
+          return {
+            id: docu.id,
+            ...data,
+            data: toDateSafe(data.data) || new Date()
+          }
+        })
         setEventos(eventosData)
       } catch (error) {
         console.error('Erro ao carregar eventos:', error)
@@ -97,20 +111,18 @@ export default function AgendaEventosPF() {
         toast.success('Evento adicionado com sucesso!')
       }
 
-      // Recarregar eventos
       const q = query(
         collection(db, 'eventosPF'),
         where('pessoaFisicaUid', '==', usuario.uid)
       )
       const querySnapshot = await getDocs(q)
-      const eventosData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        data: doc.data().data.toDate()
+      const eventosData = querySnapshot.docs.map(docu => ({
+        id: docu.id,
+        ...docu.data(),
+        data: toDateSafe(docu.data().data) || new Date()
       }))
       setEventos(eventosData)
 
-      // Limpar formulário
       setNovoEvento({
         titulo: '',
         descricao: '',
@@ -162,7 +174,6 @@ export default function AgendaEventosPF() {
         <h2 className="text-2xl font-bold text-orange-700 mb-6">📅 Minha Agenda de Eventos</h2>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Calendário */}
           <div className="lg:col-span-1">
             <Calendar
               onChange={handleDateChange}
@@ -177,9 +188,7 @@ export default function AgendaEventosPF() {
             />
           </div>
 
-          {/* Formulário e Lista */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Formulário */}
             <div className="bg-orange-50 p-4 rounded-lg">
               <h3 className="font-semibold text-orange-700 mb-3">
                 {editandoId ? '✏️ Editar Evento' : '➕ Adicionar Evento'}
@@ -264,7 +273,6 @@ export default function AgendaEventosPF() {
               </div>
             </div>
 
-            {/* Lista de Eventos do Dia */}
             <div>
               <h3 className="font-semibold text-orange-700 mb-3">
                 Eventos para {dataSelecionada.toLocaleDateString('pt-BR')}
