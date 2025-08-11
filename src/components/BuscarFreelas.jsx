@@ -99,6 +99,7 @@ function FreelaCard({
           <p className="text-sm text-gray-600 mt-1">
             📍 Aprox. {distanciaKm.toFixed(1)} km do local
           </p>
+          
         )}
 
         {isOnline && (
