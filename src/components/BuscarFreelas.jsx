@@ -1,9 +1,12 @@
-import React, { useEffect, useState, useMemo } from 'react'
+// src/components/BuscarFreelas.jsx
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  collection, query, where, onSnapshot, addDoc, serverTimestamp
+  collection, query, where, addDoc, serverTimestamp,
+  getDocs, doc, getDoc, limit
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 
+// --- distância geodésica (km)
 function calcularDistancia(lat1, lon1, lat2, lon2) {
   const toRad = (x) => (x * Math.PI) / 180
   const R = 6371
@@ -16,7 +19,58 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
   return R * c
 }
 
-function FreelaCard({ freela, distanciaKm, onChamar, chamando }) {
+// --- presença com TTL: só é online se flag + timestamp recente
+const TTL_MS = 120_000 // 2 min
+
+function toMillis(v) {
+  if (!v) return null
+  if (typeof v === 'number') return v
+  if (typeof v === 'string') {
+    if (/^\d+$/.test(v)) return Number(v) // epoch em string
+    const p = Date.parse(v)
+    return Number.isNaN(p) ? null : p
+  }
+  if (typeof v === 'object') {
+    if (typeof v.toMillis === 'function') return v.toMillis()
+    if (typeof v.seconds === 'number') return v.seconds * 1000
+    if (typeof v._seconds === 'number') return v._seconds * 1000
+  }
+  return null
+}
+
+function estaOnline(rec, now) {
+  if (!rec) return false
+  const flag = rec.online === true || rec.state === 'online'
+  const ts =
+    rec.last_seen ??     // RTDB comum
+    rec.lastSeen ??      // variação camelCase
+    rec.ts ??            // genérico
+    rec.updatedAt ??     // genérico
+    rec.last_changed     // RTDB presence padrão
+  const ms = toMillis(ts)
+  if (!flag || ms == null) return false
+  return now - ms <= TTL_MS
+}
+
+// --- reconhece perfil de freela (antigo/novo)
+function ehFreela(data) {
+  return (
+    data?.tipo === 'freela' ||
+    data?.tipoUsuario === 'freela' ||
+    (data?.tipoConta === 'funcional' && data?.tipoUsuario === 'freela')
+  )
+}
+
+function FreelaCard({
+  freela,
+  distanciaKm,
+  onChamar,
+  chamando,
+  observacao,
+  setObservacao,
+  isOnline
+}) {
+  const freelaKey = freela.uid || freela.id
   return (
     <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100 hover:shadow-xl transition">
       <div className="flex flex-col items-center mb-3">
@@ -27,6 +81,7 @@ function FreelaCard({ freela, distanciaKm, onChamar, chamando }) {
         />
         <h3 className="mt-2 text-lg font-bold text-orange-700 text-center">{freela.nome}</h3>
         <p className="text-sm text-gray-600 text-center">{freela.funcao}</p>
+
         {freela.especialidades && (
           <p className="text-sm text-gray-500 text-center">
             {Array.isArray(freela.especialidades)
@@ -34,109 +89,240 @@ function FreelaCard({ freela, distanciaKm, onChamar, chamando }) {
               : freela.especialidades}
           </p>
         )}
-        {freela.valorDiaria && (
+
+        {freela.valorDiaria != null && freela.valorDiaria !== '' && (
           <p className="text-sm font-semibold text-orange-700 mt-1">
             💰 R$ {freela.valorDiaria} / diária
           </p>
         )}
-        {distanciaKm != null && (
+
+        {/* distância */}
+        {Number.isFinite(distanciaKm) && (
           <p className="text-sm text-gray-600 mt-1">
-            📍 Aprox. {distanciaKm.toFixed(1)} km do local
+            📍 Aprox. {Number(distanciaKm).toFixed(1)} km do local
           </p>
         )}
-        <div className="flex items-center gap-2 mt-1">
-          <span className="w-2 h-2 rounded-full bg-green-500" />
-          <span className="text-xs text-green-700">🟢 Online agora</span>
-        </div>
+
+        {/* online */}
+        {isOnline ? (
+          <div className="flex items-center gap-2 mt-1">
+            <span className="w-2 h-2 rounded-full bg-green-500" />
+            <span className="text-xs text-green-700">🟢 Online agora</span>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="mb-2 w-full">
+        <label className="block text-sm font-medium text-gray-700 mb-1">📝 Observações para o freela</label>
+        <textarea
+          value={observacao[freelaKey] || ''}
+          onChange={(e) => setObservacao((prev) => ({ ...prev, [freelaKey]: e.target.value }))}
+          placeholder="Ex: Use roupa preta, falar com gerente João..."
+          className="w-full p-2 border rounded text-sm"
+          rows={2}
+          maxLength={200}
+        />
+        <p className="text-xs text-gray-500 mt-1">⚠️ Não inclua telefone, e-mail ou redes sociais.</p>
       </div>
 
       <button
         onClick={() => onChamar(freela)}
-        disabled={chamando === freela.id}
-        className="w-full py-2 px-4 rounded-lg font-semibold transition bg-orange-500 hover:bg-orange-600 text-white"
+        disabled={chamando === freelaKey}
+        className="w-full py-2 px-4 rounded-lg font-semibold transition bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50"
       >
-        {chamando === freela.id ? 'Chamando...' : '📞 Chamar'}
+        {chamando === freelaKey ? 'Chamando...' : '📞 Chamar'}
       </button>
     </div>
   )
 }
 
-export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) {
-  const [freelas, setFreelas] = useState([])
+export default function BuscarFreelas({ usuario: usuarioProp, usuariosOnline = {} }) {
+  const [usuario, setUsuario] = useState(usuarioProp || null) // fallback do localStorage se não vier por props
+  const [onlineUids, setOnlineUids] = useState([])            // UIDs efetivamente online (TTL)
+  const [perfis, setPerfis] = useState([])                    // perfis resolvidos a partir de UIDs (ou fallback)
   const [carregando, setCarregando] = useState(true)
   const [chamando, setChamando] = useState(null)
   const [filtroFuncao, setFiltroFuncao] = useState('')
+  const [observacao, setObservacao] = useState({})
 
+  // fallback simples: tenta ler usuário do localStorage se não for passado por props
   useEffect(() => {
-    const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const todos = snapshot.docs.map(doc => {
-        const data = doc.data()
-        return {
-          ...data,
-          id: doc.id // ✅ garante compatibilidade exata com Realtime DB
-        }
-      })
-      setFreelas(todos)
-      setCarregando(false)
-    })
-    return () => unsubscribe()
-  }, [])
+    if (!usuarioProp) {
+      try {
+        const raw = localStorage.getItem('usuarioLogado')
+        if (raw) setUsuario(JSON.parse(raw))
+      } catch (e) {
+        console.error('[BuscarFreelas] erro ao ler usuarioLogado do localStorage:', e)
+      }
+    } else {
+      setUsuario(usuarioProp)
+    }
+  }, [usuarioProp])
 
-  const chamarFreela = async (freela) => {
-    if (!estabelecimento?.uid) return
-    setChamando(freela.id)
+  // 1) extrai UIDs online com TTL (evita ghosts)
+  useEffect(() => {
+    const now = Date.now()
+    const uids = Object.entries(usuariosOnline)
+      .filter(([_, v]) => estaOnline(v, now))
+      .map(([k]) => k)
+    setOnlineUids(uids)
+  }, [usuariosOnline])
+
+  // helper: fallback para listar freelas quando não há presença
+  const carregarFreelasFallback = useCallback(async () => {
+    const resultado = []
+    const seen = new Set()
 
     try {
-      await addDoc(collection(db, 'chamadas'), {
-        freelaUid: freela.id,
-        freelaNome: freela.nome,
-        estabelecimentoUid: estabelecimento.uid,
-        estabelecimentoNome: estabelecimento.nome,
-        vagaTitulo: 'Serviço direto',
-        valorDiaria: freela.valorDiaria || null,
-        status: 'pendente',
-        criadoEm: serverTimestamp()
+      const q1 = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'), limit(60))
+      const s1 = await getDocs(q1)
+      s1.forEach(d => {
+        if (!seen.has(d.id)) {
+          resultado.push({ id: d.id, ...d.data() })
+          seen.add(d.id)
+        }
       })
-      alert(`Freelancer ${freela.nome} foi chamado com sucesso.`)
-    } catch (err) {
-      console.error('Erro ao chamar freela:', err)
-      alert('Erro ao chamar freelancer.')
+    } catch (e) {
+      console.error('[BuscarFreelas] fallback (tipo=freela) falhou:', e)
     }
 
-    setChamando(null)
-  }
-
-  const freelasFiltrados = useMemo(() => {
-    return freelas
-      .filter((f) => {
-        const status = usuariosOnline[f.id]
-        const online = status?.online === true
-        const funcaoMatch =
-          !filtroFuncao || f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
-
-        console.log(`🕵️ ${f.nome} [${f.id}] → Online: ${online} | Função: ${f.funcao}`)
-
-        return online && funcaoMatch
+    try {
+      const q2 = query(collection(db, 'usuarios'), where('tipoUsuario', '==', 'freela'), limit(60))
+      const s2 = await getDocs(q2)
+      s2.forEach(d => {
+        if (!seen.has(d.id)) {
+          resultado.push({ id: d.id, ...d.data() })
+          seen.add(d.id)
+        }
       })
+    } catch (e) {
+      console.error('[BuscarFreelas] fallback (tipoUsuario=freela) falhou:', e)
+    }
+
+    return resultado
+  }, [])
+
+  // 2) carrega perfis: se tiver online → resolve por UIDs; senão → fallback geral
+  useEffect(() => {
+    let cancelado = false
+    async function carregar() {
+      try {
+        setCarregando(true)
+
+        if (onlineUids.length > 0) {
+          const resultado = []
+          const chunks = []
+          for (let i = 0; i < onlineUids.length; i += 10) chunks.push(onlineUids.slice(i, i + 10))
+
+          const encontradosPorUid = new Set()
+          for (const arr of chunks) {
+            if (!arr.length) continue
+            const q = query(collection(db, 'usuarios'), where('uid', 'in', arr))
+            const snap = await getDocs(q)
+            snap.forEach(d => {
+              const data = d.data()
+              if (ehFreela(data)) resultado.push({ id: d.id, ...data })
+              if (data?.uid) encontradosPorUid.add(data.uid)
+            })
+          }
+
+          const faltantes = onlineUids.filter(u => !encontradosPorUid.has(u))
+          for (const uid of faltantes) {
+            const dref = doc(db, 'usuarios', uid)
+            const dsnap = await getDoc(dref)
+            if (dsnap.exists()) {
+              const data = dsnap.data()
+              if (ehFreela(data)) resultado.push({ id: dsnap.id, ...data, uid: data.uid || uid })
+            }
+          }
+
+          if (!cancelado) setPerfis(resultado)
+          return
+        }
+
+        const fallback = await carregarFreelasFallback()
+        if (!cancelado) setPerfis(fallback)
+      } catch (e) {
+        console.error('[BuscarFreelas] erro ao carregar perfis:', e)
+        if (!cancelado) setPerfis([])
+      } finally {
+        if (!cancelado) setCarregando(false)
+      }
+    }
+
+    carregar()
+    return () => { cancelado = true }
+  }, [onlineUids, carregarFreelasFallback])
+
+  // 3) calcula distância e aplica filtro por função
+  const freelasFiltrados = useMemo(() => {
+    return perfis
       .map((f) => {
         const distanciaKm =
-          f.coordenadas && estabelecimento?.coordenadas
+          f.coordenadas && usuario?.coordenadas
             ? calcularDistancia(
-                estabelecimento.coordenadas.latitude,
-                estabelecimento.coordenadas.longitude,
+                usuario.coordenadas.latitude,
+                usuario.coordenadas.longitude,
                 f.coordenadas.latitude,
                 f.coordenadas.longitude
               )
             : null
-
         return { ...f, distanciaKm }
       })
-      .sort((a, b) => (a.distanciaKm || Infinity) - (b.distanciaKm || Infinity))
-  }, [freelas, usuariosOnline, filtroFuncao, estabelecimento])
+      .filter((f) =>
+        !filtroFuncao || f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
+      )
+      .sort((a, b) => (a.distanciaKm ?? Infinity) - (b.distanciaKm ?? Infinity))
+  }, [perfis, filtroFuncao, usuario])
+
+  // 4) chamar freela
+  const chamarFreela = async (freela) => {
+    if (!usuario?.uid) return
+    const freelaUid = freela.uid || freela.id
+    setChamando(freelaUid)
+
+    const obs = (observacao[freelaUid] || '').trim()
+    const contemContato = /(\d{4,}|\b(zap|whats|telefone|email|contato|instagram|arroba)\b)/i
+    if (contemContato.test(obs)) {
+      alert('🚫 Não inclua telefone, e-mail ou redes sociais nas instruções.')
+      setChamando(null)
+      return
+    }
+
+    try {
+      await addDoc(collection(db, 'chamadas'), {
+        freelaUid,
+        freelaNome: freela.nome,
+        freelaFoto: freela.foto || '',
+        freelaFuncao: freela.funcao || '',
+        freela: { uid: freelaUid, nome: freela.nome, foto: freela.foto || '', funcao: freela.funcao || '' },
+
+        chamadorUid: usuario.uid,
+        chamadorNome: usuario.nome || '',
+        tipoChamador: usuario.tipo || usuario.tipoUsuario || usuario.subtipoComercial || '',
+        pessoaFisicaUid: (usuario.tipo === 'pessoa_fisica' || usuario.subtipoComercial === 'pf') ? usuario.uid : null,
+        estabelecimentoUid: (usuario.tipo === 'estabelecimento' || usuario.subtipoComercial === 'estabelecimento') ? usuario.uid : null,
+
+        valorDiaria: freela.valorDiaria ?? null,
+        observacao: obs,
+        status: 'pendente',
+        criadoEm: serverTimestamp()
+      })
+
+      alert(`Freelancer ${freela.nome} foi chamado com sucesso.`)
+    } catch (err) {
+      console.error('Erro ao chamar freela:', err)
+      alert('Erro ao chamar freelancer.')
+    } finally {
+      setChamando(null)
+    }
+  }
+
+  const listaVazia = !carregando && freelasFiltrados.length === 0
 
   return (
-    <div className="min-h-screen bg-cover bg-center p-4 pb-20"
+    <div
+      className="min-h-screen bg-cover bg-center p-4 pb-20"
       style={{
         backgroundImage: `url('/img/fundo-login.jpg')`,
         backgroundAttachment: 'fixed',
@@ -156,19 +342,26 @@ export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) 
 
       {carregando ? (
         <p className="text-center text-white">Carregando freelancers...</p>
-      ) : freelasFiltrados.length === 0 ? (
-        <p className="text-center text-white">Nenhum freelancer online com essa função.</p>
+      ) : listaVazia ? (
+        <p className="text-center text-white">Nenhum freelancer encontrado.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
-          {freelasFiltrados.map((freela) => (
-            <FreelaCard
-              key={freela.id}
-              freela={freela}
-              distanciaKm={freela.distanciaKm}
-              onChamar={chamarFreela}
-              chamando={chamando}
-            />
-          ))}
+          {freelasFiltrados.map((freela) => {
+            const uid = freela.uid || freela.id
+            const isOnline = estaOnline(usuariosOnline[uid], Date.now())
+            return (
+              <FreelaCard
+                key={uid}
+                freela={freela}
+                distanciaKm={freela.distanciaKm}
+                onChamar={chamarFreela}
+                chamando={chamando}
+                observacao={observacao}
+                setObservacao={setObservacao}
+                isOnline={isOnline}
+              />
+            )
+          })}
         </div>
       )}
     </div>
