@@ -1,5 +1,11 @@
 import React, { useEffect, useMemo, useState, Suspense, lazy } from 'react'
 import { Navigate, useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '@/context/AuthContext'
+import {
+  doc, updateDoc, serverTimestamp,
+  collection, getDocs, query, where
+} from 'firebase/firestore'
+import { db } from '@/firebase'
 
 // helper: lazy com fallback visível se o import falhar
 const SafeLazy = (loader, FallbackName) =>
@@ -15,7 +21,7 @@ const SafeLazy = (loader, FallbackName) =>
     })
   )
 
-// troque seus imports assim:
+// componentes lazy
 const MenuInferiorEstabelecimento = SafeLazy(() => import('@/components/MenuInferiorEstabelecimento'), 'MenuInferiorEstabelecimento')
 const BuscarFreelas = SafeLazy(() => import('@/components/BuscarFreelas'), 'BuscarFreelas')
 const AgendasContratadas = SafeLazy(() => import('@/components/AgendasContratadas'), 'AgendasContratadas')
@@ -58,7 +64,7 @@ export default function PainelEstabelecimento() {
   const nav = useNavigate()
   const location = useLocation()
 
-  // >>> lê ?tab=perfil|buscar|agendas|vagas|avaliacao|historico|ativas|chamadas
+  // lê ?tab=perfil|buscar|agendas|vagas|avaliacao|historico|ativas|chamadas
   const getTabFromURL = () => {
     const p = new URLSearchParams(location.search)
     return p.get('tab') || 'perfil'
@@ -71,13 +77,11 @@ export default function PainelEstabelecimento() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search])
 
-
   const estabelecimento = useMemo(
     () => (usuario?.tipo === 'estabelecimento' ? usuario : null),
     [usuario]
   )
 
-  const [abaSelecionada, setAbaSelecionada] = useState('perfil')
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
   const [agendaPerfil, setAgendaPerfil] = useState({})
 
@@ -182,24 +186,31 @@ export default function PainelEstabelecimento() {
             </Suspense>
           </ErrorBoundary>
 
-          <ErrorBoundary>
-            <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
-              <h3 className="font-bold text-orange-700 mb-2">Freelas a Avaliar</h3>
-              <Suspense fallback={<div>Carregando avaliações…</div>}>
-                {avaliacoesPendentes.length === 0 ? (
-                  <p className="text-sm text-gray-500">Nenhum freela para avaliar no momento.</p>
-                ) : (
-                  avaliacoesPendentes.map((chamada) => (
-                    <CardAvaliacaoFreela
-                      key={chamada.id}
-                      chamada={chamada}
-                      onAvaliado={() => carregarAvaliacoesPendentes(estabelecimento.uid)}
-                    />
-                  ))
-                )}
-              </Suspense>
-            </div>
-          </ErrorBoundary>
+          <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
+            <h3 className="font-bold text-orange-700 mb-2">Freelas a Avaliar</h3>
+            {avaliacoesPendentes.length === 0 ? (
+              <p className="text-sm text-gray-500">Nenhum freela para avaliar no momento.</p>
+            ) : (
+              <div className="space-y-3">
+                {avaliacoesPendentes.map((ch) => (
+                  <div key={ch.id} className="border rounded p-3">
+                    <p className="text-sm"><span className="font-semibold">Freela:</span> {ch.freelaNome || '—'}</p>
+                    <p className="text-xs text-gray-500">Chamada: {ch.id}</p>
+                    <button
+                      className="mt-2 text-xs bg-orange-600 text-white px-3 py-1 rounded"
+                      onClick={() => {
+                        // aqui você pode abrir um modal de avaliação se já tiver
+                        // por enquanto recarrega a lista após eventual avaliação
+                        carregarAvaliacoesPendentes(estabelecimento.uid)
+                      }}
+                    >
+                      Avaliar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     )
@@ -267,8 +278,8 @@ export default function PainelEstabelecimento() {
   if (carregando) return <div className="text-center text-orange-600 mt-8">Carregando painel…</div>
 
   if (usuario?.uid && usuario?.tipo !== 'estabelecimento') {
-    if (usuario?.tipo === 'freela') return <Navigate to="/painel/freela" replace />
-    if (usuario?.tipo === 'pessoa_fisica') return <Navigate to="/painel/pf" replace />
+    if (usuario?.tipo === 'freela') return <Navigate to="/painelfreela" replace />
+    if (usuario?.tipo === 'pessoa_fisica') return <Navigate to="/pf" replace />
     return <Navigate to="/" replace />
   }
 
