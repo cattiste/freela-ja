@@ -15,7 +15,15 @@ import HistoricoFreela from '@/pages/freela/HistoricoTrabalhosFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 
-import { useRealtimePresence } from '@/hooks/useRealtimePresence'
+// Fallback: se o hook não existir, não quebra a app
+let useRealtimePresence
+try {
+  // se existir, usa; se não, cria um no‑op
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  useRealtimePresence = require('@/hooks/useRealtimePresence').useRealtimePresence
+} catch {
+  useRealtimePresence = () => {}
+}
 
 export default function PainelFreela() {
   const { usuario, carregando } = useAuth()
@@ -28,14 +36,18 @@ export default function PainelFreela() {
   })
   const [chamadaAtiva, setChamadaAtiva] = useState(null)
 
-  // ✅ Presença online segura — SEM condicional
+  // presença online (no‑op se hook não existir)
   useRealtimePresence(usuario?.uid)
 
   useEffect(() => {
     if (!usuario?.uid) return
 
     const unsubChamadas = onSnapshot(
-      query(collection(db, 'chamadas'), where('freelaUid', '==', usuario.uid), where('status', '==', 'pendente')),
+      query(
+        collection(db, 'chamadas'),
+        where('freelaUid', '==', usuario.uid),
+        where('status', '==', 'pendente')
+      ),
       (snap) => setAlertas(prev => ({ ...prev, chamadas: snap.size > 0 }))
     )
 
@@ -55,7 +67,11 @@ export default function PainelFreela() {
     )
 
     const unsubRecebimentos = onSnapshot(
-      query(collection(db, 'chamadas'), where('freelaUid', '==', usuario.uid), where('status', 'in', ['finalizado', 'concluido'])),
+      query(
+        collection(db, 'chamadas'),
+        where('freelaUid', '==', usuario.uid),
+        where('status', 'in', ['finalizado', 'concluido'])
+      ),
       (snap) => setAlertas(prev => ({ ...prev, recebimentos: snap.size > 0 }))
     )
 
@@ -70,23 +86,32 @@ export default function PainelFreela() {
 
   useEffect(() => {
     if (!usuario?.uid) return
-
     const q = query(
       collection(db, 'chamadas'),
       where('freelaUid', '==', usuario.uid),
       where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'checkout_freela'])
     )
-
     const unsubscribe = onSnapshot(q, (snap) => {
       const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       setChamadaAtiva(docs[0] || null)
     })
-
     return () => unsubscribe()
   }, [usuario?.uid])
 
   if (carregando) return <div className="text-center mt-10">Verificando autenticação...</div>
-  if (!usuario) return <div className="text-center mt-10">Usuário não autenticado.</div>
+  if (!usuario?.uid) return <div className="text-center mt-10">Usuário não autenticado.</div>
+
+  // Guarda extra: se o user logado não for freela, mostra info (evita “sumir”)
+  const role = (usuario?.tipo || usuario?.tipoUsuario || '').toLowerCase()
+  if (role && role !== 'freela') {
+    return (
+      <div className="p-4">
+        <div className="mb-4 text-sm text-gray-600">
+          Papel atual: <b>{role}</b> — esta tela é específica para freela.
+        </div>
+      </div>
+    )
+  }
 
   const renderConteudo = () => {
     switch (abaSelecionada) {
@@ -122,7 +147,11 @@ export default function PainelFreela() {
   return (
     <div className="p-4 pb-20">
       {renderConteudo()}
-      <MenuInferiorFreela onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} alertas={alertas} />
+      <MenuInferiorFreela
+        onSelect={setAbaSelecionada}
+        abaAtiva={abaSelecionada}
+        alertas={alertas}
+      />
     </div>
   )
 }
