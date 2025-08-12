@@ -1,137 +1,130 @@
-// src/pages/gerais/Login.jsx
-import React, { useState } from 'react'
-import { signInWithEmailAndPassword } from 'firebase/auth'
+import React, { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { auth, db } from '@/firebase'
+import { signInWithEmailAndPassword } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
+import { auth, db } from '@/firebase'
+import { useAuth } from '@/context/AuthContext'
+
+const normalizeTipo = (t) => {
+  if (!t) return ''
+  let s = String(t).trim().toLowerCase().replace(/\s+/g, '_')
+  if (s === 'pessoafisica') s = 'pessoa_fisica'
+  return s
+}
+
+const destinoPorTipo = {
+  freela: '/painelfreela',
+  estabelecimento: '/painelestabelecimento',
+  pessoa_fisica: '/pf',
+  admin: '/painelestabelecimento',
+}
 
 export default function Login() {
   const navigate = useNavigate()
+  const { usuario, carregando } = useAuth()
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [erro, setErro] = useState('')
+  const [busy, setBusy] = useState(false)
 
-  const resolverTipo = (u = {}) => {
-    let t = u.tipo || ''
-    if (!t && u.tipoConta === 'comercial' && u.subtipoComercial) t = u.subtipoComercial
-    if (!t && u.tipoUsuario) t = u.tipoUsuario
-    if (t === 'pf') t = 'pessoa_fisica'
-    return (t || '').toLowerCase()
-  }
+  // Se já estiver logado, manda direto pro painel do seu tipo
+  useEffect(() => {
+    if (carregando) return
+    if (usuario?.uid) {
+      const tipoNorm = normalizeTipo(usuario?.tipo)
+      navigate(destinoPorTipo[tipoNorm] || '/', { replace: true })
+    }
+  }, [usuario, carregando, navigate])
 
-  const handleLogin = async (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault()
-    if (loading) return
-    setLoading(true)
-    setError('')
-
+    setErro('')
+    setBusy(true)
     try {
-      const emailNorm = email.trim().toLowerCase()
-      const cred = await signInWithEmailAndPassword(auth, emailNorm, senha)
-      try { await cred.user.getIdToken(true) } catch {}
+      const cred = await signInWithEmailAndPassword(auth, email.trim(), senha)
+      const uid = cred.user.uid
 
-      const ref = doc(db, 'usuarios', cred.user.uid)
-      const snap = await getDoc(ref)
+      // carrega perfil para obter "tipo"
+      const snap = await getDoc(doc(db, 'usuarios', uid))
       if (!snap.exists()) {
-        setError('Seu cadastro ainda não foi finalizado. Tente novamente em alguns segundos.')
-        setLoading(false)
+        // Perfil ainda não criado — manda pra Home como fallback
+        navigate('/', { replace: true })
         return
       }
+      const perfil = snap.data()
+      const tipoNorm = normalizeTipo(perfil?.tipo)
 
-      const u = snap.data() || {}
-      const tipo = resolverTipo(u)
-
-      const usuarioLocal = {
-        uid: cred.user.uid,
-        email: cred.user.email || emailNorm,
-        nome: u.nome || cred.user.displayName || '',
-        tipo,
-        funcao: u.funcao || '',
-        endereco: u.endereco || '',
-        foto: u.foto || cred.user.photoURL || ''
-      }
-      try { localStorage.setItem('usuarioLogado', JSON.stringify(usuarioLocal)) } catch {}
-
-      const nomeOk = !!usuarioLocal.nome?.trim()
-
-      if (tipo === 'freela') {
-        // se quiser obrigar função: if (!usuarioLocal.funcao?.trim()) return navigate('/freela/editarfreela', { replace: true })
-        return navigate(nomeOk ? '/painelfreela' : '/freela/editarfreela', { replace: true })
-      }
-
-      if (tipo === 'estabelecimento') {
-        return navigate(nomeOk ? '/painelestabelecimento' : '/estabelecimento/editarperfil', { replace: true })
-      }
-
-      if (tipo === 'pessoa_fisica') {
-        // você já tem alias /painelpf -> /pf no App.jsx; mas o caminho canônico é /pf
-        return navigate(nomeOk ? '/pf' : '/pf/editarperfil', { replace: true })
-      }
-
-      // fallback
-      navigate('/', { replace: true })
+      navigate(destinoPorTipo[tipoNorm] || '/', { replace: true })
     } catch (err) {
-      console.error(err)
-      const code = err?.code || ''
-      if (code === 'auth/invalid-email') setError('E-mail inválido.')
-      else if (code === 'auth/user-not-found') setError('Usuário não encontrado.')
-      else if (code === 'auth/wrong-password') setError('Senha incorreta.')
-      else if (code === 'auth/too-many-requests') setError('Muitas tentativas. Tente novamente mais tarde.')
-      else setError('E-mail, senha ou tipo de usuário inválido.')
+      console.error('[Login] erro:', err)
+      setErro('E-mail ou senha inválidos. Tente novamente.')
     } finally {
-      setLoading(false)
+      setBusy(false)
     }
   }
 
-  return (
-    <div
-      className="min-h-screen bg-cover bg-center bg-no-repeat relative"
-      style={{ backgroundImage: "url('/img/fundo-login.jpg')" }}
-    >
-      <div className="absolute inset-0 bg-black bg-opacity-50 z-0" />
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-6">
-        <h2 className="text-3xl font-bold text-white mb-6 drop-shadow">Entrar na Plataforma</h2>
+  if (carregando) {
+    return <div className="p-6 text-center text-orange-600">Carregando…</div>
+  }
 
-        <form
-          onSubmit={handleLogin}
-          className="w-full max-w-md bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg space-y-4"
-        >
+  if (usuario?.uid) {
+    // enquanto o useEffect redireciona
+    return <div className="p-6 text-center text-green-700">Entrando…</div>
+  }
+
+  return (
+    <div className="max-w-md mx-auto p-6">
+      <h1 className="text-2xl font-semibold mb-4">Entrar</h1>
+
+      {erro && (
+        <div className="mb-4 p-3 rounded bg-red-50 text-red-700 border border-red-200">
+          {erro}
+        </div>
+      )}
+
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm mb-1">E-mail</label>
           <input
             type="email"
-            placeholder="E-mail"
+            className="w-full border rounded px-3 py-2"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            required
             autoComplete="email"
-            className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
+            required
           />
+        </div>
+
+        <div>
+          <label className="block text-sm mb-1">Senha</label>
           <input
             type="password"
-            placeholder="Senha"
+            className="w-full border rounded px-3 py-2"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
-            required
             autoComplete="current-password"
-            className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
+            required
           />
+        </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition duration-300 disabled:opacity-60"
-          >
-            {loading ? 'Carregando...' : 'Entrar'}
-          </button>
+        <button
+          type="submit"
+          disabled={busy}
+          className="w-full bg-black text-white rounded px-3 py-2 disabled:opacity-60"
+        >
+          {busy ? 'Entrando…' : 'Entrar'}
+        </button>
+      </form>
 
-          {error && <p className="text-red-600 text-sm text-center">{error}</p>}
-        </form>
-
-        <p className="text-center mt-4 text-sm text-white">
-          <Link to="/esquecisenha" className="text-blue-200 hover:underline">
-            Esqueci minha senha
-          </Link>
-        </p>
+      <div className="mt-4 text-sm flex items-center justify-between">
+        <Link to="/esquecisenha" className="text-blue-600 hover:underline">
+          Esqueci minha senha
+        </Link>
+        <div className="space-x-2">
+          <Link to="/cadastrofreela" className="text-blue-600 hover:underline">Sou Freela</Link>
+          <Link to="/cadastroestabelecimento" className="text-blue-600 hover:underline">Sou Estabelecimento</Link>
+          <Link to="/cadastropf" className="text-blue-600 hover:underline">Sou Pessoa Física</Link>
+        </div>
       </div>
     </div>
   )

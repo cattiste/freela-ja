@@ -1,4 +1,3 @@
-// src/App.jsx
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
@@ -68,7 +67,7 @@ export default function App() {
         <Route path="/cadastrofreela" element={<CadastroFreela />} />
         <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
         <Route
-          path="/painelfreela/"
+          path="/painelfreela"
           element={
             <RequireRole allow={['freela','admin']}>
               <PainelFreela/>
@@ -109,19 +108,26 @@ export default function App() {
             </RequireRole>
           }
         />
+        <Route
+          path="/pf/buscar"
+          element={
+            <RequireRole allow={['pessoa_fisica','admin']}>
+              <BuscarFreelas />
+            </RequireRole>
+          }
+        />
         <Route path="/pf/candidaturas" element={<CandidaturasPF />} />
         <Route path="/pf/agenda" element={<AgendaEventosPF />} />
-        <Route path="/pf/buscar" element={<BuscarFreelas />} />
 
-        {/* Perfil público da Pessoa Física (opcional, útil pra compartilhamento) */}
+        {/* Perfil público da Pessoa Física */}
         <Route path="/perfilpessoafisica/:uid" element={<PerfilPessoaFisica />} />
 
         {/* ✅ Redirecionamentos/ajustes */}
-        {/* Antiga rota duplicada do painel PF → agora redireciona para /pf */}
         <Route path="/painelpf" element={<Navigate to="/pf" replace />} />
+        <Route path="/painelpessoafisica" element={<Navigate to="/pf" replace />} />
         <Route path="/estabelecimento/chamadasestabelecimento" element={<Navigate to="/estabelecimento/ativas" />} />
 
-        {/* 404 opcional: */}
+        {/* 404 opcional */}
         {/* <Route path="*" element={<NotFound />} /> */}
       </Routes>
     </BrowserRouter>
