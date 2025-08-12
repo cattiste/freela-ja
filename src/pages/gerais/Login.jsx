@@ -64,7 +64,7 @@ export default function Login() {
 
       if (tipo === 'estabelecimento') {
         if (!nomeOk) navigate('/estabelecimento/editarperfil', { replace: true })
-        else navigate('/painel/estabelecimento', { replace: true })  // ✅ corrigido
+        else navigate('/painelestabelecimento', { replace: true })  // ✅ corrigido
         return
       }
 
