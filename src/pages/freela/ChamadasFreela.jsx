@@ -1,113 +1,195 @@
-// src/pages/freela/ChamadasFreela.jsx
+// ChamadasFreela.jsx – versão com validação por localização desativada (check-in liberado sem GeoPoint)
+
 import React, { useEffect, useState } from 'react'
-import { collection, onSnapshot, query, where } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  updateDoc,
+  doc,
+  serverTimestamp
+} from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
+import { toast } from 'react-hot-toast'
+import AvaliacaoInline from '@/components/AvaliacaoInline'
+import RespostasRapidasFreela from '@/components/RespostasRapidasFreela'
+import ContagemRegressiva from '@/components/ContagemRegressiva'
 
-const STATUS_ATIVAS = [
-  'pendente',
-  'aceita',
-  'checkin_freela',
-  'checkin_estabelecimento',
-  'checkout_freela'
-]
-
-export default function ChamadasFreela({ freelaUid: freelaUidProp, freela }) {
+export default function ChamadasFreela() {
   const { usuario } = useAuth()
-  const freelaUid = freelaUidProp || usuario?.uid
-
   const [chamadas, setChamadas] = useState([])
   const [loading, setLoading] = useState(true)
-  const [erro, setErro] = useState('')
+  const [mensagemConfirmacao, setMensagemConfirmacao] = useState(null)
 
   useEffect(() => {
-    if (!freelaUid) return
-    setLoading(true)
-    setErro('')
+    if (!usuario?.uid) return
 
     const q = query(
       collection(db, 'chamadas'),
-      where('freelaUid', '==', freelaUid),
-      where('status', 'in', STATUS_ATIVAS)
+      where('freelaUid', '==', usuario.uid),
+      where('status', 'in', [
+        'pendente',
+        'aceita',
+        'checkin_freela',
+        'em_andamento',
+        'checkout_freela',
+        'concluido',
+        'cancelada_por_falta_de_pagamento',
+        'rejeitada'
+      ])
     )
 
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const docs = snap.docs
-          .map(d => ({ id: d.id, ...d.data() }))
-          .sort((a, b) => {
-            const ta = a.criadoEm?.toMillis?.() ?? a.criadoEm?.seconds * 1000 ?? 0
-            const tb = b.criadoEm?.toMillis?.() ?? b.criadoEm?.seconds * 1000 ?? 0
-            return tb - ta // desc
-          })
-        setChamadas(docs)
+    const unsub = onSnapshot(q, (snap) => {
+      const chamadasAtivas = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+      setTimeout(() => {
+        setChamadas(chamadasAtivas)
         setLoading(false)
-      },
-      (err) => {
-        console.error('[ChamadasFreela] onSnapshot erro:', err)
-        setErro('Falha ao carregar suas chamadas.')
-        setLoading(false)
-      }
-    )
+      }, 1000)
+    })
 
     return () => unsub()
-  }, [freelaUid])
+  }, [usuario?.uid])
 
-  const lista = Array.isArray(chamadas) ? chamadas : []
+  const atualizarChamada = async (id, dados) => {
+    try {
+      const ref = doc(db, 'chamadas', id)
+      await updateDoc(ref, dados)
+      toast.success('✅ Ação realizada com sucesso!')
+      if (dados.status === 'checkin_freela') {
+        setMensagemConfirmacao('✅ Check-in feito! Vá até o caixa ou procure o responsável para confirmar sua presença.')
+      }
+    } catch (err) {
+      console.error('Erro ao atualizar chamada:', err)
+      toast.error('Erro ao atualizar chamada.')
+    }
+  }
 
-  if (loading) return <div className="p-4">Carregando chamadas…</div>
-  if (erro) return <div className="p-4 text-red-600">{erro}</div>
+  const verificarTimeout = (chamada) => {
+    if (chamada.status !== 'aceita') return false
+    if (!chamada.aceitaEm?.toMillis) return false
+    const aceitaEm = chamada.aceitaEm.toMillis()
+    if (!aceitaEm || aceitaEm < 1000000000000) return false
+    const limite = 10 * 60 * 1000
+    const agora = Date.now()
+    const expirou = agora - aceitaEm > limite
+    return expirou
+  }
 
-  if (lista.length === 0) {
-    return (
-      <div className="p-4 text-gray-600">
-        Nenhuma chamada ativa no momento.
-      </div>
-    )
+  if (!usuario?.uid) {
+    return <div className="text-center text-red-600 mt-10">⚠️ Acesso não autorizado. Faça login novamente.</div>
+  }
+
+  if (loading) {
+    return <div className="text-center text-orange-600 mt-10">🔄 Carregando chamadas...</div>
   }
 
   return (
-    <div className="space-y-3">
-      {lista.map((c) => (
-        <div key={c.id} className="bg-white rounded-xl shadow p-3 border">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-semibold">{c.estabelecimentoNome || 'Estabelecimento'}</div>
-              <div className="text-sm text-gray-600">
-                Função: {c.funcao || '—'} {c.especialidade ? `• ${c.especialidade}` : ''}
-              </div>
-              <div className="text-xs text-gray-500">
-                Status: <span className="uppercase">{c.status}</span>
-              </div>
-            </div>
-            <div className="text-right text-sm">
-              {c.valorDiaria ? `R$ ${Number(c.valorDiaria).toFixed(2)}` : ''}
-            </div>
-          </div>
+    <div className="p-4 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold text-orange-700 text-center mb-4">📞 Chamadas Recentes</h1>
 
-          <div className="mt-3 flex gap-2 flex-wrap">
-            {c.status === 'pendente' && (
-              <>
-                <button className="px-3 py-1 rounded bg-green-600 text-white">Aceitar</button>
-                <button className="px-3 py-1 rounded bg-gray-300">Rejeitar</button>
-              </>
-            )}
-            {['aceita', 'checkin_estabelecimento'].includes(c.status) && (
-              <button className="px-3 py-1 rounded bg-blue-600 text-white">Fazer Check-in</button>
-            )}
-            {['checkin_freela'].includes(c.status) && (
-              <button className="px-3 py-1 rounded bg-orange-600 text-white">Fazer Check-out</button>
-            )}
-          </div>
+      {mensagemConfirmacao && (
+        <p className="text-sm text-green-700 bg-green-50 border border-green-300 rounded p-3 mb-4 text-center">
+          {mensagemConfirmacao}
+        </p>
+      )}
 
-          {c.observacao && (
-            <div className="mt-2 text-sm text-gray-700">
-              <span className="font-medium">Observação:</span> {c.observacao}
+      {chamadas.length === 0 ? (
+        <p className="text-center text-gray-600">Nenhuma chamada encontrada.</p>
+      ) : (
+        chamadas.map((chamada) => {
+          const expirou = verificarTimeout(chamada)
+          if (expirou) {
+            atualizarChamada(chamada.id, { status: 'cancelada_por_falta_de_pagamento' })
+            return null
+          }
+
+          return (
+            <div key={chamada.id} className="bg-white shadow p-4 rounded-xl mb-4 border border-orange-200 space-y-2">
+              <h2 className="font-semibold text-orange-600 text-lg">Chamada #{chamada?.id?.slice(-5)}</h2>
+              <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome}</p>
+              <p><strong>Status:</strong> {chamada.status}</p>
+
+              {chamada.observacao && (
+                <p className="text-sm text-gray-800 mt-2">
+                  <strong>📝 Observação:</strong> {chamada.observacao}
+                </p>
+              )}
+
+              {chamada.status === 'pendente' && (
+                <>
+                  <button
+                    onClick={() => atualizarChamada(chamada.id, {
+                      status: 'aceita',
+                      aceitaEm: serverTimestamp()
+                    })}
+                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition"
+                  >
+                    ✅ Aceitar chamada
+                  </button>
+                  <button
+                    onClick={() => atualizarChamada(chamada.id, {
+                      status: 'rejeitada',
+                      rejeitadaEm: serverTimestamp()
+                    })}
+                    className="w-full bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600 transition"
+                  >
+                    ❌ Rejeitar chamada
+                  </button>
+                </>
+              )}
+
+              {chamada.status === 'aceita' && chamada.checkInFreela !== true && (
+                <button
+                  onClick={() => atualizarChamada(chamada.id, {
+                    status: 'checkin_freela',
+                    checkInFreela: true,
+                    checkInFreelaHora: serverTimestamp()
+                  })}
+                  className="w-full bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition"
+                >
+                  📍 Fazer check-in
+                </button>
+              )}
+
+              {(chamada.status === 'checkin_freela' || chamada.status === 'em_andamento') && !chamada.checkOutFreela && (
+                <button
+                  onClick={() => atualizarChamada(chamada.id, {
+                    status: 'checkout_freela',
+                    checkOutFreela: true,
+                    checkOutFreelaHora: serverTimestamp()
+                  })}
+                  className="w-full bg-yellow-500 text-white px-4 py-2 rounded-xl hover:bg-yellow-600 transition"
+                >
+                  ⏳ Fazer check-out
+                </button>
+              )}
+
+              {(chamada.status === 'concluido' || chamada.status === 'finalizada') && (
+                <>
+                  <span className="text-green-600 font-bold block text-center mt-2">✅ Finalizada</span>
+                  <AvaliacaoInline chamada={chamada} tipo="freela" />
+                </>
+              )}
+
+              {chamada.status === 'cancelada_por_falta_de_pagamento' && (
+                <p className="text-sm text-red-600 font-semibold text-center">
+                  ❌ Chamada cancelada por falta de pagamento.
+                </p>
+              )}
+
+              {chamada.status === 'rejeitada' && (
+                <p className="text-sm text-red-600 font-semibold text-center">
+                  ❌ Chamada rejeitada.
+                </p>
+              )}
+
+              <RespostasRapidasFreela chamadaId={chamada.id} />
             </div>
-          )}
-        </div>
-      ))}
+          )
+        })
+      )}
     </div>
   )
 }
