@@ -16,7 +16,7 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
   return R * c
 }
 
-function FreelaCard({ freela, distanciaKm, onChamar, chamando, observacao, setObservacao }) {
+function FreelaCard({ freela, distanciaKm, onChamar, chamando }) {
   return (
     <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100 hover:shadow-xl transition">
       <div className="flex flex-col items-center mb-3">
@@ -50,21 +50,6 @@ function FreelaCard({ freela, distanciaKm, onChamar, chamando, observacao, setOb
         </div>
       </div>
 
-      <div className="mb-2">
-        <label className="block text-sm font-medium text-gray-700 mb-1">📝 Observações para o freela</label>
-        <textarea
-          value={observacao[freela.id] || ''}
-          onChange={(e) =>
-            setObservacao((prev) => ({ ...prev, [freela.id]: e.target.value }))
-          }
-          placeholder="Ex: Use roupa preta, falar com gerente João..."
-          className="w-full p-2 border rounded text-sm"
-          rows={2}
-          maxLength={200}
-        />
-        <p className="text-xs text-gray-500 mt-1">⚠️ Não inclua telefone, e-mail ou redes sociais.</p>
-      </div>
-
       <button
         onClick={() => onChamar(freela)}
         disabled={chamando === freela.id}
@@ -76,12 +61,11 @@ function FreelaCard({ freela, distanciaKm, onChamar, chamando, observacao, setOb
   )
 }
 
-export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
+export default function BuscarFreelas({ estabelecimento, usuariosOnline = {} }) {
   const [freelas, setFreelas] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [chamando, setChamando] = useState(null)
   const [filtroFuncao, setFiltroFuncao] = useState('')
-  const [observacao, setObservacao] = useState({})
 
   useEffect(() => {
     const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
@@ -90,7 +74,7 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         const data = doc.data()
         return {
           ...data,
-          id: doc.id
+          id: doc.id // ✅ garante compatibilidade exata com Realtime DB
         }
       })
       setFreelas(todos)
@@ -100,39 +84,19 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
   }, [])
 
   const chamarFreela = async (freela) => {
-    if (!usuario?.uid) return
+    if (!estabelecimento?.uid) return
     setChamando(freela.id)
-
-    const obs = observacao[freela.id] || ''
-
-    const contemContato = /(\d{4,}|\b(zap|whats|telefone|email|contato|instagram|arroba)\b)/i
-    if (contemContato.test(obs)) {
-      alert('🚫 Não inclua telefone, e-mail ou redes sociais nas instruções.')
-      setChamando(null)
-      return
-    }
 
     try {
       await addDoc(collection(db, 'chamadas'), {
         freelaUid: freela.id,
         freelaNome: freela.nome,
-        freelaFoto: freela.foto || '',
-        freelaFuncao: freela.funcao || '',
-        freela: {
-          uid: freela.id,
-          nome: freela.nome,
-          foto: freela.foto || '',
-          funcao: freela.funcao || ''
-        },
-        chamadorUid: usuario.uid,
-        chamadorNome: usuario.nome,
-        tipoChamador: usuario.tipo, // útil pra controle futuro
-        valorDiaria: freela.valorDiaria || null,
+        estabelecimentoUid: estabelecimento.uid,
+        estabelecimentoNome: estabelecimento.nome,
+        vagaTitulo: 'Serviço direto',
         status: 'pendente',
-        observacao: obs,
         criadoEm: serverTimestamp()
       })
-      
       alert(`Freelancer ${freela.nome} foi chamado com sucesso.`)
     } catch (err) {
       console.error('Erro ao chamar freela:', err)
@@ -150,14 +114,16 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         const funcaoMatch =
           !filtroFuncao || f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
 
+        console.log(`🕵️ ${f.nome} [${f.id}] → Online: ${online} | Função: ${f.funcao}`)
+
         return online && funcaoMatch
       })
       .map((f) => {
         const distanciaKm =
-          f.coordenadas && usuario?.coordenadas
+          f.coordenadas && estabelecimento?.coordenadas
             ? calcularDistancia(
-                usuario.coordenadas.latitude,
-                usuario.coordenadas.longitude,
+                estabelecimento.coordenadas.latitude,
+                estabelecimento.coordenadas.longitude,
                 f.coordenadas.latitude,
                 f.coordenadas.longitude
               )
@@ -166,7 +132,7 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         return { ...f, distanciaKm }
       })
       .sort((a, b) => (a.distanciaKm || Infinity) - (b.distanciaKm || Infinity))
-  }, [freelas, usuariosOnline, filtroFuncao, usuario])
+  }, [freelas, usuariosOnline, filtroFuncao, estabelecimento])
 
   return (
     <div className="min-h-screen bg-cover bg-center p-4 pb-20"
@@ -200,8 +166,6 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
               distanciaKm={freela.distanciaKm}
               onChamar={chamarFreela}
               chamando={chamando}
-              observacao={observacao}
-              setObservacao={setObservacao}
             />
           ))}
         </div>
