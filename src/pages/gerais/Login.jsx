@@ -57,7 +57,7 @@ export default function Login() {
 
       if (tipo === 'freela') {
         const funcaoOk = !!usuarioLocal.funcao?.trim()
-        if (!nomeOk || !funcaoOk) navigate('/freela/editarfreela', { replace: true })
+        if (!nomeOk) navigate('/freela/editarfreela', { replace: true })
         else navigate('/painelfreela', { replace: true })           // ✅ corrigido
         return
       }
@@ -69,7 +69,7 @@ export default function Login() {
       }
 
       if (tipo === 'pessoa_fisica') {
-        if (!nomeOk) navigate('/cadastropf', { replace: true })
+        if (!nomeOk) navigate('/pf/editarperfilpessoafisica', { replace: true })
         else navigate('/painelpf', { replace: true })               // ✅ corrigido
         return
       }
