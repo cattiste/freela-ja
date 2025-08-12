@@ -1,10 +1,16 @@
 // src/pages/freela/ChamadasFreela.jsx
 import React, { useEffect, useState } from 'react'
-import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore'
+import { collection, onSnapshot, query, where } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 
-const STATUS_ATIVAS = ['pendente', 'aceita', 'checkin_freela', 'checkin_estabelecimento', 'checkout_freela']
+const STATUS_ATIVAS = [
+  'pendente',
+  'aceita',
+  'checkin_freela',
+  'checkin_estabelecimento',
+  'checkout_freela'
+]
 
 export default function ChamadasFreela({ freelaUid: freelaUidProp, freela }) {
   const { usuario } = useAuth()
@@ -19,18 +25,22 @@ export default function ChamadasFreela({ freelaUid: freelaUidProp, freela }) {
     setLoading(true)
     setErro('')
 
-    // ⚠️ se der erro pedindo índice, o catch abaixo vai logar no console
     const q = query(
       collection(db, 'chamadas'),
       where('freelaUid', '==', freelaUid),
-      where('status', 'in', STATUS_ATIVAS),
-      orderBy('criadoEm', 'desc')
+      where('status', 'in', STATUS_ATIVAS)
     )
 
     const unsub = onSnapshot(
       q,
       (snap) => {
-        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        const docs = snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => {
+            const ta = a.criadoEm?.toMillis?.() ?? a.criadoEm?.seconds * 1000 ?? 0
+            const tb = b.criadoEm?.toMillis?.() ?? b.criadoEm?.seconds * 1000 ?? 0
+            return tb - ta // desc
+          })
         setChamadas(docs)
         setLoading(false)
       },
@@ -44,7 +54,6 @@ export default function ChamadasFreela({ freelaUid: freelaUidProp, freela }) {
     return () => unsub()
   }, [freelaUid])
 
-  // 🔒 nunca use 'lista' sem declarar — derive daqui
   const lista = Array.isArray(chamadas) ? chamadas : []
 
   if (loading) return <div className="p-4">Carregando chamadas…</div>
@@ -77,7 +86,6 @@ export default function ChamadasFreela({ freelaUid: freelaUidProp, freela }) {
             </div>
           </div>
 
-          {/* Botões básicos (ajuste conforme sua lógica atual) */}
           <div className="mt-3 flex gap-2 flex-wrap">
             {c.status === 'pendente' && (
               <>
@@ -85,11 +93,9 @@ export default function ChamadasFreela({ freelaUid: freelaUidProp, freela }) {
                 <button className="px-3 py-1 rounded bg-gray-300">Rejeitar</button>
               </>
             )}
-
             {['aceita', 'checkin_estabelecimento'].includes(c.status) && (
               <button className="px-3 py-1 rounded bg-blue-600 text-white">Fazer Check-in</button>
             )}
-
             {['checkin_freela'].includes(c.status) && (
               <button className="px-3 py-1 rounded bg-orange-600 text-white">Fazer Check-out</button>
             )}
