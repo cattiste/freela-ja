@@ -88,7 +88,7 @@ export default function App() {
             </RequireRole>
           }
         />
-        <Route path="/estabelecimento/editarperfilestabelecimentoestabelecimento" element={<EditarPerfilEstabelecimento />} />
+        <Route path="/estabelecimento/editarperfilestabelecimento" element={<EditarPerfilEstabelecimento />} />
         <Route path="/publicarvaga" element={<PublicarVaga />} />
         <Route path="/pagamentochamada/:id" element={<PagamentoChamada />} />
 
@@ -119,7 +119,7 @@ export default function App() {
         {/* ✅ Redirecionamentos/ajustes */}
         {/* Antiga rota duplicada do painel PF → agora redireciona para /pf */}
         <Route path="/painelpf" element={<Navigate to="/pf" replace />} />
-        <Route path="/painelestabelecimento/chamadas" element={<Navigate to="/painelestabelecimento/ativas" />} />
+        <Route path="/estabelecimento/chamadasestabelecimento" element={<Navigate to="/estabelecimento/ativas" />} />
 
         {/* 404 opcional: */}
         {/* <Route path="*" element={<NotFound />} /> */}
