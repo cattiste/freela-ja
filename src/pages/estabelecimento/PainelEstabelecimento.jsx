@@ -165,7 +165,7 @@ export default function PainelEstabelecimento() {
             </div>
 
             <button
-              onClick={() => nav('/estabelecimento/editarperfil')}
+              onClick={() => nav('/estabelecimento/editarperfilestabelecimento')}
               className="mt-4 w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition"
             >
               ✏️ Editar Perfil

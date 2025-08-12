@@ -88,7 +88,7 @@ export default function App() {
             </RequireRole>
           }
         />
-        <Route path="/estabelecimento/editarperfilestabelecimento" element={<EditarPerfilEstabelecimento />} />
+        <Route path="/estabelecimento/editarperfilestabelecimentoestabelecimento" element={<EditarPerfilEstabelecimento />} />
         <Route path="/publicarvaga" element={<PublicarVaga />} />
         <Route path="/pagamentochamada/:id" element={<PagamentoChamada />} />
 
