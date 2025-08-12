@@ -54,12 +54,12 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/esquecisenha" element={<EsqueciSenha />} />
         <Route path="/oportunidades" element={<Oportunidades />} />
-        <Route path="/pagamento-evento/:id" element={<PagamentoEvento />} />
-        <Route path="/evento-confirmado" element={<EventoConfirmado />} />
+        <Route path="/pagamentoevento/:id" element={<PagamentoEvento />} />
+        <Route path="/eventoconfirmado" element={<EventoConfirmado />} />
         <Route path="/meuseventos" element={<EventosPendentes />} />
         <Route path="/freela/buscareventos" element={<BuscarEventos />} />
         <Route path="/cadastropf" element={<CadastroPessoaFisica />} />
-        <Route path="/pagamento-pix" element={<PagamentoPix />} />
+        <Route path="/pagamentopix" element={<PagamentoPix />} />
         <Route path="/admin" element={<DashboardAdmin />} />
         <Route path="/privacidade" element={<Privacidade />} />
         <Route path="/termos" element={<Termos />} />
@@ -88,9 +88,9 @@ export default function App() {
             </RequireRole>
           }
         />
-        <Route path="/estabelecimento/editarperfil" element={<EditarPerfilEstabelecimento />} />
+        <Route path="/estabelecimento/editarperfilestabelecimento" element={<EditarPerfilEstabelecimento />} />
         <Route path="/publicarvaga" element={<PublicarVaga />} />
-        <Route path="/pagamento-chamada/:id" element={<PagamentoChamada />} />
+        <Route path="/pagamentochamada/:id" element={<PagamentoChamada />} />
 
         {/* 👤 Pessoa Física */}
         <Route
@@ -119,7 +119,7 @@ export default function App() {
         {/* ✅ Redirecionamentos/ajustes */}
         {/* Antiga rota duplicada do painel PF → agora redireciona para /pf */}
         <Route path="/painelpf" element={<Navigate to="/pf" replace />} />
-        <Route path="/painel-estabelecimento/chamadas" element={<Navigate to="/painelestabelecimento/ativas" />} />
+        <Route path="/painelestabelecimento/chamadas" element={<Navigate to="/painelestabelecimento/ativas" />} />
 
         {/* 404 opcional: */}
         {/* <Route path="*" element={<NotFound />} /> */}
