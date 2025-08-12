@@ -1,8 +1,10 @@
+// src/pages/pf/EditarPerfilPessoaFisica.jsx
 import React, { useEffect, useState } from 'react'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 import { useNavigate } from 'react-router-dom'
 import { onAuthStateChanged } from 'firebase/auth'
+import { uploadFoto } from '@/utils/uploadFoto'
 
 export default function EditarPerfilPessoaFisica() {
   const navigate = useNavigate()
@@ -39,26 +41,10 @@ export default function EditarPerfilPessoaFisica() {
   const handleUpload = async (e) => {
     const arquivo = e.target.files[0]
     if (!arquivo) return
-
     try {
-      const formData = new FormData()
-      formData.append('file', arquivo)
-      formData.append('upload_preset', 'preset-publico')
-      formData.append('folder', 'perfil/fotos')
-
-      const res = await fetch('https://api.cloudinary.com/v1_1/dbemvuau3/image/upload', {
-        method: 'POST',
-        body: formData
-      })
-
-      const data = await res.json()
-
-      if (res.ok) {
-        setFoto(data.secure_url)
-        alert('✅ Imagem enviada com sucesso!')
-      } else {
-        throw new Error('Erro no upload da imagem')
-      }
+      const url = await uploadFoto(arquivo)
+      setFoto(url)
+      alert('✅ Imagem enviada com sucesso!')
     } catch (err) {
       console.error('Erro no upload:', err)
       alert('Erro ao enviar imagem.')
@@ -71,7 +57,7 @@ export default function EditarPerfilPessoaFisica() {
       const ref = doc(db, 'usuarios', auth.currentUser.uid)
       await updateDoc(ref, { ...dados, foto })
       alert('✅ Perfil atualizado com sucesso!')
-      navigate('/painelpessoafisica')
+      navigate('/pf')
     } catch (err) {
       console.error(err)
       alert('Erro ao atualizar perfil.')

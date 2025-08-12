@@ -1,16 +1,44 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronDown, UserPlus, LogIn, Info, Briefcase } from 'lucide-react'
 
 export default function Home() {
   const [mostrarCadastro, setMostrarCadastro] = useState(false)
+  const dropdownRef = useRef(null)
+  const btnRef = useRef(null)
+
+  // Fecha ao clicar fora
+  useEffect(() => {
+    function onClickOutside(e) {
+      if (!mostrarCadastro) return
+      if (dropdownRef.current?.contains(e.target)) return
+      if (btnRef.current?.contains(e.target)) return
+      setMostrarCadastro(false)
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') setMostrarCadastro(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onClickOutside)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [mostrarCadastro])
+
+  // Toggle + acessibilidade
+  const toggleDropdown = () => setMostrarCadastro((v) => !v)
+  const closeAndFocusBtn = () => {
+    setMostrarCadastro(false)
+    btnRef.current?.focus()
+  }
 
   return (
     <div
       className="min-h-screen bg-cover bg-center bg-no-repeat relative"
       style={{ backgroundImage: "url('/img/fundo-login.jpg')" }}
     >
-      <div className="absolute inset-0 bg-black bg-opacity-60 z-0" />
+      <div className="absolute inset-0 bg-black/60 z-0" />
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen text-white p-8 text-center">
         <header className="max-w-3xl mb-10">
@@ -23,12 +51,15 @@ export default function Home() {
         </header>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl mb-10">
-
           {/* Botão Cadastro com Dropdown */}
           <div className="relative w-full">
             <button
-              onClick={() => setMostrarCadastro(!mostrarCadastro)}
+              ref={btnRef}
+              onClick={toggleDropdown}
               className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200 shadow"
+              aria-haspopup="menu"
+              aria-expanded={mostrarCadastro}
+              aria-controls="cadastro-menu"
             >
               <UserPlus className="w-5 h-5" />
               Cadastro
@@ -36,10 +67,37 @@ export default function Home() {
             </button>
 
             {mostrarCadastro && (
-              <div className="absolute mt-1 bg-white text-black rounded shadow w-full z-20">
-                <Link to="/cadastrofreela" className="block px-4 py-2 hover:bg-orange-100">Freelancer</Link>
-                <Link to="/cadastroestabelecimento" className="block px-4 py-2 hover:bg-orange-100">Estabelecimento</Link>
-                <Link to="/cadastropf" className="block px-4 py-2 hover:bg-orange-100">Pessoa Física</Link>
+              <div
+                id="cadastro-menu"
+                ref={dropdownRef}
+                role="menu"
+                aria-label="Opções de cadastro"
+                className="absolute left-0 right-0 mt-1 bg-white text-black rounded-lg shadow-lg z-20 overflow-hidden"
+              >
+                <Link
+                  to="/cadastrofreela"
+                  role="menuitem"
+                  className="block px-4 py-2 hover:bg-orange-100 focus:bg-orange-100 outline-none"
+                  onClick={closeAndFocusBtn}
+                >
+                  Freelancer
+                </Link>
+                <Link
+                  to="/cadastroestabelecimento"
+                  role="menuitem"
+                  className="block px-4 py-2 hover:bg-orange-100 focus:bg-orange-100 outline-none"
+                  onClick={closeAndFocusBtn}
+                >
+                  Estabelecimento
+                </Link>
+                <Link
+                  to="/cadastropf"
+                  role="menuitem"
+                  className="block px-4 py-2 hover:bg-orange-100 focus:bg-orange-100 outline-none"
+                  onClick={closeAndFocusBtn}
+                >
+                  Pessoa Física
+                </Link>
               </div>
             )}
           </div>

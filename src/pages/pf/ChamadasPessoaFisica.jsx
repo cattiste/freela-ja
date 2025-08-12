@@ -1,3 +1,4 @@
+// src/pages/pf/ChamadasPessoaFisica.jsx
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -12,6 +13,14 @@ import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
 import AvaliacaoInline from '@/components/AvaliacaoInline'
 import MensagensRecebidasPF from '@/components/MensagensRecebidasPF'
+
+const AVATAR_PLACEHOLDER =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80">
+  <rect width="100%" height="100%" fill="#f3f4f6"/>
+  <circle cx="40" cy="30" r="15" fill="#d1d5db"/>
+  <rect x="18" y="54" width="44" height="16" rx="8" fill="#d1d5db"/>
+</svg>`)
 
 export default function ChamadasPessoaFisica({ pessoaFisica }) {
   const [chamadas, setChamadas] = useState([])
@@ -55,9 +64,10 @@ export default function ChamadasPessoaFisica({ pessoaFisica }) {
       checkout_freela: 'bg-blue-200 text-blue-700',
       concluido: 'bg-gray-200 text-gray-700'
     }
+    const label = (status || '').split('_').join(' ')
     return (
       <span className={`px-2 py-1 rounded text-xs font-semibold ${cores[status] || 'bg-gray-200 text-gray-700'}`}>
-        {status.replace('_', ' ')}
+        {label}
       </span>
     )
   }
@@ -69,7 +79,7 @@ export default function ChamadasPessoaFisica({ pessoaFisica }) {
   return (
     <div className="space-y-4">
       {chamadas.map((chamada) => {
-        const foto = chamada.freelaFoto || chamada.freela?.foto || 'https://placehold.co/100x100'
+        const foto = chamada.freelaFoto || chamada.freela?.foto || AVATAR_PLACEHOLDER
         const nome = chamada.freelaNome || chamada.freela?.nome || 'Nome não informado'
 
         return (
@@ -86,7 +96,7 @@ export default function ChamadasPessoaFisica({ pessoaFisica }) {
                   <p className="text-xs text-gray-500">💰 R$ {chamada.valorDiaria} / diária</p>
                 )}
                 <p className="text-sm mt-1">📌 Status: {badgeStatus(chamada.status)}</p>
-                <MensagensRecebidas chamadaId={chamada.id} />
+                <MensagensRecebidasPF />
               </div>
             </div>
 

@@ -1,8 +1,17 @@
+// src/pages/pf/PerfilPessoaFisica.jsx
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { doc, getDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
+
+const AVATAR_PLACEHOLDER =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120">
+  <rect width="100%" height="100%" fill="#f3f4f6"/>
+  <circle cx="60" cy="45" r="22" fill="#d1d5db"/>
+  <rect x="26" y="80" width="68" height="22" rx="11" fill="#d1d5db"/>
+</svg>`)
 
 export default function PerfilPessoaFisica() {
   const { uid } = useParams()
@@ -33,7 +42,7 @@ export default function PerfilPessoaFisica() {
           orderBy('dataCriacao', 'desc')
         )
         const snapshot = await getDocs(q)
-        const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        const lista = snapshot.docs.map(docu => ({ id: docu.id, ...docu.data() }))
         setAvaliacoes(lista)
 
         if (lista.length > 0) {
@@ -81,6 +90,11 @@ export default function PerfilPessoaFisica() {
   return (
     <div className="min-h-screen bg-yellow-50 flex items-center justify-center p-6">
       <div className="bg-white rounded-3xl shadow-lg max-w-md w-full p-6 text-center">
+        <img
+          src={pessoa?.foto || AVATAR_PLACEHOLDER}
+          alt={pessoa?.nome || 'Pessoa'}
+          className="w-24 h-24 rounded-full object-cover mx-auto mb-2 border-2 border-yellow-500"
+        />
         <h1 className="text-2xl font-bold text-yellow-700 mb-1">{pessoa.nome}</h1>
         <p className="text-gray-600 mb-2">{pessoa.endereco}</p>
         {pessoa.celular && <p className="text-gray-600 mb-2">📞 {pessoa.celular}</p>}
@@ -129,7 +143,7 @@ export default function PerfilPessoaFisica() {
         
         {usuario?.uid === uid && (
           <button
-            onClick={() => navigate('/pessoa-fisica/editarperfil')}
+            onClick={() => navigate('/pf/editarperfil')}
             className="mt-4 w-full text-center bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition"
           >
             ✏️ Editar Perfil

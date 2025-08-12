@@ -8,6 +8,7 @@ import {
   addDoc,
   serverTimestamp
 } from 'firebase/firestore'
+import { onAuthStateChanged } from 'firebase/auth'
 
 export default function ChatInline({ chamadaId }) {
   const [usuario, setUsuario] = useState(null)
@@ -16,8 +17,8 @@ export default function ChatInline({ chamadaId }) {
   const divFimRef = useRef(null)
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((usuario) => {
-      setUsuario(usuario || null)
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUsuario(u || null)
     })
     return unsubscribe
   }, [])
@@ -30,11 +31,7 @@ export default function ChatInline({ chamadaId }) {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
       setMensagens(msgs)
-
-      // Scroll automático pro final
-      setTimeout(() => {
-        if (divFimRef.current) divFimRef.current.scrollIntoView({ behavior: 'smooth' })
-      }, 100)
+      setTimeout(() => divFimRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
     })
 
     return () => unsubscribe()
@@ -43,7 +40,6 @@ export default function ChatInline({ chamadaId }) {
   const enviarMensagem = async (e) => {
     e.preventDefault()
     if (!mensagem.trim() || !usuario) return
-
     const mensagensRef = collection(db, 'chamadas', chamadaId, 'mensagens')
     await addDoc(mensagensRef, {
       texto: mensagem.trim(),
@@ -53,7 +49,7 @@ export default function ChatInline({ chamadaId }) {
     })
     setMensagem('')
   }
-
+  
   return (
     <div className="mt-4 border border-orange-200 rounded-lg bg-orange-50">
       <div className="max-h-60 overflow-auto p-3 space-y-2">

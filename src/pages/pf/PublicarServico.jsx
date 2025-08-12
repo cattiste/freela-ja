@@ -1,3 +1,4 @@
+// src/pages/pf/PublicarServico.jsx
 import React, { useEffect, useState } from 'react'
 import { collection, addDoc, updateDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -65,7 +66,7 @@ export default function PublicarServico({ pessoaFisica, servico = null, onSucess
     setEnviando(true)
     try {
       const datasParaFirestore = form.datas.map(d => {
-        const jsDate = d.toDate ? d.toDate() : d
+        const jsDate = d?.toDate ? d.toDate() : new Date(d)
         return Timestamp.fromDate(jsDate)
       })
 
