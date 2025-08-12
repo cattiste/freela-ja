@@ -7,11 +7,7 @@ import {
   collection, getDocs, query, where
 } from 'firebase/firestore'
 import { db } from '@/firebase'
-import Calendar from 'react-calendar'
-import 'react-calendar/dist/Calendar.css'
-import '@/styles/estiloAgenda.css'
 
-// Componentes
 import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
 import BuscarFreelas from '@/components/BuscarFreelas'
 import AgendasContratadas from '@/components/AgendasContratadas'
@@ -19,34 +15,25 @@ import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompl
 import AvaliacoesRecebidasEstabelecimento from '@/pages/estabelecimento/AvaliacoesRecebidasEstabelecimento'
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
 import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
+import Calendar from 'react-calendar'
 
-// ErrorBoundary atualizado
+import 'react-calendar/dist/Calendar.css'
+import '@/styles/estiloAgenda.css'
+
+// ErrorBoundary simples
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { hasError: false, error: null }
+    this.state = { hasError: false, err: null }
   }
-  
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error }
-  }
-  
-  componentDidCatch(error, errorInfo) {
-    console.error('[PainelEstabelecimento] ErrorBoundary capturou:', error, errorInfo)
-  }
-  
+  static getDerivedStateFromError(err) { return { hasError: true, err } }
+  componentDidCatch(err, info) { console.error('[PainelEstabelecimento] erro:', err, info) }
   render() {
     if (this.state.hasError) {
       return (
         <div className="p-4 m-4 rounded-xl border border-red-300 bg-red-50 text-red-700">
-          <div className="font-bold mb-1">Erro no componente</div>
-          <div className="text-sm">{this.state.error?.message || 'Erro desconhecido'}</div>
-          <button 
-            onClick={() => this.setState({ hasError: false })}
-            className="mt-2 text-sm underline"
-          >
-            Tentar novamente
-          </button>
+          <div className="font-bold mb-1">Falha ao renderizar uma seção.</div>
+          <div className="text-xs break-all">{String(this.state.err)}</div>
         </div>
       )
     }
@@ -59,54 +46,38 @@ export default function PainelEstabelecimento() {
   const nav = useNavigate()
   const location = useLocation()
 
-  // Estado e lógica para abas
+  // lê ?tab=perfil|buscar|agendas|vagas|avaliacao|historico|ativas|chamadas
   const getTabFromURL = () => new URLSearchParams(location.search).get('tab') || 'perfil'
   const [abaSelecionada, setAbaSelecionada] = useState(getTabFromURL())
+
   useEffect(() => { setAbaSelecionada(getTabFromURL()) }, [location.search])
 
   const estabelecimento = useMemo(
-    () => (usuario?.tipo === 'estabelecimento' ? usuario : null),
+    () => (usuario?.tipo === 'estabelecimento' ? usuario : usuario), // confia no RequireRole
     [usuario]
   )
 
-  // Estados para dados
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
   const [agendaPerfil, setAgendaPerfil] = useState({})
-  const [usuariosOnline] = useState({}) // placeholder
+  const usuariosOnline = {} // placeholder
 
-  // Atualiza última atividade
   useEffect(() => {
     if (!estabelecimento?.uid) return
-    
-    const updateActivity = async () => {
+    ;(async () => {
       try {
         await updateDoc(doc(db, 'usuarios', estabelecimento.uid), {
           ultimaAtividade: serverTimestamp()
         })
       } catch (err) {
-        console.warn('[PainelEstabelecimento] Erro ao atualizar atividade:', err)
+        console.warn('[PainelEstabelecimento] ultimaAtividade falhou:', err)
       }
-    }
-    
-    updateActivity()
+    })()
   }, [estabelecimento?.uid])
 
-  // Carrega dados do perfil
   useEffect(() => {
     if (!estabelecimento?.uid) return
-
-    const carregarDados = async () => {
-      try {
-        await Promise.all([
-          carregarAgenda(estabelecimento.uid),
-          carregarAvaliacoesPendentes(estabelecimento.uid)
-        ])
-      } catch (err) {
-        console.error('[PainelEstabelecimento] Erro ao carregar dados:', err)
-      }
-    }
-
-    carregarDados()
+    carregarAgenda(estabelecimento.uid)
+    carregarAvaliacoesPendentes(estabelecimento.uid)
   }, [estabelecimento?.uid])
 
   async function carregarAgenda(uid) {
@@ -117,36 +88,28 @@ export default function PainelEstabelecimento() {
       snap.docs.forEach((d) => (datas[d.id] = d.data()))
       setAgendaPerfil(datas)
     } catch (err) {
-      console.error('[PainelEstabelecimento] Erro ao carregar agenda:', err)
+      console.error('[PainelEstabelecimento] erro agenda:', err)
     }
   }
 
   async function carregarAvaliacoesPendentes(uid) {
     try {
       const ref = collection(db, 'chamadas')
-      const q = query(
-        ref, 
-        where('estabelecimentoUid', '==', uid), 
-        where('status', '==', 'concluido')
-      )
+      const q = query(ref, where('estabelecimentoUid', '==', uid), where('status', '==', 'concluido'))
       const snap = await getDocs(q)
       const pendentes = snap.docs
         .map((d) => ({ id: d.id, ...d.data() }))
         .filter((c) => !c.avaliacaoFreela?.nota)
       setAvaliacoesPendentes(pendentes)
     } catch (err) {
-      console.error('[PainelEstabelecimento] Erro ao carregar avaliações pendentes:', err)
+      console.error('[PainelEstabelecimento] erro aval pendentes:', err)
     }
   }
 
-  // Renderização do perfil
   function renderPerfil() {
-    if (!estabelecimento) return null
-
     return (
-      <div className="space-y-6 pb-6">
+      <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Card de Perfil */}
           <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
             <img
               src={estabelecimento?.foto || '/img/placeholder-100.png'}
@@ -172,7 +135,6 @@ export default function PainelEstabelecimento() {
             </button>
           </div>
 
-          {/* Card de Agenda */}
           <ErrorBoundary>
             <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
               <h3 className="text-lg font-bold text-orange-700 mb-2">Minha Agenda</h3>
@@ -195,7 +157,6 @@ export default function PainelEstabelecimento() {
             </div>
           </ErrorBoundary>
 
-          {/* Card de Avaliações Pendentes */}
           <ErrorBoundary>
             <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
               <h3 className="font-bold text-orange-700 mb-2">Freelas a Avaliar</h3>
@@ -209,7 +170,7 @@ export default function PainelEstabelecimento() {
                       <p className="text-xs text-gray-500">Chamada: {ch.id}</p>
                       <button
                         className="mt-2 text-xs bg-orange-600 text-white px-3 py-1 rounded"
-                        onClick={() => nav(`/avaliar/freela/${ch.freelaUid}?chamada=${ch.id}`)}
+                        onClick={() => carregarAvaliacoesPendentes(estabelecimento.uid)}
                       >
                         Avaliar
                       </button>
@@ -224,10 +185,7 @@ export default function PainelEstabelecimento() {
     )
   }
 
-  // Renderização do conteúdo principal
   function renderConteudo() {
-    if (!estabelecimento) return null
-
     switch (abaSelecionada) {
       case 'perfil':
         return renderPerfil()
@@ -249,24 +207,16 @@ export default function PainelEstabelecimento() {
     }
   }
 
-  // Verificações de estado e segurança
-  if (carregando) {
-    return <div className="text-center text-orange-600 mt-8">Carregando painel...</div>
-  }
+  // Estados de carregamento/segurança básicos
+  if (carregando) return <div className="text-center text-orange-600 mt-8">Carregando painel…</div>
+  if (!usuario?.uid) return <Navigate to="/login" replace />
 
-  if (!usuario?.uid) {
-    return <Navigate to="/login" replace />
-  }
+  // ⚠️ Removido o redirecionamento por tipo aqui.
+  // O RequireRole na rota já garante que só 'estabelecimento' (ou admin) entra.
 
-  if (usuario?.uid && usuario?.tipo !== 'estabelecimento') {
-    if (usuario?.tipo === 'freela') return <Navigate to="/painelfreela" replace />
-    return <Navigate to="/" replace />
-  }
-
-  // Renderização principal
   return (
     <div
-      className="min-h-screen bg-cover bg-center p-4 pb-24"
+      className="min-h-screen bg-cover bg-center p-4 pb-20"
       style={{
         backgroundImage: `url('/img/fundo-login.jpg')`,
         backgroundAttachment: 'fixed',
@@ -274,14 +224,8 @@ export default function PainelEstabelecimento() {
         backgroundSize: 'cover'
       }}
     >
-      <ErrorBoundary>
-        {renderConteudo()}
-      </ErrorBoundary>
-      
-      <MenuInferiorEstabelecimento 
-        onSelect={setAbaSelecionada} 
-        abaAtiva={abaSelecionada} 
-      />
+      <ErrorBoundary>{renderConteudo()}</ErrorBoundary>
+      <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
     </div>
   )
 }
