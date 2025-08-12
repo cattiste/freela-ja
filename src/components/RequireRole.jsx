@@ -13,15 +13,12 @@ const normalizeTipo = (t) => {
 const defaultPainelDe = {
   freela: '/painelfreela',
   estabelecimento: '/painelestabelecimento',
-  pessoa_fisica: '/pf', // rota final
+  pessoa_fisica: '/pf', // tua rota PF
   admin: '/admin',
 }
 
 export default function RequireRole({ allow = [], children, routeMap }) {
-  const ctx = (typeof useAuth === 'function' ? useAuth() : null) || {}
-  const usuario = ctx.usuario ?? null
-  const carregando = ctx.carregando ?? false
-
+  const { usuario, carregando } = useAuth() || { usuario: null, carregando: false }
   const painelDe = { ...defaultPainelDe, ...(routeMap || {}) }
 
   if (carregando) {
@@ -32,14 +29,17 @@ export default function RequireRole({ allow = [], children, routeMap }) {
     return <Navigate to="/login" replace />
   }
 
-  if (usuario?.uid && (usuario?.tipo === undefined || usuario?.tipo === null)) {
-    return <div className="p-8 text-center text-orange-600">Carregando perfil…</div>
-  }
-
   const tipoNorm = normalizeTipo(usuario?.tipo)
   const allowNorm = allow.map(normalizeTipo)
 
+  // admin sempre passa
   if (tipoNorm === 'admin') {
+    return <>{children}</>
+  }
+
+  // 🔧 Hotfix: se o tipo ainda não veio do perfil, não bloqueia.
+  // Isso evita cair na Home quando o doc ainda não tem "tipo" (ou está vazio).
+  if (!tipoNorm) {
     return <>{children}</>
   }
 
