@@ -52,8 +52,6 @@ export default function Login() {
         navigate('/painelfreela')
       } else if (dadosUsuario.tipo === 'estabelecimento') {
         navigate('/painelestabelecimento')
-      } else if (dadosUsuario.tipo === 'pessoa_fisica') {
-        navigate('/pf')
       } else {
         throw new Error('Tipo de usuário não reconhecido.')
       }
