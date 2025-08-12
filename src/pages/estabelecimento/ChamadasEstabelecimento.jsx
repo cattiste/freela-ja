@@ -71,7 +71,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
     }
     return (
       <span className={`px-2 py-1 rounded text-xs font-semibold ${cores[status] || 'bg-gray-200 text-gray-700'}`}>
-         {String(status).replaceAll('_', ' ')}
+        {status.replace('_', ' ')}
       </span>
     )
   }
