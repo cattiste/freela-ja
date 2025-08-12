@@ -68,7 +68,7 @@ export default function App() {
         <Route path="/cadastrofreela" element={<CadastroFreela />} />
         <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
         <Route
-          path="/painelfreela"
+          path="/painelfreela/"
           element={
             <RequireRole allow={['freela','admin']}>
               <PainelFreela/>
