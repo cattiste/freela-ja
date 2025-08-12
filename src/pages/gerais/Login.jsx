@@ -17,7 +17,7 @@ export default function Login() {
     if (!t && u.tipoConta === 'comercial' && u.subtipoComercial) t = u.subtipoComercial
     if (!t && u.tipoUsuario) t = u.tipoUsuario
     if (t === 'pf') t = 'pessoa_fisica'
-    return t
+    return (t || '').toLowerCase()
   }
 
   const handleLogin = async (e) => {
@@ -56,24 +56,20 @@ export default function Login() {
       const nomeOk = !!usuarioLocal.nome?.trim()
 
       if (tipo === 'freela') {
-        const funcaoOk = !!usuarioLocal.funcao?.trim()
-        if (!nomeOk) navigate('/freela/editarfreela', { replace: true })
-        else navigate('/painelfreela', { replace: true })           // ✅ corrigido
-        return
+        // se quiser obrigar função: if (!usuarioLocal.funcao?.trim()) return navigate('/freela/editarfreela', { replace: true })
+        return navigate(nomeOk ? '/painelfreela' : '/freela/editarfreela', { replace: true })
       }
 
       if (tipo === 'estabelecimento') {
-        if (!nomeOk) navigate('/estabelecimento/editarperfilestabelecimento', { replace: true })
-        else navigate('/painelestabelecimento', { replace: true })  // ✅ corrigido
-        return
+        return navigate(nomeOk ? '/painelestabelecimento' : '/estabelecimento/editarperfil', { replace: true })
       }
 
       if (tipo === 'pessoa_fisica') {
-        if (!nomeOk) navigate('/pf/editarperfilpessoafisica', { replace: true })
-        else navigate('/painelpf', { replace: true })               // ✅ corrigido
-        return
+        // você já tem alias /painelpf -> /pf no App.jsx; mas o caminho canônico é /pf
+        return navigate(nomeOk ? '/pf' : '/pf/editarperfil', { replace: true })
       }
 
+      // fallback
       navigate('/', { replace: true })
     } catch (err) {
       console.error(err)
@@ -132,7 +128,7 @@ export default function Login() {
         </form>
 
         <p className="text-center mt-4 text-sm text-white">
-          <Link to="/esquecisenha" className="text-blue-2 00 hover:underline">
+          <Link to="/esquecisenha" className="text-blue-200 hover:underline">
             Esqueci minha senha
           </Link>
         </p>
