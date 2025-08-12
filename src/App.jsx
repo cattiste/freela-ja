@@ -81,7 +81,7 @@ export default function App() {
         <Route path="/cadastroestabelecimento" element={<CadastroEstabelecimento />} />
         <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
         <Route
-          path="/painelestabelecimento/:rota?"
+          path="/painelestabelecimento/*"
           element={
             <RequireRole allow={['estabelecimento','admin']}>
               <PainelEstabelecimento/>
