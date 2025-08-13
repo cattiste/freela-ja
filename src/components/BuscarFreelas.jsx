@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
-import { calcularDistancia } from '@/utils/calcularDistancia'
+import { calcularDistancia } from '@/utils/distancia'
 
 export default function BuscarFreelas() {
   const { usuario } = useAuth()
