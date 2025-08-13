@@ -1,10 +1,10 @@
-// src/components/BuscarFreelas.jsx
 import React, { useEffect, useMemo, useState } from 'react'
 import {
-  collection, query, where, onSnapshot, doc, getDoc, setDoc, serverTimestamp
+  collection, query, where, onSnapshot, doc, getDoc, getDocs, setDoc, serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
+import ProfissionalCard from '@/components/ProfissionalCard'
 
 // --- Fallback de avatar (sem depender de via.placeholder.com)
 const AvatarFallback = ({ className }) => (
@@ -66,6 +66,8 @@ function formatarId(estabelecimentoUid) {
   return id
 }
 
+const ACTIVE_STATUSES = ['pendente', 'aceita', 'checkin_freela', 'em_andamento', 'checkout_freela']
+
 export default function BuscarFreelas({ usuario: usuarioProp }) {
   // permite receber o estabelecimento por prop ou cair no contexto
   const { usuario: usuarioCtx } = useAuth()
@@ -78,6 +80,7 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
   const [filtroFuncao, setFiltroFuncao] = useState('') // opcional, por função/cargo
   const [carregando, setCarregando] = useState(true)
   const [chamandoUid, setChamandoUid] = useState(null)
+  const [freelasComChamadaAtiva, setFreelasComChamadaAtiva] = useState(() => new Set()) // freelas com chamada ativa
 
   // 1) Buscar dados do estabelecimento logado (para ter localizacao)
   useEffect(() => {
@@ -101,6 +104,7 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
     const unsub = onSnapshot(qUsuarios, (snap) => {
       const todos = []
       snap.forEach((d) => todos.push({ id: d.id, ...d.data() }))
+
       const freelas = todos.filter((u) => {
         const role = (u?.tipo || u?.tipoUsuario || '').toLowerCase().trim()
         return role === 'freela' || role === 'freelancer'
@@ -127,6 +131,27 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
     return () => unsub()
   }, [])
 
+  // 3b) Escutar chamadas ativas do ESTABELECIMENTO: marca quais freelas já têm chamada ativa
+  useEffect(() => {
+    if (!usuario?.uid) return
+    const qChamadasAtivas = query(
+      collection(db, 'chamadas'),
+      where('estabelecimentoUid', '==', usuario.uid),
+      where('status', 'in', ACTIVE_STATUSES)
+    )
+    const unsub = onSnapshot(qChamadasAtivas, (snap) => {
+      const setIds = new Set()
+      snap.forEach((d) => {
+        const data = d.data()
+        if (data?.freelaUid) setIds.add(data.freelaUid)
+      })
+      setFreelasComChamadaAtiva(setIds)
+    }, (err) => {
+      console.warn('[BuscarFreelas] onSnapshot chamadas ativas erro:', err)
+    })
+    return () => unsub()
+  }, [usuario?.uid])
+
   // 4) Montar lista com distância e status online (com normalização de localização)
   const freelasDecorados = useMemo(() => {
     const E = normalizeLocation(estab?.localizacao)
@@ -139,13 +164,16 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
           : null
 
         const online = onlineSet.has(f.id)
-        return { ...f, online, distanciaKm }
+        const hasChamadaAtiva = freelasComChamadaAtiva.has(f.id)
+
+        return { ...f, online, distanciaKm, hasChamadaAtiva }
       })
       .filter((f) => {
         // filtro por função (se preenchido)
-        const okFuncao = filtroFuncao
-          ? (String(f.funcao || '').toLowerCase().includes(filtroFuncao.toLowerCase()) ||
-             String(f.especialidade || '').toLowerCase().includes(filtroFuncao.toLowerCase()))
+        const ff = (filtroFuncao || '').trim().toLowerCase()
+        const okFuncao = ff
+          ? (String(f.funcao || '').toLowerCase().includes(ff) ||
+             String(f.especialidade || '').toLowerCase().includes(ff))
           : true
 
         // se "apenasOnline", filtra
@@ -162,13 +190,32 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
         if (b.distanciaKm == null) return -1
         return a.distanciaKm - b.distanciaKm
       })
-  }, [freelasRaw, onlineSet, estab?.localizacao, filtroFuncao, apenasOnline])
+  }, [freelasRaw, onlineSet, estab?.localizacao, filtroFuncao, apenasOnline, freelasComChamadaAtiva])
 
-  // 5) Criar chamada
+  // 5) Criar chamada (bloqueia se já existir ativa para este freela)
   async function chamarFreela(freela) {
     if (!usuario?.uid) return alert('Você precisa estar autenticado como estabelecimento.')
     try {
       setChamandoUid(freela.id)
+
+      // 5a) Checagem rápida pelo Set em memória
+      if (freelasComChamadaAtiva.has(freela.id)) {
+        alert('Já existe uma chamada ativa com este freela.')
+        return
+      }
+
+      // 5b) Checagem de segurança na base (evita corrida)
+      const qCheck = query(
+        collection(db, 'chamadas'),
+        where('estabelecimentoUid', '==', usuario.uid),
+        where('freelaUid', '==', freela.id),
+        where('status', 'in', ACTIVE_STATUSES)
+      )
+      const existing = await getDocs(qCheck)
+      if (!existing.empty) {
+        alert('Já existe uma chamada ativa com este freela.')
+        return
+      }
 
       const id = formatarId(usuario.uid)
       const chamada = {
@@ -197,69 +244,6 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
     } finally {
       setChamandoUid(null)
     }
-  }
-
-  // UI de cada freela
-  function FreelaItem({ f }) {
-    const foto = f.foto && typeof f.foto === 'string' ? f.foto : null
-    const distanciaFmt = f.distanciaKm == null ? '—' : `${f.distanciaKm.toFixed(f.distanciaKm < 10 ? 1 : 0)} km`
-    const statusPill = f.online ? 'bg-green-100 text-green-700 border-green-300' : 'bg-gray-100 text-gray-600 border-gray-300'
-    const chamando = chamandoUid === f.id
-
-    return (
-      <div className="p-4 bg-white rounded-2xl shadow-md border border-orange-100 hover:shadow-lg transition">
-        <div className="flex items-center gap-4">
-          {foto ? (
-            <img
-              src={foto}
-              alt={f.nome || 'Freela'}
-              className="w-16 h-16 rounded-full object-cover border-2 border-orange-300"
-              onError={(e) => { e.currentTarget.style.display = 'none' }}
-            />
-          ) : (
-            <AvatarFallback className="w-16 h-16" />
-          )}
-
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-bold text-orange-700">{f.nome || 'Freelancer'}</h3>
-              <span className={`text-xs px-2 py-0.5 rounded-full border ${statusPill}`}>
-                {f.online ? 'Online' : 'Offline'}
-              </span>
-            </div>
-            <p className="text-sm text-gray-600">
-              {f.funcao || 'Função não informada'}
-              {f.especialidade ? ` • ${f.especialidade}` : ''}
-            </p>
-
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-700">
-              <span className="px-2 py-1 rounded-md bg-orange-50 border border-orange-200">
-                Distância: <strong>{distanciaFmt}</strong>
-              </span>
-              {typeof f.valorDiaria === 'number' && (
-                <span className="px-2 py-1 rounded-md bg-orange-50 border border-orange-200">
-                  Diária: <strong>R$ {f.valorDiaria.toFixed(2)}</strong>
-                </span>
-              )}
-              {typeof f.avaliacaoMedia === 'number' && (
-                <span className="px-2 py-1 rounded-md bg-yellow-50 border border-yellow-200">
-                  ⭐ {f.avaliacaoMedia.toFixed(1)}
-                </span>
-              )}
-            </div>
-
-            <button
-              onClick={() => chamarFreela(f)}
-              disabled={chamando}
-              className={`mt-3 px-4 py-2 rounded-lg transition text-white ${chamando ? 'bg-orange-300 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'}`}
-              title="Criar chamada para este freela"
-            >
-              {chamando ? 'Enviando…' : 'Chamar'}
-            </button>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -300,7 +284,16 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {freelasDecorados.map((f) => (
-          <FreelaItem key={f.id} f={f} />
+          <ProfissionalCard
+            key={f.id}
+            prof={f}
+            online={f.online}
+            distanciaKm={f.distanciaKm}
+            hasChamadaAtiva={f.hasChamadaAtiva}
+            onChamar={() => chamarFreela(f)}
+            chamandoUid={chamandoUid}
+            AvatarFallback={AvatarFallback}
+          />
         ))}
       </div>
     </div>

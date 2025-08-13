@@ -1,92 +1,82 @@
-// src/components/ProfissionalCard.jsx
-import React, { useEffect, useState } from 'react'
-import { collection, query, where, onSnapshot } from 'firebase/firestore'
-import { db } from '@/firebase'
+import React from 'react'
 
-export default function ProfissionalCard({ prof, onChamar, distanciaKm, online = false, ultimaHora = '' }) {
-  const [media, setMedia] = useState(null)
-  const [total, setTotal] = useState(0)
+export default function ProfissionalCard({
+  prof,
+  online = false,
+  distanciaKm = null,
+  hasChamadaAtiva = false,
+  onChamar,
+  chamandoUid,
+  AvatarFallback // opcional, vindo do BuscarFreelas p/ manter o mesmo visual
+}) {
+  const foto = prof?.foto && typeof prof.foto === 'string' ? prof.foto : null
+  const distanciaFmt = distanciaKm == null
+    ? '—'
+    : `${distanciaKm.toFixed(distanciaKm < 10 ? 1 : 0)} km`
+  const statusPill = online ? 'bg-green-100 text-green-700 border-green-300' : 'bg-gray-100 text-gray-600 border-gray-300'
 
-  useEffect(() => {
-    if (!prof?.id) return
-    const q = query(collection(db, 'avaliacoesFreelas'), where('freelaUid', '==', prof.id))
-    const unsubscribe = onSnapshot(q, (snap) => {
-      const notas = snap.docs.map(d => d.data().nota).filter(n => typeof n === 'number')
-      const soma = notas.reduce((acc, n) => acc + n, 0)
-      setMedia(notas.length ? soma / notas.length : null)
-      setTotal(notas.length)
-    })
-    return () => unsubscribe()
-  }, [prof?.id])
-
-  const img = prof?.foto || 'https://via.placeholder.com/96'
-  const diariaNumerica = Number.isFinite(Number(prof?.valorDiaria))
-  const totalAvaliacoes = total
+  const desabilitaBotao = hasChamadaAtiva || (chamandoUid && chamandoUid === prof.id)
 
   return (
-    <div className="bg-white rounded-2xl p-5 m-4 max-w-xs shadow-md text-center">
-      <img
-        src={img}
-        alt={prof?.nome || 'Profissional'}
-        className="w-24 h-24 rounded-full object-cover mb-3 mx-auto border-2 border-orange-400 shadow"
-      />
+    <div className="p-4 bg-white rounded-2xl shadow-md border border-orange-100 hover:shadow-lg transition">
+      <div className="flex items-center gap-4">
+        {foto ? (
+          <img
+            src={foto}
+            alt={prof?.nome || 'Freela'}
+            className="w-16 h-16 rounded-full object-cover border-2 border-orange-300"
+            onError={(e) => { e.currentTarget.style.display = 'none' }}
+          />
+        ) : (
+          AvatarFallback ? <AvatarFallback className="w-16 h-16" /> : null
+        )}
 
-      <h3 className="text-lg font-bold text-gray-800">
-        {prof?.nome || 'Nome não informado'}
-      </h3>
-
-      <p className="text-gray-700 mt-1">
-        <strong>Função:</strong> {prof?.funcao || 'Não informado'}
-      </p>
-
-      {prof?.endereco && (
-        <p className="text-gray-700 mt-1">
-          <strong>Endereço:</strong> {prof.endereco}
-        </p>
-      )}
-
-      {typeof distanciaKm === 'number' && (
-        <p className="text-blue-600 mt-1">
-          <strong>📍 Distância:</strong> {distanciaKm.toFixed(1)} km
-        </p>
-      )}
-
-      {media != null && (
-        <div className="flex items-center justify-center gap-1 mt-2">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <span key={n} className="text-yellow-500 text-lg">
-              {media >= n ? '★' : '☆'}
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-bold text-orange-700">{prof?.nome || 'Freelancer'}</h3>
+            <span className={`text-xs px-2 py-0.5 rounded-full border ${statusPill}`}>
+              {online ? 'Online' : 'Offline'}
             </span>
-          ))}
-          <span className="text-sm text-gray-500">({totalAvaliacoes})</span>
+          </div>
+
+          <p className="text-sm text-gray-600">
+            {prof?.funcao || 'Função não informada'}
+            {prof?.especialidade ? ` • ${prof.especialidade}` : ''}
+          </p>
+
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-700">
+            <span className="px-2 py-1 rounded-md bg-orange-50 border border-orange-200">
+              Distância: <strong>{distanciaFmt}</strong>
+            </span>
+            {typeof prof?.valorDiaria === 'number' && (
+              <span className="px-2 py-1 rounded-md bg-orange-50 border border-orange-200">
+                Diária: <strong>R$ {prof.valorDiaria.toFixed(2)}</strong>
+              </span>
+            )}
+            {typeof prof?.avaliacaoMedia === 'number' && (
+              <span className="px-2 py-1 rounded-md bg-yellow-50 border border-yellow-200">
+                ⭐ {prof.avaliacaoMedia.toFixed(1)}
+              </span>
+            )}
+          </div>
+
+          {/* Botão mantém o MESMO visual. A lógica foi ajustada: */}
+          {!hasChamadaAtiva ? (
+            <button
+              onClick={onChamar}
+              disabled={desabilitaBotao}
+              className={`mt-3 px-4 py-2 rounded-lg transition text-white ${desabilitaBotao ? 'bg-orange-300 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'}`}
+              title="Criar chamada para este freela"
+            >
+              {chamandoUid === prof.id ? 'Enviando…' : 'Chamar'}
+            </button>
+          ) : (
+            <div className="mt-3 px-4 py-2 rounded-lg bg-green-50 border border-green-200 text-green-700 text-center">
+              Chamada em andamento
+            </div>
+          )}
         </div>
-      )}
-
-      {diariaNumerica && (
-        <p className="text-green-600 font-semibold mt-1">
-          <strong>💸 Diária:</strong> R$ {Number(prof.valorDiaria).toFixed(2)}
-        </p>
-      )}
-
-      {prof?.descricao && (
-        <p className="italic mt-2 text-sm text-gray-600">{prof.descricao}</p>
-      )}
-
-      <div className="flex items-center justify-center gap-2 mt-2">
-        <span className={`w-2 h-2 rounded-full ${online ? 'bg-green-500' : 'bg-gray-400'}`} />
-        <span className={`text-xs ${online ? 'text-green-700' : 'text-gray-500'}`}>
-          {online ? '🟢 Online agora' : (ultimaHora ? `🔴 Offline (última: ${ultimaHora})` : '🔴 Offline')}
-        </span>
       </div>
-
-      {onChamar && (
-        <button
-          onClick={() => onChamar(prof)}
-          className="bg-green-600 text-white py-2 px-4 rounded-xl mt-4 hover:bg-green-700"
-        >
-          📩 Chamar
-        </button>
-      )}
     </div>
   )
 }
