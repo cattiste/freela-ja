@@ -62,7 +62,6 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
     })
   }, [chamadas])
 
-  // Handlers
   async function confirmarConvite(ch) {
     try {
       await updateDoc(doc(db, 'chamadas', ch.id), {
@@ -144,7 +143,6 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
               <p className="text-sm text-gray-800"><strong>📝 Observação:</strong> {ch.observacao}</p>
             )}
 
-            {/* Ações por status */}
             {ch.status === 'pendente' && (
               <div className="flex flex-col sm:flex-row gap-2">
                 <button
@@ -162,7 +160,6 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
               </div>
             )}
 
-            {/* Após o freela marcar check-in, o estab confirma e vira 'em_andamento' */}
             {ch.status === 'checkin_freela' && (
               <button
                 onClick={() => confirmarCheckInFreela(ch)}
@@ -172,7 +169,6 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
               </button>
             )}
 
-            {/* Quando o freela marcar check-out, o estab confirma e vira 'concluido' */}
             {ch.status === 'checkout_freela' && (
               <button
                 onClick={() => confirmarCheckOutFreela(ch)}

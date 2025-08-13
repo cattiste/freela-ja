@@ -96,7 +96,7 @@ export default function ChamadasPessoaFisica({ pessoaFisica }) {
                   <p className="text-xs text-gray-500">💰 R$ {chamada.valorDiaria} / diária</p>
                 )}
                 <p className="text-sm mt-1">📌 Status: {badgeStatus(chamada.status)}</p>
-                <MensagensRecebidasPF />
+                <MensagensRecebidasPF chamadaId={chamada.id} />
               </div>
             </div>
 

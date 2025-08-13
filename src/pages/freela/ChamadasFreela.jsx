@@ -31,7 +31,6 @@ export default function ChamadasFreela() {
   const [loading, setLoading] = useState(true)
   const [mensagemConfirmacao, setMensagemConfirmacao] = useState(null)
 
-  // ---- snapshot das chamadas do freela (sem orderBy; ordenamos no cliente)
   useEffect(() => {
     if (!usuario?.uid) return
     setLoading(true)
@@ -42,24 +41,19 @@ export default function ChamadasFreela() {
       where('status', 'in', STATUS_LISTA)
     )
 
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-        setChamadas(docs)
-        setLoading(false)
-      },
-      (err) => {
-        console.error('[ChamadasFreela] onSnapshot erro:', err)
-        toast.error('Falha ao carregar suas chamadas.')
-        setLoading(false)
-      }
-    )
+    const unsub = onSnapshot(q, (snap) => {
+      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      setChamadas(docs)
+      setLoading(false)
+    }, (err) => {
+      console.error('[ChamadasFreela] onSnapshot erro:', err)
+      toast.error('Falha ao carregar suas chamadas.')
+      setLoading(false)
+    })
 
     return () => unsub()
   }, [usuario?.uid])
 
-  // ---- ordenação client-side: criadoEm desc (fallbacks)
   const chamadasOrdenadas = useMemo(() => {
     const ts = (x) => x?.toMillis?.() ?? (x?.seconds ? x.seconds * 1000 : 0)
     return [...(Array.isArray(chamadas) ? chamadas : [])].sort((a, b) => {
@@ -69,7 +63,6 @@ export default function ChamadasFreela() {
     })
   }, [chamadas])
 
-  // ---- cancelar por timeout (fora do render)
   useEffect(() => {
     const agora = Date.now()
     const candidatas = chamadasOrdenadas.filter((c) => {
@@ -92,7 +85,6 @@ export default function ChamadasFreela() {
     })
   }, [chamadasOrdenadas])
 
-  // ---- helpers de ação
   async function aceitarChamada(chamada) {
     try {
       await updateDoc(doc(db, 'chamadas', chamada.id), {
@@ -183,38 +175,25 @@ export default function ChamadasFreela() {
               </p>
             )}
 
-            {/* Ações por status */}
             {chamada.status === 'pendente' && (
               <>
-                <button
-                  onClick={() => aceitarChamada(chamada)}
-                  className="w-full bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition"
-                >
+                <button onClick={() => aceitarChamada(chamada)} className="w-full bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition">
                   ✅ Aceitar chamada
                 </button>
-                <button
-                  onClick={() => rejeitarChamada(chamada)}
-                  className="w-full bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600 transition"
-                >
+                <button onClick={() => rejeitarChamada(chamada)} className="w-full bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600 transition">
                   ❌ Rejeitar chamada
                 </button>
               </>
             )}
 
             {(['aceita', 'pendente'].includes(chamada.status)) && !chamada.checkInFreela && (
-              <button
-                onClick={() => confirmarCheckIn(chamada)}
-                className="w-full bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition"
-              >
+              <button onClick={() => confirmarCheckIn(chamada)} className="w-full bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition">
                 📍 Fazer check-in
               </button>
             )}
 
             {(chamada.status === 'checkin_freela' || chamada.status === 'em_andamento') && !chamada.checkOutFreela && (
-              <button
-                onClick={() => confirmarCheckOut(chamada)}
-                className="w-full bg-yellow-500 text-white px-4 py-2 rounded-xl hover:bg-yellow-600 transition"
-              >
+              <button onClick={() => confirmarCheckOut(chamada)} className="w-full bg-yellow-500 text-white px-4 py-2 rounded-xl hover:bg-yellow-600 transition">
                 ⏳ Fazer check-out
               </button>
             )}
