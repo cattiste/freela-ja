@@ -1,8 +1,19 @@
 // src/components/BuscarFreelas.jsx
 import React, { useEffect, useState } from 'react'
-import { collection, getDocs } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  addDoc,
+  serverTimestamp,
+  doc,
+  getDoc,
+  GeoPoint
+} from 'firebase/firestore'
 import { db } from '@/firebase'
-import ProfissionalCard from '@/components/ProfissionalCard'
+import { useAuth } from '@/context/AuthContext'
+import ProfissionalCard from './ProfissionalCard'
 
 function calcularDistancia(lat1, lon1, lat2, lon2) {
   const toRad = (x) => (x * Math.PI) / 180
@@ -13,38 +24,28 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(toRad(lat1)) *
       Math.cos(toRad(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2)
+      Math.sin(dLon / 2) * Math.sin(dLon / 2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   return R * c
 }
 
-export default function BuscarFreelas({ usuario }) {
+export default function BuscarFreelas() {
+  const { usuario } = useAuth()
   const [freelas, setFreelas] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [mostrarSomenteOnline, setMostrarSomenteOnline] = useState(true)
 
   useEffect(() => {
-    const fetchFreelas = async () => {
-      setLoading(true)
+    if (!usuario?.uid) return
 
-      const usuariosSnap = await getDocs(collection(db, 'usuarios'))
-      const statusSnap = await getDocs(collection(db, 'status'))
+    const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
 
-      const statusMap = {}
-      statusSnap.forEach((doc) => {
-        statusMap[doc.id] = doc.data().state
-      })
-
-      const lista = []
-
-      usuariosSnap.forEach((doc) => {
-        const data = doc.data()
-        const uid = doc.id
-
-        if (data.tipo === 'freela' && data.localizacao) {
-          const online = statusMap[uid] === 'online'
-
-          const distancia = usuario?.localizacao
+    const unsub = onSnapshot(q, async (snap) => {
+      const resultados = await Promise.all(
+        snap.docs.map(async (docSnap) => {
+          const data = docSnap.data()
+          const statusSnap = await getDoc(doc(db, 'status', docSnap.id))
+          const online = statusSnap.exists() && statusSnap.data().state === 'online'
+          const distancia = usuario?.localizacao && data?.localizacao
             ? calcularDistancia(
                 usuario.localizacao.latitude,
                 usuario.localizacao.longitude,
@@ -52,47 +53,76 @@ export default function BuscarFreelas({ usuario }) {
                 data.localizacao.longitude
               )
             : null
-
-          lista.push({
-            id: uid,
+          return {
+            id: docSnap.id,
             ...data,
             online,
-            distancia,
-          })
-        }
+            distancia
+          }
+        })
+      )
+
+      const filtrados = mostrarSomenteOnline
+        ? resultados.filter((f) => f.online)
+        : resultados
+
+      filtrados.sort((a, b) => {
+        if (a.online !== b.online) return a.online ? -1 : 1
+        if (a.distancia != null && b.distancia != null) return a.distancia - b.distancia
+        return 0
       })
 
-      // Freelas online primeiro, depois ordena por distância
-      lista.sort((a, b) => {
-        if (a.online === b.online) {
-          return (a.distancia || 9999) - (b.distancia || 9999)
-        }
-        return b.online - a.online
-      })
+      setFreelas(filtrados)
+    })
 
-      setFreelas(lista)
-      setLoading(false)
+    return () => unsub()
+  }, [usuario?.uid, mostrarSomenteOnline])
+
+  const criarChamada = async (freela) => {
+    if (!usuario?.uid || !freela?.id) return
+
+    const agora = new Date()
+    const idCustom = `${usuario.uid}_${agora.toISOString().replace(/[-:.]/g, '')}`
+
+    const chamada = {
+      estabelecimentoUid: usuario.uid,
+      freelaUid: freela.id,
+      status: 'pendente',
+      criadoEm: serverTimestamp(),
+      valor: freela.valorDiaria || 0,
+      localizacao: usuario.localizacao || null,
+      observacao: '',
     }
 
-    if (usuario) {
-      fetchFreelas()
-    }
-  }, [usuario])
+    await addDoc(collection(db, 'chamadas'), chamada)
+    alert('Chamada enviada! Aguarde a resposta do freela.')
+  }
 
   return (
-    <div className="p-4 space-y-4">
-      {loading && <p className="text-center text-gray-500">Carregando freelancers...</p>}
-      {!loading && freelas.length === 0 && (
-        <p className="text-center text-gray-400">Nenhum freelancer disponível.</p>
-      )}
+    <div className="p-4">
+      <h1 className="text-xl font-bold mb-4">Buscar Freelas</h1>
+      <div className="flex items-center gap-4 mb-4">
+        <label>
+          <input
+            type="checkbox"
+            checked={mostrarSomenteOnline}
+            onChange={(e) => setMostrarSomenteOnline(e.target.checked)}
+          />{' '}
+          Mostrar somente online
+        </label>
+      </div>
+
       {freelas.map((freela) => (
         <ProfissionalCard
           key={freela.id}
           freela={freela}
-          estabelecimento={usuario}
-          mostrarDistancia
+          onChamar={() => criarChamada(freela)}
         />
       ))}
+
+      {freelas.length === 0 && (
+        <p className="text-gray-500">Nenhum freelancer encontrado.</p>
+      )}
     </div>
   )
 }
