@@ -16,17 +16,10 @@ import AvaliacoesRecebidasEstabelecimento from '@/pages/estabelecimento/Avaliaco
 import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
 import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
 import Calendar from 'react-calendar'
+import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
-
-// src/pages/estabelecimento/PainelEstabelecimento.jsx
-import { useAuth } from '@/context/AuthContext'
-import { useRealtimePresence } from '@/hooks/useRealtimePresence'
-
-export default function PainelEstabelecimento() {
-  const { usuario } = useAuth()
-  useRealtimePresence(usuario)
 
 // ErrorBoundary simples
 class ErrorBoundary extends React.Component {
@@ -54,20 +47,20 @@ export default function PainelEstabelecimento() {
   const nav = useNavigate()
   const location = useLocation()
 
+  // presença em tempo real (RTDB + espelho Firestore)
+  useRealtimePresence(usuario)
+
   // lê ?tab=perfil|buscar|agendas|vagas|avaliacao|historico|ativas|chamadas
   const getTabFromURL = () => new URLSearchParams(location.search).get('tab') || 'perfil'
   const [abaSelecionada, setAbaSelecionada] = useState(getTabFromURL())
-
   useEffect(() => { setAbaSelecionada(getTabFromURL()) }, [location.search])
 
-  const estabelecimento = useMemo(
-    () => (usuario?.tipo === 'estabelecimento' ? usuario : usuario), // confia no RequireRole
-    [usuario]
-  )
+  // pode evoluir para checagens de role/admin se quiser
+  const estabelecimento = useMemo(() => usuario, [usuario])
 
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
   const [agendaPerfil, setAgendaPerfil] = useState({})
-  const usuariosOnline = {} // placeholder
+  const usuariosOnline = {} // placeholder se ainda precisar
 
   useEffect(() => {
     if (!estabelecimento?.uid) return
@@ -218,9 +211,6 @@ export default function PainelEstabelecimento() {
   // Estados de carregamento/segurança básicos
   if (carregando) return <div className="text-center text-orange-600 mt-8">Carregando painel…</div>
   if (!usuario?.uid) return <Navigate to="/login" replace />
-
-  // ⚠️ Removido o redirecionamento por tipo aqui.
-  // O RequireRole na rota já garante que só 'estabelecimento' (ou admin) entra.
 
   return (
     <div
