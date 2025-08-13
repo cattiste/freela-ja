@@ -1,10 +1,31 @@
 // src/components/BuscarFreelas.jsx
-import React, { useEffect, useMemo, useState } from 'react'
-import {
-  collection, query, where, onSnapshot, doc, getDoc, setDoc, serverTimestamp
-} from 'firebase/firestore'
+import React, { useEffect, useState } from 'react'
+import { collection, query, where, getDocs, doc, setDoc, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
+import { GeoPoint } from 'firebase/firestore'
+import { calcularDistancia } from '@/utils/distancia'
+
+export function calcularDistancia(lat1, lon1, lat2, lon2) {
+  if (
+    typeof lat1 !== 'number' ||
+    typeof lon1 !== 'number' ||
+    typeof lat2 !== 'number' ||
+    typeof lon2 !== 'number'
+  ) return null
+
+  const toRad = (x) => (x * Math.PI) / 180
+  const R = 6371 // raio da Terra em km
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) ** 2
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
 
 // --- Fallback de avatar (sem depender de via.placeholder.com)
 const AvatarFallback = ({ className = '' }) => (
