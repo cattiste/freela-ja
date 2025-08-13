@@ -1,81 +1,77 @@
-import React from 'react'
+// ProfissionalCard.jsx
+import React, { useState } from 'react'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { db } from '@/firebase'
 
-export default function ProfissionalCard({
-  prof,
-  online = false,
-  distanciaKm = null,
-  hasChamadaAtiva = false,
-  onChamar,
-  chamandoUid,
-  AvatarFallback // opcional, vindo do BuscarFreelas p/ manter o mesmo visual
-}) {
-  const foto = prof?.foto && typeof prof.foto === 'string' ? prof.foto : null
-  const distanciaFmt = distanciaKm == null
-    ? '—'
-    : `${distanciaKm.toFixed(distanciaKm < 10 ? 1 : 0)} km`
-  const statusPill = online ? 'bg-green-100 text-green-700 border-green-300' : 'bg-gray-100 text-gray-600 border-gray-300'
+export default function ProfissionalCard({ freela, usuario, emChamada }) {
+  const [enviando, setEnviando] = useState(false)
 
-  const desabilitaBotao = hasChamadaAtiva || (chamandoUid && chamandoUid === prof.id)
+  async function chamar() {
+    if (!usuario?.uid) return
+    setEnviando(true)
+    const id = `${usuario.uid}_${Date.now()}`
+    await setDoc(doc(db, 'chamadas', id), {
+      idPersonalizado: id,
+      estabelecimentoUid: usuario.uid,
+      estabelecimentoNome: usuario.nome || '',
+      freelaUid: freela.id,
+      freelaNome: freela.nome || '',
+      valorDiaria: freela.valorDiaria || 0,
+      estabelecimentoLocalizacao: usuario.localizacao || null,
+      freelaLocalizacao: freela.localizacao || null,
+      status: 'pendente',
+      criadoEm: serverTimestamp(),
+    })
+    setEnviando(false)
+    alert(`Chamada enviada para ${freela.nome}`)
+  }
 
   return (
-    <div className="p-4 bg-white rounded-2xl shadow-md border border-orange-100 hover:shadow-lg transition">
+    <div className="bg-white rounded-xl p-4 border border-orange-100 shadow">
       <div className="flex items-center gap-4">
-        {foto ? (
-          <img
-            src={foto}
-            alt={prof?.nome || 'Freela'}
-            className="w-16 h-16 rounded-full object-cover border-2 border-orange-300"
-            onError={(e) => { e.currentTarget.style.display = 'none' }}
-          />
-        ) : (
-          AvatarFallback ? <AvatarFallback className="w-16 h-16" /> : null
-        )}
-
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="text-lg font-bold text-orange-700">{prof?.nome || 'Freelancer'}</h3>
-            <span className={`text-xs px-2 py-0.5 rounded-full border ${statusPill}`}>
-              {online ? 'Online' : 'Offline'}
-            </span>
-          </div>
-
+        <img
+          src={freela.foto || '/placeholder-avatar.png'}
+          alt={freela.nome}
+          className="w-14 h-14 rounded-full object-cover border border-orange-200"
+        />
+        <div>
+          <h3 className="text-orange-700 font-semibold">{freela.nome}</h3>
           <p className="text-sm text-gray-600">
-            {prof?.funcao || 'Função não informada'}
-            {prof?.especialidade ? ` • ${prof.especialidade}` : ''}
+            {freela.funcao || 'Função não informada'}
           </p>
-
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-700">
-            <span className="px-2 py-1 rounded-md bg-orange-50 border border-orange-200">
-              Distância: <strong>{distanciaFmt}</strong>
+          <div className="flex gap-3 text-sm mt-1">
+            <span className="px-2 py-1 rounded-md bg-gray-100">
+              Distância:{' '}
+              <strong>
+                {freela.distancia != null
+                  ? `${freela.distancia.toFixed(1)} km`
+                  : '—'}
+              </strong>
             </span>
-            {typeof prof?.valorDiaria === 'number' && (
-              <span className="px-2 py-1 rounded-md bg-orange-50 border border-orange-200">
-                Diária: <strong>R$ {prof.valorDiaria.toFixed(2)}</strong>
-              </span>
-            )}
-            {typeof prof?.avaliacaoMedia === 'number' && (
-              <span className="px-2 py-1 rounded-md bg-yellow-50 border border-yellow-200">
-                ⭐ {prof.avaliacaoMedia.toFixed(1)}
-              </span>
-            )}
+            <span className="px-2 py-1 rounded-md bg-orange-100">
+              Diária: <strong>R$ {freela.valorDiaria?.toFixed(2)}</strong>
+            </span>
           </div>
-
-          {/* Botão mantém o MESMO visual. A lógica foi ajustada: */}
-          {!hasChamadaAtiva ? (
-            <button
-              onClick={onChamar}
-              disabled={desabilitaBotao}
-              className={`mt-3 px-4 py-2 rounded-lg transition text-white ${desabilitaBotao ? 'bg-orange-300 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'}`}
-              title="Criar chamada para este freela"
-            >
-              {chamandoUid === prof.id ? 'Enviando…' : 'Chamar'}
-            </button>
-          ) : (
-            <div className="mt-3 px-4 py-2 rounded-lg bg-green-50 border border-green-200 text-green-700 text-center">
-              Chamada em andamento
-            </div>
-          )}
         </div>
+      </div>
+
+      <div className="mt-4">
+        {emChamada ? (
+          <button
+            disabled
+            className="w-full py-2 rounded-lg bg-green-50 text-green-700 border border-green-200"
+          >
+            Chamada em andamento
+          </button>
+        ) : (
+          <button
+            onClick={chamar}
+            disabled={enviando}
+            className="w-full py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white"
+          >
+            {enviando ? 'Enviando...' : 'Chamar'}
+          </button>
+        )}
       </div>
     </div>
   )
