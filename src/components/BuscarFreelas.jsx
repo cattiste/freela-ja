@@ -1,7 +1,7 @@
 // src/components/BuscarFreelas.jsx
 import React, { useEffect, useMemo, useState } from 'react'
 import {
-  collection, query, where, onSnapshot, doc, getDoc
+  collection, query, where, onSnapshot, doc, getDoc, setDoc, serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
@@ -37,6 +37,14 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
   return R * c
 }
 
+// formata timestamp para ID customizado
+function formatarId(estabelecimentoUid) {
+  const d = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  const id = `${estabelecimentoUid}_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
+  return id
+}
+
 export default function BuscarFreelas({ usuario: usuarioProp }) {
   // permite receber o estabelecimento por prop ou cair no contexto
   const { usuario: usuarioCtx } = useAuth()
@@ -48,6 +56,7 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
   const [apenasOnline, setApenasOnline] = useState(false)
   const [filtroFuncao, setFiltroFuncao] = useState('') // opcional, por função/cargo
   const [carregando, setCarregando] = useState(true)
+  const [chamandoUid, setChamandoUid] = useState(null)
 
   // 1) Buscar dados do estabelecimento logado (para ter localizacao)
   useEffect(() => {
@@ -64,31 +73,25 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
     return () => { ativo = false }
   }, [usuario?.uid])
 
-// 2) Escutar freelas (coleção usuarios)
-useEffect(() => {
-  setCarregando(true)
-
-  // pegamos todos e filtramos no client para tolerar variações de campo/valor
-  const qUsuarios = collection(db, 'usuarios')
-  const unsub = onSnapshot(qUsuarios, (snap) => {
-    const todos = []
-    snap.forEach((d) => todos.push({ id: d.id, ...d.data() }))
-
-    const freelas = todos.filter((u) => {
-      const role = (u?.tipo || u?.tipoUsuario || '').toLowerCase().trim()
-      return role === 'freela' || role === 'freelancer'
+  // 2) Escutar freelas (coleção usuarios) — busca todos e filtra por tipo no client
+  useEffect(() => {
+    setCarregando(true)
+    const qUsuarios = collection(db, 'usuarios')
+    const unsub = onSnapshot(qUsuarios, (snap) => {
+      const todos = []
+      snap.forEach((d) => todos.push({ id: d.id, ...d.data() }))
+      const freelas = todos.filter((u) => {
+        const role = (u?.tipo || u?.tipoUsuario || '').toLowerCase().trim()
+        return role === 'freela' || role === 'freelancer'
+      })
+      setFreelasRaw(freelas)
+      setCarregando(false)
+    }, (err) => {
+      console.error('[BuscarFreelas] onSnapshot usuarios erro:', err)
+      setCarregando(false)
     })
-
-    setFreelasRaw(freelas)
-    setCarregando(false)
-  }, (err) => {
-    console.error('[BuscarFreelas] onSnapshot usuarios erro:', err)
-    setCarregando(false)
-  })
-
-  return () => unsub()
-}, [])
-
+    return () => unsub()
+  }, [])
 
   // 3) Escutar /status (apenas os online) — marcamos como online se houver state === 'online'
   useEffect(() => {
@@ -147,11 +150,47 @@ useEffect(() => {
       })
   }, [freelasRaw, onlineSet, estab?.localizacao, filtroFuncao, apenasOnline])
 
+  // 5) Criar chamada
+  async function chamarFreela(freela) {
+    if (!usuario?.uid) return alert('Você precisa estar autenticado como estabelecimento.')
+    try {
+      setChamandoUid(freela.id)
+
+      const id = formatarId(usuario.uid)
+      const chamada = {
+        // chaves
+        idPersonalizado: id,
+        estabelecimentoUid: usuario.uid,
+        estabelecimentoNome: usuario.nome || '',
+        freelaUid: freela.id,
+        freelaNome: freela.nome || '',
+        // valores
+        valorDiaria: typeof freela.valorDiaria === 'number' ? freela.valorDiaria : 0,
+        // localização (se quiser usar depois)
+        estabelecimentoLocalizacao: estab?.localizacao || null,
+        freelaLocalizacao: freela?.localizacao || null,
+        // status/controle
+        status: 'pendente',
+        criadoEm: serverTimestamp(),
+      }
+
+      await setDoc(doc(db, 'chamadas', id), chamada)
+      alert(`Chamada enviada para ${freela.nome || 'freela'}.`)
+
+    } catch (err) {
+      console.error('[BuscarFreelas] Erro ao chamar freela:', err)
+      alert('Erro ao chamar o freela. Veja o console.')
+    } finally {
+      setChamandoUid(null)
+    }
+  }
+
   // UI de cada freela
   function FreelaItem({ f }) {
     const foto = f.foto && typeof f.foto === 'string' ? f.foto : null
     const distanciaFmt = f.distanciaKm == null ? '—' : `${f.distanciaKm.toFixed(f.distanciaKm < 10 ? 1 : 0)} km`
     const statusPill = f.online ? 'bg-green-100 text-green-700 border-green-300' : 'bg-gray-100 text-gray-600 border-gray-300'
+    const chamando = chamandoUid === f.id
 
     return (
       <div className="p-4 bg-white rounded-2xl shadow-md border border-orange-100 hover:shadow-lg transition">
@@ -194,6 +233,15 @@ useEffect(() => {
                 </span>
               )}
             </div>
+
+            <button
+              onClick={() => chamarFreela(f)}
+              disabled={chamando}
+              className={`mt-3 px-4 py-2 rounded-lg transition text-white ${chamando ? 'bg-orange-300 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'}`}
+              title="Criar chamada para este freela"
+            >
+              {chamando ? 'Enviando…' : 'Chamar'}
+            </button>
           </div>
         </div>
       </div>
