@@ -1,7 +1,7 @@
 // src/components/BuscarFreelas.jsx
 import React, { useEffect, useMemo, useState } from 'react'
 import {
-  collection, query, where, onSnapshot, doc, getDoc, orderBy, limit
+  collection, query, where, onSnapshot, doc, getDoc
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
@@ -37,8 +37,11 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
   return R * c
 }
 
-export default function BuscarFreelas() {
-  const { usuario } = useAuth() // usuário logado (estabelecimento)
+export default function BuscarFreelas({ usuario: usuarioProp }) {
+  // permite receber o estabelecimento por prop ou cair no contexto
+  const { usuario: usuarioCtx } = useAuth()
+  const usuario = usuarioProp || usuarioCtx
+
   const [estab, setEstab] = useState(null) // doc do estabelecimento (para pegar localizacao)
   const [freelasRaw, setFreelasRaw] = useState([]) // docs de usuarios tipo 'freela'
   const [onlineSet, setOnlineSet] = useState(() => new Set()) // UIDs online (de /status)
@@ -64,14 +67,10 @@ export default function BuscarFreelas() {
   // 2) Escutar freelas (coleção usuarios)
   useEffect(() => {
     setCarregando(true)
-    const base = [where('tipo', '==', 'freela')]
-    // Se quiser performance, pode limitar ou paginar
-    const qUsuarios = query(collection(db, 'usuarios'), ...base /*, limit(200)*/)
+    const qUsuarios = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
     const unsub = onSnapshot(qUsuarios, (snap) => {
       const list = []
-      snap.forEach((d) => {
-        list.push({ id: d.id, ...d.data() })
-      })
+      snap.forEach((d) => list.push({ id: d.id, ...d.data() }))
       setFreelasRaw(list)
       setCarregando(false)
     }, (err) => {
