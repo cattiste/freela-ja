@@ -1,58 +1,127 @@
+// src/hooks/useRealtimePresence.js
 import { useEffect } from 'react'
-import { ref, onValue, onDisconnect, set, get } from 'firebase/database'
-import { doc, setDoc } from 'firebase/firestore'
 import { rtdb, db } from '@/firebase'
+import {
+  ref,
+  onValue,
+  onDisconnect,
+  set,
+  get,
+  serverTimestamp as rtdbNow,
+} from 'firebase/database'
+import {
+  doc,
+  setDoc,
+  serverTimestamp as fsNow,
+} from 'firebase/firestore'
 
+/**
+ * Presença em tempo real (RTDB) com espelho no Firestore.
+ * - Marca online ao entrar, offline ao desconectar/minimizar/fechar.
+ * - Força a conexão do RTDB para evitar precisar dar F5.
+ * - Protege contra UID inválido (evita "Invalid token in path").
+ */
 export function useRealtimePresence(usuario) {
   useEffect(() => {
-    if (!usuario?.uid) return
+    // 1) Checagens iniciais
+    if (!usuario?.uid || typeof usuario.uid !== 'string') return
+    const rawUid = usuario.uid.trim()
+    // caracteres proibidos em paths do RTDB: . # $ [ ]
+    if (/[.#$\[\]]/.test(rawUid)) {
+      console.warn('[presence] UID contém caracteres inválidos para RTDB:', rawUid)
+      return
+    }
 
-    const uid = usuario.uid
-    const statusRef = ref(rtdb, `/status/${uid}`)
+    const uid = rawUid
+    const statusPath = `status/${uid}` // sem barra inicial para evitar confusão
+    let statusRef
+    try {
+      statusRef = ref(rtdb, statusPath)
+    } catch (e) {
+      console.error('[presence] erro ao criar ref do RTDB:', e)
+      return
+    }
+
     const infoConnectedRef = ref(rtdb, '.info/connected')
+    let mounted = true
+    let visTimer = null
 
-    // 👇 Força a conexão com o RTDB lendo um dado leve
-    get(ref(rtdb, '/.info/serverTimeOffset')).then(() => {
-      console.log('[presence] Conexão forçada com RTDB')
-    })
+    // 2) Força a conexão do RTDB com uma leitura leve
+    get(ref(rtdb, '.info/serverTimeOffset'))
+      .then(() => console.log('[presence] RTDB “warmed up”'))
+      .catch(() => {/* silencioso */})
 
-    const unsubscribe = onValue(infoConnectedRef, (snap) => {
-      const conectado = snap.val() === true
-      console.log('[presence] .info/connected =', conectado)
+    // 3) Funções utilitárias
+    const setRTDB = (data) => set(statusRef, data)
+    const setFS = (data) =>
+      setDoc(doc(db, 'status', uid), data, { merge: true })
 
-      if (conectado) {
-        // Ao desconectar: grava offline no RTDB e no Firestore
-        onDisconnect(statusRef).set({
+    const goOnline = async () => {
+      try {
+        // programa offline automático no disconnect
+        await onDisconnect(statusRef).set({
           state: 'offline',
-          last_changed: Date.now(),
-        }).then(() => {
-          console.log('[presence] onDisconnect set OK')
-          // Espelha no Firestore como offline
-          setDoc(doc(db, 'status', uid), {
-            state: 'offline',
-            last_changed: Date.now(),
-          }).then(() => {
-            console.log('[presence] espelhado FS offline (desconectado local)')
-          })
+          last_changed: rtdbNow(),
         })
-
-        // Marca como online no RTDB
-        set(statusRef, {
-          state: 'online',
-          last_changed: Date.now(),
-        }).then(() => {
-          console.log('[presence] set RTDB online OK')
-          // Espelha no Firestore como online
-          setDoc(doc(db, 'status', uid), {
-            state: 'online',
-            last_changed: Date.now(),
-          }).then(() => {
-            console.log('[presence] espelhado FS online OK')
-          })
-        })
+        // marca online agora (RTDB + FS)
+        await setRTDB({ state: 'online', last_changed: rtdbNow() })
+        await setFS({ state: 'online', last_changed: fsNow() })
+        // console.log('[presence] online OK')
+      } catch (e) {
+        console.error('[presence] erro ao marcar online:', e)
       }
+    }
+
+    const goOffline = async () => {
+      try {
+        await setRTDB({ state: 'offline', last_changed: rtdbNow() })
+        await setFS({ state: 'offline', last_changed: fsNow() })
+        // console.log('[presence] offline OK')
+      } catch (e) {
+        // silencioso para não poluir
+      }
+    }
+
+    // 4) Observa a conexão do RTDB
+    const unsubscribe = onValue(infoConnectedRef, async (snap) => {
+      if (!mounted) return
+      const connected = snap.val() === true
+      // console.log('[presence] .info/connected =', connected)
+
+      if (!connected) {
+        // Sem conexão com RTDB: já espelha offline no FS (opcional)
+        try {
+          await setFS({ state: 'offline', last_changed: fsNow() })
+        } catch (_) {}
+        return
+      }
+
+      // Conectado: entra online
+      await goOnline()
     })
 
-    return () => unsubscribe()
-  }, [usuario])
+    // 5) Visibilidade da aba: ocultou → offline, voltou → online
+    const handleVisibility = () => {
+      if (visTimer) clearTimeout(visTimer)
+      visTimer = setTimeout(async () => {
+        if (!mounted) return
+        if (document.visibilityState === 'hidden') {
+          await goOffline()
+        } else {
+          // Ao voltar visível, garante que estamos online
+          await goOnline()
+        }
+      }, 150) // debounce curto
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    // 6) Cleanup
+    return () => {
+      mounted = false
+      if (visTimer) clearTimeout(visTimer)
+      document.removeEventListener('visibilitychange', handleVisibility)
+      unsubscribe()
+      // onDisconnect já está armado no servidor; não precisa desfazer manualmente.
+    }
+  }, [usuario?.uid])
 }
