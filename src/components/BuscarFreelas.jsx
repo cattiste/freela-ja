@@ -64,21 +64,31 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
     return () => { ativo = false }
   }, [usuario?.uid])
 
-  // 2) Escutar freelas (coleção usuarios)
-  useEffect(() => {
-    setCarregando(true)
-    const qUsuarios = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
-    const unsub = onSnapshot(qUsuarios, (snap) => {
-      const list = []
-      snap.forEach((d) => list.push({ id: d.id, ...d.data() }))
-      setFreelasRaw(list)
-      setCarregando(false)
-    }, (err) => {
-      console.error('[BuscarFreelas] onSnapshot usuarios erro:', err)
-      setCarregando(false)
+// 2) Escutar freelas (coleção usuarios)
+useEffect(() => {
+  setCarregando(true)
+
+  // pegamos todos e filtramos no client para tolerar variações de campo/valor
+  const qUsuarios = collection(db, 'usuarios')
+  const unsub = onSnapshot(qUsuarios, (snap) => {
+    const todos = []
+    snap.forEach((d) => todos.push({ id: d.id, ...d.data() }))
+
+    const freelas = todos.filter((u) => {
+      const role = (u?.tipo || u?.tipoUsuario || '').toLowerCase().trim()
+      return role === 'freela' || role === 'freelancer'
     })
-    return () => unsub()
-  }, [])
+
+    setFreelasRaw(freelas)
+    setCarregando(false)
+  }, (err) => {
+    console.error('[BuscarFreelas] onSnapshot usuarios erro:', err)
+    setCarregando(false)
+  })
+
+  return () => unsub()
+}, [])
+
 
   // 3) Escutar /status (apenas os online) — marcamos como online se houver state === 'online'
   useEffect(() => {
