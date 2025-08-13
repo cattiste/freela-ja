@@ -6,30 +6,8 @@ import {
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 
-
-export function calcularDistancia(lat1, lon1, lat2, lon2) {
-  if (
-    typeof lat1 !== 'number' ||
-    typeof lon1 !== 'number' ||
-    typeof lat2 !== 'number' ||
-    typeof lon2 !== 'number'
-  ) return null
-
-  const toRad = (x) => (x * Math.PI) / 180
-  const R = 6371 // raio da Terra em km
-  const dLat = toRad(lat2 - lat1)
-  const dLon = toRad(lon2 - lon1)
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLon / 2) ** 2
-
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return R * c
-}
-
 // --- Fallback de avatar (sem depender de via.placeholder.com)
-const AvatarFallback = ({ className = '' }) => (
+const AvatarFallback = ({ className }) => (
   <div className={`flex items-center justify-center bg-orange-100 text-orange-600 rounded-full ${className}`}>
     <svg viewBox="0 0 24 24" className="w-1/2 h-1/2" aria-hidden="true">
       <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.33 0-8 2.17-8 4.5V21h16v-2.5C20 16.17 16.33 14 12 14Z" />
@@ -89,11 +67,11 @@ function formatarId(estabelecimentoUid) {
 }
 
 export default function BuscarFreelas({ usuario: usuarioProp }) {
-  // permite receber o estabelecimento/contratante por prop ou cair no contexto
+  // permite receber o estabelecimento por prop ou cair no contexto
   const { usuario: usuarioCtx } = useAuth()
   const usuario = usuarioProp || usuarioCtx
 
-  const [estab, setEstab] = useState(null) // doc do estabelecimento/contratante (para pegar localizacao)
+  const [estab, setEstab] = useState(null) // doc do estabelecimento (para pegar localizacao)
   const [freelasRaw, setFreelasRaw] = useState([]) // docs de usuarios tipo 'freela'
   const [onlineSet, setOnlineSet] = useState(() => new Set()) // UIDs online (de /status)
   const [apenasOnline, setApenasOnline] = useState(false)
@@ -101,7 +79,7 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
   const [carregando, setCarregando] = useState(true)
   const [chamandoUid, setChamandoUid] = useState(null)
 
-  // 1) Buscar dados do estabelecimento/contratante logado (para ter localizacao)
+  // 1) Buscar dados do estabelecimento logado (para ter localizacao)
   useEffect(() => {
     let ativo = true
     async function loadEstab() {
@@ -188,7 +166,7 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
 
   // 5) Criar chamada
   async function chamarFreela(freela) {
-    if (!usuario?.uid) return alert('Você precisa estar autenticado para chamar.')
+    if (!usuario?.uid) return alert('Você precisa estar autenticado como estabelecimento.')
     try {
       setChamandoUid(freela.id)
 
@@ -196,7 +174,7 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
       const chamada = {
         // chaves
         idPersonalizado: id,
-        estabelecimentoUid: usuario.uid,            // também serve para PF/Contratante
+        estabelecimentoUid: usuario.uid,
         estabelecimentoNome: usuario.nome || '',
         freelaUid: freela.id,
         freelaNome: freela.nome || '',
@@ -224,9 +202,7 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
   // UI de cada freela
   function FreelaItem({ f }) {
     const foto = f.foto && typeof f.foto === 'string' ? f.foto : null
-    const distanciaFmt = f.distanciaKm == null
-      ? '—'
-      : `${f.distanciaKm.toFixed(f.distanciaKm < 10 ? 1 : 0)} km`
+    const distanciaFmt = f.distanciaKm == null ? '—' : `${f.distanciaKm.toFixed(f.distanciaKm < 10 ? 1 : 0)} km`
     const statusPill = f.online ? 'bg-green-100 text-green-700 border-green-300' : 'bg-gray-100 text-gray-600 border-gray-300'
     const chamando = chamandoUid === f.id
 
