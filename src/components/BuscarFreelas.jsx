@@ -29,12 +29,33 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
   const dLat = toRad(lat2 - lat1)
   const dLon = toRad(lon2 - lon1)
   const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    Math.sin(dLon / 2) ** 2
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   return R * c
+}
+
+// --- normaliza vários formatos de localização para {lat, lon}
+function normalizeLocation(loc) {
+  if (!loc) return null
+  if (typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
+    return { lat: loc.latitude, lon: loc.longitude }
+  }
+  if (typeof loc.lat === 'number' && typeof loc.lng === 'number') {
+    return { lat: loc.lat, lon: loc.lng }
+  }
+  if (typeof loc.lat === 'number' && typeof loc.lon === 'number') {
+    return { lat: loc.lat, lon: loc.lon }
+  }
+  if (typeof loc.lat === 'number' && typeof loc.long === 'number') {
+    return { lat: loc.lat, lon: loc.long }
+  }
+  if (typeof loc.latitude === 'number' && typeof loc.long === 'number') {
+    return { lat: loc.latitude, lon: loc.long }
+  }
+  return null
 }
 
 // formata timestamp para ID customizado
@@ -106,26 +127,19 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
     return () => unsub()
   }, [])
 
-  // 4) Montar lista com distância e status online
+  // 4) Montar lista com distância e status online (com normalização de localização)
   const freelasDecorados = useMemo(() => {
-    const latE = estab?.localizacao?.latitude
-    const lonE = estab?.localizacao?.longitude
+    const E = normalizeLocation(estab?.localizacao)
 
     return freelasRaw
       .map((f) => {
-        const latF = f?.localizacao?.latitude
-        const lonF = f?.localizacao?.longitude
-        const distanciaKm = (typeof latE === 'number' && typeof lonE === 'number' && typeof latF === 'number' && typeof lonF === 'number')
-          ? calcularDistancia(latE, lonE, latF, lonF)
+        const F = normalizeLocation(f?.localizacao)
+        const distanciaKm = (E && F)
+          ? calcularDistancia(E.lat, E.lon, F.lat, F.lon)
           : null
 
         const online = onlineSet.has(f.id)
-
-        return {
-          ...f,
-          online,
-          distanciaKm,
-        }
+        return { ...f, online, distanciaKm }
       })
       .filter((f) => {
         // filtro por função (se preenchido)

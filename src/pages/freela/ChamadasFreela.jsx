@@ -10,7 +10,6 @@ import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
 import AvaliacaoInline from '@/components/AvaliacaoInline'
 import RespostasRapidasFreela from '@/components/RespostasRapidasFreela'
-import ContagemRegressiva from '@/components/ContagemRegressiva'
 
 const STATUS_LISTA = [
   'pendente',
@@ -62,9 +61,7 @@ export default function ChamadasFreela() {
 
   // ---- ordenação client-side: criadoEm desc (fallbacks)
   const chamadasOrdenadas = useMemo(() => {
-    const ts = (x) =>
-      x?.toMillis?.() ??
-      (x?.seconds ? x.seconds * 1000 : 0)
+    const ts = (x) => x?.toMillis?.() ?? (x?.seconds ? x.seconds * 1000 : 0)
     return [...(Array.isArray(chamadas) ? chamadas : [])].sort((a, b) => {
       const aT = ts(a.criadoEm) || ts(a.aceitaEm) || ts(a.checkInFreelaHora) || 0
       const bT = ts(b.criadoEm) || ts(b.aceitaEm) || ts(b.checkInFreelaHora) || 0
@@ -74,13 +71,10 @@ export default function ChamadasFreela() {
 
   // ---- cancelar por timeout (fora do render)
   useEffect(() => {
-    // só cancela as que estão 'aceita' e passaram do prazo
     const agora = Date.now()
     const candidatas = chamadasOrdenadas.filter((c) => {
       if (c.status !== 'aceita') return false
-      const aceitaMs =
-        c.aceitaEm?.toMillis?.() ??
-        (c.aceitaEm?.seconds ? c.aceitaEm.seconds * 1000 : 0)
+      const aceitaMs = c.aceitaEm?.toMillis?.() ?? (c.aceitaEm?.seconds ? c.aceitaEm.seconds * 1000 : 0)
       if (!aceitaMs || aceitaMs < 1_000_000_000_000) return false
       return (agora - aceitaMs) > LIMITE_ACEITACAO_MS
     })
@@ -99,16 +93,60 @@ export default function ChamadasFreela() {
   }, [chamadasOrdenadas])
 
   // ---- helpers de ação
-  const atualizarChamada = async (id, dados) => {
+  async function aceitarChamada(chamada) {
     try {
-      await updateDoc(doc(db, 'chamadas', id), dados)
-      toast.success('✅ Ação realizada com sucesso!')
-      if (dados.status === 'checkin_freela') {
-        setMensagemConfirmacao('✅ Check-in feito! Vá até o caixa ou procure o responsável para confirmar sua presença.')
-      }
+      await updateDoc(doc(db, 'chamadas', chamada.id), {
+        status: 'aceita',
+        aceitaEm: serverTimestamp()
+      })
+      toast.success('✅ Chamada aceita!')
     } catch (err) {
-      console.error('Erro ao atualizar chamada:', err)
-      toast.error('Erro ao atualizar chamada.')
+      console.error('[ChamadasFreela] aceitarChamada erro:', err)
+      toast.error('Erro ao aceitar chamada.')
+    }
+  }
+
+  async function rejeitarChamada(chamada) {
+    try {
+      await updateDoc(doc(db, 'chamadas', chamada.id), {
+        status: 'rejeitada',
+        rejeitadaEm: serverTimestamp()
+      })
+      toast.success('❌ Chamada rejeitada.')
+    } catch (err) {
+      console.error('[ChamadasFreela] rejeitarChamada erro:', err)
+      toast.error('Erro ao rejeitar chamada.')
+    }
+  }
+
+  async function confirmarCheckIn(chamada) {
+    try {
+      await updateDoc(doc(db, 'chamadas', chamada.id), {
+        status: 'checkin_freela',
+        checkInFreela: true,
+        checkInFreelaHora: serverTimestamp()
+      })
+      toast.success('✅ Check-in feito!')
+      setMensagemConfirmacao('✅ Check-in feito! Vá até o caixa ou procure o responsável para confirmar sua presença.')
+    } catch (e) {
+      console.error('[ChamadasFreela] erro ao confirmar check-in:', e)
+      toast.error(e?.code === 'permission-denied'
+        ? 'Sem permissão para atualizar esta chamada.'
+        : 'Erro ao confirmar check-in.')
+    }
+  }
+
+  async function confirmarCheckOut(chamada) {
+    try {
+      await updateDoc(doc(db, 'chamadas', chamada.id), {
+        status: 'checkout_freela',
+        checkOutFreela: true,
+        checkOutFreelaHora: serverTimestamp()
+      })
+      toast.success('⏳ Check-out registrado!')
+    } catch (e) {
+      console.error('[ChamadasFreela] erro ao confirmar check-out:', e)
+      toast.error('Erro ao confirmar check-out.')
     }
   }
 
@@ -145,22 +183,17 @@ export default function ChamadasFreela() {
               </p>
             )}
 
+            {/* Ações por status */}
             {chamada.status === 'pendente' && (
               <>
                 <button
-                  onClick={() => atualizarChamada(chamada.id, {
-                    status: 'aceita',
-                    aceitaEm: serverTimestamp()
-                  })}
+                  onClick={() => aceitarChamada(chamada)}
                   className="w-full bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition"
                 >
                   ✅ Aceitar chamada
                 </button>
                 <button
-                  onClick={() => atualizarChamada(chamada.id, {
-                    status: 'rejeitada',
-                    rejeitadaEm: serverTimestamp()
-                  })}
+                  onClick={() => rejeitarChamada(chamada)}
                   className="w-full bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600 transition"
                 >
                   ❌ Rejeitar chamada
@@ -168,13 +201,9 @@ export default function ChamadasFreela() {
               </>
             )}
 
-            {chamada.status === 'aceita' && chamada.checkInFreela !== true && (
+            {(['aceita', 'pendente'].includes(chamada.status)) && !chamada.checkInFreela && (
               <button
-                onClick={() => atualizarChamada(chamada.id, {
-                  status: 'checkin_freela',
-                  checkInFreela: true,
-                  checkInFreelaHora: serverTimestamp()
-                })}
+                onClick={() => confirmarCheckIn(chamada)}
                 className="w-full bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition"
               >
                 📍 Fazer check-in
@@ -183,11 +212,7 @@ export default function ChamadasFreela() {
 
             {(chamada.status === 'checkin_freela' || chamada.status === 'em_andamento') && !chamada.checkOutFreela && (
               <button
-                onClick={() => atualizarChamada(chamada.id, {
-                  status: 'checkout_freela',
-                  checkOutFreela: true,
-                  checkOutFreelaHora: serverTimestamp()
-                })}
+                onClick={() => confirmarCheckOut(chamada)}
                 className="w-full bg-yellow-500 text-white px-4 py-2 rounded-xl hover:bg-yellow-600 transition"
               >
                 ⏳ Fazer check-out
