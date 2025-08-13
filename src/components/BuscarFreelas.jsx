@@ -1,141 +1,142 @@
-import React, { useEffect, useState, useMemo } from 'react'
-import { db } from '@/firebase'
+// src/components/BuscarFreelas.jsx
+import React, { useEffect, useState } from 'react'
 import {
   collection,
   query,
   where,
   onSnapshot,
-  doc,
-  updateDoc,
   getDoc,
-  serverTimestamp,
+  doc,
   addDoc,
+  serverTimestamp
 } from 'firebase/firestore'
+import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
-import ProfissionalCard from './ProfissionalCard'
-import { calcularDistancia } from '@/utils/distancia' // ✅ usa o util central
+import { calcularDistancia } from '@/utils/calcularDistancia'
 
 export default function BuscarFreelas() {
   const { usuario } = useAuth()
   const [freelas, setFreelas] = useState([])
-  const [mostrarSomenteOnline, setMostrarSomenteOnline] = useState(false)
+  const [filtro, setFiltro] = useState('')
+  const [apenasOnline, setApenasOnline] = useState(false)
 
   useEffect(() => {
-    if (!usuario?.localizacao || !usuario?.tipo) return
+    if (!usuario?.localizacao) return
 
     const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
+    const unsub = onSnapshot(q, async (snap) => {
+      const lista = await Promise.all(
+        snap.docs.map(async (docu) => {
+          const data = docu.data()
+          const statusSnap = await getDoc(doc(db, 'status', docu.id))
+          const online = statusSnap.exists() && statusSnap.data().state === 'online'
 
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const statusSnap = await getDoc(doc(db, 'status', usuario.uid))
-      const meusChamadosSnap = await getDoc(doc(db, 'chamadas', usuario.uid))
+          let distancia = null
+          if (usuario?.localizacao && data?.localizacao) {
+            distancia = calcularDistancia(
+              usuario.localizacao.latitude,
+              usuario.localizacao.longitude,
+              data.localizacao.latitude,
+              data.localizacao.longitude
+            )
+          }
 
-      const promises = snapshot.docs.map(async (docUser) => {
-        const data = docUser.data()
-        const statusRef = doc(db, 'status', docUser.id)
-        const statusSnap = await getDoc(statusRef)
+          return {
+            id: docu.id,
+            ...data,
+            online,
+            distancia: distancia?.toFixed(1)
+          }
+        })
+      )
 
-        const online = statusSnap.exists() && statusSnap.data().state === 'online'
-        const distancia = calcularDistancia(
-          usuario.localizacao.latitude,
-          usuario.localizacao.longitude,
-          data.localizacao.latitude,
-          data.localizacao.longitude
-        )
+      const filtrados = lista.filter((f) =>
+        f.nome?.toLowerCase().includes(filtro.toLowerCase()) ||
+        f.funcao?.toLowerCase().includes(filtro.toLowerCase())
+      )
 
-        return {
-          ...data,
-          id: docUser.id,
-          online,
-          distancia,
-        }
+      const ordenados = filtrados.sort((a, b) => {
+        if (a.online !== b.online) return a.online ? -1 : 1
+        return (a.distancia ?? 999) - (b.distancia ?? 999)
       })
 
-      const resultado = await Promise.all(promises)
-
-      // Filtro online
-      let filtrado = resultado
-      if (mostrarSomenteOnline) {
-        filtrado = resultado.filter((f) => f.online)
-      }
-
-      // Ordena online primeiro e por proximidade
-      filtrado.sort((a, b) => {
-        if (a.online && !b.online) return -1
-        if (!a.online && b.online) return 1
-        return a.distancia - b.distancia
-      })
-
-      setFreelas(filtrado)
+      setFreelas(apenasOnline ? ordenados.filter((f) => f.online) : ordenados)
     })
 
-    return () => unsubscribe()
-  }, [usuario, mostrarSomenteOnline])
+    return () => unsub()
+  }, [usuario, filtro, apenasOnline])
 
-  const handleChamarFreela = async (freela) => {
-    if (!usuario) return
+  const chamarFreela = async (freela) => {
+    if (!usuario?.uid || !freela?.id) return
 
-    const chamada = {
+    const agora = new Date()
+    const dataId = agora.toISOString().replace(/[-:.]/g, '').slice(0, 15)
+    const chamadaId = `${usuario.uid}_${dataId}`
+
+    await addDoc(collection(db, 'chamadas'), {
+      chamadaId,
+      criadoEm: serverTimestamp(),
+      status: 'pendente',
       estabelecimentoUid: usuario.uid,
       freelaUid: freela.id,
-      status: 'pendente',
-      criadoEm: serverTimestamp(),
-      valorDiaria: freela.valorDiaria || 0,
-    }
-
-    await addDoc(collection(db, 'chamadas'), chamada)
-  }
-
-  const handleConfirmarChamada = async (freela) => {
-    const q = query(
-      collection(db, 'chamadas'),
-      where('estabelecimentoUid', '==', usuario.uid),
-      where('freelaUid', '==', freela.id),
-      where('status', '==', 'aceita')
-    )
-
-    const snap = await getDocs(q)
-    snap.forEach(async (docItem) => {
-      await updateDoc(doc(db, 'chamadas', docItem.id), {
-        status: 'confirmada',
-        confirmadoEm: serverTimestamp(),
-      })
+      valor: freela.valorDiaria || 0
     })
   }
 
   return (
     <div className="p-4">
-      <div className="mb-4">
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={mostrarSomenteOnline}
-            onChange={() => setMostrarSomenteOnline((prev) => !prev)}
-          />
-          Mostrar apenas online
-        </label>
-      </div>
+      <input
+        type="text"
+        placeholder="Filtrar por função/especialidade"
+        className="w-full p-2 rounded border mb-4"
+        value={filtro}
+        onChange={(e) => setFiltro(e.target.value)}
+      />
 
-      {freelas.length === 0 && <p>Nenhum freelancer disponível.</p>}
+      <label className="flex items-center space-x-2 mb-4">
+        <input
+          type="checkbox"
+          checked={apenasOnline}
+          onChange={(e) => setApenasOnline(e.target.checked)}
+        />
+        <span>Mostrar apenas online</span>
+      </label>
 
-      {freelas.map((freela) => (
-        <div key={freela.id} className="mb-4">
-          <ProfissionalCard freela={freela} />
-          <div className="flex gap-2 mt-2">
-            <button
-              onClick={() => handleChamarFreela(freela)}
-              className="bg-blue-500 text-white px-3 py-1 rounded"
+      {freelas.length === 0 ? (
+        <p className="text-center text-gray-500">Nenhum freelancer disponível.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {freelas.map((freela) => (
+            <div
+              key={freela.id}
+              className="bg-white rounded-lg shadow-md p-4 flex items-center space-x-4"
             >
-              Chamar
-            </button>
-            <button
-              onClick={() => handleConfirmarChamada(freela)}
-              className="bg-green-500 text-white px-3 py-1 rounded"
-            >
-              Confirmar Chamada
-            </button>
-          </div>
+              <img
+                src={freela.foto || 'https://via.placeholder.com/100'}
+                alt={freela.nome}
+                className="w-16 h-16 rounded-full object-cover"
+              />
+              <div className="flex-1">
+                <h2 className="font-bold text-lg">
+                  {freela.nome}{' '}
+                  <span className={`ml-2 text-xs px-2 py-1 rounded-full ${freela.online ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-500'}`}>
+                    {freela.online ? 'Online' : 'Offline'}
+                  </span>
+                </h2>
+                <p className="text-sm text-gray-600">{freela.funcao}</p>
+                <p className="text-sm text-gray-600">Distância: {freela.distancia ? `${freela.distancia} km` : '—'}</p>
+                <p className="text-sm font-medium mt-1">Diária: R$ {freela.valorDiaria?.toFixed(2)}</p>
+              </div>
+              <button
+                onClick={() => chamarFreela(freela)}
+                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded"
+              >
+                Chamar
+              </button>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   )
 }
