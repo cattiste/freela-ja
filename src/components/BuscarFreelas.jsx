@@ -1,160 +1,138 @@
+// src/components/BuscarFreelas.jsx
 import React, { useEffect, useState } from 'react'
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  addDoc,
-  serverTimestamp,
-  doc,
-  getDoc,
-} from 'firebase/firestore'
+import { collection, query, where, getDocs, doc, setDoc, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
+import { GeoPoint } from 'firebase/firestore'
+import { calcularDistancia } from '@/utils/distancia'
 
-function calcularDistancia(lat1, lon1, lat2, lon2) {
-  const toRad = (x) => (x * Math.PI) / 180
-  const R = 6371
-  const dLat = toRad(lat2 - lat1)
-  const dLon = toRad(lon2 - lon1)
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2)
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return R * c
-}
-
-export default function BuscarFreelas({ origem, tipoUsuario }) {
+export default function BuscarFreelas() {
   const { usuario } = useAuth()
   const [freelas, setFreelas] = useState([])
-  const [mostrarOnline, setMostrarOnline] = useState(true)
+  const [mostrarOffline, setMostrarOffline] = useState(false)
+  const [confirmados, setConfirmados] = useState({})
 
   useEffect(() => {
-    if (!usuario?.localizacao) return
-    const carregarFreelas = async () => {
+    if (!usuario?.localizacao || !usuario?.tipo) return
+
+    async function carregarFreelas() {
+      const snap = await getDocs(query(
+        collection(db, 'usuarios'),
+        where('tipo', '==', 'freela'),
+        where('localizacao', '!=', null)
+      ))
+
       const statusSnap = await getDocs(collection(db, 'status'))
       const statusMap = {}
-      statusSnap.forEach((doc) => {
-        statusMap[doc.id] = doc.data().state
-      })
-
-      const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
-      const snap = await getDocs(q)
+      statusSnap.forEach(doc => statusMap[doc.id] = doc.data()?.state)
 
       const lista = []
+      for (const docFreela of snap.docs) {
+        const freela = { id: docFreela.id, ...docFreela.data() }
+        const status = statusMap[freela.id] || 'offline'
+        if (status === 'offline' && !mostrarOffline) continue
 
-      snap.forEach((docUser) => {
-        const data = docUser.data()
-        const status = statusMap[docUser.id] || 'offline'
-
-        if (mostrarOnline && status !== 'online') return
+        freela.status = status
 
         const distancia = calcularDistancia(
           usuario.localizacao.latitude,
           usuario.localizacao.longitude,
-          data.localizacao?.latitude || 0,
-          data.localizacao?.longitude || 0
+          freela.localizacao.latitude,
+          freela.localizacao.longitude
         )
+        freela.distancia = distancia.toFixed(2)
 
-        lista.push({
-          id: docUser.id,
-          ...data,
-          status,
-          distancia,
-        })
+        lista.push(freela)
+      }
+
+      // ordena online por distância, offline por último
+      const ordenados = lista.sort((a, b) => {
+        if (a.status !== b.status) return a.status === 'online' ? -1 : 1
+        return parseFloat(a.distancia) - parseFloat(b.distancia)
       })
 
-      lista.sort((a, b) => {
-        if (a.status === 'online' && b.status !== 'online') return -1
-        if (a.status !== 'online' && b.status === 'online') return 1
-        return a.distancia - b.distancia
-      })
-
-      setFreelas(lista)
+      setFreelas(ordenados)
     }
 
     carregarFreelas()
-  }, [usuario?.localizacao, mostrarOnline])
+  }, [usuario, mostrarOffline])
 
-  const criarChamada = async (freelaId) => {
-    if (!usuario?.uid || !freelaId) return
-    const docFreela = await getDoc(doc(db, 'usuarios', freelaId))
-    const dataFreela = docFreela.data()
+  async function chamarFreela(freela) {
+    const obs = prompt('Deseja incluir alguma observação? (ex: usar roupa preta)')
+    const chamadaId = `${usuario.uid}_${new Date().toISOString().replace(/\W/g, '')}`
 
-    const agora = new Date()
-    const dataFormatada = agora
-      .toISOString()
-      .replace(/[-:.]/g, '')
-      .slice(0, 15)
-
-    const chamadaId = `${usuario.uid}_${dataFormatada}`
-
-    await addDoc(collection(db, 'chamadas'), {
+    const chamada = {
       chamadaId,
+      estabelecimentoUid: usuario.uid,
+      freelaUid: freela.id,
       criadoEm: serverTimestamp(),
       status: 'pendente',
-      estabelecimentoUid: usuario.uid,
-      freelaUid: freelaId,
-      valor: dataFreela.valorDiaria || 100,
-      nomeFreela: dataFreela.nome,
-      nomeEstabelecimento: usuario.nome,
-      localEstabelecimento: usuario.localizacao,
-    })
+      valorDiaria: freela.valorDiaria || 100,
+      observacao: obs || '',
+    }
+
+    await setDoc(doc(db, 'chamadas', chamadaId), chamada)
     alert('Chamada enviada!')
+  }
+
+  async function confirmarChamada(freelaId) {
+    const snap = await getDocs(query(
+      collection(db, 'chamadas'),
+      where('estabelecimentoUid', '==', usuario.uid),
+      where('freelaUid', '==', freelaId),
+      where('status', '==', 'aceita')
+    ))
+    snap.forEach(docSnap => {
+      setDoc(doc(db, 'chamadas', docSnap.id), { status: 'confirmada' }, { merge: true })
+    })
+    setConfirmados(prev => ({ ...prev, [freelaId]: true }))
   }
 
   return (
     <div className="p-4">
-      <h2 className="text-lg font-bold mb-2">Buscar Freelancers</h2>
-      <label className="block mb-4">
+      <h2 className="text-xl font-bold mb-4">Buscar Freelas</h2>
+      <label className="block mb-2">
         <input
           type="checkbox"
-          checked={mostrarOnline}
-          onChange={() => setMostrarOnline(!mostrarOnline)}
-          className="mr-2"
-        />
-        Mostrar somente freelancers online
+          checked={mostrarOffline}
+          onChange={() => setMostrarOffline(!mostrarOffline)}
+        /> Mostrar offline
       </label>
 
-      {freelas.map((freela) => (
-        <div
-          key={freela.id}
-          className="mb-4 p-4 border rounded shadow bg-white flex flex-col"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <p className="font-bold">{freela.nome}</p>
-              <p className="text-sm text-gray-600">{freela.funcao}</p>
-              <p className="text-sm text-gray-500">
-                Distância: {freela.distancia.toFixed(2)} km
-              </p>
-              <p className="text-sm text-gray-500">
-                Diária: R$ {freela.valorDiaria || 'N/D'}
-              </p>
-              <p
-                className={`text-sm ${
-                  freela.status === 'online' ? 'text-green-600' : 'text-gray-400'
-                }`}
-              >
-                {freela.status === 'online' ? 'Online' : 'Offline'}
-              </p>
-            </div>
+      {freelas.map(f => (
+        <div key={f.id} className="bg-white rounded shadow p-4 mb-4 flex flex-col sm:flex-row justify-between items-center">
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold">{f.nome}</h3>
+            <p>Função: {f.funcao}</p>
+            <p>Especialidade: {f.especialidade}</p>
+            <p>Status: <span className={f.status === 'online' ? 'text-green-600' : 'text-gray-500'}>{f.status}</span></p>
+            <p>Distância: {f.distancia} km</p>
+            <p>Valor diária: R$ {f.valorDiaria || 100}</p>
+          </div>
+
+          <div className="flex flex-col gap-2 mt-4 sm:mt-0 sm:ml-4">
             <button
-              onClick={() => criarChamada(freela.id)}
-              className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+              onClick={() => chamarFreela(f)}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
             >
               Chamar
             </button>
+
+            {f.status === 'aceita' && !confirmados[f.id] && (
+              <button
+                onClick={() => confirmarChamada(f.id)}
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              >
+                Confirmar Chamada
+              </button>
+            )}
+
+            {confirmados[f.id] && (
+              <span className="text-green-600 font-bold">Chamada Confirmada</span>
+            )}
           </div>
         </div>
       ))}
-
-      {freelas.length === 0 && (
-        <p className="text-gray-600">Nenhum freelancer encontrado.</p>
-      )}
     </div>
   )
 }
