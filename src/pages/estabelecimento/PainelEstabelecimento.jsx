@@ -20,6 +20,14 @@ import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
 
+// src/pages/estabelecimento/PainelEstabelecimento.jsx
+import { useAuth } from '@/context/AuthContext'
+import { useRealtimePresence } from '@/hooks/useRealtimePresence'
+
+export default function PainelEstabelecimento() {
+  const { usuario } = useAuth()
+  useRealtimePresence(usuario)
+
 // ErrorBoundary simples
 class ErrorBoundary extends React.Component {
   constructor(props) {

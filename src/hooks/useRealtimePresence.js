@@ -1,50 +1,65 @@
-// 📄 src/hooks/useRealtimePresence.js
+// src/hooks/useRealtimePresence.js
 import { useEffect } from 'react'
-import {
-  getDatabase,
-  ref,
-  set,
-  onDisconnect,
-  onValue,
-  serverTimestamp
-} from 'firebase/database'
-import { app } from '@/firebase' // ✅ importante: usa o app configurado com databaseURL
+import { rtdb, db } from '@/firebase'
+import { ref, onValue, onDisconnect, set, serverTimestamp as rtdbNow } from 'firebase/database'
+import { doc, setDoc, serverTimestamp as fsNow } from 'firebase/firestore'
 
-export function useRealtimePresence(uid) {
+export function useRealtimePresence(usuario) {
   useEffect(() => {
-    if (!uid) return
+    if (!usuario?.uid) return
 
-    const db = getDatabase(app) // ✅ evita erro "Feature is disabled"
-    const userRef = ref(db, `users/${uid}`)
-    const connectedRef = ref(db, '.info/connected')
+    const uid = usuario.uid
+    const statusRef = ref(rtdb, `/status/${uid}`)
+    const infoConnectedRef = ref(rtdb, '.info/connected')
 
-    const unsubscribe = onValue(connectedRef, (snap) => {
-      if (snap.val() === true) {
-        console.log('🔥 Conectado ao Realtime DB, marcando online para', uid)
+    console.log('[presence] init for', uid)
 
-        onDisconnect(userRef).set({
-          online: false,
-          lastSeen: serverTimestamp()
-        })
+    const unsub = onValue(infoConnectedRef, async (snap) => {
+      const connected = snap.val() === true
+      console.log('[presence] .info/connected =', connected)
 
-        set(userRef, {
-          online: true,
-          lastSeen: serverTimestamp()
-        }).then(() => {
-          console.log('✅ Presença registrada com sucesso:', uid)
-        }).catch((err) => {
-          console.error('❌ Erro ao gravar presença:', err)
-        })
+      if (!connected) {
+        // Opcional: espelhar offline no Firestore
+        try {
+          await setDoc(doc(db, 'status', uid), { state: 'offline', last_changed: fsNow() }, { merge: true })
+          console.log('[presence] espelhado FS offline (desconectado local)')
+        } catch (e) {
+          console.warn('[presence] falha espelhar FS offline:', e)
+        }
+        return
+      }
+
+      try {
+        await onDisconnect(statusRef).set({ state: 'offline', last_changed: rtdbNow() })
+        console.log('[presence] onDisconnect set OK')
+
+        await set(statusRef, { state: 'online', last_changed: rtdbNow() })
+        console.log('[presence] set RTDB online OK')
+
+        await setDoc(doc(db, 'status', uid), { state: 'online', last_changed: fsNow() }, { merge: true })
+        console.log('[presence] espelhado FS online OK')
+      } catch (e) {
+        console.error('[presence] erro:', e)
       }
     })
 
-    return () => {
-      set(userRef, {
-        online: false,
-        lastSeen: serverTimestamp()
-      }).then(() => {
-        console.log('👋 Freela desconectou manualmente:', uid)
-      })
+    // Marca offline ao fechar/ocultar (melhora responsividade de status)
+    const handleVisibility = async () => {
+      if (document.visibilityState === 'hidden') {
+        try {
+          await set(statusRef, { state: 'offline', last_changed: rtdbNow() })
+          await setDoc(doc(db, 'status', uid), { state: 'offline', last_changed: fsNow() }, { merge: true })
+          console.log('[presence] página oculta → offline')
+        } catch (e) { /* silencioso */ }
+      }
     }
-  }, [uid])
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility)
+      unsub()
+      // No unmount não forçamos nada; onDisconnect já está configurado.
+      console.log('[presence] cleanup for', uid)
+    }
+  }, [usuario?.uid])
 }

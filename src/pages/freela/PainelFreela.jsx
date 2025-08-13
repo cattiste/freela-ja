@@ -15,15 +15,13 @@ import HistoricoFreela from '@/pages/freela/HistoricoTrabalhosFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 
-// Fallback: se o hook não existir, não quebra a app
-let useRealtimePresence
-try {
-  // se existir, usa; se não, cria um no‑op
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  useRealtimePresence = require('@/hooks/useRealtimePresence').useRealtimePresence
-} catch {
-  useRealtimePresence = () => {}
-}
+// src/pages/freela/PainelFreela.jsx
+import { useAuth } from '@/context/AuthContext'
+import { useRealtimePresence } from '@/hooks/useRealtimePresence'
+
+export default function PainelFreela() {
+  const { usuario } = useAuth()
+  useRealtimePresence(usuario)
 
 export default function PainelFreela() {
   const { usuario, carregando } = useAuth()
