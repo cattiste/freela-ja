@@ -46,7 +46,7 @@ export default function ServicosPessoaFisica({ pessoaFisica }) {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-orange-700">📋 Meus Serviços</h2>
         <button
-          onClick={() => navigate('/pessoa-fisica/publicarservico')}
+          onClick={() => navigate('/pf/publicarservico')}
           className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700"
         >
           + Novo Serviço
@@ -57,7 +57,7 @@ export default function ServicosPessoaFisica({ pessoaFisica }) {
         <div className="text-center bg-white p-8 rounded-xl shadow border border-orange-100">
           <p className="text-gray-600 mb-4">Nenhum serviço cadastrado ainda.</p>
           <button
-            onClick={() => navigate('/pessoa-fisica/publicarservico')}
+            onClick={() => navigate('/pf/publicarservico')}
             className="bg-orange-600 text-white px-6 py-2 rounded hover:bg-orange-700"
           >
             Criar Primeiro Serviço
@@ -73,7 +73,7 @@ export default function ServicosPessoaFisica({ pessoaFisica }) {
 
               <div className="mt-3 flex gap-2">
                 <button
-                  onClick={() => navigate(`/pessoa-fisica/servico/${servico.id}`)}
+                  onClick={() => navigate(`/pf/publicarservico/${servico.id}`)}
                   className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
                 >
                   ✏️ Editar

@@ -127,7 +127,7 @@ export default function PerfilPessoaFisica() {
 
         {usuario && usuario.tipo === 'freela' && usuario.uid !== uid && (
           <button
-            onClick={() => navigate(`/avaliacao/pessoa-fisica/${uid}`)}
+            onClick={() => navigate(`/avaliacao/pf/${uid}`)}
             className="mt-4 px-4 py-2 bg-yellow-600 text-white rounded-full hover:bg-yellow-700 transition"
           >
             Avaliar esta Pessoa
