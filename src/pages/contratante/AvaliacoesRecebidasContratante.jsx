@@ -1,10 +1,10 @@
-// src/pages/estabelecimento/AvaliacoesRecebidasEstabelecimento.jsx
+﻿// src/pages/contratante/AvaliacoesRecebidasContratante.jsx
 import React, { useEffect, useState } from 'react'
 import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 
-export default function AvaliacoesRecebidasEstabelecimento() {
+export default function AvaliacoesRecebidasContratante() {
   const { usuario } = useAuth()
   const [avaliacoes, setAvaliacoes] = useState([])
   const [carregando, setCarregando] = useState(true)
@@ -16,13 +16,13 @@ export default function AvaliacoesRecebidasEstabelecimento() {
       try {
         const q = query(
           collection(db, 'chamadas'),
-          where('estabelecimentoUid', '==', usuario.uid)
+          where('contratanteUid', '==', usuario.uid)
         )
 
         const snap = await getDocs(q)
         const avaliadas = snap.docs
           .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(chamada => chamada.avaliacaoEstabelecimento?.nota)
+          .filter(chamada => chamada.avaliacaoContratante?.nota)
 
         setAvaliacoes(avaliadas)
       } catch (err) {
@@ -55,9 +55,9 @@ export default function AvaliacoesRecebidasEstabelecimento() {
             👨‍🍳 Freela: {chamada.freelaNome || '---'}
           </p>
           <p className="text-gray-800 italic mt-1">
-            "{chamada.avaliacaoEstabelecimento?.comentario || 'Sem comentário'}"
+            "{chamada.avaliacaoContratante?.comentario || 'Sem comentário'}"
           </p>
-          <p className="text-yellow-600 mt-2">⭐ Nota: {chamada.avaliacaoEstabelecimento?.nota || '--'}</p>
+          <p className="text-yellow-600 mt-2">⭐ Nota: {chamada.avaliacaoContratante?.nota || '--'}</p>
         </div>
       ))}
     </div>

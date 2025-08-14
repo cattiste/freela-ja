@@ -1,103 +1,148 @@
-import React, { useEffect, useState } from 'react'
-import { collection, query, where, onSnapshot, doc, updateDoc, getDoc } from 'firebase/firestore'
-import { db } from '@/firebase'
-import { useAuth } from '@/context/AuthContext'
+﻿// ChamadasContratante.jsx – revisão para garantir exibição do status 'aceita'
 
-export default function ChamadasContratante() {
-  const { usuario } = useAuth()
+import React, { useEffect, useState } from 'react'
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  updateDoc,
+  doc,
+  serverTimestamp
+} from 'firebase/firestore'
+import { db } from '@/firebase'
+import { toast } from 'react-hot-toast'
+import AvaliacaoInline from '@/components/AvaliacaoInline'
+import MensagensRecebidasContratante from '@/components/MensagensRecebidasContratante'
+
+export default function ChamadasContratante({ contratante }) {
   const [chamadas, setChamadas] = useState([])
+  const [loadingId, setLoadingId] = useState(null)
 
   useEffect(() => {
-    if (!usuario?.uid) return
+    if (!contratante?.uid) return
 
     const q = query(
       collection(db, 'chamadas'),
-      where('contratanteUid', '==', usuario.uid),
-      where('status', 'in', [
-        'pendente',
-        'aceita',
-        'confirmada',
-        'checkin_freela',
-        'checkout_freela',
-        'concluido'
-      ])
+      where('contratanteUid', '==', contratante.uid),
+      where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'concluido'])
     )
 
-    const unsub = onSnapshot(q, async (snap) => {
-      const chamadasComFreela = await Promise.all(
-        snap.docs.map(async (docSnap) => {
-          const dados = docSnap.data()
-          const freelaRef = doc(db, 'usuarios', dados.freelaUid)
-          const freelaSnap = await getDoc(freelaRef)
-          return {
-            id: docSnap.id,
-            ...dados,
-            freela: freelaSnap.exists() ? freelaSnap.data() : null
-          }
-        })
-      )
-      setChamadas(chamadasComFreela)
+    const unsub = onSnapshot(q, (snap) => {
+      const todasChamadas = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+
+      const unicas = {}
+      todasChamadas.forEach((chamada) => {
+        const existente = unicas[chamada.freelaUid]
+        const novaData = chamada.criadoEm?.toMillis?.() || 0
+        const dataExistente = existente?.criadoEm?.toMillis?.() || 0
+
+        if (!existente || novaData > dataExistente) {
+          unicas[chamada.freelaUid] = chamada
+        }
+      })
+
+      setChamadas(Object.values(unicas))
     })
 
     return () => unsub()
-  }, [usuario])
+  }, [contratante])
 
-  const atualizarStatus = async (id, novoStatus) => {
-    await updateDoc(doc(db, 'chamadas', id), { status: novoStatus })
+  const atualizarChamada = async (id, dados) => {
+    try {
+      setLoadingId(id)
+      await updateDoc(doc(db, 'chamadas', id), dados)
+      toast.success('✅ Ação realizada com sucesso!')
+    } catch (err) {
+      console.error('Erro ao atualizar chamada:', err)
+      toast.error('Erro ao atualizar chamada.')
+    } finally {
+      setLoadingId(null)
+    }
+  }
+
+  const badgeStatus = (status) => {
+    const cores = {
+      aceita: 'bg-yellow-200 text-yellow-700',
+      checkin_freela: 'bg-purple-200 text-purple-700',
+      em_andamento: 'bg-green-200 text-green-700',
+      checkout_freela: 'bg-blue-200 text-blue-700',
+      concluido: 'bg-gray-200 text-gray-700'
+    }
+    return (
+      <span className={`px-2 py-1 rounded text-xs font-semibold ${cores[status] || 'bg-gray-200 text-gray-700'}`}>
+         {String(status).replaceAll('_', ' ')}
+      </span>
+    )
+  }
+
+  if (!chamadas.length) {
+    return <div className="text-center mt-6 text-gray-500">Nenhuma chamada ativa no momento.</div>
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <h2 className="text-xl font-bold">📞 Chamadas Ativas</h2>
+    <div className="space-y-4">
+      {chamadas.map((chamada) => {
+        // Mostrar todas, inclusive 'aceita'
+        const foto = chamada.freelaFoto || chamada.freela?.foto || 'https://placehold.co/100x100'
+        const nome = chamada.freelaNome || chamada.freela?.nome || 'Nome não informado'
 
-      {chamadas.map((chamada) => (
-        <div key={chamada.id} className="bg-white p-4 rounded shadow space-y-2">
-          <div className="flex items-center gap-4">
-            <img
-              src={chamada.freela?.foto || 'https://via.placeholder.com/100'}
-              alt="Foto do freela"
-              className="w-16 h-16 rounded-full object-cover"
-            />
-            <div>
-              <h3 className="font-semibold text-lg">{chamada.freela?.nome || 'Freela'}</h3>
-              <p className="text-sm text-gray-600">{chamada.freela?.funcao}</p>
-              <p className="text-sm text-gray-600">Especialidade: {chamada.freela?.especialidade}</p>
-              <p className="text-sm text-gray-600">Valor diária: R${chamada.freela?.valorDiaria}</p>
-              <p className="text-sm text-gray-500">Status: {chamada.status}</p>
+        return (
+          <div key={chamada.id} className="bg-white rounded-xl p-3 shadow border border-orange-100 space-y-2">
+            <div className="flex items-center gap-3">
+              <img
+                src={foto}
+                alt={nome}
+                className="w-10 h-10 rounded-full border border-orange-300 object-cover"
+              />
+              <div className="flex-1">
+                <p className="font-bold text-orange-600">{nome}</p>
+                {chamada.valorDiaria && (
+                  <p className="text-xs text-gray-500">💰 R$ {chamada.valorDiaria} / diária</p>
+                )}
+                <p className="text-sm mt-1">📌 Status: {badgeStatus(chamada.status)}</p>
+                <MensagensRecebidasContratante chamadaId={chamada.id} />
+              </div>
             </div>
+
+            {chamada.checkInFreela === true && !chamada.checkInContratante && (
+              <button
+                onClick={() =>
+                  atualizarChamada(chamada.id, {
+                    checkInContratante: true,
+                    checkInContratanteHora: serverTimestamp(),
+                    status: 'em_andamento'
+                  })
+                }
+                disabled={loadingId === chamada.id}
+                className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+              >
+                {loadingId === chamada.id ? 'Confirmando...' : '✅ Confirmar Check-in'}
+              </button>
+            )}
+
+            {chamada.checkOutFreela === true && !chamada.checkOutContratante && (
+              <button
+                onClick={() =>
+                  atualizarChamada(chamada.id, {
+                    checkOutContratante: true,
+                    checkOutContratanteHora: serverTimestamp(),
+                    status: 'concluido'
+                  })
+                }
+                disabled={loadingId === chamada.id}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+              >
+                {loadingId === chamada.id ? 'Confirmando...' : '📤 Confirmar Check-out'}
+              </button>
+            )}
+
+            {chamada.status === 'concluido' && (
+              <AvaliacaoInline chamada={chamada} tipo="contratante" />
+            )}
           </div>
-
-          {/* Botões dinâmicos com base no status */}
-          <div className="flex flex-wrap gap-2 mt-2">
-            {chamada.status === 'aceita' && (
-              <button
-                onClick={() => atualizarStatus(chamada.id, 'confirmada')}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded"
-              >
-                ✅ Confirmar Chamada
-              </button>
-            )}
-
-            {chamada.status === 'checkin_freela' && (
-              <button
-                onClick={() => atualizarStatus(chamada.id, 'checkin_estabelecimento')}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
-              >
-                📍 Confirmar Check-in
-              </button>
-            )}
-
-            {chamada.status === 'checkout_freela' && (
-              <button
-                onClick={() => atualizarStatus(chamada.id, 'concluido')}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded"
-              >
-                ⏹ Confirmar Check-out
-              </button>
-            )}
-          </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

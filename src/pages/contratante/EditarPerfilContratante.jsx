@@ -1,126 +1,150 @@
-// src/pages/contratante/EditarPerfilContratante.jsx
+﻿// src/pages/contratante/EditarPerfilContratante.jsx
 import React, { useEffect, useState } from 'react'
-import { useAuth } from '@/context/AuthContext'
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/firebase'
-import { uploadFoto } from '@/utils/uploadFoto'
+import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { auth, db } from '@/firebase'
+import { useNavigate } from 'react-router-dom'
+import { onAuthStateChanged } from 'firebase/auth'
 
 export default function EditarPerfilContratante() {
-  const { usuario } = useAuth()
-  const [form, setForm] = useState({
-    nome: '',
-    cpfCnpj: '',
-    celular: '',
-    endereco: '',
-    foto: ''
-  })
+  const navigate = useNavigate()
+  const [dados, setDados] = useState({})
+  const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  const [foto, setFoto] = useState('')
 
   useEffect(() => {
-    async function fetchPerfil() {
-      try {
-        const ref = doc(db, 'usuarios', usuario.uid)
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const ref = doc(db, 'usuarios', user.uid)
         const snap = await getDoc(ref)
+
         if (snap.exists()) {
           const data = snap.data()
-          setForm({
-            nome: data.nome || '',
-            cpfCnpj: data.cpfCnpj || '',
-            celular: data.celular || '',
-            endereco: data.endereco || '',
-            foto: data.foto || ''
-          })
+          setDados(data)
+          setFoto(data.foto || '')
         }
-      } catch (err) {
-        console.error('Erro ao carregar perfil:', err)
+
+        setCarregando(false)
+      } else {
+        navigate('/login')
       }
-    }
-    if (usuario?.uid) fetchPerfil()
-  }, [usuario])
+    })
 
-  const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }))
+    return () => unsubscribe()
+  }, [navigate])
 
-  const onSelectFoto = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const handleChange = (e) => {
+    setDados({ ...dados, [e.target.name]: e.target.value })
+  }
+
+  const handleUpload = async (e) => {
+    const arquivo = e.target.files[0]
+    if (!arquivo) return
+
     try {
-      setUploading(true)
-      const url = await uploadFoto(file)
-      setForm((p) => ({ ...p, foto: url }))
+      const formData = new FormData()
+      formData.append('file', arquivo)
+      formData.append('upload_preset', 'preset-publico') // 🔁 substitua se seu preset tiver outro nome
+      formData.append('folder', 'perfil/fotos')
+
+      const res = await fetch('https://api.cloudinary.com/v1_1/dbemvuau3/image/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setFoto(data.secure_url)
+        alert('✅ Imagem enviada com sucesso!')
+      } else {
+        throw new Error('Erro no upload da imagem')
+      }
     } catch (err) {
-      console.error(err)
-      alert('Erro ao enviar a foto.')
-    } finally {
-      setUploading(false)
+      console.error('Erro no upload:', err)
+      alert('Erro ao enviar imagem.')
     }
   }
 
-  const salvar = async (e) => {
-    e.preventDefault()
-    if (!usuario?.uid) return alert('Usuário não identificado.')
+  const salvar = async () => {
     setSalvando(true)
     try {
-      const ref = doc(db, 'usuarios', usuario.uid)
-      await setDoc(ref, {
-        ...form,
-        atualizadoEm: serverTimestamp()
-      }, { merge: true })
-      alert('✅ Perfil atualizado!')
+      const ref = doc(db, 'usuarios', auth.currentUser.uid)
+      await updateDoc(ref, { ...dados, foto })
+      alert('✅ Perfil atualizado com sucesso!')
+      navigate('/painelcontratante')
     } catch (err) {
-      console.error('Erro ao salvar perfil:', err)
-      alert('Erro ao salvar perfil.')
+      console.error(err)
+      alert('Erro ao atualizar perfil.')
     } finally {
       setSalvando(false)
     }
   }
 
+  if (carregando) return <p className="p-4 text-orange-600">Carregando dados...</p>
+
   return (
-    <div className="p-4 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold text-orange-700 mb-4">✏️ Editar Perfil</h1>
-      <form onSubmit={salvar} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Nome</label>
-          <input name="nome" value={form.nome} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
+    <div className="min-h-screen p-6 bg-orange-50 flex justify-center items-center">
+      <div className="bg-white p-6 rounded-2xl shadow-md w-full max-w-xl space-y-4">
+        <h2 className="text-2xl font-bold text-orange-700">✏️ Editar Perfil do Contratante</h2>
+
+        <div className="flex items-center gap-4">
+          <img
+            src={foto || 'https://placehold.co/100x100'}
+            alt="Foto do Contratante"
+            className="w-20 h-20 rounded-full object-cover border border-orange-500"
+          />
+          <input type="file" accept="image/*" onChange={handleUpload} />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">CPF ou CNPJ</label>
-          <input name="cpfCnpj" value={form.cpfCnpj} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
-        </div>
+        <label className="block text-sm font-medium">Nome</label>
+        <input
+          name="nome"
+          value={dados.nome || ''}
+          onChange={handleChange}
+          className="input"
+        />
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Celular</label>
-          <input name="celular" value={form.celular} onChange={handleChange} className="w-full border rounded px-3 py-2" />
-        </div>
+        <label className="block text-sm font-medium">Especialidade</label>
+        <input
+          name="especialidade"
+          value={dados.especialidade || ''}
+          onChange={handleChange}
+          className="input"
+        />
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Endereço</label>
-          <input name="endereco" value={form.endereco} onChange={handleChange} className="w-full border rounded px-3 py-2" />
-        </div>
+        <label className="block text-sm font-medium">Celular</label>
+        <input
+          name="celular"
+          value={dados.celular || ''}
+          onChange={handleChange}
+          className="input"
+        />
 
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">Foto</label>
-          {form.foto ? (
-            <div className="flex items-center gap-3">
-              <img src={form.foto} alt="foto" className="w-16 h-16 rounded object-cover border" />
-              <button type="button" onClick={() => setForm((p) => ({ ...p, foto: '' }))} className="text-sm underline">
-                Trocar foto
-              </button>
-            </div>
-          ) : (
-            <input type="file" accept="image/*" onChange={onSelectFoto} className="w-full" />
-          )}
-          {uploading && <p className="text-sm text-orange-600">Enviando foto...</p>}
-        </div>
+        <label className="block text-sm font-medium">Endereço</label>
+        <input
+          name="endereco"
+          value={dados.endereco || ''}
+          onChange={handleChange}
+          className="input"
+        />
+
+        <label className="block text-sm font-medium">CNPJ</label>
+        <input
+          name="cnpj"
+          value={dados.cnpj || ''}
+          onChange={handleChange}
+          className="input"
+        />
 
         <button
-          type="submit"
-          disabled={salvando || uploading}
-          className="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition disabled:opacity-50"
+          onClick={salvar}
+          disabled={salvando}
+          className="w-full mt-4 bg-orange-600 text-white py-2 rounded hover:bg-orange-700 transition disabled:opacity-50"
         >
-          {salvando ? 'Salvando...' : 'Salvar'}</button>
-      </form>
+          {salvando ? 'Salvando...' : 'Salvar Alterações'}
+        </button>
+      </div>
     </div>
   )
 }
