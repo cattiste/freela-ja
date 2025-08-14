@@ -3,14 +3,11 @@ import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
-import 'react-calendar/dist/Calendar.css'
-import '@/styles/estiloAgenda.css'
-import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 
 import MenuInferiorContratante from '@/components/MenuInferiorContratante'
 import PerfilContratanteCard from './PerfilContratanteCard'
-import ChamadasContratante from './ChamadasContratante'
-import AvaliacoesRecebidasContratante from './AvaliacoesRecebidasContratante'
+import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
+import AvaliacoesRecebidasEstabelecimento from '@/pages/estabelecimento/AvaliacoesRecebidasEstabelecimento'
 import AgendasContratadas from '@/components/AgendasContratadas'
 
 export default function PainelContratante() {
@@ -51,12 +48,12 @@ export default function PainelContratante() {
 
         <div className="bg-white p-4 rounded-2xl shadow-md">
           <h2 className="text-xl font-bold mb-2">Avaliações Recebidas</h2>
-          <AvaliacoesRecebidasContratante uid={usuario.uid} />
+          <AvaliacoesRecebidasEstabelecimento uid={usuario.uid} />
         </div>
 
         <div className="bg-white p-4 rounded-2xl shadow-md">
           <h2 className="text-xl font-bold mb-2">Chamadas Ativas</h2>
-          <ChamadasContratante chamadas={chamadas} />
+          <ChamadasEstabelecimento chamadas={chamadas} />
         </div>
       </div>
 
