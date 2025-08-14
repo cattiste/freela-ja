@@ -187,27 +187,27 @@ export default function CadastroFreela() {
 
       const ref = doc(db, 'usuarios', uid)
       const payload = {
-        uid,
-        email: auth.currentUser?.email || cred.email || '',
-        nome: form.nome.trim(),
-        cpf: cpfNum,
-        funcao: form.funcao.trim(),
-        especialidades: form.especialidades
-          ? form.especialidades.split(',').map((s) => s.trim()).filter(Boolean)
-          : [],
-        valorDiaria: form.valorDiaria !== '' ? Number(form.valorDiaria) : null,
-        celular: form.celular.trim(),
-        cidade: form.cidade.trim(),
-        endereco: form.endereco.trim(),
-        foto: form.foto || '',
-        tipoUsuario: 'freela',
-        tipoConta: 'funcional',
-        aceitouContrato: true,
-        versaoContrato: VERSAO_CONTRATO,
-        dataAceiteContrato: serverTimestamp(),
-        atualizadoEm: serverTimestamp(),
-        criadoEm: serverTimestamp()
-      }
+       uid,
+       email: auth.currentUser?.email || cred.email || '',
+       nome: form.nome.trim(),
+       cpf: cpfNum,
+       funcao: form.funcao.trim(),
+       especialidades: form.especialidades
+         ? form.especialidades.split(',').map((s) => s.trim()).filter(Boolean)
+         : [],
+       valorDiaria: form.valorDiaria !== '' ? Number(form.valorDiaria) : null,
+       celular: form.celular.trim(),
+       cidade: form.cidade.trim(),
+       endereco: form.endereco.trim(),
+       foto: form.foto || '',
+       tipo: 'freela', // ✅ agora padrão da plataforma
+       aceitouContrato: true,
+       versaoContrato: VERSAO_CONTRATO,
+       dataAceiteContrato: serverTimestamp(),
+       atualizadoEm: serverTimestamp(),
+       criadoEm: serverTimestamp()
+     }
+
 
       await setDoc(ref, payload, { merge: true })
       alert('✅ Cadastro salvo com sucesso!')
