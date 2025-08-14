@@ -288,7 +288,7 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
           return (
             <ProfissionalCard
               key={f.id}
-              prof={f}
+              freela={f}
               online={f.online}
               distanciaKm={f.distanciaKm}
               hasChamadaAtiva={f.hasChamadaAtiva}
