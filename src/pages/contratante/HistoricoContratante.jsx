@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { db } from '@/firebase'
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore'
 import { useAuth } from '@/context/AuthContext'
-import ChamadaInline from '@/components/ChamadaInline'
+
 
 export default function HistoricoContratante() {
   const { usuario } = useAuth()
