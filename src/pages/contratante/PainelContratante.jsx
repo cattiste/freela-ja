@@ -128,7 +128,7 @@ export default function PainelContratante() {
             </div>
 
             <button
-              onClick={() => nav('/contratante/editarperfil')}
+              onClick={() => nav('/contratante/editarperfilcontratante')}
               className="mt-4 w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition"
             >
               ✏️ Editar Perfil
