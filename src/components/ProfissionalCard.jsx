@@ -1,4 +1,3 @@
-// ProfissionalCard.jsx
 import React, { useState } from 'react'
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -27,52 +26,45 @@ export default function ProfissionalCard({ freela, usuario, emChamada }) {
   }
 
   return (
-    <div className="bg-white rounded-xl p-4 border border-orange-100 shadow">
-      <div className="flex items-center gap-4">
+    <div className="bg-white rounded-lg p-3 border border-orange-100 shadow-sm space-y-2">
+      <div className="flex items-center gap-3">
         <img
           src={freela.foto || '/placeholder-avatar.png'}
           alt={freela.nome}
-          className="w-14 h-14 rounded-full object-cover border border-orange-200"
+          className="w-12 h-12 rounded-full object-cover border border-orange-200"
         />
-        <div>
-          <h3 className="text-orange-700 font-semibold">{freela.nome}</h3>
-          <p className="text-sm text-gray-600">
+        <div className="flex flex-col">
+          <span className="text-orange-700 font-semibold text-sm">{freela.nome}</span>
+          <span className="text-xs text-gray-600">
             {freela.funcao || 'Função não informada'}
-          </p>
-          <div className="flex gap-3 text-sm mt-1">
-            <span className="px-2 py-1 rounded-md bg-gray-100">
-              Distância:{' '}
-              <strong>
-                {freela.distancia != null
-                  ? `${freela.distancia.toFixed(1)} km`
-                  : '—'}
-              </strong>
-            </span>
-            <span className="px-2 py-1 rounded-md bg-orange-100">
-              Diária: <strong>R$ {freela.valorDiaria?.toFixed(2)}</strong>
-            </span>
-          </div>
+            {freela.especialidade && ` / ${freela.especialidade}`}
+          </span>
         </div>
       </div>
 
-      <div className="mt-4">
-        {emChamada ? (
-          <button
-            disabled
-            className="w-full py-2 rounded-lg bg-green-50 text-green-700 border border-green-200"
-          >
-            Chamada em andamento
-          </button>
-        ) : (
-          <button
-            onClick={chamar}
-            disabled={enviando}
-            className="w-full py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white"
-          >
-            {enviando ? 'Enviando...' : 'Chamar'}
-          </button>
-        )}
+      <div className="flex justify-between text-sm text-gray-600">
+        <span>
+          Distância:{' '}
+          <strong>
+            {freela.distancia != null ? `${freela.distancia.toFixed(1)} km` : '—'}
+          </strong>
+        </span>
+        <span>
+          Diária: <strong>R$ {freela.valorDiaria?.toFixed(2)}</strong>
+        </span>
       </div>
+
+      <button
+        onClick={chamar}
+        disabled={enviando || emChamada}
+        className={`w-full py-1.5 text-sm rounded-md transition ${
+          emChamada
+            ? 'bg-green-100 text-green-700 border border-green-300 cursor-not-allowed'
+            : 'bg-orange-600 hover:bg-orange-700 text-white'
+        }`}
+      >
+        {emChamada ? 'Chamada em andamento' : enviando ? 'Enviando...' : 'Chamar'}
+      </button>
     </div>
   )
 }

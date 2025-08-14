@@ -5,6 +5,13 @@ import {
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import ProfissionalCard from '@/components/ProfissionalCard'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+import { useRealtimePresence } from '@/hooks/useRealtimePresence'
+
+export default function BuscarFreelas() {
+  const { usuario } = useAuth()
+  const statusMap = useOnlineStatus() // ← mapa com uid -> status
+  useRealtimePresence(usuario?.uid)   // ← marca como online no RTDB
 
 // --- Fallback de avatar (sem depender de via.placeholder.com)
 const AvatarFallback = ({ className }) => (
@@ -81,7 +88,7 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
   const [carregando, setCarregando] = useState(true)
   const [chamandoUid, setChamandoUid] = useState(null)
   const [freelasComChamadaAtiva, setFreelasComChamadaAtiva] = useState(() => new Set()) // freelas com chamada ativa
-
+  
   // 1) Buscar dados do estabelecimento logado (para ter localizacao)
   useEffect(() => {
     let ativo = true
