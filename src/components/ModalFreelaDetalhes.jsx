@@ -1,8 +1,35 @@
-// src/components/ModalFreelaDetalhes.jsx
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import { collection, query, where, getDocs } from 'firebase/firestore'
+import { db } from '@/firebase'
 
 export default function ModalFreelaDetalhes({ freela, onClose }) {
+  const [avaliacoes, setAvaliacoes] = useState([])
+
+  useEffect(() => {
+    async function loadAvaliacoes() {
+      if (!freela?.id) return
+      const q = query(
+        collection(db, 'avaliacoes'),
+        where('avaliadoId', '==', freela.id),
+        where('tipo', '==', 'freela')
+      )
+      const snap = await getDocs(q)
+      const lista = []
+      snap.forEach(doc => lista.push(doc.data()))
+      setAvaliacoes(lista)
+    }
+
+    if (freela?.id) {
+      loadAvaliacoes()
+    }
+  }, [freela?.id])
+
   if (!freela) return null
+
+  const media =
+    avaliacoes.length > 0
+      ? avaliacoes.reduce((soma, a) => soma + (a.nota || 0), 0) / avaliacoes.length
+      : null
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
@@ -26,16 +53,26 @@ export default function ModalFreelaDetalhes({ freela, onClose }) {
               {freela.funcao || 'Função não informada'}
               {freela.especialidade && ` / ${freela.especialidade}`}
             </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Diária: R$ {freela.valorDiaria?.toFixed(2)}
+            </p>
           </div>
         </div>
 
         <div className="space-y-2 text-sm text-gray-700">
-          <p><strong>Distância:</strong> {freela.distanciaKm != null ? `${freela.distanciaKm.toFixed(1)} km` : '—'}</p>
-          <p><strong>Valor da diária:</strong> R$ {freela.valorDiaria?.toFixed(2)}</p>
+          <p>
+            <strong>Distância:</strong>{' '}
+            {freela.distanciaKm != null ? `${freela.distanciaKm.toFixed(1)} km` : '—'}
+          </p>
           {freela.descricao && (
             <p><strong>Descrição:</strong> {freela.descricao}</p>
           )}
-          {/* Você pode incluir mais informações aqui, como avaliações futuramente */}
+          {media !== null && (
+            <p>
+              <strong>Média de avaliação:</strong>{' '}
+              {media.toFixed(1)} ★ ({avaliacoes.length} avaliação{avaliacoes.length > 1 ? 'es' : ''})
+            </p>
+          )}
         </div>
 
         <div className="mt-4">
