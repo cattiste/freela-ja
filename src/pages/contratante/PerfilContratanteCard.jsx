@@ -15,7 +15,7 @@ export default function PerfilContratanteCard({ contratante }) {
     <div className="bg-white rounded-xl shadow p-6 space-y-4">
       <div className="flex items-center gap-4">
         <img
-          src={contratante.foto || '/placeholder.jpg'}
+          src={contratante.foto || 'https://via.placeholder.com/100'}
           alt="Foto"
           className="w-20 h-20 rounded-full object-cover border"
         />
@@ -23,8 +23,8 @@ export default function PerfilContratanteCard({ contratante }) {
           <h2 className="text-xl font-bold text-orange-700">{contratante.nome}</h2>
           <p className="text-gray-600 text-sm">{contratante.email}</p>
           <p className="text-gray-700">
-            <strong>CPF ou CNPJ:</strong>{' '}
-            {usuario?.cnpj || usuario?.cpf || 'Não informado'}
+            <strong>{contratante.cnpj ? 'CNPJ' : 'CPF'}:</strong>{' '}
+            {contratante.cnpj || contratante.cpf || 'Não informado'}
           </p>
         </div>
       </div>
@@ -33,7 +33,6 @@ export default function PerfilContratanteCard({ contratante }) {
         <strong>Endereço:</strong> {contratante.endereco || '—'}
       </p>
 
-      {/* ✅ Exibir botão só se for o dono */}
       {podeEditar && (
         <button
           onClick={() => navigate('/contratante/editarperfilcontratante')}

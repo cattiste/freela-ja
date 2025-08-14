@@ -100,7 +100,7 @@ export default function App() {
             <PainelContratante />
           </RequireRole>
         } />
-        <Route path="/contratante/editarperfil" element={
+        <Route path="/contratante/editarperfilcontratante" element={
           <RequireRole allow={['contratante', 'admin']}>
             <EditarPerfilContratante />
           </RequireRole>
