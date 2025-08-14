@@ -5,6 +5,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import { onAuthStateChanged } from 'firebase/auth'
 import InputMask from 'react-input-mask'
+import { mask as masker } from 'remask'
 
 export default function EditarPerfilContratante() {
   const navigate = useNavigate()
@@ -109,14 +110,17 @@ export default function EditarPerfilContratante() {
           <input name="endereco" value={dados.endereco || ''} onChange={handleChange} className="input" />
 
           <label className="block text-sm font-medium">CPF ou CNPJ</label>
-          <InputMask
-            mask={dados.documento?.replace(/\D/g, '').length > 11 ? '99.999.999/9999-99' : '999.999.999-99'}
-            maskChar=""
-            name="documento"
-            value={dados.documento || ''}
-            onChange={handleChange}
-            className="input"
-          />
+          <input
+            name="cnpj"
+            value={dados.cnpj || ''}
+            onChange={(e) => {
+               const raw = e.target.value.replace(/\D/g, '')
+               const masked = masker(raw, ['999.999.999-99', '99.999.999/9999-99'])
+               setDados({ ...dados, cnpj: masked })
+             }}
+             maxLength={18}
+             className="input"
+          /> 
         </div>
 
         <button
