@@ -5,22 +5,9 @@ import {
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import ProfissionalCard from '@/components/ProfissionalCard'
-import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 
-export default function BuscarFreelas() {
-  const { usuario } = useAuth()
-  const statusMap = useOnlineStatus() // ← mapa com uid -> status
-  useRealtimePresence(usuario?.uid)   // ← marca como online no RTDB
-
-// --- Fallback de avatar (sem depender de via.placeholder.com)
-const AvatarFallback = ({ className }) => (
-  <div className={`flex items-center justify-center bg-orange-100 text-orange-600 rounded-full ${className}`}>
-    <svg viewBox="0 0 24 24" className="w-1/2 h-1/2" aria-hidden="true">
-      <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.33 0-8 2.17-8 4.5V21h16v-2.5C20 16.17 16.33 14 12 14Z" />
-    </svg>
-  </div>
-)
+const ACTIVE_STATUSES = ['pendente', 'aceita', 'checkin_freela', 'em_andamento', 'checkout_freela']
 
 // --- distância geodésica (km)
 function calcularDistancia(lat1, lon1, lat2, lon2) {
@@ -44,7 +31,6 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
   return R * c
 }
 
-// --- normaliza vários formatos de localização para {lat, lon}
 function normalizeLocation(loc) {
   if (!loc) return null
   if (typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
@@ -65,7 +51,6 @@ function normalizeLocation(loc) {
   return null
 }
 
-// formata timestamp para ID customizado
 function formatarId(estabelecimentoUid) {
   const d = new Date()
   const pad = (n) => String(n).padStart(2, '0')
@@ -73,23 +58,21 @@ function formatarId(estabelecimentoUid) {
   return id
 }
 
-const ACTIVE_STATUSES = ['pendente', 'aceita', 'checkin_freela', 'em_andamento', 'checkout_freela']
-
 export default function BuscarFreelas({ usuario: usuarioProp }) {
-  // permite receber o estabelecimento por prop ou cair no contexto
   const { usuario: usuarioCtx } = useAuth()
   const usuario = usuarioProp || usuarioCtx
 
-  const [estab, setEstab] = useState(null) // doc do estabelecimento (para pegar localizacao)
-  const [freelasRaw, setFreelasRaw] = useState([]) // docs de usuarios tipo 'freela'
-  const [onlineSet, setOnlineSet] = useState(() => new Set()) // UIDs online (de /status)
+  useRealtimePresence(usuario?.uid)
+
+  const [estab, setEstab] = useState(null)
+  const [freelasRaw, setFreelasRaw] = useState([])
+  const [onlineSet, setOnlineSet] = useState(() => new Set())
   const [apenasOnline, setApenasOnline] = useState(false)
-  const [filtroFuncao, setFiltroFuncao] = useState('') // opcional, por função/cargo
+  const [filtroFuncao, setFiltroFuncao] = useState('')
   const [carregando, setCarregando] = useState(true)
   const [chamandoUid, setChamandoUid] = useState(null)
-  const [freelasComChamadaAtiva, setFreelasComChamadaAtiva] = useState(() => new Set()) // freelas com chamada ativa
-  
-  // 1) Buscar dados do estabelecimento logado (para ter localizacao)
+  const [freelasComChamadaAtiva, setFreelasComChamadaAtiva] = useState(() => new Set())
+
   useEffect(() => {
     let ativo = true
     async function loadEstab() {
@@ -104,7 +87,6 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
     return () => { ativo = false }
   }, [usuario?.uid])
 
-  // 2) Escutar freelas (coleção usuarios) — busca todos e filtra por tipo no client
   useEffect(() => {
     setCarregando(true)
     const qUsuarios = collection(db, 'usuarios')
@@ -125,12 +107,11 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
     return () => unsub()
   }, [])
 
-  // 3) Escutar /status (apenas os online) — marcamos como online se houver state === 'online'
   useEffect(() => {
     const qStatusOnline = query(collection(db, 'status'), where('state', '==', 'online'))
     const unsub = onSnapshot(qStatusOnline, (snap) => {
       const setNovo = new Set()
-      snap.forEach((d) => setNovo.add(d.id)) // id do doc = uid do usuário
+      snap.forEach((d) => setNovo.add(d.id))
       setOnlineSet(setNovo)
     }, (err) => {
       console.error('[BuscarFreelas] onSnapshot status erro:', err)
@@ -138,7 +119,6 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
     return () => unsub()
   }, [])
 
-  // 3b) Escutar chamadas ativas do ESTABELECIMENTO: marca quais freelas já têm chamada ativa
   useEffect(() => {
     if (!usuario?.uid) return
     const qChamadasAtivas = query(
@@ -159,7 +139,6 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
     return () => unsub()
   }, [usuario?.uid])
 
-  // 4) Montar lista com distância e status online (com normalização de localização)
   const freelasDecorados = useMemo(() => {
     const E = normalizeLocation(estab?.localizacao)
 
@@ -176,22 +155,18 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
         return { ...f, online, distanciaKm, hasChamadaAtiva }
       })
       .filter((f) => {
-        // filtro por função (se preenchido)
         const ff = (filtroFuncao || '').trim().toLowerCase()
         const okFuncao = ff
           ? (String(f.funcao || '').toLowerCase().includes(ff) ||
              String(f.especialidade || '').toLowerCase().includes(ff))
           : true
 
-        // se "apenasOnline", filtra
-        const okOnline = apenasOnline ? f.online === true : true
+        const okOnline = apenasOnline ? Boolean(f.online) === true : true
 
         return okFuncao && okOnline
       })
       .sort((a, b) => {
-        // 1) online primeiro
         if (a.online !== b.online) return a.online ? -1 : 1
-        // 2) distância (nulls vão pro fim)
         if (a.distanciaKm == null && b.distanciaKm == null) return 0
         if (a.distanciaKm == null) return 1
         if (b.distanciaKm == null) return -1
@@ -199,19 +174,16 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
       })
   }, [freelasRaw, onlineSet, estab?.localizacao, filtroFuncao, apenasOnline, freelasComChamadaAtiva])
 
-  // 5) Criar chamada (bloqueia se já existir ativa para este freela)
   async function chamarFreela(freela) {
     if (!usuario?.uid) return alert('Você precisa estar autenticado como estabelecimento.')
     try {
       setChamandoUid(freela.id)
 
-      // 5a) Checagem rápida pelo Set em memória
       if (freelasComChamadaAtiva.has(freela.id)) {
         alert('Já existe uma chamada ativa com este freela.')
         return
       }
 
-      // 5b) Checagem de segurança na base (evita corrida)
       const qCheck = query(
         collection(db, 'chamadas'),
         where('estabelecimentoUid', '==', usuario.uid),
@@ -226,18 +198,14 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
 
       const id = formatarId(usuario.uid)
       const chamada = {
-        // chaves
         idPersonalizado: id,
         estabelecimentoUid: usuario.uid,
         estabelecimentoNome: usuario.nome || '',
         freelaUid: freela.id,
         freelaNome: freela.nome || '',
-        // valores
         valorDiaria: typeof freela.valorDiaria === 'number' ? freela.valorDiaria : 0,
-        // localização (se quiser usar depois)
         estabelecimentoLocalizacao: estab?.localizacao || null,
         freelaLocalizacao: freela?.localizacao || null,
-        // status/controle
         status: 'pendente',
         criadoEm: serverTimestamp(),
       }
@@ -290,21 +258,16 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {freelasDecorados.map((f) => {
-          if (!f?.id || !f?.nome) return null // segurança extra
-          return (
-            <ProfissionalCard
-              key={f.id}
-              freela={f}
-              online={f.online}
-              distanciaKm={f.distanciaKm}
-              hasChamadaAtiva={f.hasChamadaAtiva}
-              onChamar={() => chamarFreela(f)}
-              chamandoUid={chamandoUid}
-              AvatarFallback={AvatarFallback}
-           />
-         )
-       })}
+        {freelasDecorados.map((f) => (
+          <ProfissionalCard
+            key={f.id}
+            freela={f}
+            online={f.online}
+            distanciaKm={f.distanciaKm}
+            emChamada={f.hasChamadaAtiva}
+            usuario={usuario}
+          />
+        ))}
       </div>
     </div>
   )
