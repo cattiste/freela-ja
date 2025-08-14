@@ -6,7 +6,6 @@ import { createUserWithEmailAndPassword, onAuthStateChanged } from 'firebase/aut
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import ContratoPrestacaoServico from '@/components/ContratoPrestacaoServico'
-import InputMask from 'react-input-mask'
 
 const VERSAO_CONTRATO = '1.0.0'
 
@@ -54,7 +53,27 @@ export default function CadastroContratante() {
     return () => unsub()
   }, [])
 
-  const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }))
+  const handleChange = (e) => {
+    const { name, value } = e.target
+
+    if (name === 'cpfOuCnpj') {
+      const raw = value.replace(/\D/g, '')
+      let formatado = raw
+
+      if (raw.length <= 11) {
+        // CPF
+        formatado = raw.replace(/^(\d{3})(\d{3})(\d{3})(\d{0,2})$/, '$1.$2.$3-$4')
+      } else {
+        // CNPJ
+        formatado = raw.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})$/, '$1.$2.$3/$4-$5')
+      }
+
+      setForm((p) => ({ ...p, [name]: formatado }))
+    } else {
+      setForm((p) => ({ ...p, [name]: value }))
+    }
+  }
+
   const handleCred = (e) => setCred((p) => ({ ...p, [e.target.name]: e.target.value }))
 
   const onSelectFoto = async (e) => {
@@ -86,8 +105,8 @@ export default function CadastroContratante() {
       return alert('Preencha os campos obrigatórios.')
     }
 
-    const digitsOnly = form.cpfOuCnpj.replace(/\D/g, '')
-    const tipoConta = digitsOnly.length === 14 ? 'estabelecimento' : 'pessoa_fisica'
+    const rawDoc = form.cpfOuCnpj.replace(/\D/g, '')
+    const tipoConta = rawDoc.length > 11 ? 'comercial' : 'pessoa_fisica'
 
     const payload = {
       uid,
@@ -130,26 +149,8 @@ export default function CadastroContratante() {
         </div>
 
         <input name="nome" value={form.nome} onChange={handleChange} placeholder="Nome completo ou fantasia" required className="w-full border px-3 py-2 rounded" />
-
-        <InputMask
-          mask={form.cpfOuCnpj.replace(/\D/g, '').length > 11 ? '99.999.999/9999-99' : '999.999.999-99'}
-          name="cpfOuCnpj"
-          value={form.cpfOuCnpj}
-          onChange={handleChange}
-          placeholder="CPF ou CNPJ"
-          required
-          className="w-full border px-3 py-2 rounded"
-        />
-
-        <InputMask
-          mask="(99) 99999-9999"
-          name="celular"
-          value={form.celular}
-          onChange={handleChange}
-          placeholder="Celular"
-          className="w-full border px-3 py-2 rounded"
-        />
-
+        <input name="cpfOuCnpj" value={form.cpfOuCnpj} onChange={handleChange} placeholder="CPF ou CNPJ" required className="w-full border px-3 py-2 rounded" />
+        <input name="celular" value={form.celular} onChange={handleChange} placeholder="Celular" className="w-full border px-3 py-2 rounded" />
         <input name="endereco" value={form.endereco} onChange={handleChange} placeholder="Endereço" required className="w-full border px-3 py-2 rounded" />
         <input name="especialidade" value={form.especialidade} onChange={handleChange} placeholder="Especialidade" className="w-full border px-3 py-2 rounded" />
 
