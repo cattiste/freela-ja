@@ -57,7 +57,7 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
   const { usuario: usuarioCtx } = useAuth()
   const usuario = usuarioProp || usuarioCtx
 
-  useRealtimePresence(usuario?.uid)
+  useRealtimePresence(usuario)
 
   const [estab, setEstab] = useState(null)
   const [freelasRaw, setFreelasRaw] = useState([])
