@@ -283,18 +283,21 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {freelasDecorados.map((f) => (
-          <ProfissionalCard
-            key={f.id}
-            prof={f}
-            online={f.online}
-            distanciaKm={f.distanciaKm}
-            hasChamadaAtiva={f.hasChamadaAtiva}
-            onChamar={() => chamarFreela(f)}
-            chamandoUid={chamandoUid}
-            AvatarFallback={AvatarFallback}
-          />
-        ))}
+        {freelasDecorados.map((f) => {
+          if (!f?.id || !f?.nome) return null // segurança extra
+          return (
+            <ProfissionalCard
+              key={f.id}
+              prof={f}
+              online={f.online}
+              distanciaKm={f.distanciaKm}
+              hasChamadaAtiva={f.hasChamadaAtiva}
+              onChamar={() => chamarFreela(f)}
+              chamandoUid={chamandoUid}
+              AvatarFallback={AvatarFallback}
+           />
+         )
+       })}
       </div>
     </div>
   )
