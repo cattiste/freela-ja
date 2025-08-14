@@ -34,13 +34,11 @@ import PainelEstabelecimento from '@/pages/estabelecimento/PainelEstabelecimento
 import EditarPerfilEstabelecimento from '@/pages/estabelecimento/EditarPerfilEstabelecimento'
 import PublicarVaga from '@/pages/estabelecimento/PublicarVaga'
 import PagamentoChamada from '@/pages/estabelecimento/PagamentoChamada'
+import CadastroContratante from '@/pages/contratante/CadastroContratante'
+import PainelContratante from '@/pages/contratante/PainelContratante'
+import EditarPerfilContratante from '@/pages/contratante/EditarPerfilContratante'
+import PerfilContratante from '@/pages/contratante/PerfilContratante'
 
-// Pessoa Física
-import PainelPessoaFisica from '@/pages/pf/PainelPessoaFisica'
-import CandidaturasPF from '@/pages/pf/CandidaturasPF'
-import AgendaEventosPF from '@/pages/pf/AgendaEventosPF'
-import EditarPerfilPessoaFisica from '@/pages/pf/EditarPerfilPessoaFisica'
-import PerfilPessoaFisica from '@/pages/pf/PerfilPessoaFisica'
 
 export default function App() {
   return (
@@ -56,8 +54,7 @@ export default function App() {
         <Route path="/pagamentoevento/:id" element={<PagamentoEvento />} />
         <Route path="/eventoconfirmado" element={<EventoConfirmado />} />
         <Route path="/meuseventos" element={<EventosPendentes />} />
-        <Route path="/freela/buscareventos" element={<BuscarEventos />} />
-        <Route path="/cadastropf" element={<CadastroPessoaFisica />} />
+        <Route path="/freela/buscareventos" element={<BuscarEventos />} />        
         <Route path="/pagamentopix" element={<PagamentoPix />} />
         <Route path="/admin" element={<DashboardAdmin />} />
         <Route path="/privacidade" element={<Privacidade />} />
@@ -91,41 +88,23 @@ export default function App() {
         <Route path="/publicarvaga" element={<PublicarVaga />} />
         <Route path="/pagamentochamada/:id" element={<PagamentoChamada />} />
 
-        {/* 👤 Pessoa Física */}
-        <Route
-          path="/pf"
-          element={
-            <RequireRole allow={['pessoa_fisica','admin']}>
-              <PainelPessoaFisica/>
-            </RequireRole>
-          }
-        />
-        <Route
-          path="/pf/editarperfil"
-          element={
-            <RequireRole allow={['pessoa_fisica','admin']}>
-              <EditarPerfilPessoaFisica/>
-            </RequireRole>
-          }
-        />
-        <Route
-          path="/pf/buscar"
-          element={
-            <RequireRole allow={['pessoa_fisica','admin']}>
-              <BuscarFreelas />
-            </RequireRole>
-          }
-        />
-        <Route path="/pf/candidaturas" element={<CandidaturasPF />} />
-        <Route path="/pf/agenda" element={<AgendaEventosPF />} />
-
-        {/* Perfil público da Pessoa Física */}
-        <Route path="/perfilpessoafisica/:uid" element={<PerfilPessoaFisica />} />
-
+        
         {/* ✅ Redirecionamentos/ajustes */}
-        <Route path="/painelpf" element={<Navigate to="/pf" replace />} />
-        <Route path="/painelpessoafisica" element={<Navigate to="/pf" replace />} />
+       
         <Route path="/estabelecimento/chamadasestabelecimento" element={<Navigate to="/estabelecimento/ativas" />} />
+
+        <Route path="/cadastrocontratante" element={<CadastroContratante />} />
+        <Route path="/perfilcontratante/:uid" element={<PerfilContratante />} />
+        <Route path="/painelcontratante" element={<RequireRole allow={['contratante', 'admin']}>
+        <PainelContratante />
+        </RequireRole>
+         }
+       />
+       <Route path="/contratante/editarperfil" element={<RequireRole allow={['contratante', 'admin']}>
+       <EditarPerfilContratante />
+       </RequireRole>
+         }
+       />
 
         {/* 404 opcional */}
         {/* <Route path="*" element={<NotFound />} /> */}

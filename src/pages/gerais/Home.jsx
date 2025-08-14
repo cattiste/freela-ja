@@ -1,38 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react'
+// src/pages/gerais/Home.jsx
+import React from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronDown, UserPlus, LogIn, Info, Briefcase } from 'lucide-react'
+import { UserPlus, LogIn, Info, Briefcase } from 'lucide-react'
 
 export default function Home() {
-  const [mostrarCadastro, setMostrarCadastro] = useState(false)
-  const dropdownRef = useRef(null)
-  const btnRef = useRef(null)
-
-  // Fecha ao clicar fora
-  useEffect(() => {
-    function onClickOutside(e) {
-      if (!mostrarCadastro) return
-      if (dropdownRef.current?.contains(e.target)) return
-      if (btnRef.current?.contains(e.target)) return
-      setMostrarCadastro(false)
-    }
-    function onKey(e) {
-      if (e.key === 'Escape') setMostrarCadastro(false)
-    }
-    document.addEventListener('mousedown', onClickOutside)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onClickOutside)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [mostrarCadastro])
-
-  // Toggle + acessibilidade
-  const toggleDropdown = () => setMostrarCadastro((v) => !v)
-  const closeAndFocusBtn = () => {
-    setMostrarCadastro(false)
-    btnRef.current?.focus()
-  }
-
   return (
     <div
       className="min-h-screen bg-cover bg-center bg-no-repeat relative"
@@ -50,77 +21,47 @@ export default function Home() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl mb-10">
-          {/* Botão Cadastro com Dropdown */}
-          <div className="relative w-full">
-            <button
-              ref={btnRef}
-              onClick={toggleDropdown}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200 shadow"
-              aria-haspopup="menu"
-              aria-expanded={mostrarCadastro}
-              aria-controls="cadastro-menu"
-            >
-              <UserPlus className="w-5 h-5" />
-              Cadastro
-              <ChevronDown className="w-4 h-4" />
-            </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4 w-full max-w-2xl mb-10">
+          {/* Botão Cadastro Contratante */}
+          <Link
+            to="/cadastrocontratante"
+            className="w-full px-6 py-3 rounded-lg font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200 shadow flex items-center justify-center gap-2"
+          >
+            <UserPlus className="w-5 h-5" />
+            Preciso de um Freela
+          </Link>
 
-            {mostrarCadastro && (
-              <div
-                id="cadastro-menu"
-                ref={dropdownRef}
-                role="menu"
-                aria-label="Opções de cadastro"
-                className="absolute left-0 right-0 mt-1 bg-white text-black rounded-lg shadow-lg z-20 overflow-hidden"
-              >
-                <Link
-                  to="/cadastrofreela"
-                  role="menuitem"
-                  className="block px-4 py-2 hover:bg-orange-100 focus:bg-orange-100 outline-none"
-                  onClick={closeAndFocusBtn}
-                >
-                  Freelancer
-                </Link>
-                <Link
-                  to="/cadastroestabelecimento"
-                  role="menuitem"
-                  className="block px-4 py-2 hover:bg-orange-100 focus:bg-orange-100 outline-none"
-                  onClick={closeAndFocusBtn}
-                >
-                  Estabelecimento
-                </Link>
-                <Link
-                  to="/cadastropf"
-                  role="menuitem"
-                  className="block px-4 py-2 hover:bg-orange-100 focus:bg-orange-100 outline-none"
-                  onClick={closeAndFocusBtn}
-                >
-                  Pessoa Física
-                </Link>
-              </div>
-            )}
-          </div>
+          {/* Botão Cadastro Freela */}
+          <Link
+            to="/cadastrofreela"
+            className="w-full px-6 py-3 rounded-lg font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200 shadow flex items-center justify-center gap-2"
+          >
+            <UserPlus className="w-5 h-5" />
+            Sou um Freela
+          </Link>
 
+          {/* Login */}
           <Link
             to="/login"
-            className="px-6 py-3 rounded-lg font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200 shadow flex items-center justify-center gap-2"
+            className="w-full px-6 py-3 rounded-lg font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200 shadow flex items-center justify-center gap-2"
           >
             <LogIn className="w-5 h-5" />
             Login
           </Link>
 
+          {/* Oportunidades */}
           <Link
             to="/oportunidades"
-            className="px-6 py-3 rounded-lg font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200 shadow flex items-center justify-center gap-2"
+            className="w-full px-6 py-3 rounded-lg font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200 shadow flex items-center justify-center gap-2"
           >
             <Briefcase className="w-5 h-5" />
             Oportunidades
           </Link>
 
+          {/* Sobre */}
           <Link
             to="/sobre"
-            className="px-6 py-3 rounded-lg font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200 shadow flex items-center justify-center gap-2"
+            className="w-full px-6 py-3 rounded-lg font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200 shadow flex items-center justify-center gap-2"
           >
             <Info className="w-5 h-5" />
             Sobre
