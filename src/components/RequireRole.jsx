@@ -5,15 +5,13 @@ import { useAuth } from '@/context/AuthContext'
 
 const normalizeTipo = (t) => {
   if (!t) return ''
-  let s = String(t).trim().toLowerCase().replace(/\s+/g, '_')
-  if (s === 'pessoafisica') s = 'pessoa_fisica'
-  return s
+  return String(t).trim().toLowerCase().replace(/\s+/g, '_')
 }
 
 const defaultPainelDe = {
   freela: '/painelfreela',
   estabelecimento: '/painelestabelecimento',
-  pessoa_fisica: '/pf', // tua rota PF
+  contratante: '/painelcontratante',
   admin: '/admin',
 }
 
@@ -32,13 +30,12 @@ export default function RequireRole({ allow = [], children, routeMap }) {
   const tipoNorm = normalizeTipo(usuario?.tipo)
   const allowNorm = allow.map(normalizeTipo)
 
-  // admin sempre passa
+  // admin sempre tem acesso a tudo
   if (tipoNorm === 'admin') {
     return <>{children}</>
   }
 
-  // 🔧 Hotfix: se o tipo ainda não veio do perfil, não bloqueia.
-  // Isso evita cair na Home quando o doc ainda não tem "tipo" (ou está vazio).
+  // ⚠️ Se o tipo ainda não veio do Firestore, permite acesso temporariamente
   if (!tipoNorm) {
     return <>{children}</>
   }

@@ -1,6 +1,5 @@
-// src/pages/gerais/Login.jsx
 import React, { useState } from 'react'
-import { signInWithEmailAndPassword } from 'firebase/auth'
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth'
 import { useNavigate, Link } from 'react-router-dom'
 import { auth, db } from '@/firebase'
 import { doc, getDoc } from 'firebase/firestore'
@@ -11,14 +10,6 @@ export default function Login() {
   const [senha, setSenha] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
-  const resolverTipo = (u = {}) => {
-    let t = u.tipo || ''
-    if (!t && u.tipoConta === 'comercial' && u.subtipoComercial) t = u.subtipoComercial
-    if (!t && u.tipoUsuario) t = u.tipoUsuario
-    if (t === 'pf') t = 'pessoa_fisica'
-    return (t || '').toLowerCase()
-  }
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -33,14 +24,16 @@ export default function Login() {
 
       const ref = doc(db, 'usuarios', cred.user.uid)
       const snap = await getDoc(ref)
+
       if (!snap.exists()) {
-        setError('Seu cadastro ainda não foi finalizado. Tente novamente em alguns segundos.')
+        await signOut(auth)
+        setError('Seu cadastro ainda não foi finalizado. Faça novamente.')
         setLoading(false)
         return
       }
 
       const u = snap.data() || {}
-      const tipo = resolverTipo(u)
+      const tipo = (u.tipo || '').toLowerCase()
 
       const usuarioLocal = {
         uid: cred.user.uid,
@@ -51,26 +44,24 @@ export default function Login() {
         endereco: u.endereco || '',
         foto: u.foto || cred.user.photoURL || ''
       }
-      try { localStorage.setItem('usuarioLogado', JSON.stringify(usuarioLocal)) } catch {}
+
+      try {
+        localStorage.setItem('usuarioLogado', JSON.stringify(usuarioLocal))
+      } catch {}
 
       const nomeOk = !!usuarioLocal.nome?.trim()
 
       if (tipo === 'freela') {
-        // se quiser obrigar função: if (!usuarioLocal.funcao?.trim()) return navigate('/freela/editarfreela', { replace: true })
         return navigate(nomeOk ? '/painelfreela' : '/freela/editarfreela', { replace: true })
       }
 
-      if (tipo === 'estabelecimento') {
-        return navigate(nomeOk ? '/painelestabelecimento' : '/estabelecimento/editarperfil', { replace: true })
+      if (tipo === 'contratante') {
+        return navigate(nomeOk ? '/painelcontratante' : '/contratante/editarperfil', { replace: true })
       }
 
-      if (tipo === 'pessoa_fisica') {
-        // você já tem alias /painelpf -> /pf no App.jsx; mas o caminho canônico é /pf
-        return navigate(nomeOk ? '/pf' : '/pf/editarperfil', { replace: true })
-      }
-
-      // fallback
-      navigate('/', { replace: true })
+      // Se tipo desconhecido
+      await signOut(auth)
+      setError('Tipo de usuário inválido.')
     } catch (err) {
       console.error(err)
       const code = err?.code || ''

@@ -9,9 +9,7 @@ export const useAuth = () => useContext(Ctx)
 
 const normalizeTipo = (t) => {
   if (!t) return ''
-  let s = String(t).trim().toLowerCase().replace(/\s+/g, '_')
-  if (s === 'pessoafisica') s = 'pessoa_fisica'
-  return s
+  return String(t).trim().toLowerCase().replace(/\s+/g, '_')
 }
 
 export function AuthProvider({ children }) {
@@ -19,7 +17,7 @@ export function AuthProvider({ children }) {
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    // garante persistência local (não bloqueia fluxo se falhar)
+    // Garante persistência local (não bloqueia se falhar)
     setPersistence(auth, browserLocalPersistence).catch(() => {})
 
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -33,12 +31,12 @@ export function AuthProvider({ children }) {
         const ref = doc(db, 'usuarios', u.uid)
         const snap = await getDoc(ref)
 
-        // cria perfil mínimo se ainda não existir (evita tipo indefinido)
+        // Cria perfil mínimo se ainda não existir (evita tipo indefinido)
         if (!snap.exists()) {
           const perfilMinimo = {
             uid: u.uid,
             email: u.email ?? '',
-            tipo: '', // define depois no cadastro
+            tipo: '', // será definido no cadastro
             criadoEm: serverTimestamp(),
             atualizadoEm: serverTimestamp(),
           }
@@ -55,7 +53,7 @@ export function AuthProvider({ children }) {
           uid: u.uid,
           email: u.email ?? '',
           ...perfil,
-          tipo: tipoNorm, // sempre normalizado
+          tipo: tipoNorm,
         })
       } catch (e) {
         console.error('[Auth] erro ao carregar perfil:', e)
