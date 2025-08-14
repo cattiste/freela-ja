@@ -3,8 +3,8 @@ import React from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { Link } from 'react-router-dom'
 //import { formatarTelefone } from '@/utils/formatarTelefone'
-import AvaliacoesRecebidas from '@/components/AvaliacoesRecebidas'
-import AgendasContratante from '@/components/AgendasContratante'
+import AvaliacoesRecebidasContratante from './AvaliacoesRecebidasContratante'
+import AgendasContratadas from '@/components/AgendasContratadas'
 import MenuInferiorContratante from '@/components/MenuInferiorContratante'
 
 export default function PerfilContratante() {
