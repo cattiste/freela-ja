@@ -1,38 +1,37 @@
-// src/pages/contratante/PainelContratante.jsx
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useAuth } from '@/context/AuthContext'
-import { collection, query, where, onSnapshot } from 'firebase/firestore'
-import { db } from '@/firebase'
-
 import MenuInferiorContratante from '@/components/MenuInferiorContratante'
-import PerfilContratante from './PerfilContratante'
-import BuscarFreelas from '@/components/BuscarFreelas'
-import ChamadasContratante from './ChamadasContratante'
-import HistoricoContratante from './HistoricoContratante'
-import ConfiguracoesContratante from './ConfiguracoesContratante'
+import { Link } from 'react-router-dom'
 
 export default function PainelContratante() {
   const { usuario, carregando } = useAuth()
-  const [aba, setAba] = useState('perfil')
 
-  if (carregando || !usuario) return <div className="p-4">Carregando...</div>
-  if (usuario.tipo !== 'contratante') return <div className="p-4">Acesso negado.</div>
-
-  const renderAba = () => {
-    switch (aba) {
-      case 'perfil': return <PerfilContratante />
-      case 'buscar': return <BuscarFreelas tipoContratante="contratante" />
-      case 'chamadas': return <ChamadasContratante />
-      case 'historico': return <HistoricoContratante />
-      case 'config': return <ConfiguracoesContratante />
-      default: return <PerfilContratante />
-    }
-  }
+  if (carregando) return <div className="p-4">Carregando perfil...</div>
+  if (!usuario) return <div className="p-4 text-red-600">Erro ao carregar usuário.</div>
 
   return (
-    <div className="pb-20">
-      {renderAba()}
-      <MenuInferiorContratante aba={aba} setAba={setAba} />
+    <div className="min-h-screen bg-orange-50 pb-20">
+      <div className="p-6 max-w-xl mx-auto">
+        <h1 className="text-2xl font-bold mb-4 text-orange-700">Olá, {usuario.nome || 'Contratante'}!</h1>
+
+        <div className="bg-white p-4 rounded-lg shadow space-y-2">
+          {usuario.foto && (
+            <img src={usuario.foto} alt="Foto de perfil" className="w-24 h-24 rounded-full object-cover mx-auto" />
+          )}
+          <p><strong>Email:</strong> {usuario.email}</p>
+          <p><strong>CPF ou CNPJ:</strong> {usuario.cpfOuCnpj || 'Não informado'}</p>
+          <p><strong>Endereço:</strong> {usuario.endereco || 'Não informado'}</p>
+          <p><strong>Especialidade:</strong> {usuario.especialidade || 'Não informado'}</p>
+        </div>
+
+        <div className="mt-6 text-center">
+          <Link to="/contratante/editarperfil" className="text-orange-600 hover:underline">
+            Editar Perfil
+          </Link>
+        </div>
+      </div>
+
+      <MenuInferiorContratante />
     </div>
   )
 }
