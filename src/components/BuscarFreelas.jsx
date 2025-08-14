@@ -4,20 +4,17 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
-import ProfissionalCard from '@/components/ProfissionalCard'
+import ProfissionalCardMini from '@/components/ProfissionalCardMini'
+import ModalFreelaDetalhes from '@/components/ModalFreelaDetalhes'
 import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 
 const ACTIVE_STATUSES = ['pendente', 'aceita', 'checkin_freela', 'em_andamento', 'checkout_freela']
 
-// --- distância geodésica (km)
 function calcularDistancia(lat1, lon1, lat2, lon2) {
   if (
-    typeof lat1 !== 'number' ||
-    typeof lon1 !== 'number' ||
-    typeof lat2 !== 'number' ||
-    typeof lon2 !== 'number'
+    typeof lat1 !== 'number' || typeof lon1 !== 'number' ||
+    typeof lat2 !== 'number' || typeof lon2 !== 'number'
   ) return null
-
   const toRad = (x) => (x * Math.PI) / 180
   const R = 6371
   const dLat = toRad(lat2 - lat1)
@@ -26,7 +23,6 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
     Math.sin(dLon / 2) ** 2
-
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   return R * c
 }
@@ -54,8 +50,7 @@ function normalizeLocation(loc) {
 function formatarId(estabelecimentoUid) {
   const d = new Date()
   const pad = (n) => String(n).padStart(2, '0')
-  const id = `${estabelecimentoUid}_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
-  return id
+  return `${estabelecimentoUid}_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
 }
 
 export default function BuscarFreelas({ usuario: usuarioProp }) {
@@ -66,12 +61,12 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
 
   const [estab, setEstab] = useState(null)
   const [freelasRaw, setFreelasRaw] = useState([])
-  const [onlineSet, setOnlineSet] = useState(() => new Set())
+  const [onlineSet, setOnlineSet] = useState(new Set())
   const [apenasOnline, setApenasOnline] = useState(false)
   const [filtroFuncao, setFiltroFuncao] = useState('')
   const [carregando, setCarregando] = useState(true)
-  const [chamandoUid, setChamandoUid] = useState(null)
-  const [freelasComChamadaAtiva, setFreelasComChamadaAtiva] = useState(() => new Set())
+  const [freelasComChamadaAtiva, setFreelasComChamadaAtiva] = useState(new Set())
+  const [freelaSelecionado, setFreelaSelecionado] = useState(null)
 
   useEffect(() => {
     let ativo = true
@@ -93,7 +88,6 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
     const unsub = onSnapshot(qUsuarios, (snap) => {
       const todos = []
       snap.forEach((d) => todos.push({ id: d.id, ...d.data() }))
-
       const freelas = todos.filter((u) => {
         const role = (u?.tipo || u?.tipoUsuario || '').toLowerCase().trim()
         return role === 'freela' || role === 'freelancer'
@@ -174,53 +168,6 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
       })
   }, [freelasRaw, onlineSet, estab?.localizacao, filtroFuncao, apenasOnline, freelasComChamadaAtiva])
 
-  async function chamarFreela(freela) {
-    if (!usuario?.uid) return alert('Você precisa estar autenticado como estabelecimento.')
-    try {
-      setChamandoUid(freela.id)
-
-      if (freelasComChamadaAtiva.has(freela.id)) {
-        alert('Já existe uma chamada ativa com este freela.')
-        return
-      }
-
-      const qCheck = query(
-        collection(db, 'chamadas'),
-        where('estabelecimentoUid', '==', usuario.uid),
-        where('freelaUid', '==', freela.id),
-        where('status', 'in', ACTIVE_STATUSES)
-      )
-      const existing = await getDocs(qCheck)
-      if (!existing.empty) {
-        alert('Já existe uma chamada ativa com este freela.')
-        return
-      }
-
-      const id = formatarId(usuario.uid)
-      const chamada = {
-        idPersonalizado: id,
-        estabelecimentoUid: usuario.uid,
-        estabelecimentoNome: usuario.nome || '',
-        freelaUid: freela.id,
-        freelaNome: freela.nome || '',
-        valorDiaria: typeof freela.valorDiaria === 'number' ? freela.valorDiaria : 0,
-        estabelecimentoLocalizacao: estab?.localizacao || null,
-        freelaLocalizacao: freela?.localizacao || null,
-        status: 'pendente',
-        criadoEm: serverTimestamp(),
-      }
-
-      await setDoc(doc(db, 'chamadas', id), chamada)
-      alert(`Chamada enviada para ${freela.nome || 'freela'}.`)
-
-    } catch (err) {
-      console.error('[BuscarFreelas] Erro ao chamar freela:', err)
-      alert('Erro ao chamar o freela. Veja o console.')
-    } finally {
-      setChamandoUid(null)
-    }
-  }
-
   return (
     <div className="space-y-4">
       <div className="p-3 bg-white rounded-2xl border border-orange-100 shadow-sm">
@@ -259,16 +206,18 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {freelasDecorados.map((f) => (
-          <ProfissionalCard
+          <ProfissionalCardMini
             key={f.id}
             freela={f}
-            online={f.online}
-            distanciaKm={f.distanciaKm}
-            emChamada={f.hasChamadaAtiva}
-            usuario={usuario}
+            onClick={() => setFreelaSelecionado(f)}
           />
         ))}
       </div>
+
+      <ModalFreelaDetalhes
+        freela={freelaSelecionado}
+        onClose={() => setFreelaSelecionado(null)}
+      />
     </div>
   )
 }
