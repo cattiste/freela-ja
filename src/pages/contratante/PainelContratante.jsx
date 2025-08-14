@@ -1,33 +1,59 @@
-import React from 'react'
+// src/pages/contratante/PainelContratante.jsx
+import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
+import { db } from '@/firebase'
+
 import MenuInferiorContratante from '@/components/MenuInferiorContratante'
-import { Link } from 'react-router-dom'
+import PerfilContratanteCard from './PerfilContratanteCard'
+import ChamadasContratante from './ChamadasContratante'
+import AvaliacoesRecebidasContratante from './AvaliacoesRecebidasContratante'
+import AgendaContratante from './AgendaContratante'
 
 export default function PainelContratante() {
   const { usuario, carregando } = useAuth()
+  const [chamadas, setChamadas] = useState([])
 
-  if (carregando) return <div className="p-4">Carregando perfil...</div>
-  if (!usuario) return <div className="p-4 text-red-600">Erro ao carregar usuário.</div>
+  useEffect(() => {
+    if (!usuario?.uid) return
+
+    const q = query(
+      collection(db, 'chamadas'),
+      where('estabelecimentoUid', '==', usuario.uid),
+      where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'checkout_freela'])
+    )
+
+    const unsub = onSnapshot(q, (snap) => {
+      const lista = []
+      snap.forEach((doc) => lista.push({ id: doc.id, ...doc.data() }))
+      setChamadas(lista)
+    })
+
+    return () => unsub()
+  }, [usuario?.uid])
+
+  if (carregando || !usuario?.uid) {
+    return <div className="p-6 text-center">Carregando…</div>
+  }
 
   return (
-    <div className="min-h-screen bg-orange-50 pb-20">
-      <div className="p-6 max-w-xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4 text-orange-700">Olá, {usuario.nome || 'Contratante'}!</h1>
+    <div className="pb-20">
+      <div className="p-4 space-y-4">
+        <PerfilContratanteCard usuario={usuario} />
 
-        <div className="bg-white p-4 rounded-lg shadow space-y-2">
-          {usuario.foto && (
-            <img src={usuario.foto} alt="Foto de perfil" className="w-24 h-24 rounded-full object-cover mx-auto" />
-          )}
-          <p><strong>Email:</strong> {usuario.email}</p>
-          <p><strong>CPF ou CNPJ:</strong> {usuario.cpfOuCnpj || 'Não informado'}</p>
-          <p><strong>Endereço:</strong> {usuario.endereco || 'Não informado'}</p>
-          <p><strong>Especialidade:</strong> {usuario.especialidade || 'Não informado'}</p>
+        <div className="bg-white p-4 rounded-2xl shadow-md">
+          <h2 className="text-xl font-bold mb-2">Agenda</h2>
+          <AgendaContratante usuario={usuario} />
         </div>
 
-        <div className="mt-6 text-center">
-          <Link to="/contratante/editarperfil" className="text-orange-600 hover:underline">
-            Editar Perfil
-          </Link>
+        <div className="bg-white p-4 rounded-2xl shadow-md">
+          <h2 className="text-xl font-bold mb-2">Avaliações Recebidas</h2>
+          <AvaliacoesRecebidasContratante uid={usuario.uid} />
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl shadow-md">
+          <h2 className="text-xl font-bold mb-2">Chamadas Ativas</h2>
+          <ChamadasContratante chamadas={chamadas} />
         </div>
       </div>
 
