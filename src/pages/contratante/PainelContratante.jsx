@@ -46,7 +46,7 @@ export default function PainelContratante() {
 
         <div className="bg-white p-4 rounded-2xl shadow-md">
           <h2 className="text-xl font-bold mb-2">Agenda</h2>
-          <AgendaContratante usuario={usuario} />
+          <AgendasContratadas usuario={usuario} />
         </div>
 
         <div className="bg-white p-4 rounded-2xl shadow-md">
