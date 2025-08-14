@@ -95,7 +95,7 @@ export default function CadastroFreela() {
   }
   const handleCpfBlur = () => {
     const dig = apenasNumeros(form.cpf)
-    if (!dig) return setCpfErro('') // vazio tratado na validação final
+    if (!dig) return setCpfErro('')
     setCpfErro(validarCPF(dig) ? '' : 'CPF inválido')
   }
 
