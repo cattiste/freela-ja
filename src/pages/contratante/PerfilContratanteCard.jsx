@@ -22,7 +22,10 @@ export default function PerfilContratanteCard({ contratante }) {
         <div>
           <h2 className="text-xl font-bold text-orange-700">{contratante.nome}</h2>
           <p className="text-gray-600 text-sm">{contratante.email}</p>
-          <p className="text-gray-600 text-sm">{contratante.cnpj}</p>
+          <p className="text-gray-700">
+            <strong>CPF ou CNPJ:</strong>{' '}
+            {usuario?.cnpj || usuario?.cpf || 'Não informado'}
+          </p>
         </div>
       </div>
 
@@ -33,7 +36,7 @@ export default function PerfilContratanteCard({ contratante }) {
       {/* ✅ Exibir botão só se for o dono */}
       {podeEditar && (
         <button
-          onClick={() => navigate('/contratante/editarperfil')}
+          onClick={() => navigate('/contratante/editarperfilcontratante')}
           className="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition"
         >
           ✏️ Editar Perfil
