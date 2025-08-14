@@ -3,12 +3,15 @@ import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
+import 'react-calendar/dist/Calendar.css'
+import '@/styles/estiloAgenda.css'
+import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 
 import MenuInferiorContratante from '@/components/MenuInferiorContratante'
 import PerfilContratanteCard from './PerfilContratanteCard'
 import ChamadasContratante from './ChamadasContratante'
 import AvaliacoesRecebidasContratante from './AvaliacoesRecebidasContratante'
-import AgendaContratante from './AgendaContratante'
+import AgendasContratadas from '@/components/AgendasContratadas'
 
 export default function PainelContratante() {
   const { usuario, carregando } = useAuth()
