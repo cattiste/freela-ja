@@ -1,15 +1,27 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React from 'react'
+import { useAuth } from '@/context/AuthContext'
 import {
-  collection, query, where, onSnapshot, doc, getDoc, getDocs, setDoc, serverTimestamp
+  collection,
+  getDocs,
+  getDoc,
+  doc,
+  addDoc,
+  serverTimestamp,
+  query,
+  where
 } from 'firebase/firestore'
 import { db } from '@/firebase'
-import { useAuth } from '@/context/AuthContext'
-import ProfissionalCardMini from '@/components/ProfissionalCardMini'
+import ProfissionalCard from '@/components/ProfissionalCard'
 import ModalFreelaDetalhes from '@/components/ModalFreelaDetalhes'
 import { useRealtimePresence } from '@/hooks/useRealtimePresence'
-import React, { useEffect, useState } from 'react'
 
 const ACTIVE_STATUSES = ['pendente', 'aceita', 'checkin_freela', 'em_andamento', 'checkout_freela']
+
+export default function BuscarFreelas({ usuario: usuarioProp, usuariosOnline, onChamar }) {
+  const { usuario: usuarioCtx } = useAuth()
+  const usuario = usuarioProp || usuarioCtx
+
+  useRealtimePresence(usuario)
 
 function calcularDistancia(lat1, lon1, lat2, lon2) {
   if (
