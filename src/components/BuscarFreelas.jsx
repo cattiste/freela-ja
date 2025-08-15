@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext'
 import ProfissionalCardMini from '@/components/ProfissionalCardMini'
 import ModalFreelaDetalhes from '@/components/ModalFreelaDetalhes'
 import { useRealtimePresence } from '@/hooks/useRealtimePresence'
-import criaChamada from '@/utils/criaChamada'
+import criaChamada from '@/utils/criarChamada'
 import { toast } from 'react-hot-toast'
 
 const handleChamar = async (freela) => {
