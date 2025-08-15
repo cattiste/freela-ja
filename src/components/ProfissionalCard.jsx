@@ -7,13 +7,13 @@ export default function ProfissionalCard({ freela, usuario, onChamar, distanciaK
   const [total, setTotal] = useState(0)
 
   useEffect(() => {
-    if (!prof?.id) return
+    if (!freela?.id) return
 
-    console.log('📌 ID do freela no card:', prof.id)
+    console.log('📌 ID do freela no card:', freela.id)
 
     const q = query(
       collection(db, 'avaliacoesFreelas'),
-      where('freelaUid', '==', prof.id)
+      where('freelaUid', '==', freela.id)
     )
 
     const unsubscribe = onSnapshot(q, (snap) => {
@@ -27,27 +27,27 @@ export default function ProfissionalCard({ freela, usuario, onChamar, distanciaK
     })
 
     return () => unsubscribe()
-  }, [prof.id])
+  }, [freela.id])
 
   return (
     <div className="bg-white rounded-2xl p-5 m-4 max-w-xs shadow-md text-center">
       <img
         src={imagemValida}
-        alt={prof.nome || 'Profissional'}
+        alt={freela.nome || 'Profissional'}
         className="w-24 h-24 rounded-full object-cover mb-3 mx-auto border-2 border-orange-400 shadow"
       />
 
       <h3 className="text-lg font-bold text-gray-800">
-        {prof.nome || 'Nome não informado'}
+        {freela.nome || 'Nome não informado'}
       </h3>
 
       <p className="text-gray-700 mt-1">
-        <strong>Função:</strong> {prof.funcao || 'Não informado'}
+        <strong>Função:</strong> {freela.funcao || 'Não informado'}
       </p>
 
-      {prof.endereco && (
+      {freela.endereco && (
         <p className="text-gray-700 mt-1">
-          <strong>Endereço:</strong> {prof.endereco}
+          <strong>Endereço:</strong> {freela.endereco}
         </p>
       )}
 
@@ -71,12 +71,12 @@ export default function ProfissionalCard({ freela, usuario, onChamar, distanciaK
 
       {diariaNumerica && (
         <p className="text-green-600 font-semibold mt-1">
-          <strong>💸 Diária:</strong> R$ {parseFloat(prof.valorDiaria).toFixed(2)}
+          <strong>💸 Diária:</strong> R$ {parseFloat(freela.valorDiaria).toFixed(2)}
         </p>
       )}
 
-      {prof.descricao && (
-        <p className="italic mt-2 text-sm text-gray-600">{prof.descricao}</p>
+      {freela.descricao && (
+        <p className="italic mt-2 text-sm text-gray-600">{freela.descricao}</p>
       )}
 
       {/* ✅ Status online/offline */}
