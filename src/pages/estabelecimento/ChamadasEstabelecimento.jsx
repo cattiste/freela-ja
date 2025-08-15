@@ -1,221 +1,189 @@
-// ChamadasEstabelecimento.jsx unificado – controle completo de chamadas, pagamentos, check-in/out e avaliações
-
-import React, { useEffect, useState } from 'react'
+// src/pages/estabelecimento/ChamadasEstabelecimento.jsx
+import React, { useEffect, useMemo, useState } from 'react'
 import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  updateDoc,
-  doc,
-  serverTimestamp,
-  getDoc
+  collection, query, where, onSnapshot,
+  updateDoc, doc, serverTimestamp
 } from 'firebase/firestore'
-import { db, functions } from '@/firebase'
-import { httpsCallable } from 'firebase/functions'
+import { db } from '@/firebase'
+import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
-import AvaliacaoInline from '@/components/AvaliacaoInline'
-import ChatInline from '@/components/ChatInline'
+
+const STATUS_LISTA = [
+  'pendente',
+  'aceita',
+  'checkin_freela',
+  'em_andamento',
+  'checkout_freela',
+  'concluido',
+  'finalizada',
+  'cancelada_por_falta_de_pagamento',
+  'rejeitada'
+]
 
 export default function ChamadasEstabelecimento({ estabelecimento }) {
+  const { usuario } = useAuth()
+  const estab = estabelecimento || usuario
   const [chamadas, setChamadas] = useState([])
-  const [carregando, setCarregando] = useState(true)
-  const [loadingId, setLoadingId] = useState(null)
-  const [pagamentos, setPagamentos] = useState({})
-  const [qrcodes, setQrcodes] = useState({})
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!estabelecimento?.uid) return
+    if (!estab?.uid) return
+    setLoading(true)
 
     const q = query(
       collection(db, 'chamadas'),
-      where('estabelecimentoUid', '==', estabelecimento.uid),
-      where('status', 'in', ['aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'concluido', 'finalizada'])
+      where('estabelecimentoUid', '==', estab.uid),
+      where('status', 'in', STATUS_LISTA)
     )
 
-    const unsub = onSnapshot(q, async (snap) => {
-      const lista = []
-      const pagamentosTemp = {}
-
-      for (const docSnap of snap.docs) {
-        const chamada = { id: docSnap.id, ...docSnap.data() }
-        lista.push(chamada)
-
-        const pgSnap = await getDoc(doc(db, 'pagamentos', chamada.id))
-        if (pgSnap.exists()) pagamentosTemp[chamada.id] = pgSnap.data()
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+        setChamadas(docs)
+        setLoading(false)
+      },
+      (err) => {
+        console.error('[ChamadasEstabelecimento] onSnapshot erro:', err)
+        toast.error('Falha ao carregar chamadas.')
+        setLoading(false)
       }
-
-      setChamadas(lista)
-      setPagamentos(pagamentosTemp)
-      setCarregando(false)
-    })
+    )
 
     return () => unsub()
-  }, [estabelecimento])
+  }, [estab?.uid])
 
-  const pagarChamada = async (chamada) => {
-    const cobraPix = httpsCallable(functions, 'cobraChamadaAoAceitar')
+  const chamadasOrdenadas = useMemo(() => {
+    const ts = (x) => x?.toMillis?.() ?? (x?.seconds ? x.seconds * 1000 : 0)
+    return [...chamadas].sort((a, b) => {
+      const aT = ts(a.criadoEm) || ts(a.aceitaEm) || ts(a.checkInFreelaHora) || 0
+      const bT = ts(b.criadoEm) || ts(b.aceitaEm) || ts(b.checkInFreelaHora) || 0
+      return bT - aT
+    })
+  }, [chamadas])
+
+  async function confirmarConvite(ch) {
     try {
-      const res = await cobraPix({
-        chamadaId: chamada.id,
-        valorDiaria: chamada.valorDiaria,
-        nomeEstabelecimento: estabelecimento.nome,
-        cpfEstabelecimento: estabelecimento.cpf
+      await updateDoc(doc(db, 'chamadas', ch.id), {
+        status: 'aceita',
+        aceitaEm: serverTimestamp()
       })
-      toast.success('✅ Cobrança Pix gerada com sucesso!')
-      setQrcodes(prev => ({ ...prev, [chamada.id]: res.data.imagem }))
-    } catch (err) {
-      console.error(err)
-      toast.error('Erro ao gerar cobrança Pix')
+      toast.success('✅ Convite confirmado!')
+    } catch (e) {
+      console.error('[ChamadasEstabelecimento] confirmarConvite erro:', e)
+      toast.error('Erro ao confirmar convite.')
     }
   }
 
-  const atualizarChamada = async (id, dados) => {
+  async function cancelarConvite(ch) {
     try {
-      setLoadingId(id)
-      const ref = doc(db, 'chamadas', id)
-      await updateDoc(ref, dados)
-      toast.success('✅ Ação realizada com sucesso!')
-    } catch (err) {
-      console.error('Erro ao atualizar chamada:', err)
-      toast.error('Erro ao atualizar chamada.')
-    } finally {
-      setLoadingId(null)
+      await updateDoc(doc(db, 'chamadas', ch.id), {
+        status: 'cancelada_por_falta_de_pagamento',
+        canceladaEm: serverTimestamp()
+      })
+      toast.success('❌ Convite cancelado.')
+    } catch (e) {
+      console.error('[ChamadasEstabelecimento] cancelarConvite erro:', e)
+      toast.error('Erro ao cancelar convite.')
     }
   }
 
-  const badgeStatus = (status) => {
-    const cores = {
-      aceita: 'bg-yellow-200 text-yellow-700',
-      checkin_freela: 'bg-purple-200 text-purple-700',
-      em_andamento: 'bg-green-200 text-green-700',
-      checkout_freela: 'bg-blue-200 text-blue-700',
-      concluido: 'bg-green-100 text-green-600',
-      finalizada: 'bg-gray-200 text-gray-600'
+  async function confirmarCheckInFreela(ch) {
+    try {
+      await updateDoc(doc(db, 'chamadas', ch.id), {
+        status: 'em_andamento',
+        checkInConfirmadoPeloEstab: true,
+        checkInConfirmadoPeloEstabHora: serverTimestamp()
+      })
+      toast.success('📍 Check-in do freela confirmado!')
+    } catch (e) {
+      console.error('[ChamadasEstabelecimento] confirmarCheckInFreela erro:', e)
+      toast.error('Erro ao confirmar check-in.')
     }
-    return (
-      <span className={`px-2 py-1 rounded text-xs font-semibold ${cores[status] || 'bg-gray-200 text-gray-700'}`}>
-        {status.replace('_', ' ')}
-      </span>
-    )
   }
 
-  if (carregando) return <p className="text-center text-orange-600">🔄 Carregando chamadas...</p>
-  if (chamadas.length === 0) return <p className="text-center text-gray-600">📭 Nenhuma chamada registrada.</p>
+  async function confirmarCheckOutFreela(ch) {
+    try {
+      await updateDoc(doc(db, 'chamadas', ch.id), {
+        status: 'concluido',
+        checkOutConfirmadoPeloEstab: true,
+        checkOutConfirmadoPeloEstabHora: serverTimestamp()
+      })
+      toast.success('⏳ Check-out do freela confirmado!')
+    } catch (e) {
+      console.error('[ChamadasEstabelecimento] confirmarCheckOutFreela erro:', e)
+      toast.error('Erro ao confirmar check-out.')
+    }
+  }
+
+  if (loading) {
+    return <div className="text-center text-orange-600 mt-8">🔄 Carregando chamadas…</div>
+  }
+
+  if (!estab?.uid) {
+    return <div className="text-center text-red-600 mt-8">⚠️ Estabelecimento não autenticado.</div>
+  }
 
   return (
-    <div className="space-y-3">
-      {chamadas.map(chamada => {
-        const pg = pagamentos[chamada.id]
-        const qr = qrcodes[chamada.id]
+    <div className="p-4 max-w-5xl mx-auto">
+      <h1 className="text-2xl font-bold text-orange-700 text-center mb-4">📡 Chamadas Ativas</h1>
 
-        return (
-          <div key={chamada.id} className="p-3 bg-white rounded-xl shadow border border-orange-100 space-y-2">
-            <div className="flex items-center gap-3">
-              <img
-                src={chamada.freelaFoto || 'https://via.placeholder.com/40'}
-                alt={chamada.freelaNome}
-                className="w-10 h-10 rounded-full border border-orange-300 object-cover"
-              />
-              <div className="flex-1">
-                <p className="font-bold text-orange-600">{chamada.freelaNome}</p>
-                {chamada.valorDiaria && (
-                  <p className="text-xs text-gray-500">💰 R$ {chamada.valorDiaria} / diária</p>
-                )}
-                <p className="text-sm mt-1">📌 Status: {badgeStatus(chamada.status)}</p>
-                <ChatInline chamadaId={chamada.id} />
-              </div>
-            </div>
-
-            <pre className="text-xs text-gray-500 bg-gray-50 p-2 rounded border border-gray-200 whitespace-pre-wrap">
-checkInFreela: {chamada.checkInFreela?.toString()} | checkInEstabelecimento: {chamada.checkInEstabelecimento?.toString()} |
-checkOutFreela: {chamada.checkOutFreela?.toString()} | checkOutEstabelecimento: {chamada.checkOutEstabelecimento?.toString()}
-            </pre>
-
-            {!pg && chamada.status === 'aceita' && (
-              <button
-                onClick={() => pagarChamada(chamada)}
-                className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-              >
-                💳 Efetuar Pagamento Pix
-              </button>
+      {chamadasOrdenadas.length === 0 ? (
+        <p className="text-center text-gray-600">Nenhuma chamada ativa no momento.</p>
+      ) : (
+        chamadasOrdenadas.map((ch) => (
+          <div key={ch.id} className="bg-white shadow p-4 rounded-xl mb-4 border border-orange-200 space-y-2">
+            <h2 className="font-semibold text-orange-600 text-lg">Chamada #{ch?.id?.slice(-5)}</h2>
+            <p><strong>Freela:</strong> {ch.freelaNome || ch.freelaUid}</p>
+            <p><strong>Status:</strong> {ch.status}</p>
+            {typeof ch.valorDiaria === 'number' && (
+              <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>
+            )}
+            {ch.observacao && (
+              <p className="text-sm text-gray-800"><strong>📝 Observação:</strong> {ch.observacao}</p>
             )}
 
-            {qr && (
-              <div className="mt-3">
-                <img src={qr} alt="QR Code Pix" className="w-48 mx-auto" />
-                <p className="text-center text-sm text-gray-500 mt-1">Escaneie para pagar</p>
+            {ch.status === 'pendente' && (
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  onClick={() => confirmarConvite(ch)}
+                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+                >
+                  ✅ Confirmar convite
+                </button>
+                <button
+                  onClick={() => cancelarConvite(ch)}
+                  className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition"
+                >
+                  ❌ Cancelar convite
+                </button>
               </div>
             )}
 
-            {pg && (
-              <p className="text-green-700 font-semibold text-sm text-center">✅ Pagamento confirmado</p>
-            )}
-
-            {chamada.status === 'checkin_freela' && !chamada.checkInEstabelecimento && (
+            {ch.status === 'checkin_freela' && (
               <button
-                onClick={() => atualizarChamada(chamada.id, {
-                  checkInEstabelecimento: true,
-                  checkInEstabelecimentoHora: serverTimestamp(),
-                  status: 'em_andamento'
-                })}
-                disabled={loadingId === chamada.id}
-                className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+                onClick={() => confirmarCheckInFreela(ch)}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
               >
-                {loadingId === chamada.id ? 'Confirmando...' : '✅ Confirmar Check-in'}
+                📍 Confirmar check-in do freela
               </button>
             )}
 
-            {chamada.status === 'checkout_freela' && !chamada.checkOutEstabelecimento && (
+            {ch.status === 'checkout_freela' && (
               <button
-                onClick={() => atualizarChamada(chamada.id, {
-                  checkOutEstabelecimento: true,
-                  checkOutEstabelecimentoHora: serverTimestamp(),
-                  status: 'concluido'
-                })}
-                disabled={loadingId === chamada.id}
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+                onClick={() => confirmarCheckOutFreela(ch)}
+                className="w-full bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition"
               >
-                {loadingId === chamada.id ? 'Confirmando...' : '📤 Confirmar Check-out'}
+                ⏳ Confirmar check-out do freela
               </button>
             )}
 
-            {/* Pagar freela após conclusão */}
-            {chamada.status === 'concluido' && pg && !pg.pixConfirmado && (
-              <button
-                onClick={async () => {
-                  try {
-                    const pagar = httpsCallable(functions, 'pagarFreelaAoCheckout')
-                    const res = await pagar({ chamadaId: chamada.id })
-                    toast.success('✅ Freela pago com sucesso!')
-                    setPagamentos(prev => ({
-                      ...prev,
-                      [chamada.id]: { ...pg, pixConfirmado: true }
-                    }))
-                  } catch (err) {
-                    console.error(err)
-                    toast.error('Erro ao pagar freela.')
-                  }
-                }}
-                className="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition"
-              >
-                💸 Pagar Freela
-              </button>
-            )}
-
-            {(chamada.status === 'concluido' || chamada.status === 'finalizada') && (
-              <>
-                <span className="text-green-600 font-bold block text-center mt-2">✅ Finalizada</span>
-                {!chamada.avaliacaoFreelaFeita ? (
-                  <AvaliacaoInline chamada={chamada} tipo="estabelecimento" />
-                ) : (
-                  <p className="text-sm text-gray-500 text-center">Freelancer já avaliado ✅</p>
-                )}
-              </>
+            {(ch.status === 'concluido' || ch.status === 'finalizada') && (
+              <span className="text-green-600 font-bold block text-center mt-2">✅ Finalizada</span>
             )}
           </div>
-        )
-      })}
+        ))
+      )}
     </div>
   )
 }

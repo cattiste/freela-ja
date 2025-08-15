@@ -4,8 +4,8 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
-import ProfissionalCardMini from '@/components/ProfissionalCard'
-//import ModalFreelaDetalhes from '@/components/ModalFreelaDetalhes'
+import ProfissionalCardMini from '@/components/ProfissionalCardMini'
+import ModalFreelaDetalhes from '@/components/ModalFreelaDetalhes'
 import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 
 const ACTIVE_STATUSES = ['pendente', 'aceita', 'checkin_freela', 'em_andamento', 'checkout_freela']

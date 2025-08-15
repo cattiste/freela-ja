@@ -1,64 +1,72 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import { auth, db } from '../firebase'
-import { onAuthStateChanged } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
+// src/context/AuthContext.jsx
+import { onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth'
+import { auth, db } from '@/firebase'
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { createContext, useContext, useEffect, useState, useMemo } from 'react'
 
-const AuthContext = createContext()
+const Ctx = createContext(null)
+export const useAuth = () => useContext(Ctx)
+
+const normalizeTipo = (t) => {
+  if (!t) return ''
+  return String(t).trim().toLowerCase().replace(/\s+/g, '_')
+}
 
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null)
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (usuario) => {
-      if (usuario) {
-        try {
-          await usuario.getIdToken(true) // força renovação
-          const docRef = doc(db, 'usuarios', usuario.uid)
-          const docSnap = await getDoc(docRef)
+    // Garante persistência local (não bloqueia se falhar)
+    setPersistence(auth, browserLocalPersistence).catch(() => {})
 
-          const dados = docSnap.exists()
-            ? { uid: usuario.uid, ...docSnap.data() }
-            : { uid: usuario.uid, email: usuario.email }
-
-          setUsuario(dados)
-          localStorage.setItem('usuarioLogado', JSON.stringify(dados)) // ✅ salva no localStorage
-
-        } catch (erro) {
-          console.error('Erro ao buscar dados do usuário:', erro)
-          const fallback = { uid: usuario.uid, email: usuario.email }
-          setUsuario(fallback)
-          localStorage.setItem('usuarioLogado', JSON.stringify(fallback)) // ✅ fallback
-        }
-      } else {
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      if (!u) {
         setUsuario(null)
-        localStorage.removeItem('usuarioLogado') // ✅ remove ao deslogar
+        setCarregando(false)
+        return
       }
-      setCarregando(false)
+
+      try {
+        const ref = doc(db, 'usuarios', u.uid)
+        const snap = await getDoc(ref)
+
+        // Cria perfil mínimo se ainda não existir (evita tipo indefinido)
+        if (!snap.exists()) {
+          const perfilMinimo = {
+            uid: u.uid,
+            email: u.email ?? '',
+            tipo: '', // será definido no cadastro
+            criadoEm: serverTimestamp(),
+            atualizadoEm: serverTimestamp(),
+          }
+          await setDoc(ref, perfilMinimo, { merge: true })
+          setUsuario({ ...perfilMinimo })
+          setCarregando(false)
+          return
+        }
+
+        const perfil = snap.data()
+        const tipoNorm = normalizeTipo(perfil?.tipo)
+
+        setUsuario({
+          uid: u.uid,
+          email: u.email ?? '',
+          ...perfil,
+          tipo: tipoNorm,
+        })
+      } catch (e) {
+        console.error('[Auth] erro ao carregar perfil:', e)
+        // fallback: usuário básico logado
+        setUsuario({ uid: u.uid, email: u.email ?? '', tipo: '' })
+      } finally {
+        setCarregando(false)
+      }
     })
 
-    return () => unsubscribe()
+    return () => unsub()
   }, [])
 
-  const atualizarUsuario = async () => {
-    const usuario = auth.currentUser
-    if (usuario) {
-      const docSnap = await getDoc(doc(db, 'usuarios', usuario.uid))
-      if (docSnap.exists()) {
-        const dados = { uid: usuario.uid, ...docSnap.data() }
-        setUsuario(dados)
-        localStorage.setItem('usuarioLogado', JSON.stringify(dados))
-      }
-    }
-  }
-
-  return (
-    <AuthContext.Provider value={{ usuario, carregando, atualizarUsuario }}>
-      {children}
-    </AuthContext.Provider>
-  )
-}
-
-export function useAuth() {
-  return useContext(AuthContext)
+  const value = useMemo(() => ({ usuario, carregando }), [usuario, carregando])
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

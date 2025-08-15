@@ -25,6 +25,7 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
           id: doc.id,
           ...doc.data(),
         }))
+        
         setAvaliacoes(lista)
       } catch (err) {
         console.error('Erro ao buscar avaliações:', err)
@@ -71,7 +72,7 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
                 {avaliacao.estabelecimentoNome || '---'}
               </p>
               <p className="text-sm text-gray-600 italic">
-                "{avaliacao.mensagem || 'Sem mensagem'}"
+                "{avaliacao.comentario || 'Sem comentario'}"
               </p>
               <p className="text-yellow-600 mt-1">⭐ Nota: {avaliacao.nota || '---'}</p>
             </div>
