@@ -1,4 +1,3 @@
-// src/pages/freela/PainelFreela.jsx
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
@@ -25,47 +24,39 @@ export default function PainelFreela() {
     chamadas: false,
     agenda: false,
     avaliacoes: false,
-    recebimentos: false,
+    recebimentos: false
   })
   const [chamadaAtiva, setChamadaAtiva] = useState(null)
 
-  // presença online
-  useRealtimePresence(usuario)
+  // ✅ Presença online segura — SEM condicional
+  useRealtimePresence(usuario?.uid)
 
   useEffect(() => {
     if (!usuario?.uid) return
 
     const unsubChamadas = onSnapshot(
-      query(
-        collection(db, 'chamadas'),
-        where('freelaUid', '==', usuario.uid),
-        where('status', '==', 'pendente')
-      ),
-      (snap) => setAlertas((prev) => ({ ...prev, chamadas: snap.size > 0 }))
+      query(collection(db, 'chamadas'), where('freelaUid', '==', usuario.uid), where('status', '==', 'pendente')),
+      (snap) => setAlertas(prev => ({ ...prev, chamadas: snap.size > 0 }))
     )
 
     const unsubEventos = onSnapshot(
       query(collection(db, 'eventos'), where('ativo', '==', true)),
-      (snap) => setAlertas((prev) => ({ ...prev, agenda: snap.size > 0 }))
+      (snap) => setAlertas(prev => ({ ...prev, agenda: snap.size > 0 }))
     )
 
     const unsubVagas = onSnapshot(
       query(collection(db, 'vagas'), where('status', '==', 'aberta')),
-      (snap) => setAlertas((prev) => ({ ...prev, agenda: snap.size > 0 }))
+      (snap) => setAlertas(prev => ({ ...prev, agenda: snap.size > 0 }))
     )
 
     const unsubAvaliacoes = onSnapshot(
       query(collection(db, 'avaliacoesFreelas'), where('freelaUid', '==', usuario.uid)),
-      (snap) => setAlertas((prev) => ({ ...prev, avaliacoes: snap.size > 0 }))
+      (snap) => setAlertas(prev => ({ ...prev, avaliacoes: snap.size > 0 }))
     )
 
     const unsubRecebimentos = onSnapshot(
-      query(
-        collection(db, 'chamadas'),
-        where('freelaUid', '==', usuario.uid),
-        where('status', 'in', ['finalizado', 'concluido'])
-      ),
-      (snap) => setAlertas((prev) => ({ ...prev, recebimentos: snap.size > 0 }))
+      query(collection(db, 'chamadas'), where('freelaUid', '==', usuario.uid), where('status', 'in', ['finalizado', 'concluido'])),
+      (snap) => setAlertas(prev => ({ ...prev, recebimentos: snap.size > 0 }))
     )
 
     return () => {
@@ -79,32 +70,23 @@ export default function PainelFreela() {
 
   useEffect(() => {
     if (!usuario?.uid) return
+
     const q = query(
       collection(db, 'chamadas'),
       where('freelaUid', '==', usuario.uid),
       where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'checkout_freela'])
     )
+
     const unsubscribe = onSnapshot(q, (snap) => {
-      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       setChamadaAtiva(docs[0] || null)
     })
+
     return () => unsubscribe()
   }, [usuario?.uid])
 
   if (carregando) return <div className="text-center mt-10">Verificando autenticação...</div>
-  if (!usuario?.uid) return <div className="text-center mt-10">Usuário não autenticado.</div>
-
-  // Guarda: se o usuário logado não for freela
-  const role = (usuario?.tipo || usuario?.tipoUsuario || '').toLowerCase()
-  if (role && role !== 'freela') {
-    return (
-      <div className="p-4">
-        <div className="mb-4 text-sm text-gray-600">
-          Papel atual: <b>{role}</b> — esta tela é específica para freela.
-        </div>
-      </div>
-    )
-  }
+  if (!usuario) return <div className="text-center mt-10">Usuário não autenticado.</div>
 
   const renderConteudo = () => {
     switch (abaSelecionada) {
@@ -140,11 +122,7 @@ export default function PainelFreela() {
   return (
     <div className="p-4 pb-20">
       {renderConteudo()}
-      <MenuInferiorFreela
-        onSelect={setAbaSelecionada}
-        abaAtiva={abaSelecionada}
-        alertas={alertas}
-      />
+      <MenuInferiorFreela onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} alertas={alertas} />
     </div>
   )
 }

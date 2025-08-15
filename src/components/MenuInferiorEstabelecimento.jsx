@@ -25,17 +25,21 @@ const botoes = [
 
 export default function MenuInferiorEstabelecimento({ onSelect, abaAtiva }) {
   return (
-    <nav className="menu-inferior">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-inner flex justify-around py-2 z-50">
       {botoes.map(({ id, label, icon }) => (
         <button
           key={id}
           onClick={() => onSelect(id)}
-          className={`menu-item ${abaAtiva === id ? 'active' : ''}`}
+          className={`flex flex-col items-center text-xs font-medium transition ${
+            abaAtiva === id ? 'text-orange-600' : 'text-gray-500'
+          }`}
         >
-          <div className="menu-icon-container">
-            {React.cloneElement(icon, {
-              className: abaAtiva === id ? 'text-orange-600' : 'text-gray-500'
-            })}
+          <div
+            className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-300 ${
+              abaAtiva === id ? 'bg-orange-100' : 'bg-gray-100'
+            }`}
+          >
+            {icon}
           </div>
           {label}
         </button>

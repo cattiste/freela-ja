@@ -1,33 +1,20 @@
-import React, { useEffect, useState } from 'react'
-import { collection, query, where, onSnapshot } from 'firebase/firestore'
-import { db } from '@/firebase'
+// src/components/ProfissionalCard.jsx
+
+import React from 'react'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
 export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
-  const [media, setMedia] = useState(null)
-  const [total, setTotal] = useState(0)
+  const { online, ultimaAtividade } = useOnlineStatus(prof.id)
+  const ultimaHora = ultimaAtividade
+    ? ultimaAtividade.toDate().toLocaleTimeString('pt-BR')
+    : '--:--'
 
-  useEffect(() => {
-    if (!prof?.id) return
+  const imagemValida =
+    typeof prof.foto === 'string' && prof.foto.trim() !== ''
+      ? prof.foto
+      : 'https://i.imgur.com/3W8i1sT.png'
 
-    console.log('📌 ID do freela no card:', prof.id)
-
-    const q = query(
-      collection(db, 'avaliacoesFreelas'),
-      where('freelaUid', '==', prof.id)
-    )
-
-    const unsubscribe = onSnapshot(q, (snap) => {
-      const notas = snap.docs.map(doc => doc.data().nota).filter(n => typeof n === 'number')
-      const soma = notas.reduce((acc, n) => acc + n, 0)
-      const mediaFinal = notas.length ? soma / notas.length : null
-      setMedia(mediaFinal)
-      setTotal(notas.length)
-
-      console.log('⭐ Avaliações encontradas:', notas.length, ' | Média:', mediaFinal)
-    })
-
-    return () => unsubscribe()
-  }, [prof.id])
+  const diariaNumerica = !isNaN(parseFloat(prof.valorDiaria))
 
   return (
     <div className="bg-white rounded-2xl p-5 m-4 max-w-xs shadow-md text-center">
@@ -57,16 +44,10 @@ export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
         </p>
       )}
 
-      {/* ⭐ Estrelas de avaliação */}
-      {media && (
-        <div className="flex items-center justify-center gap-1 mt-2">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <span key={n} className="text-yellow-500 text-lg">
-              {media >= n ? '★' : '☆'}
-            </span>
-          ))}
-          <span className="text-sm text-gray-500">({totalAvaliacoes})</span>
-        </div>
+      {typeof prof.avaliacao === 'number' && (
+        <p className="text-yellow-500 mt-1">
+          <strong>Avaliação:</strong> ⭐ {prof.avaliacao.toFixed(1)}
+        </p>
       )}
 
       {diariaNumerica && (

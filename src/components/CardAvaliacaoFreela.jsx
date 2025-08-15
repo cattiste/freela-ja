@@ -1,11 +1,6 @@
+// src/components/CardAvaliacaoFreela.jsx
 import React, { useState } from 'react'
-import {
-  addDoc,
-  collection,
-  serverTimestamp,
-  doc,
-  updateDoc
-} from 'firebase/firestore'
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 export default function CardAvaliacaoFreela({ chamada, onAvaliado }) {
@@ -13,33 +8,22 @@ export default function CardAvaliacaoFreela({ chamada, onAvaliado }) {
   const [comentario, setComentario] = useState('')
   const [enviando, setEnviando] = useState(false)
 
-  const freela = chamada?.freela || {}
-
-  const nome = freela?.nome || chamada.freelaNome || 'Freela'
-  const foto = freela?.foto || chamada.freelaFoto || 'https://via.placeholder.com/60'
+  const freela = chamada?.freela
 
   const enviarAvaliacao = async () => {
+    if (!freela?.uid || !chamada?.id || !chamada?.estabelecimentoUid) return
+
     try {
       setEnviando(true)
 
-      // ✅ Agora criando uma nova avaliação SEM sobrescrever
-      await addDoc(collection(db, 'avaliacoesFreelas'), {
+      await addDoc(collection(db, 'avaliacoes'), {
         tipo: 'freela',
-        freelaUid: freela.uid || chamada.freelaUid,
+        freelaUid: freela.uid,
         estabelecimentoUid: chamada.estabelecimentoUid,
         chamadaId: chamada.id,
         nota,
         comentario,
-        data: serverTimestamp()
-      })
-
-      // ✅ Ainda atualiza a própria chamada com o campo de avaliação
-      await updateDoc(doc(db, 'chamadas', chamada.id), {
-        avaliacaoFreela: {
-          nota,
-          comentario,
-          criadoEm: serverTimestamp()
-        }
+        data: serverTimestamp(),
       })
 
       if (onAvaliado) onAvaliado(chamada.id)
@@ -55,15 +39,13 @@ export default function CardAvaliacaoFreela({ chamada, onAvaliado }) {
     <div className="bg-white p-4 rounded-xl shadow-md border border-orange-200 mb-4">
       <div className="flex items-center gap-4 mb-2">
         <img
-          src={foto}
-          alt={nome}
+          src={freela.foto || 'https://via.placeholder.com/60'}
+          alt={freela.nome}
           className="w-16 h-16 rounded-full object-cover border border-orange-400"
         />
         <div>
-          <h3 className="text-lg font-bold text-orange-700">{nome}</h3>
-          <p className="text-sm text-gray-600">
-            {freela.funcao || chamada.freelaFuncao || 'Função não informada'}
-          </p>
+          <h3 className="text-lg font-bold text-orange-700">{freela.nome}</h3>
+          <p className="text-sm text-gray-600">{freela.funcao}</p>
         </div>
       </div>
 

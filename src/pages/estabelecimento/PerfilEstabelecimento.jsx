@@ -111,8 +111,7 @@ export default function PerfilEstabelecimento() {
           </div>
         )}
 
-        const papel = usuario?.role || usuario?.tipo || usuario?.tipoUsuario
-        {usuario && papel === 'freela' && usuario.uid !== uid && (
+        {usuario && usuario.tipo === 'freela' && usuario.uid !== uid && (
           <button
             onClick={() => navigate(`/avaliacao/estabelecimento/${uid}`)}
             className="mt-4 px-4 py-2 bg-yellow-600 text-white rounded-full hover:bg-yellow-700 transition"
@@ -126,13 +125,6 @@ export default function PerfilEstabelecimento() {
           className="mt-6 px-6 py-2 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 transition"
         >
           ← Voltar
-        </button>
-        
-        <button
-          onClick={() => navigate('/estabelecimento/editarperfilestabelecimento')}
-          className="mt-4 w-full text-center bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition"
-        >
-         ✏️ Editar Perfil
         </button>
       </div>
     </div>

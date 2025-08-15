@@ -39,7 +39,7 @@ export default function CadastroEvento() {
         // criadorUid: auth.currentusuario.uid,
       })
       alert('Evento cadastrado com sucesso!')
-      navigate('/freela/buscareventos')
+      navigate('/eventosfreelas') // redireciona para lista de eventos
     } catch (err) {
       console.error('Erro ao criar evento:', err)
       setError('Erro ao criar evento. Tente novamente.')

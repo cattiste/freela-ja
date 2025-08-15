@@ -18,12 +18,11 @@ export default function EditarFreela() {
   const [salvando, setSalvando] = useState(false)
 
   useEffect(() => {
-  const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
-  const papel = usuario?.tipo || usuario?.tipoUsuario
-  if (!usuario || papel !== 'freela') {
-    navigate('/login')
-    return
-  }
+    const usuario = JSON.parse(localStorage.getItem('usuarioLogado'))
+    if (!usuario || usuario.tipo !== 'freela') {
+      navigate('/login')
+      return
+    }
 
     const fetchDados = async () => {
       const docRef = doc(db, 'usuarios', usuario.uid)

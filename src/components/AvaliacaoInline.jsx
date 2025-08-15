@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { doc, updateDoc, serverTimestamp, addDoc, collection } from 'firebase/firestore'
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 import toast from 'react-hot-toast'
 
@@ -8,10 +8,11 @@ export default function AvaliacaoInline({ chamada, tipo = 'freela' }) {
   const [comentario, setComentario] = useState('')
   const [enviando, setEnviando] = useState(false)
 
+  // ✅ VERIFICAÇÃO REFINADA
   const jaAvaliado =
     tipo === 'estabelecimento'
-      ? !!chamada.avaliacaoFreela?.nota
-      : !!chamada.avaliacaoEstabelecimento?.nota
+      ? !!chamada.avaliacaoEstabelecimento?.nota
+      : !!chamada.avaliacaoFreela?.nota
 
   if (jaAvaliado) return null
 
@@ -21,7 +22,7 @@ export default function AvaliacaoInline({ chamada, tipo = 'freela' }) {
     setEnviando(true)
 
     const campo =
-      tipo === 'estabelecimento' ? 'avaliacaoFreela' : 'avaliacaoEstabelecimento'
+      tipo === 'estabelecimento' ? 'avaliacaoEstabelecimento' : 'avaliacaoFreela'
 
     const dados = {
       [campo]: {
@@ -32,29 +33,8 @@ export default function AvaliacaoInline({ chamada, tipo = 'freela' }) {
     }
 
     try {
-      // ✅ Atualiza o documento da chamada com o campo embutido
       const ref = doc(db, 'chamadas', chamada.id)
       await updateDoc(ref, dados)
-
-      // ✅ Cria um novo documento na coleção correta
-      const avaliacaoData = {
-        tipo,
-        chamadaId: chamada.id,
-        nota,
-        comentario,
-        data: serverTimestamp()
-      }
-
-      if (tipo === 'estabelecimento') {
-        avaliacaoData.freelaUid = chamada.freelaUid
-        avaliacaoData.estabelecimentoUid = chamada.estabelecimentoUid
-        await addDoc(collection(db, 'avaliacoesFreelas'), avaliacaoData)
-      } else {
-        avaliacaoData.freelaUid = chamada.freelaUid
-        avaliacaoData.estabelecimentoUid = chamada.estabelecimentoUid
-        await addDoc(collection(db, 'avaliacoesEstabelecimentos'), avaliacaoData)
-      }
-
       toast.success('Avaliação enviada com sucesso!')
     } catch (err) {
       console.error(err)

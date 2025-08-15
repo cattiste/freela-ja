@@ -1,3 +1,4 @@
+// src/components/AvaliarFreela.jsx
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -11,7 +12,7 @@ import {
 import { db } from '@/firebase'
 import toast from 'react-hot-toast'
 
-export default function AvaliacaoFreela({ estabelecimento }) {
+export default function AvaliarFreela({ estabelecimento }) {
   const [chamadas, setChamadas] = useState([])
   const [nota, setNota] = useState({})
   const [comentario, setComentario] = useState({})
@@ -24,7 +25,7 @@ export default function AvaliacaoFreela({ estabelecimento }) {
       collection(db, 'chamadas'),
       where('estabelecimentoUid', '==', estabelecimento.uid),
       where('status', 'in', ['concluido', 'finalizada']),
-      where('avaliacaoEstabelecimentoFeita', '==', false)
+      where('avaliacaoFreelaFeita', '==', false)
     )
 
     const unsubscribe = onSnapshot(q, (snap) => {
@@ -36,27 +37,31 @@ export default function AvaliacaoFreela({ estabelecimento }) {
   }, [estabelecimento])
 
   const handleEnviar = async (chamada) => {
-    const chamadaId = chamada.id
-    const notaEnviada = nota[chamadaId]
-    const texto = comentario[chamadaId] || ''
+    const id = chamada.id
+    const notaEnviada = nota[id]
+    const texto = comentario[id] || ''
 
     if (!notaEnviada) {
       toast.error('Dê uma nota antes de enviar.')
       return
     }
 
-    setEnviando(chamadaId)
+    setEnviando(id)
 
     try {
-      const ref = doc(db, 'chamadas', chamadaId)
-      await updateDoc(ref, {
-        avaliacaoEstabelecimento: {
-          nota: notaEnviada,
-          comentario: texto,
-          criadoEm: serverTimestamp()
-        },
-        avaliacaoEstabelecimentoFeita: true
+      await updateDoc(doc(db, 'avaliacoesFreelas', id), {
+        chamadaId: id,
+        freelaUid: chamada.freelaUid,
+        estabelecimentoUid: estabelecimento.uid,
+        nota: notaEnviada,
+        comentario: texto,
+        criadoEm: serverTimestamp()
       })
+
+      await updateDoc(doc(db, 'chamadas', id), {
+        avaliacaoFreelaFeita: true
+      })
+
       toast.success('✅ Avaliação enviada com sucesso!')
     } catch (err) {
       console.error(err)
