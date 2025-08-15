@@ -1,12 +1,10 @@
 import React from 'react'
 import { toast } from 'react-hot-toast'
-import { criarChamada } from '@/utils/criarChamada'
+import criarChamada from '@/utils/criarChamada'
 
 export default function ProfissionalCardMini({ freela, usuario }) {
   return (
-    <div
-      className="bg-white rounded-xl p-4 border border-orange-100 shadow-sm flex flex-col items-center text-center w-full max-w-xs mx-auto"
-    >
+    <div className="bg-white rounded-xl p-4 border border-orange-100 shadow-sm flex flex-col items-center text-center w-full max-w-[300px] mx-auto">
       <div className="relative">
         <img
           src={freela.foto || '/placeholder-avatar.png'}
@@ -18,7 +16,7 @@ export default function ProfissionalCardMini({ freela, usuario }) {
             freela.online ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'
           }`}
         >
-          {freela.online ? 'Online' : 'Offline'}
+          {freela.online ? '🟢 Online' : '⚪ Offline'}
         </span>
       </div>
 
