@@ -1,4 +1,5 @@
-import React from 'react'
+
+import React, { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import {
   collection,
@@ -8,10 +9,11 @@ import {
   addDoc,
   serverTimestamp,
   query,
-  where
+  where,
+  onSnapshot
 } from 'firebase/firestore'
 import { db } from '@/firebase'
-import ProfissionalCard from '@/components/ProfissionalCard'
+import ProfissionalCardMini from '@/components/ProfissionalCardMini'
 import ModalFreelaDetalhes from '@/components/ModalFreelaDetalhes'
 import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 
@@ -23,54 +25,75 @@ export default function BuscarFreelas({ usuario: usuarioProp, usuariosOnline, on
 
   useRealtimePresence(usuario)
 
-function calcularDistancia(lat1, lon1, lat2, lon2) {
-  if (
-    typeof lat1 !== 'number' || typeof lon1 !== 'number' ||
-    typeof lat2 !== 'number' || typeof lon2 !== 'number'
-  ) return null
-  const toRad = (x) => (x * Math.PI) / 180
-  const R = 6371
-  const dLat = toRad(lat2 - lat1)
-  const dLon = toRad(lon2 - lon1)
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLon / 2) ** 2
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return R * c
-}
+  function calcularDistancia(lat1, lon1, lat2, lon2) {
+    if (
+      typeof lat1 !== 'number' || typeof lon1 !== 'number' ||
+      typeof lat2 !== 'number' || typeof lon2 !== 'number'
+    ) return null
+    const toRad = (x) => (x * Math.PI) / 180
+    const R = 6371
+    const dLat = toRad(lat2 - lat1)
+    const dLon = toRad(lon2 - lon1)
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) ** 2
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
+  }
 
-function normalizeLocation(loc) {
-  if (!loc) return null
-  if (typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
-    return { lat: loc.latitude, lon: loc.longitude }
+  function normalizeLocation(loc) {
+    if (!loc) return null
+    if (typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
+      return { lat: loc.latitude, lon: loc.longitude }
+    }
+    if (typeof loc.lat === 'number' && typeof loc.lng === 'number') {
+      return { lat: loc.lat, lon: loc.lng }
+    }
+    if (typeof loc.lat === 'number' && typeof loc.lon === 'number') {
+      return { lat: loc.lat, lon: loc.lon }
+    }
+    if (typeof loc.lat === 'number' && typeof loc.long === 'number') {
+      return { lat: loc.lat, lon: loc.long }
+    }
+    if (typeof loc.latitude === 'number' && typeof loc.long === 'number') {
+      return { lat: loc.latitude, lon: loc.long }
+    }
+    return null
   }
-  if (typeof loc.lat === 'number' && typeof loc.lng === 'number') {
-    return { lat: loc.lat, lon: loc.lng }
-  }
-  if (typeof loc.lat === 'number' && typeof loc.lon === 'number') {
-    return { lat: loc.lat, lon: loc.lon }
-  }
-  if (typeof loc.lat === 'number' && typeof loc.long === 'number') {
-    return { lat: loc.lat, lon: loc.long }
-  }
-  if (typeof loc.latitude === 'number' && typeof loc.long === 'number') {
-    return { lat: loc.latitude, lon: loc.long }
-  }
-  return null
-}
 
-function formatarId(contratanteUid) {
-  const d = new Date()
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${contratanteUid}_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
-}
+  function formatarId(contratanteUid) {
+    const d = new Date()
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${contratanteUid}_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
+  }
 
-export default function BuscarFreelas({ usuario, usuariosOnline, onChamar }) {
-  const { usuario: usuarioCtx } = useAuth()
-  const usuario = usuarioProp || usuarioCtx
+  async function handleChamarFreela(freela) {
+    if (!usuario?.uid || !freela?.id) {
+      console.warn('Usuário ou freela inválido.')
+      return
+    }
 
-  useRealtimePresence(usuario)
+    const chamadaId = formatarId(usuario.uid)
+
+    try {
+      await addDoc(collection(db, 'chamadas'), {
+        chamadaId,
+        status: 'pendente',
+        criadoEm: serverTimestamp(),
+        contratanteUid: usuario.uid,
+        freelaUid: freela.id,
+        valor: freela.valorDiaria || 0,
+        local: estab?.localizacao || null,
+        observacao: '',
+      })
+      if (typeof onChamar === 'function') onChamar()
+      alert(`Freela chamado com sucesso!`)
+    } catch (err) {
+      console.error('Erro ao chamar freela:', err)
+      alert('Erro ao chamar o freela.')
+    }
+  }
 
   const [estab, setEstab] = useState(null)
   const [freelasRaw, setFreelasRaw] = useState([])
@@ -223,6 +246,8 @@ export default function BuscarFreelas({ usuario, usuariosOnline, onChamar }) {
             key={f.id}
             freela={f}
             onClick={() => setFreelaSelecionado(f)}
+            onChamar={() => handleChamarFreela(f)}
+            desabilitarChamada={f.hasChamadaAtiva}
           />
         ))}
       </div>
