@@ -1,5 +1,4 @@
 // src/pages/freela/ChamadasFreela.jsx
-// versão com validação por localização desativada (check-in liberado)
 import React, { useEffect, useMemo, useState } from 'react'
 import {
   collection, query, where, onSnapshot,
@@ -23,7 +22,7 @@ const STATUS_LISTA = [
   'rejeitada'
 ]
 
-const LIMITE_ACEITACAO_MS = 10 * 60 * 1000 // 10 min
+const LIMITE_ACEITACAO_MS = 10 * 60 * 1000 // 10 minutos
 
 export default function ChamadasFreela() {
   const { usuario } = useAuth()
@@ -54,6 +53,26 @@ export default function ChamadasFreela() {
     return () => unsub()
   }, [usuario?.uid])
 
+  // 🔔 TOCAR SOM DE CHAMADA NOVA
+  useEffect(() => {
+    if (!chamadas || chamadas.length === 0) return
+
+    const pendente = chamadas.find((c) => c.status === 'pendente')
+
+    if (!pendente) return
+
+    const criadoEm = pendente.criadoEm?.toMillis?.()
+    const agora = Date.now()
+
+    if (criadoEm && agora - criadoEm < 10_000) {
+      const audio = new Audio('/sons/chamada.mp3')
+      audio.volume = 1.0
+      audio.play().catch((e) => {
+        console.warn('🔇 Falha ao tocar som:', e.message)
+      })
+    }
+  }, [chamadas])
+
   const chamadasOrdenadas = useMemo(() => {
     const ts = (x) => x?.toMillis?.() ?? (x?.seconds ? x.seconds * 1000 : 0)
     return [...(Array.isArray(chamadas) ? chamadas : [])].sort((a, b) => {
@@ -63,16 +82,14 @@ export default function ChamadasFreela() {
     })
   }, [chamadas])
 
+  // ⏳ Auto-cancelamento se passou tempo sem pagamento
   useEffect(() => {
     const agora = Date.now()
     const candidatas = chamadasOrdenadas.filter((c) => {
       if (c.status !== 'aceita') return false
       const aceitaMs = c.aceitaEm?.toMillis?.() ?? (c.aceitaEm?.seconds ? c.aceitaEm.seconds * 1000 : 0)
-      if (!aceitaMs || aceitaMs < 1_000_000_000_000) return false
-      return (agora - aceitaMs) > LIMITE_ACEITACAO_MS
+      return aceitaMs && (agora - aceitaMs) > LIMITE_ACEITACAO_MS
     })
-
-    if (candidatas.length === 0) return
 
     candidatas.forEach(async (ch) => {
       try {
