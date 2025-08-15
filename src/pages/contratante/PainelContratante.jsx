@@ -7,8 +7,9 @@ import {
   collection, getDocs, query, where
 } from 'firebase/firestore'
 import { db } from '@/firebase'
-import { addDoc, serverTimestamp } from 'firebase/firestore'
+import { addDoc } from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
+
 
 import MenuInferiorContratante from '@/components/MenuInferiorContratante'
 import BuscarFreelas from '@/components/BuscarFreelas'

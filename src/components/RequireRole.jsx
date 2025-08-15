@@ -11,7 +11,6 @@ const normalizeTipo = (t) => {
 const defaultPainelDe = {
   freela: '/painelfreela',
   contratante: '/painelcontratante',
-  contratante: '/painelcontratante',
   admin: '/admin',
 }
 
@@ -46,4 +45,10 @@ export default function RequireRole({ allow = [], children, routeMap }) {
   }
 
   return <>{children}</>
+
+  const redirecionamentos = {
+  freela: '/painelfreela',
+  contratante: '/painelcontratante',
+  admin: '/admin',
+ }
 }
