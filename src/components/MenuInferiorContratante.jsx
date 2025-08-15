@@ -1,3 +1,4 @@
+// src/components/MenuInferiorEstabelecimento.jsx
 import React from 'react'
 import {
   UserCircle,

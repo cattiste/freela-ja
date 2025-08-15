@@ -12,7 +12,7 @@ function toDateLike(ts) {
   } catch { return null }
 }
 
-export default function MensagensRecebidasContratante({ chamadaId }) {
+export default function MensagensRecebidasEstabelecimento({ chamadaId }) {
   const [mensagens, setMensagens] = useState([])
 
   useEffect(() => {
