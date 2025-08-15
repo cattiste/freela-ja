@@ -7,23 +7,6 @@ import { useAuth } from '@/context/AuthContext'
 import ProfissionalCardMini from '@/components/ProfissionalCardMini'
 import ModalFreelaDetalhes from '@/components/ModalFreelaDetalhes'
 import { useRealtimePresence } from '@/hooks/useRealtimePresence'
-import criaChamada from '@/utils/criarChamada'
-import { toast } from 'react-hot-toast'
-
-const handleChamar = async (freela) => {
-  try {
-    await criaChamada({
-      freela,
-      contratante: usuario,
-      localizacao: usuario.localizacao,
-      observacao: 'Comparecer de roupa preta', // opcional
-    })
-    toast.success('Chamada realizada com sucesso!')
-  } catch (err) {
-    console.error('[BuscarFreelas] erro ao chamar freela:', err)
-    toast.error('Erro ao chamar freela.')
-  }
-}
 
 const ACTIVE_STATUSES = ['pendente', 'aceita', 'checkin_freela', 'em_andamento', 'checkout_freela']
 
