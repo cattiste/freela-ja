@@ -54,7 +54,7 @@ function formatarId(contratanteUid) {
   return `${contratanteUid}_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
 }
 
-export default function BuscarFreelas({ usuario: usuarioProp }) {
+export default function BuscarFreelas({ usuario, usuariosOnline, onChamar }) {
   const { usuario: usuarioCtx } = useAuth()
   const usuario = usuarioProp || usuarioCtx
 
