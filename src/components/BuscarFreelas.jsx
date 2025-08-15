@@ -1,8 +1,10 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
-  collection, query, where, onSnapshot, addDoc, serverTimestamp
+  collection, query, where, onSnapshot, doc, getDoc, getDocs, setDoc, serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/firebase'
+import { useAuth } from '@/context/AuthContext'
+import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 
 function calcularDistancia(lat1, lon1, lat2, lon2) {
   const toRad = (x) => (x * Math.PI) / 180
