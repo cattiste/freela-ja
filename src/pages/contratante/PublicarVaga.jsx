@@ -1,4 +1,4 @@
-﻿// src/pages/contratante/PublicarVaga.jsx
+// src/pages/estabelecimento/PublicarVaga.jsx
 import React, { useEffect, useState } from 'react'
 import { collection, addDoc, updateDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -6,7 +6,7 @@ import DatePicker from 'react-multi-date-picker'
 import { toast } from 'react-hot-toast'
 import '@/styles/orange.css'
 
-export default function PublicarVaga({ contratante, vaga = null, onSucesso }) {
+export default function PublicarVaga({ estabelecimento, vaga = null, onSucesso }) {
   const [form, setForm] = useState({
     titulo: '',
     descricao: '',
@@ -61,7 +61,7 @@ export default function PublicarVaga({ contratante, vaga = null, onSucesso }) {
     if (form.tipo === 'clt' && !form.endereco) {
       return toast.error('Informe o endereço para CLT.')
     }
-    if (!contratante?.uid) {
+    if (!estabelecimento?.uid) {
       return toast.error('Usuário não autenticado.')
     }
 
@@ -86,8 +86,8 @@ export default function PublicarVaga({ contratante, vaga = null, onSucesso }) {
         status: 'aberta',              // para ser listada no painel do freela
         dataPublicacao: serverTimestamp(),
         criadoEm: serverTimestamp(),
-        contratanteUid: contratante.uid,
-        contratanteNome: contratante.nome
+        estabelecimentoUid: estabelecimento.uid,
+        estabelecimentoNome: estabelecimento.nome
       }
 
       if (vaga && vaga.id) {

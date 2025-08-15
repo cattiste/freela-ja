@@ -1,148 +1,189 @@
-﻿// ChamadasContratante.jsx – revisão para garantir exibição do status 'aceita'
-
-import React, { useEffect, useState } from 'react'
+// src/pages/estabelecimento/ChamadasEstabelecimento.jsx
+import React, { useEffect, useMemo, useState } from 'react'
 import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  updateDoc,
-  doc,
-  serverTimestamp
+  collection, query, where, onSnapshot,
+  updateDoc, doc, serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/firebase'
+import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
-import AvaliacaoInline from '@/components/AvaliacaoInline'
-import MensagensRecebidasContratante from '@/components/MensagensRecebidasContratante'
 
-export default function ChamadasContratante({ contratante }) {
+const STATUS_LISTA = [
+  'pendente',
+  'aceita',
+  'checkin_freela',
+  'em_andamento',
+  'checkout_freela',
+  'concluido',
+  'finalizada',
+  'cancelada_por_falta_de_pagamento',
+  'rejeitada'
+]
+
+export default function ChamadasEstabelecimento({ estabelecimento }) {
+  const { usuario } = useAuth()
+  const estab = estabelecimento || usuario
   const [chamadas, setChamadas] = useState([])
-  const [loadingId, setLoadingId] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!contratante?.uid) return
+    if (!estab?.uid) return
+    setLoading(true)
 
     const q = query(
       collection(db, 'chamadas'),
-      where('contratanteUid', '==', contratante.uid),
-      where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'concluido'])
+      where('estabelecimentoUid', '==', estab.uid),
+      where('status', 'in', STATUS_LISTA)
     )
 
-    const unsub = onSnapshot(q, (snap) => {
-      const todasChamadas = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-
-      const unicas = {}
-      todasChamadas.forEach((chamada) => {
-        const existente = unicas[chamada.freelaUid]
-        const novaData = chamada.criadoEm?.toMillis?.() || 0
-        const dataExistente = existente?.criadoEm?.toMillis?.() || 0
-
-        if (!existente || novaData > dataExistente) {
-          unicas[chamada.freelaUid] = chamada
-        }
-      })
-
-      setChamadas(Object.values(unicas))
-    })
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+        setChamadas(docs)
+        setLoading(false)
+      },
+      (err) => {
+        console.error('[ChamadasEstabelecimento] onSnapshot erro:', err)
+        toast.error('Falha ao carregar chamadas.')
+        setLoading(false)
+      }
+    )
 
     return () => unsub()
-  }, [contratante])
+  }, [estab?.uid])
 
-  const atualizarChamada = async (id, dados) => {
+  const chamadasOrdenadas = useMemo(() => {
+    const ts = (x) => x?.toMillis?.() ?? (x?.seconds ? x.seconds * 1000 : 0)
+    return [...chamadas].sort((a, b) => {
+      const aT = ts(a.criadoEm) || ts(a.aceitaEm) || ts(a.checkInFreelaHora) || 0
+      const bT = ts(b.criadoEm) || ts(b.aceitaEm) || ts(b.checkInFreelaHora) || 0
+      return bT - aT
+    })
+  }, [chamadas])
+
+  async function confirmarConvite(ch) {
     try {
-      setLoadingId(id)
-      await updateDoc(doc(db, 'chamadas', id), dados)
-      toast.success('✅ Ação realizada com sucesso!')
-    } catch (err) {
-      console.error('Erro ao atualizar chamada:', err)
-      toast.error('Erro ao atualizar chamada.')
-    } finally {
-      setLoadingId(null)
+      await updateDoc(doc(db, 'chamadas', ch.id), {
+        status: 'aceita',
+        aceitaEm: serverTimestamp()
+      })
+      toast.success('✅ Convite confirmado!')
+    } catch (e) {
+      console.error('[ChamadasEstabelecimento] confirmarConvite erro:', e)
+      toast.error('Erro ao confirmar convite.')
     }
   }
 
-  const badgeStatus = (status) => {
-    const cores = {
-      aceita: 'bg-yellow-200 text-yellow-700',
-      checkin_freela: 'bg-purple-200 text-purple-700',
-      em_andamento: 'bg-green-200 text-green-700',
-      checkout_freela: 'bg-blue-200 text-blue-700',
-      concluido: 'bg-gray-200 text-gray-700'
+  async function cancelarConvite(ch) {
+    try {
+      await updateDoc(doc(db, 'chamadas', ch.id), {
+        status: 'cancelada_por_falta_de_pagamento',
+        canceladaEm: serverTimestamp()
+      })
+      toast.success('❌ Convite cancelado.')
+    } catch (e) {
+      console.error('[ChamadasEstabelecimento] cancelarConvite erro:', e)
+      toast.error('Erro ao cancelar convite.')
     }
-    return (
-      <span className={`px-2 py-1 rounded text-xs font-semibold ${cores[status] || 'bg-gray-200 text-gray-700'}`}>
-         {String(status).replaceAll('_', ' ')}
-      </span>
-    )
   }
 
-  if (!chamadas.length) {
-    return <div className="text-center mt-6 text-gray-500">Nenhuma chamada ativa no momento.</div>
+  async function confirmarCheckInFreela(ch) {
+    try {
+      await updateDoc(doc(db, 'chamadas', ch.id), {
+        status: 'em_andamento',
+        checkInConfirmadoPeloEstab: true,
+        checkInConfirmadoPeloEstabHora: serverTimestamp()
+      })
+      toast.success('📍 Check-in do freela confirmado!')
+    } catch (e) {
+      console.error('[ChamadasEstabelecimento] confirmarCheckInFreela erro:', e)
+      toast.error('Erro ao confirmar check-in.')
+    }
+  }
+
+  async function confirmarCheckOutFreela(ch) {
+    try {
+      await updateDoc(doc(db, 'chamadas', ch.id), {
+        status: 'concluido',
+        checkOutConfirmadoPeloEstab: true,
+        checkOutConfirmadoPeloEstabHora: serverTimestamp()
+      })
+      toast.success('⏳ Check-out do freela confirmado!')
+    } catch (e) {
+      console.error('[ChamadasEstabelecimento] confirmarCheckOutFreela erro:', e)
+      toast.error('Erro ao confirmar check-out.')
+    }
+  }
+
+  if (loading) {
+    return <div className="text-center text-orange-600 mt-8">🔄 Carregando chamadas…</div>
+  }
+
+  if (!estab?.uid) {
+    return <div className="text-center text-red-600 mt-8">⚠️ Estabelecimento não autenticado.</div>
   }
 
   return (
-    <div className="space-y-4">
-      {chamadas.map((chamada) => {
-        // Mostrar todas, inclusive 'aceita'
-        const foto = chamada.freelaFoto || chamada.freela?.foto || 'https://placehold.co/100x100'
-        const nome = chamada.freelaNome || chamada.freela?.nome || 'Nome não informado'
+    <div className="p-4 max-w-5xl mx-auto">
+      <h1 className="text-2xl font-bold text-orange-700 text-center mb-4">📡 Chamadas Ativas</h1>
 
-        return (
-          <div key={chamada.id} className="bg-white rounded-xl p-3 shadow border border-orange-100 space-y-2">
-            <div className="flex items-center gap-3">
-              <img
-                src={foto}
-                alt={nome}
-                className="w-10 h-10 rounded-full border border-orange-300 object-cover"
-              />
-              <div className="flex-1">
-                <p className="font-bold text-orange-600">{nome}</p>
-                {chamada.valorDiaria && (
-                  <p className="text-xs text-gray-500">💰 R$ {chamada.valorDiaria} / diária</p>
-                )}
-                <p className="text-sm mt-1">📌 Status: {badgeStatus(chamada.status)}</p>
-                <MensagensRecebidasContratante chamadaId={chamada.id} />
+      {chamadasOrdenadas.length === 0 ? (
+        <p className="text-center text-gray-600">Nenhuma chamada ativa no momento.</p>
+      ) : (
+        chamadasOrdenadas.map((ch) => (
+          <div key={ch.id} className="bg-white shadow p-4 rounded-xl mb-4 border border-orange-200 space-y-2">
+            <h2 className="font-semibold text-orange-600 text-lg">Chamada #{ch?.id?.slice(-5)}</h2>
+            <p><strong>Freela:</strong> {ch.freelaNome || ch.freelaUid}</p>
+            <p><strong>Status:</strong> {ch.status}</p>
+            {typeof ch.valorDiaria === 'number' && (
+              <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>
+            )}
+            {ch.observacao && (
+              <p className="text-sm text-gray-800"><strong>📝 Observação:</strong> {ch.observacao}</p>
+            )}
+
+            {ch.status === 'pendente' && (
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  onClick={() => confirmarConvite(ch)}
+                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+                >
+                  ✅ Confirmar convite
+                </button>
+                <button
+                  onClick={() => cancelarConvite(ch)}
+                  className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition"
+                >
+                  ❌ Cancelar convite
+                </button>
               </div>
-            </div>
+            )}
 
-            {chamada.checkInFreela === true && !chamada.checkInContratante && (
+            {ch.status === 'checkin_freela' && (
               <button
-                onClick={() =>
-                  atualizarChamada(chamada.id, {
-                    checkInContratante: true,
-                    checkInContratanteHora: serverTimestamp(),
-                    status: 'em_andamento'
-                  })
-                }
-                disabled={loadingId === chamada.id}
-                className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+                onClick={() => confirmarCheckInFreela(ch)}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
               >
-                {loadingId === chamada.id ? 'Confirmando...' : '✅ Confirmar Check-in'}
+                📍 Confirmar check-in do freela
               </button>
             )}
 
-            {chamada.checkOutFreela === true && !chamada.checkOutContratante && (
+            {ch.status === 'checkout_freela' && (
               <button
-                onClick={() =>
-                  atualizarChamada(chamada.id, {
-                    checkOutContratante: true,
-                    checkOutContratanteHora: serverTimestamp(),
-                    status: 'concluido'
-                  })
-                }
-                disabled={loadingId === chamada.id}
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+                onClick={() => confirmarCheckOutFreela(ch)}
+                className="w-full bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition"
               >
-                {loadingId === chamada.id ? 'Confirmando...' : '📤 Confirmar Check-out'}
+                ⏳ Confirmar check-out do freela
               </button>
             )}
 
-            {chamada.status === 'concluido' && (
-              <AvaliacaoInline chamada={chamada} tipo="contratante" />
+            {(ch.status === 'concluido' || ch.status === 'finalizada') && (
+              <span className="text-green-600 font-bold block text-center mt-2">✅ Finalizada</span>
             )}
           </div>
-        )
-      })}
+        ))
+      )}
     </div>
   )
 }

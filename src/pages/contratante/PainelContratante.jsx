@@ -1,4 +1,4 @@
-﻿// src/pages/contratante/PainelContratante.jsx
+// src/pages/estabelecimento/PainelEstabelecimento.jsx
 import React, { useEffect, useMemo, useState } from 'react'
 import { Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
@@ -8,14 +8,15 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 
-import MenuInferiorContratante from '@/components/MenuInferiorContratante'
+import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
 import BuscarFreelas from '@/components/BuscarFreelas'
 import AgendasContratadas from '@/components/AgendasContratadas'
-import VagasContratanteCompleto from '@/components/VagasContratanteCompleto'
-import AvaliacoesRecebidasContratante from '@/pages/contratante/AvaliacoesRecebidasContratante'
-import HistoricoChamadasContratante from '@/components/HistoricoChamadasContratante'
-import ChamadasContratante from '@/pages/contratante/ChamadasContratante'
+import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompleto'
+import AvaliacoesRecebidasEstabelecimento from '@/pages/estabelecimento/AvaliacoesRecebidasEstabelecimento'
+import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
+import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
 import Calendar from 'react-calendar'
+import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
@@ -27,7 +28,7 @@ class ErrorBoundary extends React.Component {
     this.state = { hasError: false, err: null }
   }
   static getDerivedStateFromError(err) { return { hasError: true, err } }
-  componentDidCatch(err, info) { console.error('[PainelContratante] erro:', err, info) }
+  componentDidCatch(err, info) { console.error('[PainelEstabelecimento] erro:', err, info) }
   render() {
     if (this.state.hasError) {
       return (
@@ -41,44 +42,44 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-export default function PainelContratante() {
+export default function PainelEstabelecimento() {
   const { usuario, carregando } = useAuth()
   const nav = useNavigate()
   const location = useLocation()
 
+  // presença em tempo real (RTDB + espelho Firestore)
+  useRealtimePresence(usuario)
+
   // lê ?tab=perfil|buscar|agendas|vagas|avaliacao|historico|ativas|chamadas
   const getTabFromURL = () => new URLSearchParams(location.search).get('tab') || 'perfil'
   const [abaSelecionada, setAbaSelecionada] = useState(getTabFromURL())
-
   useEffect(() => { setAbaSelecionada(getTabFromURL()) }, [location.search])
 
-  const contratante = useMemo(
-    () => (usuario?.tipo === 'contratante' ? usuario : null),
-    [usuario]
-  )
+  // pode evoluir para checagens de role/admin se quiser
+  const estabelecimento = useMemo(() => usuario, [usuario])
 
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
   const [agendaPerfil, setAgendaPerfil] = useState({})
-  const usuariosOnline = {} // placeholder
+  const usuariosOnline = {} // placeholder se ainda precisar
 
   useEffect(() => {
-    if (!contratante?.uid) return
+    if (!estabelecimento?.uid) return
     ;(async () => {
       try {
-        await updateDoc(doc(db, 'usuarios', contratante.uid), {
+        await updateDoc(doc(db, 'usuarios', estabelecimento.uid), {
           ultimaAtividade: serverTimestamp()
         })
       } catch (err) {
-        console.warn('[PainelContratante] ultimaAtividade falhou:', err)
+        console.warn('[PainelEstabelecimento] ultimaAtividade falhou:', err)
       }
     })()
-  }, [contratante?.uid])
+  }, [estabelecimento?.uid])
 
   useEffect(() => {
-    if (!contratante?.uid) return
-    carregarAgenda(contratante.uid)
-    carregarAvaliacoesPendentes(contratante.uid)
-  }, [contratante?.uid])
+    if (!estabelecimento?.uid) return
+    carregarAgenda(estabelecimento.uid)
+    carregarAvaliacoesPendentes(estabelecimento.uid)
+  }, [estabelecimento?.uid])
 
   async function carregarAgenda(uid) {
     try {
@@ -88,21 +89,21 @@ export default function PainelContratante() {
       snap.docs.forEach((d) => (datas[d.id] = d.data()))
       setAgendaPerfil(datas)
     } catch (err) {
-      console.error('[PainelContratante] erro agenda:', err)
+      console.error('[PainelEstabelecimento] erro agenda:', err)
     }
   }
 
   async function carregarAvaliacoesPendentes(uid) {
     try {
       const ref = collection(db, 'chamadas')
-      const q = query(ref, where('contratanteUid', '==', uid), where('status', '==', 'concluido'))
+      const q = query(ref, where('estabelecimentoUid', '==', uid), where('status', '==', 'concluido'))
       const snap = await getDocs(q)
       const pendentes = snap.docs
         .map((d) => ({ id: d.id, ...d.data() }))
         .filter((c) => !c.avaliacaoFreela?.nota)
       setAvaliacoesPendentes(pendentes)
     } catch (err) {
-      console.error('[PainelContratante] erro aval pendentes:', err)
+      console.error('[PainelEstabelecimento] erro aval pendentes:', err)
     }
   }
 
@@ -112,23 +113,23 @@ export default function PainelContratante() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
             <img
-              src={contratante?.foto || '/img/placeholder-100.png'}
-              alt={contratante?.nome || 'Contratante'}
+              src={estabelecimento?.foto || '/img/placeholder-100.png'}
+              alt={estabelecimento?.nome || 'Estabelecimento'}
               className="w-24 h-24 rounded-full object-cover mb-2 border-2 border-orange-500 mx-auto"
               onError={(e) => (e.currentTarget.src = '/img/placeholder-100.png')}
             />
             <h2 className="text-center text-xl font-bold text-orange-700">
-              {contratante?.nome || 'Sem nome'}
+              {estabelecimento?.nome || 'Sem nome'}
             </h2>
             <div className="text-sm text-gray-700 space-y-1 mt-3">
-              <p>📞 {contratante?.celular || 'Telefone não informado'}</p>
-              <p>📧 {contratante?.email}</p>
-              <p>📍 {contratante?.endereco || 'Endereço não informado'}</p>
-              <p>🧾 {contratante?.cnpj || 'CNPJ não informado'}</p>
+              <p>📞 {estabelecimento?.celular || 'Telefone não informado'}</p>
+              <p>📧 {estabelecimento?.email}</p>
+              <p>📍 {estabelecimento?.endereco || 'Endereço não informado'}</p>
+              <p>🧾 {estabelecimento?.cnpj || 'CNPJ não informado'}</p>
             </div>
 
             <button
-              onClick={() => nav('/contratante/editarperfilcontratante')}
+              onClick={() => nav('/estabelecimento/editarperfilestabelecimento')}
               className="mt-4 w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition"
             >
               ✏️ Editar Perfil
@@ -170,7 +171,7 @@ export default function PainelContratante() {
                       <p className="text-xs text-gray-500">Chamada: {ch.id}</p>
                       <button
                         className="mt-2 text-xs bg-orange-600 text-white px-3 py-1 rounded"
-                        onClick={() => carregarAvaliacoesPendentes(contratante.uid)}
+                        onClick={() => carregarAvaliacoesPendentes(estabelecimento.uid)}
                       >
                         Avaliar
                       </button>
@@ -190,32 +191,26 @@ export default function PainelContratante() {
       case 'perfil':
         return renderPerfil()
       case 'buscar':
-        return <BuscarFreelas usuario={contratante} usuariosOnline={usuariosOnline} />
+        return <BuscarFreelas usuario={estabelecimento} usuariosOnline={usuariosOnline} />
       case 'agendas':
-        return <AgendasContratadas contratante={contratante} />
+        return <AgendasContratadas estabelecimento={estabelecimento} />
       case 'vagas':
-        return <VagasContratanteCompleto contratante={contratante} />
+        return <VagasEstabelecimentoCompleto estabelecimento={estabelecimento} />
       case 'avaliacao':
-        return <AvaliacoesRecebidasContratante />
+        return <AvaliacoesRecebidasEstabelecimento />
       case 'historico':
-        return <HistoricoChamadasContratante contratante={contratante} />
+        return <HistoricoChamadasEstabelecimento estabelecimento={estabelecimento} />
       case 'ativas':
       case 'chamadas':
-        return <ChamadasContratante contratante={contratante} />
+        return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
       default:
         return renderPerfil()
     }
   }
 
-  // Estados de carregamento/segurança
+  // Estados de carregamento/segurança básicos
   if (carregando) return <div className="text-center text-orange-600 mt-8">Carregando painel…</div>
   if (!usuario?.uid) return <Navigate to="/login" replace />
-
-  if (usuario?.uid && usuario?.tipo !== 'contratante') {
-    if (usuario?.tipo === 'freela') return <Navigate to="/painelfreela" replace />
-    if (usuario?.tipo === 'pessoa_fisica') return <Navigate to="/pf" replace />
-    return <Navigate to="/" replace />
-  }
 
   return (
     <div
@@ -228,7 +223,7 @@ export default function PainelContratante() {
       }}
     >
       <ErrorBoundary>{renderConteudo()}</ErrorBoundary>
-      <MenuInferiorContratante onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
+      <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
     </div>
   )
 }
