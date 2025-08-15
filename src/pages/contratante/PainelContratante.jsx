@@ -50,7 +50,7 @@ async function chamarFreela(freela) {
   try {
     const novaChamada = {
       contratanteUid: contratante.uid,
-      freelaUid: freela.id,
+      freelaUid: freela.uid,
       status: 'pendente',
       criadaEm: serverTimestamp(),
       nomeContratante: contratante.nome || '',

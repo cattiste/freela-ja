@@ -10,7 +10,7 @@ export default function ModalFreelaDetalhes({ freela, onClose }) {
       if (!freela?.id) return
       const q = query(
         collection(db, 'avaliacoes'),
-        where('avaliadoId', '==', freela.id),
+        where('avaliadoId', '==', freela.uid),
         where('tipo', '==', 'freela')
       )
       const snap = await getDocs(q)

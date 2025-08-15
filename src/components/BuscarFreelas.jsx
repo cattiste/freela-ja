@@ -69,31 +69,35 @@ export default function BuscarFreelas({ usuario: usuarioProp, usuariosOnline, on
   }
 
   async function handleChamarFreela(freela) {
-    if (!usuario?.uid || !freela?.id) {
-      console.warn('Usuário ou freela inválido.')
-      return
-    }
-
-    const chamadaId = formatarId(usuario.uid)
-
-    try {
-      await addDoc(collection(db, 'chamadas'), {
-        chamadaId,
-        status: 'pendente',
-        criadoEm: serverTimestamp(),
-        contratanteUid: usuario.uid,
-        freelaUid: freela.id,
-        valor: freela.valorDiaria || 0,
-        local: estab?.localizacao || null,
-        observacao: '',
-      })
-      if (typeof onChamar === 'function') onChamar()
-      alert(`Freela chamado com sucesso!`)
-    } catch (err) {
-      console.error('Erro ao chamar freela:', err)
-      alert('Erro ao chamar o freela.')
-    }
+  if (!usuario?.uid || !freela?.id) {
+    console.warn('Usuário ou freela inválido.');
+    return;
   }
+
+  try {
+    await addDoc(collection(db, 'chamadas'), {
+      freelaUid: freela.id,
+      freelaNome: freela.nome,
+      freelaFoto: freela.foto || '',
+      freelaFuncao: freela.funcao || '',
+      
+      chamadorUid: usuario.uid,
+      chamadorNome: usuario.nome || '',
+      tipoChamador: usuario.tipoUsuario || usuario.tipo || '',
+      
+      valorDiaria: freela.valorDiaria || null,
+      observacao: '',
+      status: 'pendente',
+      criadoEm: serverTimestamp(),
+    });
+    
+    if (typeof onChamar === 'function') onChamar();
+    alert(`Freelancer ${freela.nome} foi chamado com sucesso.`);
+  } catch (err) {
+    console.error('Erro ao chamar freela:', err);
+    alert('Erro ao chamar freelancer.');
+  }
+}
 
   const [estab, setEstab] = useState(null)
   const [freelasRaw, setFreelasRaw] = useState([])

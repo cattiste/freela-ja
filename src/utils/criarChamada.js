@@ -11,7 +11,7 @@ export async function criarChamada({ contratante, freela }) {
     idPersonalizado: id,
     contratanteUid: contratante.uid,
     contratanteNome: contratante.nome || '',
-    freelaUid: freela.id,
+    freelaUid: freela.uid,
     freelaNome: freela.nome || '',
     freelaFoto: freela.foto || '',
     valorDiaria: typeof freela.valorDiaria === 'number' ? freela.valorDiaria : null,
