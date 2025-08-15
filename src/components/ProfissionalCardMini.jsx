@@ -1,6 +1,6 @@
 import React from 'react'
 import { toast } from 'react-hot-toast'
-import criarChamada from '@/utils/criarChamada'
+import { criarChamada } from '@/utils/criarChamada'
 
 export default function ProfissionalCardMini({ freela, usuario }) {
   return (
