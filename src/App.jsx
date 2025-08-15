@@ -32,10 +32,6 @@ import PainelContratante from '@/pages/contratante/PainelContratante'
 import EditarPerfilContratante from '@/pages/contratante/EditarPerfilContratante'
 import PublicarVaga from '@/pages/contratante/PublicarVaga'
 import PagamentoChamada from '@/pages/contratante/PagamentoChamada'
-import CadastroContratante from '@/pages/contratante/CadastroContratante'
-import PainelContratante from '@/pages/contratante/PainelContratante'
-import EditarPerfilContratante from '@/pages/contratante/EditarPerfilContratante'
-import PerfilContratante from '@/pages/contratante/PerfilContratante'
 
 export default function App() {
   return (
@@ -86,23 +82,7 @@ export default function App() {
         } />
         <Route path="/publicarvaga" element={<PublicarVaga />} />
         <Route path="/pagamentochamada/:id" element={<PagamentoChamada />} />
-
-        {/* ✅ Redirecionamentos úteis */}
         <Route path="/contratante/chamadascontratante" element={<Navigate to="/contratante/ativas" />} />
-
-        {/* 🤝 Contratante */}
-        <Route path="/cadastrocontratante" element={<CadastroContratante />} />
-        <Route path="/perfilcontratante/:uid" element={<PerfilContratante />} />
-        <Route path="/painelcontratante" element={
-          <RequireRole allow={['contratante', 'admin']}>
-            <PainelContratante />
-          </RequireRole>
-        } />
-        <Route path="/contratante/editarperfilcontratante" element={
-          <RequireRole allow={['contratante', 'admin']}>
-            <EditarPerfilContratante />
-          </RequireRole>
-        } />
 
         {/* 404 opcional */}
         {/* <Route path="*" element={<NotFound />} /> */}
