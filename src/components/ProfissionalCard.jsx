@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
 
-export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
+export default function ProfissionalCard({ freela, usuario, onChamar, distanciaKm }) {
   const [media, setMedia] = useState(null)
   const [total, setTotal] = useState(0)
 
