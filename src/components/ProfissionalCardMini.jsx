@@ -41,15 +41,15 @@ export default function ProfissionalCardMini({ freela, usuario }) {
       <button
         className="mt-4 w-full py-1.5 text-sm rounded-md bg-orange-600 hover:bg-orange-700 text-white"
         onClick={async (e) => {
-  e.stopPropagation()
-  try {
-    await criarChamada({ contratante: usuario, freela })
-    toast.success(`✅ Chamada enviada para ${freela.nome}`)
-  } catch (err) {
-    console.error('Erro ao chamar freela:', err)
-    toast.error(err.message || 'Erro ao chamar freela.')
-  }
-}}
+          e.stopPropagation()
+          try {
+            await criarChamada({ contratante: usuario, freela })
+            toast.success(`✅ Chamada enviada para ${freela.nome}`)
+          } catch (err) {
+            console.error('Erro ao chamar freela:', err)
+            toast.error(err.message || 'Erro ao chamar freela.')
+          }
+        }}
       >
         Chamar
       </button>
