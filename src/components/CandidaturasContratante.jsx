@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
 
-export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
+export default function CandidaturasContratante({ contratanteUid }) {
   const [candidaturas, setCandidaturas] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [editandoId, setEditandoId] = useState(null)
@@ -10,12 +10,12 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
   const [contatoEdit, setContatoEdit] = useState('')
 
   useEffect(() => {
-    if (!estabelecimentoUid) return
+    if (!contratanteUid) return
 
     const buscarCandidaturas = async () => {
       try {
         const candidaturasRef = collection(db, 'candidaturas')
-        const q = query(candidaturasRef, where('estabelecimentoUid', '==', estabelecimentoUid))
+        const q = query(candidaturasRef, where('contratanteUid', '==', contratanteUid))
         const snapshot = await getDocs(q)
 
         const lista = await Promise.all(
@@ -48,7 +48,7 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
     }
 
     buscarCandidaturas()
-  }, [estabelecimentoUid])
+  }, [contratanteUid])
 
   const iniciarEdicao = (candidatura) => {
     setEditandoId(candidatura.id)
@@ -178,7 +178,7 @@ export default function CandidaturasEstabelecimento({ estabelecimentoUid }) {
 
                 {/* Se aprovando, mostrar campo contato */}
                 <label className="block mb-2 font-semibold text-gray-700">
-                  {`Contato do estabelecimento (aparecerá se aprovado):`}
+                  {`Contato do contratante (aparecerá se aprovado):`}
                 </label>
                 <input
                   type="text"

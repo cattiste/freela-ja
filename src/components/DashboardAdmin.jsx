@@ -111,7 +111,7 @@ export default function DashboardAdmin() {
               <th>ID</th>
               <th>Status</th>
               <th>Freela</th>
-              <th>Estabelecimento</th>
+              <th>Contratante</th>
             </tr>
           </thead>
           <tbody>
@@ -120,7 +120,7 @@ export default function DashboardAdmin() {
                 <td className="py-1">#{chamada.id.slice(-5)}</td>
                 <td>{chamada.status || '-'}</td>
                 <td>{chamada.freelaNome || '-'}</td>
-                <td>{chamada.estabelecimentoNome || '-'}</td>
+                <td>{chamada.contratanteNome || '-'}</td>
               </tr>
             ))}
           </tbody>
@@ -157,7 +157,7 @@ export default function DashboardAdmin() {
             <h2 className="text-lg font-semibold text-gray-700 capitalize mb-2">📂 Chamadas: {status.replaceAll('_', ' ')}</h2>
             <ul className="text-sm space-y-1 max-h-40 overflow-y-auto">
               {chamadas.filter(c => c.status === status).map(c => (
-                <li key={c.id} className="border-b pb-1">#{c.id.slice(-5)} - {c.freelaNome || '-'} → {c.estabelecimentoNome || '-'}</li>
+                <li key={c.id} className="border-b pb-1">#{c.id.slice(-5)} - {c.freelaNome || '-'} → {c.contratanteNome || '-'}</li>
               ))}
             </ul>
           </div>

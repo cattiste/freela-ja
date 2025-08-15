@@ -68,8 +68,8 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
           {avaliacoes.map((avaliacao) => (
             <div key={avaliacao.id} className="bg-gray-50 border p-3 rounded-xl shadow-sm">
               <p className="text-sm text-gray-800">
-                <strong>Estabelecimento:</strong>{' '}
-                {avaliacao.estabelecimentoNome || '---'}
+                <strong>Contratante:</strong>{' '}
+                {avaliacao.contratanteNome || '---'}
               </p>
               <p className="text-sm text-gray-600 italic">
                 "{avaliacao.comentario || 'Sem comentario'}"

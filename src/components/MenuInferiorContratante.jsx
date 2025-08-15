@@ -1,4 +1,4 @@
-// src/components/MenuInferiorEstabelecimento.jsx
+// src/components/MenuInferiorContratante.jsx
 import React from 'react'
 import {
   UserCircle,
@@ -23,7 +23,7 @@ const botoes = [
   
 ]
 
-export default function MenuInferiorEstabelecimento({ onSelect, abaAtiva }) {
+export default function MenuInferiorContratante({ onSelect, abaAtiva }) {
   return (
     <nav className="menu-inferior">
       {botoes.map(({ id, label, icon }) => (

@@ -166,7 +166,7 @@ export default function ChamadasFreela() {
         chamadasOrdenadas.map((chamada) => (
           <div key={chamada.id} className="bg-white shadow p-4 rounded-xl mb-4 border border-orange-200 space-y-2">
             <h2 className="font-semibold text-orange-600 text-lg">Chamada #{chamada?.id?.slice(-5)}</h2>
-            <p><strong>Estabelecimento:</strong> {chamada.estabelecimentoNome || '—'}</p>
+            <p><strong>Contratante:</strong> {chamada.contratanteNome || '—'}</p>
             <p><strong>Status:</strong> {chamada.status}</p>
 
             {chamada.observacao && (

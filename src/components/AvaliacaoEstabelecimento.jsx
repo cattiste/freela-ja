@@ -3,7 +3,7 @@ import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
 
-export default function AvaliacaoEstabelecimento({ chamadaId, estabelecimentoUid, freelaUid, onSucesso }) {
+export default function AvaliacaoContratante({ chamadaId, contratanteUid, freelaUid, onSucesso }) {
   const [nota, setNota] = useState(0)
   const [comentario, setComentario] = useState('')
   const [jaAvaliado, setJaAvaliado] = useState(false)
@@ -14,7 +14,7 @@ export default function AvaliacaoEstabelecimento({ chamadaId, estabelecimentoUid
   // Verifica se já avaliou essa chamada
   useEffect(() => {
     async function checarAvaliacao() {
-      const docRef = doc(db, 'avaliacoesEstabelecimentos', docId)
+      const docRef = doc(db, 'avaliacoesContratantes', docId)
       const snap = await getDoc(docRef)
       if (snap.exists()) {
         const data = snap.data()
@@ -33,10 +33,10 @@ export default function AvaliacaoEstabelecimento({ chamadaId, estabelecimentoUid
       return
     }
     try {
-      const docRef = doc(db, 'avaliacoesEstabelecimentos', docId)
+      const docRef = doc(db, 'avaliacoesContratantes', docId)
       await setDoc(docRef, {
         chamadaId,
-        estabelecimentoUid,
+        contratanteUid,
         freelaUid,
         nota,
         comentario,
@@ -55,7 +55,7 @@ export default function AvaliacaoEstabelecimento({ chamadaId, estabelecimentoUid
 
   return (
     <div className="p-4 border rounded-lg bg-white max-w-md mx-auto shadow">
-      <h2 className="text-xl font-semibold mb-4">Avalie o Estabelecimento</h2>
+      <h2 className="text-xl font-semibold mb-4">Avalie o Contratante</h2>
 
       <div className="flex gap-1 mb-4">
         {[1,2,3,4,5].map(star => (

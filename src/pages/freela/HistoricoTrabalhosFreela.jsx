@@ -135,7 +135,7 @@ export default function HistoricoTrabalhosFreela({ freelaUid }) {
                         {i.vagaTitulo || i.freelaFuncao || 'Trabalho'}
                       </h3>
                       <p className="text-sm text-gray-600">
-                        {i.estabelecimentoNome || 'Estabelecimento não informado'}
+                        {i.contratanteNome || 'Contratante não informado'}
                       </p>
                     </div>
                     <span

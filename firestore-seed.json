@@ -15,7 +15,7 @@
       "email": "contato@bardoze.com",
       "celular": "1133334444",
       "endereco": "Av. Principal, 456",
-      "tipo": "estabelecimento"
+      "tipo": "contratante"
     }
   },
   "vagas": {
@@ -24,7 +24,7 @@
       "descricao": "Precisamos de garçom para sexta e sábado à noite.",
       "cidade": "São Paulo",
       "empresa": "Bar do Zé",
-      "estabelecimentoUid": "estab456",
+      "contratanteUid": "estab456",
       "status": "ativo",
       "valorDiaria": 180
     }
@@ -33,8 +33,8 @@
     "chamada001": {
       "freelaUid": "freela123",
       "freelaNome": "João Freela",
-      "estabelecimentoUid": "estab456",
-      "estabelecimentoNome": "Bar do Zé",
+      "contratanteUid": "estab456",
+      "contratanteNome": "Bar do Zé",
       "status": "pendente",
       "criadoEm": { ".sv": "timestamp" },
       "checkInFreela": false,

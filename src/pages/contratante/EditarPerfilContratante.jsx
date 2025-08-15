@@ -1,11 +1,11 @@
-// src/pages/estabelecimento/EditarPerfilEstabelecimento.jsx
+// src/pages/contratante/EditarPerfilContratante.jsx
 import React, { useEffect, useState } from 'react'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 import { useNavigate } from 'react-router-dom'
 import { onAuthStateChanged } from 'firebase/auth'
 
-export default function EditarPerfilEstabelecimento() {
+export default function EditarPerfilContratante() {
   const navigate = useNavigate()
   const [dados, setDados] = useState({})
   const [carregando, setCarregando] = useState(true)
@@ -72,7 +72,7 @@ export default function EditarPerfilEstabelecimento() {
       const ref = doc(db, 'usuarios', auth.currentUser.uid)
       await updateDoc(ref, { ...dados, foto })
       alert('✅ Perfil atualizado com sucesso!')
-      navigate('/painelestabelecimento')
+      navigate('/painelcontratante')
     } catch (err) {
       console.error(err)
       alert('Erro ao atualizar perfil.')
@@ -86,12 +86,12 @@ export default function EditarPerfilEstabelecimento() {
   return (
     <div className="min-h-screen p-6 bg-orange-50 flex justify-center items-center">
       <div className="bg-white p-6 rounded-2xl shadow-md w-full max-w-xl space-y-4">
-        <h2 className="text-2xl font-bold text-orange-700">✏️ Editar Perfil do Estabelecimento</h2>
+        <h2 className="text-2xl font-bold text-orange-700">✏️ Editar Perfil do Contratante</h2>
 
         <div className="flex items-center gap-4">
           <img
             src={foto || 'https://placehold.co/100x100'}
-            alt="Foto do Estabelecimento"
+            alt="Foto do Contratante"
             className="w-20 h-20 rounded-full object-cover border border-orange-500"
           />
           <input type="file" accept="image/*" onChange={handleUpload} />

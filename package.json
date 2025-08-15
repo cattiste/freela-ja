@@ -1,7 +1,7 @@
 {
   "name": "freela-ja-web",
   "version": "1.0.0",
-  "description": "Plataforma para conectar freelancers e estabelecimentos.",
+  "description": "Plataforma para conectar freelancers e contratantes.",
   "author": "Bruno Cattiste",
   "scripts": {
     "dev": "vite",

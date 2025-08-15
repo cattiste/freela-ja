@@ -9,9 +9,9 @@ export default function AvaliacaoInline({ chamada, tipo = 'freela' }) {
   const [enviando, setEnviando] = useState(false)
 
   const jaAvaliado =
-    tipo === 'estabelecimento'
+    tipo === 'contratante'
       ? !!chamada.avaliacaoFreela?.nota
-      : !!chamada.avaliacaoEstabelecimento?.nota
+      : !!chamada.avaliacaoContratante?.nota
 
   if (jaAvaliado) return null
 
@@ -21,7 +21,7 @@ export default function AvaliacaoInline({ chamada, tipo = 'freela' }) {
     setEnviando(true)
 
     const campo =
-      tipo === 'estabelecimento' ? 'avaliacaoFreela' : 'avaliacaoEstabelecimento'
+      tipo === 'contratante' ? 'avaliacaoFreela' : 'avaliacaoContratante'
 
     const dados = {
       [campo]: {
@@ -45,14 +45,14 @@ export default function AvaliacaoInline({ chamada, tipo = 'freela' }) {
         data: serverTimestamp()
       }
 
-      if (tipo === 'estabelecimento') {
+      if (tipo === 'contratante') {
         avaliacaoData.freelaUid = chamada.freelaUid
-        avaliacaoData.estabelecimentoUid = chamada.estabelecimentoUid
+        avaliacaoData.contratanteUid = chamada.contratanteUid
         await addDoc(collection(db, 'avaliacoesFreelas'), avaliacaoData)
       } else {
         avaliacaoData.freelaUid = chamada.freelaUid
-        avaliacaoData.estabelecimentoUid = chamada.estabelecimentoUid
-        await addDoc(collection(db, 'avaliacoesEstabelecimentos'), avaliacaoData)
+        avaliacaoData.contratanteUid = chamada.contratanteUid
+        await addDoc(collection(db, 'avaliacoesContratantes'), avaliacaoData)
       }
 
       toast.success('Avaliação enviada com sucesso!')
@@ -67,7 +67,7 @@ export default function AvaliacaoInline({ chamada, tipo = 'freela' }) {
   return (
     <div className="mt-3 border-t pt-3 border-gray-200">
       <h3 className="text-sm font-semibold text-gray-700 mb-2">
-        {tipo === 'estabelecimento' ? '📋 Avalie o freelancer' : '📋 Avalie o estabelecimento'}
+        {tipo === 'contratante' ? '📋 Avalie o freelancer' : '📋 Avalie o contratante'}
       </h3>
 
       <div className="flex gap-1 mb-2">

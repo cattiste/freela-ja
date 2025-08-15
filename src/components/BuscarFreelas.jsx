@@ -47,10 +47,10 @@ function normalizeLocation(loc) {
   return null
 }
 
-function formatarId(estabelecimentoUid) {
+function formatarId(contratanteUid) {
   const d = new Date()
   const pad = (n) => String(n).padStart(2, '0')
-  return `${estabelecimentoUid}_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
+  return `${contratanteUid}_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
 }
 
 export default function BuscarFreelas({ usuario: usuarioProp }) {
@@ -117,7 +117,7 @@ export default function BuscarFreelas({ usuario: usuarioProp }) {
     if (!usuario?.uid) return
     const qChamadasAtivas = query(
       collection(db, 'chamadas'),
-      where('estabelecimentoUid', '==', usuario.uid),
+      where('contratanteUid', '==', usuario.uid),
       where('status', 'in', ACTIVE_STATUSES)
     )
     const unsub = onSnapshot(qChamadasAtivas, (snap) => {

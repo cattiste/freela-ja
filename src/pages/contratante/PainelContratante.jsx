@@ -1,4 +1,4 @@
-// src/pages/estabelecimento/PainelEstabelecimento.jsx
+// src/pages/contratante/PainelContratante.jsx
 import React, { useEffect, useMemo, useState } from 'react'
 import { Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
@@ -8,13 +8,13 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 
-import MenuInferiorEstabelecimento from '@/components/MenuInferiorEstabelecimento'
+import MenuInferiorContratante from '@/components/MenuInferiorContratante'
 import BuscarFreelas from '@/components/BuscarFreelas'
 import AgendasContratadas from '@/components/AgendasContratadas'
-import VagasEstabelecimentoCompleto from '@/components/VagasEstabelecimentoCompleto'
-import AvaliacoesRecebidasEstabelecimento from '@/pages/estabelecimento/AvaliacoesRecebidasEstabelecimento'
-import HistoricoChamadasEstabelecimento from '@/components/HistoricoChamadasEstabelecimento'
-import ChamadasEstabelecimento from '@/pages/estabelecimento/ChamadasEstabelecimento'
+import VagasContratanteCompleto from '@/components/VagasContratanteCompleto'
+import AvaliacoesRecebidasContratante from '@/pages/contratante/AvaliacoesRecebidasContratante'
+import HistoricoChamadasContratante from '@/components/HistoricoChamadasContratante'
+import ChamadasContratante from '@/pages/contratante/ChamadasContratante'
 import Calendar from 'react-calendar'
 import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 
@@ -28,7 +28,7 @@ class ErrorBoundary extends React.Component {
     this.state = { hasError: false, err: null }
   }
   static getDerivedStateFromError(err) { return { hasError: true, err } }
-  componentDidCatch(err, info) { console.error('[PainelEstabelecimento] erro:', err, info) }
+  componentDidCatch(err, info) { console.error('[PainelContratante] erro:', err, info) }
   render() {
     if (this.state.hasError) {
       return (
@@ -42,7 +42,7 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-export default function PainelEstabelecimento() {
+export default function PainelContratante() {
   const { usuario, carregando } = useAuth()
   const nav = useNavigate()
   const location = useLocation()
@@ -56,30 +56,30 @@ export default function PainelEstabelecimento() {
   useEffect(() => { setAbaSelecionada(getTabFromURL()) }, [location.search])
 
   // pode evoluir para checagens de role/admin se quiser
-  const estabelecimento = useMemo(() => usuario, [usuario])
+  const contratante = useMemo(() => usuario, [usuario])
 
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
   const [agendaPerfil, setAgendaPerfil] = useState({})
   const usuariosOnline = {} // placeholder se ainda precisar
 
   useEffect(() => {
-    if (!estabelecimento?.uid) return
+    if (!contratante?.uid) return
     ;(async () => {
       try {
-        await updateDoc(doc(db, 'usuarios', estabelecimento.uid), {
+        await updateDoc(doc(db, 'usuarios', contratante.uid), {
           ultimaAtividade: serverTimestamp()
         })
       } catch (err) {
-        console.warn('[PainelEstabelecimento] ultimaAtividade falhou:', err)
+        console.warn('[PainelContratante] ultimaAtividade falhou:', err)
       }
     })()
-  }, [estabelecimento?.uid])
+  }, [contratante?.uid])
 
   useEffect(() => {
-    if (!estabelecimento?.uid) return
-    carregarAgenda(estabelecimento.uid)
-    carregarAvaliacoesPendentes(estabelecimento.uid)
-  }, [estabelecimento?.uid])
+    if (!contratante?.uid) return
+    carregarAgenda(contratante.uid)
+    carregarAvaliacoesPendentes(contratante.uid)
+  }, [contratante?.uid])
 
   async function carregarAgenda(uid) {
     try {
@@ -89,21 +89,21 @@ export default function PainelEstabelecimento() {
       snap.docs.forEach((d) => (datas[d.id] = d.data()))
       setAgendaPerfil(datas)
     } catch (err) {
-      console.error('[PainelEstabelecimento] erro agenda:', err)
+      console.error('[PainelContratante] erro agenda:', err)
     }
   }
 
   async function carregarAvaliacoesPendentes(uid) {
     try {
       const ref = collection(db, 'chamadas')
-      const q = query(ref, where('estabelecimentoUid', '==', uid), where('status', '==', 'concluido'))
+      const q = query(ref, where('contratanteUid', '==', uid), where('status', '==', 'concluido'))
       const snap = await getDocs(q)
       const pendentes = snap.docs
         .map((d) => ({ id: d.id, ...d.data() }))
         .filter((c) => !c.avaliacaoFreela?.nota)
       setAvaliacoesPendentes(pendentes)
     } catch (err) {
-      console.error('[PainelEstabelecimento] erro aval pendentes:', err)
+      console.error('[PainelContratante] erro aval pendentes:', err)
     }
   }
 
@@ -113,23 +113,23 @@ export default function PainelEstabelecimento() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
             <img
-              src={estabelecimento?.foto || '/img/placeholder-100.png'}
-              alt={estabelecimento?.nome || 'Estabelecimento'}
+              src={contratante?.foto || '/img/placeholder-100.png'}
+              alt={contratante?.nome || 'Contratante'}
               className="w-24 h-24 rounded-full object-cover mb-2 border-2 border-orange-500 mx-auto"
               onError={(e) => (e.currentTarget.src = '/img/placeholder-100.png')}
             />
             <h2 className="text-center text-xl font-bold text-orange-700">
-              {estabelecimento?.nome || 'Sem nome'}
+              {contratante?.nome || 'Sem nome'}
             </h2>
             <div className="text-sm text-gray-700 space-y-1 mt-3">
-              <p>📞 {estabelecimento?.celular || 'Telefone não informado'}</p>
-              <p>📧 {estabelecimento?.email}</p>
-              <p>📍 {estabelecimento?.endereco || 'Endereço não informado'}</p>
-              <p>🧾 {estabelecimento?.cnpj || 'CNPJ não informado'}</p>
+              <p>📞 {contratante?.celular || 'Telefone não informado'}</p>
+              <p>📧 {contratante?.email}</p>
+              <p>📍 {contratante?.endereco || 'Endereço não informado'}</p>
+              <p>🧾 {contratante?.cnpj || 'CNPJ não informado'}</p>
             </div>
 
             <button
-              onClick={() => nav('/estabelecimento/editarperfilestabelecimento')}
+              onClick={() => nav('/contratante/editarperfilcontratante')}
               className="mt-4 w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition"
             >
               ✏️ Editar Perfil
@@ -171,7 +171,7 @@ export default function PainelEstabelecimento() {
                       <p className="text-xs text-gray-500">Chamada: {ch.id}</p>
                       <button
                         className="mt-2 text-xs bg-orange-600 text-white px-3 py-1 rounded"
-                        onClick={() => carregarAvaliacoesPendentes(estabelecimento.uid)}
+                        onClick={() => carregarAvaliacoesPendentes(contratante.uid)}
                       >
                         Avaliar
                       </button>
@@ -191,18 +191,18 @@ export default function PainelEstabelecimento() {
       case 'perfil':
         return renderPerfil()
       case 'buscar':
-        return <BuscarFreelas usuario={estabelecimento} usuariosOnline={usuariosOnline} />
+        return <BuscarFreelas usuario={contratante} usuariosOnline={usuariosOnline} />
       case 'agendas':
-        return <AgendasContratadas estabelecimento={estabelecimento} />
+        return <AgendasContratadas contratante={contratante} />
       case 'vagas':
-        return <VagasEstabelecimentoCompleto estabelecimento={estabelecimento} />
+        return <VagasContratanteCompleto contratante={contratante} />
       case 'avaliacao':
-        return <AvaliacoesRecebidasEstabelecimento />
+        return <AvaliacoesRecebidasContratante />
       case 'historico':
-        return <HistoricoChamadasEstabelecimento estabelecimento={estabelecimento} />
+        return <HistoricoChamadasContratante contratante={contratante} />
       case 'ativas':
       case 'chamadas':
-        return <ChamadasEstabelecimento estabelecimento={estabelecimento} />
+        return <ChamadasContratante contratante={contratante} />
       default:
         return renderPerfil()
     }
@@ -223,7 +223,7 @@ export default function PainelEstabelecimento() {
       }}
     >
       <ErrorBoundary>{renderConteudo()}</ErrorBoundary>
-      <MenuInferiorEstabelecimento onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
+      <MenuInferiorContratante onSelect={setAbaSelecionada} abaAtiva={abaSelecionada} />
     </div>
   )
 }

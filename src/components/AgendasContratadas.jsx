@@ -13,18 +13,18 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 
-export default function AgendasContratadas({ estabelecimento }) {
+export default function AgendasContratadas({ contratante }) {
   const [datasOcupadas, setDatasOcupadas] = useState({})
   const [dataSelecionada, setDataSelecionada] = useState(null)
   const [nota, setNota] = useState('')
   const [modoEdicao, setModoEdicao] = useState(false)
 
   useEffect(() => {
-    if (!estabelecimento?.uid) return
+    if (!contratante?.uid) return
 
     const carregarAgenda = async () => {
       try {
-        const ref = collection(db, 'usuarios', estabelecimento.uid, 'agenda')
+        const ref = collection(db, 'usuarios', contratante.uid, 'agenda')
         const snap = await getDocs(ref)
         const datas = {}
         snap.docs.forEach(doc => {
@@ -37,7 +37,7 @@ export default function AgendasContratadas({ estabelecimento }) {
     }
 
     carregarAgenda()
-  }, [estabelecimento])
+  }, [contratante])
 
   const handleClickDia = (date) => {
     const dia = date.toISOString().split('T')[0]
@@ -55,10 +55,10 @@ export default function AgendasContratadas({ estabelecimento }) {
   }
 
   const marcarData = async () => {
-    if (!dataSelecionada || !estabelecimento?.uid) return
+    if (!dataSelecionada || !contratante?.uid) return
 
     try {
-      const ref = doc(db, 'usuarios', estabelecimento.uid, 'agenda', dataSelecionada)
+      const ref = doc(db, 'usuarios', contratante.uid, 'agenda', dataSelecionada)
       await setDoc(ref, { nota: nota.trim() || 'Ocupado' })
       setModoEdicao(false)
       setDataSelecionada(null)
@@ -74,10 +74,10 @@ export default function AgendasContratadas({ estabelecimento }) {
   }
 
   const liberarData = async (dia) => {
-    if (!estabelecimento?.uid) return
+    if (!contratante?.uid) return
 
     try {
-      const ref = doc(db, 'usuarios', estabelecimento.uid, 'agenda', dia)
+      const ref = doc(db, 'usuarios', contratante.uid, 'agenda', dia)
       await deleteDoc(ref)
       setDatasOcupadas(prev => {
         const novo = { ...prev }

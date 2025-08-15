@@ -4,7 +4,7 @@ import { doc, getDoc, collection, query, where, getDocs, orderBy } from 'firebas
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 
-export default function PerfilEstabelecimento() {
+export default function PerfilContratante() {
   const { uid } = useParams()
   const navigate = useNavigate()
   const { usuario } = useAuth()
@@ -20,7 +20,7 @@ export default function PerfilEstabelecimento() {
         const estabSnap = await getDoc(estabRef)
 
         if (!estabSnap.exists()) {
-          setErro('Estabelecimento não encontrado.')
+          setErro('Contratante não encontrado.')
           setCarregando(false)
           return
         }
@@ -28,8 +28,8 @@ export default function PerfilEstabelecimento() {
         setEstab(estabSnap.data())
 
         const q = query(
-          collection(db, 'avaliacoesEstabelecimentos'),
-          where('estabelecimentoUid', '==', uid),
+          collection(db, 'avaliacoesContratantes'),
+          where('contratanteUid', '==', uid),
           orderBy('dataCriacao', 'desc')
         )
         const snapshot = await getDocs(q)
@@ -44,7 +44,7 @@ export default function PerfilEstabelecimento() {
 
       } catch (e) {
         console.error(e)
-        setErro('Erro ao carregar dados do estabelecimento.')
+        setErro('Erro ao carregar dados do contratante.')
       } finally {
         setCarregando(false)
       }
@@ -114,10 +114,10 @@ export default function PerfilEstabelecimento() {
         const papel = usuario?.role || usuario?.tipo || usuario?.tipoUsuario
         {usuario && papel === 'freela' && usuario.uid !== uid && (
           <button
-            onClick={() => navigate(`/avaliacao/estabelecimento/${uid}`)}
+            onClick={() => navigate(`/avaliacao/contratante/${uid}`)}
             className="mt-4 px-4 py-2 bg-yellow-600 text-white rounded-full hover:bg-yellow-700 transition"
           >
-            Avaliar este Estabelecimento
+            Avaliar este Contratante
           </button>
         )}
 
@@ -129,7 +129,7 @@ export default function PerfilEstabelecimento() {
         </button>
         
         <button
-          onClick={() => navigate('/estabelecimento/editarperfilestabelecimento')}
+          onClick={() => navigate('/contratante/editarperfilcontratante')}
           className="mt-4 w-full text-center bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition"
         >
          ✏️ Editar Perfil

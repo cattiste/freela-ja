@@ -26,7 +26,7 @@ export default function CardAvaliacaoFreela({ chamada, onAvaliado }) {
       await addDoc(collection(db, 'avaliacoesFreelas'), {
         tipo: 'freela',
         freelaUid: freela.uid || chamada.freelaUid,
-        estabelecimentoUid: chamada.estabelecimentoUid,
+        contratanteUid: chamada.contratanteUid,
         chamadaId: chamada.id,
         nota,
         comentario,

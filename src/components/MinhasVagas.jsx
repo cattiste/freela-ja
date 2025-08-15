@@ -3,17 +3,17 @@ import React, { useEffect, useState } from 'react'
 import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore'
 import { db } from '@/firebase'
 
-export default function MinhasVagas({ estabelecimento, onEditar }) {
+export default function MinhasVagas({ contratante, onEditar }) {
   const [vagas, setVagas] = useState([])
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
     const buscarVagas = async () => {
-      if (!estabelecimento?.uid) return
+      if (!contratante?.uid) return
       try {
         const q = query(
           collection(db, 'vagas'),
-          where('estabelecimentoUid', '==', estabelecimento.uid)
+          where('contratanteUid', '==', contratante.uid)
         )
         const snapshot = await getDocs(q)
         const lista = snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
@@ -25,7 +25,7 @@ export default function MinhasVagas({ estabelecimento, onEditar }) {
       }
     }
     buscarVagas()
-  }, [estabelecimento?.uid])
+  }, [contratante?.uid])
 
   const excluirVaga = async (id) => {
     if (!window.confirm('Tem certeza que deseja excluir esta vaga?')) return

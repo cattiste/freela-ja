@@ -1,7 +1,7 @@
 
 # 📦 Freela Já — Plataforma de Contratação de Freelancers
 
-**Freela Já** é uma plataforma criada com o objetivo de conectar estabelecimentos e pessoas físicas a profissionais freelancers qualificados para eventos, bares, festas e outras atividades. Desenvolvido desde 2023, o projeto busca modernizar a forma de contratação pontual de serviços, com segurança, praticidade e tecnologia.
+**Freela Já** é uma plataforma criada com o objetivo de conectar contratantes e pessoas físicas a profissionais freelancers qualificados para eventos, bares, festas e outras atividades. Desenvolvido desde 2023, o projeto busca modernizar a forma de contratação pontual de serviços, com segurança, praticidade e tecnologia.
 
 ## 📜 Histórico do Projeto
 
@@ -14,7 +14,7 @@
 - **Primeiros módulos desenvolvidos** *(Julho – Setembro de 2023)*:
   - Cadastro de freelancers
   - Painel do freelancer com check-in/check-out
-  - Painel do estabelecimento com chamadas e agenda
+  - Painel do contratante com chamadas e agenda
   - Sistema de avaliações
   - Firebase (Firestore, Auth, Storage, Realtime DB)
 

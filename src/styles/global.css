@@ -19,7 +19,7 @@
   background-color: #f3630a;
 }
 
-/* Para os painéis que você quer o botão azul (ex PainelFreela, PainelEstabelecimento) */
+/* Para os painéis que você quer o botão azul (ex PainelFreela, PainelContratante) */
 .botao-home-painel {
   background-color: #4f46e5; /* azul arroxeado */
 }

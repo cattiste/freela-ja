@@ -4,7 +4,7 @@ import { doc, getDoc } from 'firebase/firestore'
 import { Navigate } from 'react-router-dom'
 import { auth, db } from '@/firebase'
 
-export default function RotaProtegidaEstabelecimento({ children }) {
+export default function RotaProtegidaContratante({ children }) {
   const [carregando, setCarregando] = useState(true)
   const [permitido, setPermitido] = useState(false)
 
@@ -19,7 +19,7 @@ export default function RotaProtegidaEstabelecimento({ children }) {
       const docRef = doc(db, 'usuarios', usuario.uid)
       const docSnap = await getDoc(docRef)
 
-      if (docSnap.exists() && docSnap.data().tipo === 'estabelecimento') {
+      if (docSnap.exists() && docSnap.data().tipo === 'contratante') {
         setPermitido(true)
       } else {
         setPermitido(false)

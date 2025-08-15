@@ -3,15 +3,15 @@ import React, { useEffect, useState } from 'react'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
 
-export default function HistoricoChamadasEstabelecimento({ estabelecimento }) {
+export default function HistoricoChamadasContratante({ contratante }) {
   const [chamadas, setChamadas] = useState([])
 
   useEffect(() => {
-    if (!estabelecimento?.uid) return
+    if (!contratante?.uid) return
 
     const q = query(
       collection(db, 'chamadas'),
-      where('estabelecimentoUid', '==', estabelecimento.uid),
+      where('contratanteUid', '==', contratante.uid),
       where('status', 'in', ['concluido', 'finalizada'])
     )
 
@@ -21,7 +21,7 @@ export default function HistoricoChamadasEstabelecimento({ estabelecimento }) {
     })
 
     return () => unsub()
-  }, [estabelecimento])
+  }, [contratante])
 
   if (!chamadas.length) {
     return <div className="text-center mt-6 text-gray-500">Nenhuma chamada finalizada encontrada.</div>

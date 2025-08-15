@@ -8,8 +8,8 @@ export default function PagamentoChamada({ valorBase, onConfirmar }) {
   const [validade, setValidade] = useState('')
   const [cvv, setCvv] = useState('')
 
-  const taxaEstabelecimento = valorBase * 0.10
-  const valorTotal = valorBase + taxaEstabelecimento
+  const taxaContratante = valorBase * 0.10
+  const valorTotal = valorBase + taxaContratante
 
   const confirmarPagamento = () => {
     // Aqui você integraria com a função gerarCobrancaPix ou com o gateway de cartão
@@ -22,7 +22,7 @@ export default function PagamentoChamada({ valorBase, onConfirmar }) {
 
       <p className="text-sm text-gray-600">
         Valor base da diária: <strong>R$ {valorBase.toFixed(2)}</strong><br />
-        Taxa de serviço (10%): <strong>R$ {taxaEstabelecimento.toFixed(2)}</strong><br />
+        Taxa de serviço (10%): <strong>R$ {taxaContratante.toFixed(2)}</strong><br />
         <span className="text-orange-700 font-bold">Total: R$ {valorTotal.toFixed(2)}</span>
       </p>
 

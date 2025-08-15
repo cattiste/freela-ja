@@ -58,7 +58,7 @@ exports.pagarFreelaAoCheckout = functions.https.onCall(async (data, context) => 
   }
 })
 
-// ✅ Função 2: Gera QR Code Pix para o estabelecimento e salva confirmação
+// ✅ Função 2: Gera QR Code Pix para o contratante e salva confirmação
 exports.cobraChamadaAoAceitar = functions.https.onRequest(async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).send('Método não permitido')

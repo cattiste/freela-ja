@@ -13,7 +13,7 @@ import PublicarEvento from '@/pages/gerais/PublicarEvento'
 
 // Páginas de perfil
 import PerfilFreela from '@/pages/freela/PerfilFreela'
-import PerfilEstabelecimento from '@/pages/estabelecimento/PerfilEstabelecimento'
+import PerfilContratante from '@/pages/contratante/PerfilContratante'
 
 export function RotasPublicas() {
   return (
@@ -26,7 +26,7 @@ export function RotasPublicas() {
       <Route path="/oportunidades" element={<Oportunidades />} />
       <Route path="/publicarevento" element={<PublicarEvento />} />
       <Route path="/perfilfreela/:uid" element={<PerfilFreela />} />
-      <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
+      <Route path="/perfilcontratante/:uid" element={<PerfilContratante />} />
     </>
   )
 }

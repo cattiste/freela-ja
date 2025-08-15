@@ -10,7 +10,7 @@ const normalizeTipo = (t) => {
 
 const defaultPainelDe = {
   freela: '/painelfreela',
-  estabelecimento: '/painelestabelecimento',
+  contratante: '/painelcontratante',
   contratante: '/painelcontratante',
   admin: '/admin',
 }

@@ -11,7 +11,7 @@ export default function ProtectedRoute({ children, role }) {
 
   if (role && usuario?.tipo !== role) {
     // Redireciona para o painel correto do usuário
-    if (usuario?.tipo === 'estabelecimento') return <Navigate to="/painelestabelecimento" replace />
+    if (usuario?.tipo === 'contratante') return <Navigate to="/painelcontratante" replace />
     if (usuario?.tipo === 'freela') return <Navigate to="/painelfreela" replace />
     if (usuario?.tipo === 'pessoa_fisica') return <Navigate to="/painelpf" replace />
     return <Navigate to="/" replace />

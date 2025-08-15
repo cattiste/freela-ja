@@ -1,4 +1,4 @@
-// src/pages/estabelecimento/CadastroEstabelecimento.jsx
+// src/pages/contratante/CadastroContratante.jsx
 import React, { useEffect, useState } from 'react'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { onAuthStateChanged, createUserWithEmailAndPassword } from 'firebase/auth'
@@ -9,7 +9,7 @@ import ContratoPrestacaoServico from '@/components/ContratoPrestacaoServico'
 
 const VERSAO_CONTRATO = '1.0.0'
 
-export default function CadastroEstabelecimento() {
+export default function CadastroContratante() {
   const navigate = useNavigate()
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
@@ -105,7 +105,7 @@ export default function CadastroEstabelecimento() {
         uid = userCred.user.uid
       }
 
-      if (!form.nome?.trim()) return alert('Informe o nome do estabelecimento.')
+      if (!form.nome?.trim()) return alert('Informe o nome do contratante.')
       if (!form.cnpj?.trim()) return alert('Informe o CNPJ.')
       if (!form.endereco?.trim()) return alert('Informe o endereço.')
       if (!uid) {
@@ -123,9 +123,9 @@ export default function CadastroEstabelecimento() {
         endereco: form.endereco.trim(),
         especialidade: form.especialidade.trim(),
         foto: form.foto || '',
-        tipoUsuario: 'estabelecimento',
+        tipoUsuario: 'contratante',
         tipoConta: 'comercial',
-        subtipoComercial: 'estabelecimento',
+        subtipoComercial: 'contratante',
         aceitouContrato: true,
         versaoContrato: VERSAO_CONTRATO,
         dataAceiteContrato: serverTimestamp(),
@@ -135,7 +135,7 @@ export default function CadastroEstabelecimento() {
 
       await setDoc(ref, payload, { merge: true })
       alert('✅ Cadastro salvo com sucesso!')
-      navigate('/painelestabelecimento')
+      navigate('/painelcontratante')
     } catch (e2) {
       console.error('Erro ao salvar cadastro:', e2)
       alert('Erro ao salvar cadastro.')
@@ -150,7 +150,7 @@ export default function CadastroEstabelecimento() {
     <div className="min-h-screen p-6 bg-orange-50 flex justify-center items-center">
       <form onSubmit={salvar} className="bg-white w-full max-w-xl rounded-2xl shadow p-6 space-y-4">
         <div className="flex items-start justify-between">
-          <h1 className="text-2xl font-bold text-orange-700">🏪 Cadastro do Estabelecimento</h1>
+          <h1 className="text-2xl font-bold text-orange-700">🏪 Cadastro do Contratante</h1>
           {modoEdicao && !forcarCriacao && (
             <button type="button" onClick={() => setForcarCriacao(true)} className="text-sm underline text-orange-700">
               Criar nova conta (usar outro e-mail)
@@ -215,7 +215,7 @@ export default function CadastroEstabelecimento() {
         </div>
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium">Foto do estabelecimento</label>
+          <label className="block text-sm font-medium">Foto do contratante</label>
           {form.foto ? (
             <div className="flex items-center gap-3">
               <img src={form.foto} alt="preview" className="w-16 h-16 rounded object-cover border" />

@@ -42,7 +42,7 @@ export default function HistoricoChamadasFreela({ freelaUid }) {
           <thead className="bg-orange-100 text-orange-800">
             <tr>
               <th className="text-left px-4 py-2">Vaga</th>
-              <th className="text-left px-4 py-2">Estabelecimento</th>
+              <th className="text-left px-4 py-2">Contratante</th>
               <th className="text-left px-4 py-2">Chamada</th>
               <th className="text-left px-4 py-2">Check-in</th>
               <th className="text-left px-4 py-2">Check-out</th>
@@ -53,7 +53,7 @@ export default function HistoricoChamadasFreela({ freelaUid }) {
             {chamadas.map((chamada) => (
               <tr key={chamada.id} className="border-t hover:bg-orange-50">
                 <td className="px-4 py-2">{chamada.vagaTitulo || '—'}</td>
-                <td className="px-4 py-2">{chamada.estabelecimentoNome || '—'}</td>
+                <td className="px-4 py-2">{chamada.contratanteNome || '—'}</td>
                 <td className="px-4 py-2">{formatarData(chamada.criadoEm)}</td>
                 <td className="px-4 py-2">{formatarData(chamada.checkInFreelaHora)}</td>
                 <td className="px-4 py-2">{formatarData(chamada.checkOutFreelaHora)}</td>

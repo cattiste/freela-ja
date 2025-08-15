@@ -21,10 +21,10 @@ export default function ProfissionalCardMini({ freela, usuario }) {
         valorDiaria: freela.valorDiaria || null,
         status: 'pendente',
         criadoEm: serverTimestamp(),
-        ...(usuario.tipo === 'estabelecimento'
+        ...(usuario.tipo === 'contratante'
           ? {
-              estabelecimentoUid: usuario.uid,
-              estabelecimentoNome: usuario.nome || '',
+              contratanteUid: usuario.uid,
+              contratanteNome: usuario.nome || '',
             }
           : {
               pessoaFisicaUid: usuario.uid,

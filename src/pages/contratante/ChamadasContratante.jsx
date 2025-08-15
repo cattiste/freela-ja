@@ -1,4 +1,4 @@
-// src/pages/estabelecimento/ChamadasEstabelecimento.jsx
+// src/pages/contratante/ChamadasContratante.jsx
 import React, { useEffect, useMemo, useState } from 'react'
 import {
   collection, query, where, onSnapshot,
@@ -20,9 +20,9 @@ const STATUS_LISTA = [
   'rejeitada'
 ]
 
-export default function ChamadasEstabelecimento({ estabelecimento }) {
+export default function ChamadasContratante({ contratante }) {
   const { usuario } = useAuth()
-  const estab = estabelecimento || usuario
+  const estab = contratante || usuario
   const [chamadas, setChamadas] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -32,7 +32,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
 
     const q = query(
       collection(db, 'chamadas'),
-      where('estabelecimentoUid', '==', estab.uid),
+      where('contratanteUid', '==', estab.uid),
       where('status', 'in', STATUS_LISTA)
     )
 
@@ -44,7 +44,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
         setLoading(false)
       },
       (err) => {
-        console.error('[ChamadasEstabelecimento] onSnapshot erro:', err)
+        console.error('[ChamadasContratante] onSnapshot erro:', err)
         toast.error('Falha ao carregar chamadas.')
         setLoading(false)
       }
@@ -70,7 +70,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
       })
       toast.success('✅ Convite confirmado!')
     } catch (e) {
-      console.error('[ChamadasEstabelecimento] confirmarConvite erro:', e)
+      console.error('[ChamadasContratante] confirmarConvite erro:', e)
       toast.error('Erro ao confirmar convite.')
     }
   }
@@ -83,7 +83,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
       })
       toast.success('❌ Convite cancelado.')
     } catch (e) {
-      console.error('[ChamadasEstabelecimento] cancelarConvite erro:', e)
+      console.error('[ChamadasContratante] cancelarConvite erro:', e)
       toast.error('Erro ao cancelar convite.')
     }
   }
@@ -97,7 +97,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
       })
       toast.success('📍 Check-in do freela confirmado!')
     } catch (e) {
-      console.error('[ChamadasEstabelecimento] confirmarCheckInFreela erro:', e)
+      console.error('[ChamadasContratante] confirmarCheckInFreela erro:', e)
       toast.error('Erro ao confirmar check-in.')
     }
   }
@@ -111,7 +111,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
       })
       toast.success('⏳ Check-out do freela confirmado!')
     } catch (e) {
-      console.error('[ChamadasEstabelecimento] confirmarCheckOutFreela erro:', e)
+      console.error('[ChamadasContratante] confirmarCheckOutFreela erro:', e)
       toast.error('Erro ao confirmar check-out.')
     }
   }
@@ -121,7 +121,7 @@ export default function ChamadasEstabelecimento({ estabelecimento }) {
   }
 
   if (!estab?.uid) {
-    return <div className="text-center text-red-600 mt-8">⚠️ Estabelecimento não autenticado.</div>
+    return <div className="text-center text-red-600 mt-8">⚠️ Contratante não autenticado.</div>
   }
 
   return (

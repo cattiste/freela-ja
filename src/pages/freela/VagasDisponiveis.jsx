@@ -74,7 +74,7 @@ export default function VagasDisponiveis({ freela }) {
     try {
       await addDoc(collection(db, 'candidaturas'), {
         vagaId: vaga.id,
-        estabelecimentoUid: vaga.estabelecimentoUid || null,
+        contratanteUid: vaga.contratanteUid || null,
         freelaUid: uid,
         dataCandidatura: serverTimestamp(),
         status: 'pendente',
@@ -171,7 +171,7 @@ export default function VagasDisponiveis({ freela }) {
                     </p>
                     {candidatura.status.toLowerCase() === 'rejeitado' && candidatura.mensagem && (
                       <p className="mt-2 text-red-700 italic">
-                        Mensagem do estabelecimento: {candidatura.mensagem}
+                        Mensagem do contratante: {candidatura.mensagem}
                       </p>
                     )}
                     {candidatura.status.toLowerCase() === 'aprovado' && candidatura.contato && (

@@ -17,7 +17,7 @@ export async function bootPresence() {
   const tipoConta = u?.tipoConta ?? (u?.tipo === 'freela' ? 'funcional' : u?.tipo ? 'comercial' : null)
   const tipoUsuario = u?.tipoUsuario ?? (u?.tipo === 'freela' ? 'freela' : null)
   const subtipoComercial =
-    u?.subtipoComercial ?? (u?.tipo === 'estabelecimento' ? 'estabelecimento' : u?.tipo === 'pessoa_fisica' ? 'pf' : null)
+    u?.subtipoComercial ?? (u?.tipo === 'contratante' ? 'contratante' : u?.tipo === 'pessoa_fisica' ? 'pf' : null)
 
   const statusRef = ref(rtdb, `status/${user.uid}`)
   const base = {

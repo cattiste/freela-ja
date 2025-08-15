@@ -16,7 +16,7 @@ export default function Sobre() {
             O FreelaJá nasceu com um propósito simples: conectar profissionais autônomos da área de alimentos e serviços com empresas que precisam de uma mão extra — de forma rápida, confiável e justa.
           </p>
           <p>
-            Aqui, cozinheiros, garçons, seguranças, faxineiros e muitos outros profissionais encontram oportunidades reais de trabalho. E os estabelecimentos ganham agilidade para montar suas equipes conforme a demanda.
+            Aqui, cozinheiros, garçons, seguranças, faxineiros e muitos outros profissionais encontram oportunidades reais de trabalho. E os contratantes ganham agilidade para montar suas equipes conforme a demanda.
           </p>
           <p>
             Acreditamos no poder da colaboração e na força do trabalho independente. Por isso, criamos um espaço onde o talento encontra a oportunidade — sem enrolação, sem taxas abusivas e com total liberdade.

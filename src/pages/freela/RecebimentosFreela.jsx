@@ -147,7 +147,7 @@ export default function RecebimentosFreela() {
           historico.map(item => (
             <div key={item.id} className="border rounded p-3 bg-gray-50 shadow-sm">
               <p><strong>Vaga:</strong> {item.vagaTitulo || item.vagaId || 'Não informado'}</p>
-              <p><strong>Estabelecimento:</strong> {item.estabelecimentoNome || item.estabelecimentoUid}</p>
+              <p><strong>Contratante:</strong> {item.contratanteNome || item.contratanteUid}</p>
               <p><strong>Data:</strong> {item.dataCandidatura?.toDate ? item.dataCandidatura.toDate().toLocaleDateString('pt-BR') : 'Não informado'}</p>
               <p><strong>Valor Recebido:</strong> R$ {Number(item.valorPago || 0).toFixed(2).replace('.', ',')}</p>
               <p><strong>Status:</strong> {item.status}</p>

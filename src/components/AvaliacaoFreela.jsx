@@ -13,18 +13,18 @@ import {
 import { db } from '@/firebase'
 import toast from 'react-hot-toast'
 
-export default function AvaliacaoFreela({ estabelecimento }) {
+export default function AvaliacaoFreela({ contratante }) {
   const [chamadas, setChamadas] = useState([])
   const [nota, setNota] = useState({})
   const [comentario, setComentario] = useState({})
   const [enviando, setEnviando] = useState(null)
 
   useEffect(() => {
-    if (!estabelecimento?.uid) return
+    if (!contratante?.uid) return
 
     const q = query(
       collection(db, 'chamadas'),
-      where('estabelecimentoUid', '==', estabelecimento.uid),
+      where('contratanteUid', '==', contratante.uid),
       where('status', 'in', ['concluido', 'finalizada']),
       where('avaliacaoFreelaFeita', '==', false)
     )
@@ -35,7 +35,7 @@ export default function AvaliacaoFreela({ estabelecimento }) {
     })
 
     return () => unsubscribe()
-  }, [estabelecimento])
+  }, [contratante])
 
   const handleEnviar = async (chamada) => {
     const id = chamada.id
@@ -54,7 +54,7 @@ export default function AvaliacaoFreela({ estabelecimento }) {
       await setDoc(doc(db, 'avaliacoesFreelas', docId), {
         chamadaId: id,
         freelaUid: chamada.freelaUid,
-        estabelecimentoUid: estabelecimento.uid,
+        contratanteUid: contratante.uid,
         nota: notaEnviada,
         comentario: texto,
         criadoEm: serverTimestamp()

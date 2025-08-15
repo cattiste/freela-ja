@@ -1,10 +1,10 @@
-// src/components/VagasEstabelecimentoCompleto.jsx
+// src/components/VagasContratanteCompleto.jsx
 import React, { useState } from 'react'
-import PublicarVaga from '@/pages/estabelecimento/PublicarVaga'
+import PublicarVaga from '@/pages/contratante/PublicarVaga'
 import MinhasVagas from '@/components/MinhasVagas'
-import CandidaturasEstabelecimento from '@/components/CandidaturasEstabelecimento'
+import CandidaturasContratante from '@/components/CandidaturasContratante'
 
-export default function VagasEstabelecimentoCompleto({ estabelecimento }) {
+export default function VagasContratanteCompleto({ contratante }) {
   const [tab, setTab] = useState('publicar')
   const [vagaEditando, setVagaEditando] = useState(null)
 
@@ -52,14 +52,14 @@ export default function VagasEstabelecimentoCompleto({ estabelecimento }) {
       <div>
         {tab === 'publicar' && (
           <PublicarVaga
-            estabelecimento={estabelecimento}
+            contratante={contratante}
             vaga={vagaEditando}
             onSucesso={handleSalvarSucesso}
           />
         )}
         {tab === 'minhas' && (
           <MinhasVagas
-            estabelecimento={estabelecimento}
+            contratante={contratante}
             onEditar={(vaga) => {
               setVagaEditando(vaga)
               setTab('publicar')
@@ -67,7 +67,7 @@ export default function VagasEstabelecimentoCompleto({ estabelecimento }) {
           />
         )}
         {tab === 'candidaturas' && (
-          <CandidaturasEstabelecimento estabelecimentoUid={estabelecimento.uid} />
+          <CandidaturasContratante contratanteUid={contratante.uid} />
         )}
       </div>
     </div>
