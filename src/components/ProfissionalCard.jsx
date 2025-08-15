@@ -2,14 +2,12 @@ import React, { useEffect, useState } from 'react'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
 
-export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
+export default function ProfissionalCard({ prof, onChamar }) {
   const [media, setMedia] = useState(null)
   const [total, setTotal] = useState(0)
 
   useEffect(() => {
     if (!prof?.id) return
-
-    console.log('📌 ID do freela no card:', prof.id)
 
     const q = query(
       collection(db, 'avaliacoesFreelas'),
@@ -22,12 +20,21 @@ export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
       const mediaFinal = notas.length ? soma / notas.length : null
       setMedia(mediaFinal)
       setTotal(notas.length)
-
-      console.log('⭐ Avaliações encontradas:', notas.length, ' | Média:', mediaFinal)
     })
 
     return () => unsubscribe()
   }, [prof.id])
+
+  // Fallback para imagem
+  const imagemValida = prof?.fotoUrl || 'https://via.placeholder.com/100'
+
+  const online = prof?.online
+  const ultimaAtividade = prof?.ultimaAtividade
+  const ultimaHora = ultimaAtividade
+    ? new Date(ultimaAtividade.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : 'desconhecida'
+
+  const diariaNumerica = !isNaN(parseFloat(prof.valorDiaria))
 
   return (
     <div className="bg-white rounded-2xl p-5 m-4 max-w-xs shadow-md text-center">
@@ -51,12 +58,6 @@ export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
         </p>
       )}
 
-      {typeof distanciaKm === 'number' && (
-        <p className="text-blue-600 mt-1">
-          <strong>📍 Distância:</strong> {distanciaKm.toFixed(1)} km
-        </p>
-      )}
-
       {/* ⭐ Estrelas de avaliação */}
       {media && (
         <div className="flex items-center justify-center gap-1 mt-2">
@@ -65,7 +66,7 @@ export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
               {media >= n ? '★' : '☆'}
             </span>
           ))}
-          <span className="text-sm text-gray-500">({totalAvaliacoes})</span>
+          <span className="text-sm text-gray-500">({total})</span>
         </div>
       )}
 
