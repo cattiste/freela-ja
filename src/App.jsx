@@ -25,15 +25,13 @@ import PerfilFreela from '@/pages/freela/PerfilFreela'
 import PainelFreela from '@/pages/freela/PainelFreela'
 import EditarFreela from '@/pages/freela/EditarFreela'
 
-// 🏢 Estabelecimento
-import CadastroEstabelecimento from '@/pages/estabelecimento/CadastroEstabelecimento'
-import PerfilEstabelecimento from '@/pages/estabelecimento/PerfilEstabelecimento'
-import PainelEstabelecimento from '@/pages/estabelecimento/PainelEstabelecimento'
-import EditarPerfilEstabelecimento from '@/pages/estabelecimento/EditarPerfilEstabelecimento'
-import PublicarVaga from '@/pages/estabelecimento/PublicarVaga'
-import PagamentoChamada from '@/pages/estabelecimento/PagamentoChamada'
-
-// 🤝 Contratante (Pessoa Física)
+// 🏢 Contratante
+import CadastroContratante from '@/pages/contratante/CadastroContratante'
+import PerfilContratante from '@/pages/contratante/PerfilContratante'
+import PainelContratante from '@/pages/contratante/PainelContratante'
+import EditarPerfilContratante from '@/pages/contratante/EditarPerfilContratante'
+import PublicarVaga from '@/pages/contratante/PublicarVaga'
+import PagamentoChamada from '@/pages/contratante/PagamentoChamada'
 import CadastroContratante from '@/pages/contratante/CadastroContratante'
 import PainelContratante from '@/pages/contratante/PainelContratante'
 import EditarPerfilContratante from '@/pages/contratante/EditarPerfilContratante'
@@ -73,24 +71,24 @@ export default function App() {
           </RequireRole>
         } />
 
-        {/* 🏢 Estabelecimento */}
-        <Route path="/cadastroestabelecimento" element={<CadastroEstabelecimento />} />
-        <Route path="/perfilestabelecimento/:uid" element={<PerfilEstabelecimento />} />
-        <Route path="/painelestabelecimento/*" element={
-          <RequireRole allow={['estabelecimento', 'admin']}>
-            <PainelEstabelecimento />
+        {/* 🏢 Contratante */}
+        <Route path="/cadastrocontratante" element={<CadastroContratante />} />
+        <Route path="/perfilcontratante/:uid" element={<PerfilContratante />} />
+        <Route path="/painelcontratante/*" element={
+          <RequireRole allow={['contratante', 'admin']}>
+            <PainelContratante />
           </RequireRole>
         } />
-        <Route path="/estabelecimento/editarperfilestabelecimento" element={
-          <RequireRole allow={['estabelecimento', 'admin']}>
-            <EditarPerfilEstabelecimento />
+        <Route path="/contratante/editarperfilcontratante" element={
+          <RequireRole allow={['contratante', 'admin']}>
+            <EditarPerfilContratante />
           </RequireRole>
         } />
         <Route path="/publicarvaga" element={<PublicarVaga />} />
         <Route path="/pagamentochamada/:id" element={<PagamentoChamada />} />
 
         {/* ✅ Redirecionamentos úteis */}
-        <Route path="/estabelecimento/chamadasestabelecimento" element={<Navigate to="/estabelecimento/ativas" />} />
+        <Route path="/contratante/chamadascontratante" element={<Navigate to="/contratante/ativas" />} />
 
         {/* 🤝 Contratante */}
         <Route path="/cadastrocontratante" element={<CadastroContratante />} />
