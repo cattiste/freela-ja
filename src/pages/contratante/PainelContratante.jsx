@@ -7,6 +7,8 @@ import {
   collection, getDocs, query, where
 } from 'firebase/firestore'
 import { db } from '@/firebase'
+import { addDoc, serverTimestamp } from 'firebase/firestore'
+import { toast } from 'react-hot-toast'
 
 import MenuInferiorContratante from '@/components/MenuInferiorContratante'
 import BuscarFreelas from '@/components/BuscarFreelas'
@@ -39,6 +41,28 @@ class ErrorBoundary extends React.Component {
       )
     }
     return this.props.children
+  }
+}
+async function chamarFreela(freela) {
+  if (!contratante?.uid || !freela?.id) return
+
+  try {
+    const novaChamada = {
+      contratanteUid: contratante.uid,
+      freelaUid: freela.id,
+      status: 'pendente',
+      criadaEm: serverTimestamp(),
+      nomeContratante: contratante.nome || '',
+      nomeFreela: freela.nome || '',
+      valorDiaria: freela.valorDiaria || 0
+    }
+
+    await addDoc(collection(db, 'chamadas'), novaChamada)
+
+    toast.success('Chamada enviada com sucesso!')
+  } catch (err) {
+    console.error('Erro ao chamar freela:', err)
+    toast.error('Erro ao enviar chamada')
   }
 }
 

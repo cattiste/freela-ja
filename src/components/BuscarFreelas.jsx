@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext'
 import ProfissionalCardMini from '@/components/ProfissionalCardMini'
 import ModalFreelaDetalhes from '@/components/ModalFreelaDetalhes'
 import { useRealtimePresence } from '@/hooks/useRealtimePresence'
+import React, { useEffect, useState } from 'react'
 
 const ACTIVE_STATUSES = ['pendente', 'aceita', 'checkin_freela', 'em_andamento', 'checkout_freela']
 
