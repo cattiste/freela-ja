@@ -2,18 +2,18 @@ import React, { useEffect, useState } from 'react'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
 
-export default function ProfissionalCard({ freela, usuario, onChamar, distanciaKm }) {
+export default function ProfissionalCard({ prof, onChamar, distanciaKm }) {
   const [media, setMedia] = useState(null)
   const [total, setTotal] = useState(0)
 
   useEffect(() => {
-    if (!freela?.id) return
+    if (!prof?.id) return
 
-    console.log('📌 ID do freela no card:', freela.id)
+    console.log('📌 ID do freela no card:', prof.id)
 
     const q = query(
       collection(db, 'avaliacoesFreelas'),
-      where('freelaUid', '==', freela.id)
+      where('freelaUid', '==', prof.id)
     )
 
     const unsubscribe = onSnapshot(q, (snap) => {
@@ -27,27 +27,27 @@ export default function ProfissionalCard({ freela, usuario, onChamar, distanciaK
     })
 
     return () => unsubscribe()
-  }, [freela.id])
+  }, [prof.id])
 
   return (
     <div className="bg-white rounded-2xl p-5 m-4 max-w-xs shadow-md text-center">
       <img
         src={imagemValida}
-        alt={freela.nome || 'Profissional'}
+        alt={prof.nome || 'Profissional'}
         className="w-24 h-24 rounded-full object-cover mb-3 mx-auto border-2 border-orange-400 shadow"
       />
 
       <h3 className="text-lg font-bold text-gray-800">
-        {freela.nome || 'Nome não informado'}
+        {prof.nome || 'Nome não informado'}
       </h3>
 
       <p className="text-gray-700 mt-1">
-        <strong>Função:</strong> {freela.funcao || 'Não informado'}
+        <strong>Função:</strong> {prof.funcao || 'Não informado'}
       </p>
 
-      {freela.endereco && (
+      {prof.endereco && (
         <p className="text-gray-700 mt-1">
-          <strong>Endereço:</strong> {freela.endereco}
+          <strong>Endereço:</strong> {prof.endereco}
         </p>
       )}
 
@@ -71,12 +71,12 @@ export default function ProfissionalCard({ freela, usuario, onChamar, distanciaK
 
       {diariaNumerica && (
         <p className="text-green-600 font-semibold mt-1">
-          <strong>💸 Diária:</strong> R$ {parseFloat(freela.valorDiaria).toFixed(2)}
+          <strong>💸 Diária:</strong> R$ {parseFloat(prof.valorDiaria).toFixed(2)}
         </p>
       )}
 
-      {freela.descricao && (
-        <p className="italic mt-2 text-sm text-gray-600">{freela.descricao}</p>
+      {prof.descricao && (
+        <p className="italic mt-2 text-sm text-gray-600">{prof.descricao}</p>
       )}
 
       {/* ✅ Status online/offline */}
