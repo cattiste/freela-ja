@@ -1,3 +1,4 @@
+
 // src/components/ProfissionalCardMini.jsx
 import React from 'react'
 
@@ -8,13 +9,13 @@ export default function ProfissionalCardMini({ freela, onClick, onChamar }) {
 
   return (
     <div
-      className="bg-white border rounded-xl shadow-sm p-4 cursor-pointer hover:shadow-md transition flex flex-col items-center text-center"
+      className="bg-white border rounded-xl shadow-sm px-4 py-3 cursor-pointer hover:shadow-md transition flex flex-col items-center text-center w-full max-w-xs mx-auto"
       onClick={onClick}
     >
       <img
         src={foto || 'https://via.placeholder.com/100'}
         alt={nome || 'Freela'}
-        className="w-20 h-20 rounded-full object-cover border-2 border-orange-400 shadow mb-2"
+        className="w-16 h-16 rounded-full object-cover border-2 border-orange-400 shadow mb-1"
       />
 
       <div className="text-sm font-bold text-gray-800">{nome || 'Sem nome'}</div>
@@ -48,7 +49,7 @@ export default function ProfissionalCardMini({ freela, onClick, onChamar }) {
             e.stopPropagation()
             onChamar()
           }}
-          className="mt-3 bg-green-600 text-white px-4 py-1 rounded-full text-sm hover:bg-green-700"
+          className="mt-2 bg-orange-500 text-white px-4 py-1 rounded-full text-xs hover:bg-orange-600"
         >
           📩 Chamar
         </button>
