@@ -12,8 +12,6 @@ import {
   limit,
 } from 'firebase/firestore'
 import { db } from '@/firebase'
-import ProfissionalCardMini from '@/components/ProfissionalCardMini'
-import ModalFreelaDetalhes from '@/components/ModalFreelaDetalhes'
 
 // ---------------------------------------------
 // util: distância geodésica (km)
