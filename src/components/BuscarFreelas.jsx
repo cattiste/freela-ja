@@ -24,22 +24,28 @@ export default function BuscarFreelas({ contratante }) {
       const lista = []
 
       for (const docSnap of querySnapshot.docs) {
-        const data = docSnap.data()
-        const uid = docSnap.id
-        data.id = uid
+  const data = docSnap.data()
+  const uid = docSnap.id
 
-        // Buscar status online do Firestore
-        try {
-          const statusRef = doc(db, 'status', uid)
-          const statusSnap = await getDoc(statusRef)
-          const online = statusSnap.exists() && statusSnap.data().state === 'online'
-          setStatusOnline((prev) => ({ ...prev, [uid]: online }))
-        } catch (err) {
-          console.error('Erro ao buscar status online:', err)
-        }
+  if (!data) continue  // se der erro, pula
 
-        lista.push(data)
-      }
+  const freela = {
+    ...data,
+    id: uid,
+  }
+
+  try {
+    const statusRef = doc(db, 'status', uid)
+    const statusSnap = await getDoc(statusRef)
+    const online = statusSnap.exists() && statusSnap.data().state === 'online'
+    setStatusOnline((prev) => ({ ...prev, [uid]: online }))
+  } catch (err) {
+    console.error('Erro ao buscar status online:', err)
+  }
+
+  lista.push(freela)
+}
+
 
       setFreelas(lista)
     }
