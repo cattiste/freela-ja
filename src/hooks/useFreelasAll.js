@@ -1,7 +1,13 @@
 // src/hooks/useFreelasAll.js
 import { useEffect, useState } from 'react'
 import { db } from '@/firebase'
-import { getDocs, collection, query, where } from 'firebase/firestore'
+import {
+  getDocs,
+  collection,
+  query,
+  where
+} from 'firebase/firestore';
+
 
 export function useFreelasAll(ativar = false) {
   const [perfis, setPerfis] = useState([])
