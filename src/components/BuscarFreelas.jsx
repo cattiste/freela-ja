@@ -1,183 +1,108 @@
 // src/components/BuscarFreelas.jsx
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   collection,
+  getDocs,
   query,
   where,
-  getDocs,
   doc,
   getDoc,
-  limit,
 } from 'firebase/firestore'
 import { db } from '@/firebase'
+import ProfissionalCard from './ProfissionalCard'
 
-import ProfissionalCardMini from '@/components/ProfissionalCardMini'
-import ModalFreelaDetalhes from '@/components/ModalFreelaDetalhes'
-
-// Utilitário: distância geodésica
-function calcularDistancia(lat1, lon1, lat2, lon2) {
-  const toRad = (x) => (x * Math.PI) / 180
-  const R = 6371
-  const dLat = toRad(lat2 - lat1)
-  const dLon = toRad(lon2 - lon1)
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return R * c
-}
-
-function toMillis(v) {
-  if (!v) return null
-  if (typeof v === 'number') return v
-  if (typeof v === 'string') {
-    const parsed = Date.parse(v)
-    if (!Number.isNaN(parsed)) return parsed
-    if (/^\d+$/.test(v)) return Number(v)
-    return null
-  }
-  if (typeof v === 'object') {
-    if (typeof v.toMillis === 'function') return v.toMillis()
-    if (typeof v.seconds === 'number') return v.seconds * 1000
-  }
-  return null
-}
-
-function estaOnline(rec, nowMs, ttlMs = 120000) {
-  if (!rec) return false
-  const flag = rec.state === 'online'
-  const ts = toMillis(rec.last_changed)
-  if (ts == null) return flag
-  return flag && nowMs - ts <= ttlMs
-}
-
-export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
-  const [perfis, setPerfis] = useState([])
-  const [carregando, setCarregando] = useState(true)
+export default function BuscarFreelas({ contratante }) {
+  const [freelas, setFreelas] = useState([])
+  const [statusOnline, setStatusOnline] = useState({})
+  const [filtro, setFiltro] = useState('todos')
   const [filtroFuncao, setFiltroFuncao] = useState('')
-  const [modalFreela, setModalFreela] = useState(null)
 
   useEffect(() => {
-    let cancelado = false
-    async function carregarPerfis() {
-      try {
-        setCarregando(true)
-        const resultado = []
-        const uidsSet = new Set()
+    const fetchFreelas = async () => {
+      const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'))
+      const querySnapshot = await getDocs(q)
+      const lista = []
 
-        // Busca novo modelo
-        const qNovo = query(
-          collection(db, 'usuarios'),
-          where('tipoUsuario', '==', 'freela'),
-          limit(50)
-        )
-        const snapNovo = await getDocs(qNovo)
-        snapNovo.forEach((docSnap) => {
-          const data = docSnap.data()
-          const uid = data.uid || docSnap.id
-          resultado.push({ id: docSnap.id, uid, ...data })
-          uidsSet.add(uid)
-        })
+      for (const docSnap of querySnapshot.docs) {
+        const data = docSnap.data()
+        const uid = docSnap.id
+        data.id = uid
 
-        // Fallback para modelo legado
-        const qAntigo = query(
-          collection(db, 'usuarios'),
-          where('tipo', '==', 'freela'),
-          limit(50)
-        )
-        const snapAntigo = await getDocs(qAntigo)
-        snapAntigo.forEach((docSnap) => {
-          const data = docSnap.data()
-          const uid = data.uid || docSnap.id
-          if (!uidsSet.has(uid)) {
-            resultado.push({ id: docSnap.id, uid, ...data })
-          }
-        })
+        // Buscar status online do Firestore
+        try {
+          const statusRef = doc(db, 'status', uid)
+          const statusSnap = await getDoc(statusRef)
+          const online = statusSnap.exists() && statusSnap.data().state === 'online'
+          setStatusOnline((prev) => ({ ...prev, [uid]: online }))
+        } catch (err) {
+          console.error('Erro ao buscar status online:', err)
+        }
 
-        if (!cancelado) setPerfis(resultado)
-      } catch (e) {
-        console.error('[BuscarFreelas] erro ao carregar perfis:', e)
-      } finally {
-        if (!cancelado) setCarregando(false)
+        lista.push(data)
       }
+
+      setFreelas(lista)
     }
 
-    carregarPerfis()
-
-    return () => {
-      cancelado = true
-    }
+    fetchFreelas()
   }, [])
 
-  const filtrados = useMemo(() => {
-    return perfis
-      .map((freela) => {
-        const distanciaKm =
-          freela?.coordenadas && usuario?.coordenadas
-            ? calcularDistancia(
-                usuario.coordenadas.latitude,
-                usuario.coordenadas.longitude,
-                freela.coordenadas.latitude,
-                freela.coordenadas.longitude
-              )
-            : null
-        return { ...freela, distanciaKm }
-      })
-      .filter(
-        (f) =>
-          !filtroFuncao ||
-          f?.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
-      )
-      .sort((a, b) => (a.distanciaKm ?? Infinity) - (b.distanciaKm ?? Infinity))
-  }, [perfis, filtroFuncao, usuario])
+  const aplicarFiltros = () => {
+    return freelas.filter((freela) => {
+      const online = statusOnline[freela.id] === true
+      const offline = statusOnline[freela.id] === false
+
+      if (filtro === 'online' && !online) return false
+      if (filtro === 'offline' && !offline) return false
+
+      if (filtroFuncao && !freela.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())) return false
+
+      return true
+    })
+  }
 
   return (
-    <div className="p-4 pb-20">
-      <div className="max-w-4xl mx-auto mb-4 flex flex-col sm:flex-row gap-3 sm:items-center">
-        <input
-          type="text"
-          placeholder="Buscar por função..."
-          value={filtroFuncao}
-          onChange={(e) => setFiltroFuncao(e.target.value)}
-          className="w-full px-4 py-2 rounded-lg shadow-sm border border-gray-300 focus:ring-2 focus:ring-orange-400"
-        />
+    <div className="p-4">
+      <input
+        type="text"
+        placeholder="Buscar por função..."
+        value={filtroFuncao}
+        onChange={(e) => setFiltroFuncao(e.target.value)}
+        className="w-full p-2 mb-4 rounded border"
+      />
+
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setFiltro('todos')}
+          className={`px-4 py-2 rounded ${filtro === 'todos' ? 'bg-orange-500 text-white' : 'bg-gray-200'}`}
+        >
+          Todos
+        </button>
+        <button
+          onClick={() => setFiltro('online')}
+          className={`px-4 py-2 rounded ${filtro === 'online' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
+        >
+          Online
+        </button>
+        <button
+          onClick={() => setFiltro('offline')}
+          className={`px-4 py-2 rounded ${filtro === 'offline' ? 'bg-red-500 text-white' : 'bg-gray-200'}`}
+        >
+          Offline
+        </button>
       </div>
 
-      {carregando ? (
-        <p className="text-center text-orange-700">🔄 Carregando freelancers...</p>
-      ) : filtrados.length === 0 ? (
-        <p className="text-center text-gray-500">Nenhum freela encontrado.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
-          {filtrados.map((freela) => {
-            const uid = freela.uid || freela.id
-            const isOnline = estaOnline(usuariosOnline[uid], Date.now())
-
-            console.log('DEBUG FREELA', uid, usuariosOnline[uid])
-
-            return (
-              <div
-                key={uid}
-                className="cursor-pointer"
-                onClick={() => setModalFreela({ ...freela, isOnline })}
-              >
-                <ProfissionalCardMini
-                  freela={freela}
-                  usuario={usuario}
-                  isOnline={isOnline}
-                />
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {modalFreela && (
-        <ModalFreelaDetalhes
-          freela={modalFreela}
-          isOnline={modalFreela.isOnline}
-          onClose={() => setModalFreela(null)}
+      {aplicarFiltros().map((freela) => (
+        <ProfissionalCard
+          key={freela.id}
+          freela={freela}
+          contratante={contratante}
+          isOnline={statusOnline[freela.id]}
         />
+      ))}
+
+      {aplicarFiltros().length === 0 && (
+        <p className="text-center text-gray-500 mt-8">Nenhum freelancer encontrado.</p>
       )}
     </div>
   )
