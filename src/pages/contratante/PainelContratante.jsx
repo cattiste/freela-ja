@@ -10,7 +10,6 @@ import { db } from '@/firebase'
 import { addDoc } from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
 
-
 import MenuInferiorContratante from '@/components/MenuInferiorContratante'
 import BuscarFreelas from '@/components/BuscarFreelas'
 import AgendasContratadas from '@/components/AgendasContratadas'
@@ -30,8 +29,12 @@ class ErrorBoundary extends React.Component {
     super(props)
     this.state = { hasError: false, err: null }
   }
-  static getDerivedStateFromError(err) { return { hasError: true, err } }
-  componentDidCatch(err, info) { console.error('[PainelContratante] erro:', err, info) }
+  static getDerivedStateFromError(err) {
+    return { hasError: true, err }
+  }
+  componentDidCatch(err, info) {
+    console.error('[PainelContratante] erro:', err, info)
+  }
   render() {
     if (this.state.hasError) {
       return (
@@ -44,48 +47,25 @@ class ErrorBoundary extends React.Component {
     return this.props.children
   }
 }
-async function chamarFreela(freela) {
-  if (!contratante?.uid || !freela?.id) return
-
-  try {
-    const novaChamada = {
-      contratanteUid: contratante.uid,
-      freelaUid: freela.uid,
-      status: 'pendente',
-      criadaEm: serverTimestamp(),
-      nomeContratante: contratante.nome || '',
-      nomeFreela: freela.nome || '',
-      valorDiaria: freela.valorDiaria || 0
-    }
-
-    await addDoc(collection(db, 'chamadas'), novaChamada)
-
-    toast.success('Chamada enviada com sucesso!')
-  } catch (err) {
-    console.error('Erro ao chamar freela:', err)
-    toast.error('Erro ao enviar chamada')
-  }
-}
 
 export default function PainelContratante() {
   const { usuario, carregando } = useAuth()
   const nav = useNavigate()
   const location = useLocation()
 
-  // presença em tempo real (RTDB + espelho Firestore)
-  useRealtimePresence(usuario)
+  // 🔥 Aqui está a correção: presença + coleta dos online
+  const { usuariosOnline } = useRealtimePresence(usuario)
 
-  // lê ?tab=perfil|buscar|agendas|vagas|avaliacao|historico|ativas|chamadas
   const getTabFromURL = () => new URLSearchParams(location.search).get('tab') || 'perfil'
   const [abaSelecionada, setAbaSelecionada] = useState(getTabFromURL())
-  useEffect(() => { setAbaSelecionada(getTabFromURL()) }, [location.search])
+  useEffect(() => {
+    setAbaSelecionada(getTabFromURL())
+  }, [location.search])
 
-  // pode evoluir para checagens de role/admin se quiser
   const contratante = useMemo(() => usuario, [usuario])
 
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
   const [agendaPerfil, setAgendaPerfil] = useState({})
-  const usuariosOnline = {} // placeholder se ainda precisar
 
   useEffect(() => {
     if (!contratante?.uid) return
@@ -233,7 +213,6 @@ export default function PainelContratante() {
     }
   }
 
-  // Estados de carregamento/segurança básicos
   if (carregando) return <div className="text-center text-orange-600 mt-8">Carregando painel…</div>
   if (!usuario?.uid) return <Navigate to="/login" replace />
 
