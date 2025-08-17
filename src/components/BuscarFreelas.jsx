@@ -4,7 +4,7 @@ import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/firebase';
 import ProfissionalCardMini from '@/components/ProfissionalCardMini';
 import { calcularDistancia } from '@/utils/distancia';
-import { useUsuariosOnline } from '@/hooks/useUsuariosOnline';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
 export default function BuscarFreelas({ usuario }) {
   const [filtroFuncao, setFiltroFuncao] = useState('');
@@ -13,7 +13,7 @@ export default function BuscarFreelas({ usuario }) {
   const [freelas, setFreelas] = useState([]);
   const [chamando, setChamando] = useState(null);
 
-  const usuariosOnline = useUsuariosOnline();
+  const usuariosOnline = useOnlineStatus();
 
   useEffect(() => {
     const fetchFreelas = async () => {
