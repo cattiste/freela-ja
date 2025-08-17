@@ -1,22 +1,19 @@
+// src/components/BuscarFreelas.jsx
 import React, { useEffect, useMemo, useState } from 'react'
-import { useAuth } from '@/context/AuthContext'
 import {
   collection,
-  getDocs,
-  getDoc,
-  doc,
-  addDoc,
-  serverTimestamp,
   query,
   where,
-  onSnapshot
+  addDoc,
+  serverTimestamp,
+  getDocs,
+  doc,
+  getDoc,
+  limit,
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import ProfissionalCardMini from '@/components/ProfissionalCardMini'
 import ModalFreelaDetalhes from '@/components/ModalFreelaDetalhes'
-import { useRealtimePresence } from '@/hooks/useRealtimePresence'
-
-const ACTIVE_STATUSES = ['pendente', 'aceita', 'checkin_freela', 'em_andamento', 'checkout_freela']
 
 // ---------------------------------------------
 // util: distância geodésica (km)
