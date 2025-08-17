@@ -1,184 +1,211 @@
-// src/components/BuscarFreelas.jsx
+
 import React, { useEffect, useMemo, useState } from 'react'
+import { useAuth } from '@/context/AuthContext'
 import {
   collection,
+  getDocs,
+  getDoc,
+  doc,
+  addDoc,
+  serverTimestamp,
   query,
   where,
-  getDocs,
-  doc,
-  getDoc,
-  limit,
+  onSnapshot
 } from 'firebase/firestore'
 import { db } from '@/firebase'
-
-import ProfissionalCard from '@/components/ProfissionalCard'
+import ProfissionalCardMini from '@/components/ProfissionalCardMini'
 import ModalFreelaDetalhes from '@/components/ModalFreelaDetalhes'
+import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 
-// Utilitário: distância geodésica
-function calcularDistancia(lat1, lon1, lat2, lon2) {
-  const toRad = (x) => (x * Math.PI) / 180
-  const R = 6371
-  const dLat = toRad(lat2 - lat1)
-  const dLon = toRad(lon2 - lon1)
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return R * c
-}
+const ACTIVE_STATUSES = ['pendente', 'aceita', 'checkin_freela', 'em_andamento', 'checkout_freela']
 
-function toMillis(v) {
-  if (!v) return null
-  if (typeof v === 'number') return v
-  if (typeof v === 'string') {
-    const parsed = Date.parse(v)
-    if (!Number.isNaN(parsed)) return parsed
-    if (/^\d+$/.test(v)) return Number(v)
+export default function BuscarFreelas({ usuario: usuarioProp, usuariosOnline, onChamar }) {
+  const { usuario: usuarioCtx } = useAuth()
+  const usuario = usuarioProp || usuarioCtx
+
+  useRealtimePresence(usuario)
+
+  function calcularDistancia(lat1, lon1, lat2, lon2) {
+    if (
+      typeof lat1 !== 'number' || typeof lon1 !== 'number' ||
+      typeof lat2 !== 'number' || typeof lon2 !== 'number'
+    ) return null
+    const toRad = (x) => (x * Math.PI) / 180
+    const R = 6371
+    const dLat = toRad(lat2 - lat1)
+    const dLon = toRad(lon2 - lon1)
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) ** 2
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
+  }
+
+  function normalizeLocation(loc) {
+    if (!loc) return null
+    if (typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
+      return { lat: loc.latitude, lon: loc.longitude }
+    }
+    if (typeof loc.lat === 'number' && typeof loc.lng === 'number') {
+      return { lat: loc.lat, lon: loc.lng }
+    }
+    if (typeof loc.lat === 'number' && typeof loc.lon === 'number') {
+      return { lat: loc.lat, lon: loc.lon }
+    }
+    if (typeof loc.lat === 'number' && typeof loc.long === 'number') {
+      return { lat: loc.lat, lon: loc.long }
+    }
+    if (typeof loc.latitude === 'number' && typeof loc.long === 'number') {
+      return { lat: loc.latitude, lon: loc.long }
+    }
     return null
   }
-  if (typeof v === 'object') {
-    if (typeof v.toMillis === 'function') return v.toMillis()
-    if (typeof v.seconds === 'number') return v.seconds * 1000
+
+  async function handleChamarFreela(freela) {
+    if (!usuario?.uid || !freela?.id) {
+      console.warn('Usuário ou freela inválido.')
+      return
+    }
+
+    try {
+      await addDoc(collection(db, 'chamadas'), {
+        freelaUid: freela.id,
+        freelaNome: freela.nome,
+        freelaFoto: freela.foto || '',
+        freelaFuncao: freela.funcao || '',
+
+        contratanteUid: usuario.uid, // Campo necessário para as regras do Firestore
+        chamadorUid: usuario.uid,
+        chamadorNome: usuario.nome || '',
+        tipoChamador: usuario.tipoUsuario || usuario.tipo || '',
+
+        valorDiaria: freela.valorDiaria || null,
+        observacao: '',
+        status: 'pendente',
+        criadoEm: serverTimestamp(),
+      })
+
+      if (typeof onChamar === 'function') onChamar()
+      alert(`Freelancer ${freela.nome} foi chamado com sucesso.`)
+    } catch (err) {
+      console.error('Erro ao chamar freela:', err)
+      alert('Erro ao chamar freelancer.')
+    }
   }
-  return null
-}
 
-function estaOnline(rec, nowMs, ttlMs = 120000) {
-  if (!rec) return false
-  const flag = rec.state === 'online'
-  const ts = toMillis(rec.last_changed)
-  if (ts == null) return flag
-  return flag && nowMs - ts <= ttlMs
-}
-
-export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
-  const [perfis, setPerfis] = useState([])
-  const [carregando, setCarregando] = useState(true)
+  const [estab, setEstab] = useState(null)
+  const [freelasRaw, setFreelasRaw] = useState([])
+  const [onlineSet, setOnlineSet] = useState(new Set())
+  const [apenasOnline, setApenasOnline] = useState(false)
   const [filtroFuncao, setFiltroFuncao] = useState('')
-  const [modalFreela, setModalFreela] = useState(null)
+  const [carregando, setCarregando] = useState(true)
+  const [freelasComChamadaAtiva, setFreelasComChamadaAtiva] = useState(new Set())
+  const [freelaSelecionado, setFreelaSelecionado] = useState(null)
 
   useEffect(() => {
-    let cancelado = false
-    async function carregarPerfis() {
-      try {
-        setCarregando(true)
-        const resultado = []
-        const uidsSet = new Set()
-
-        // Busca novo modelo
-        const qNovo = query(
-          collection(db, 'usuarios'),
-          where('tipoUsuario', '==', 'freela'),
-          limit(50)
-        )
-        const snapNovo = await getDocs(qNovo)
-        snapNovo.forEach((docSnap) => {
-          const data = docSnap.data()
-          const uid = data.uid || docSnap.id
-          resultado.push({ id: docSnap.id, uid, ...data })
-          uidsSet.add(uid)
-        })
-
-        // Fallback para modelo legado
-        const qAntigo = query(
-          collection(db, 'usuarios'),
-          where('tipo', '==', 'freela'),
-          limit(50)
-        )
-        const snapAntigo = await getDocs(qAntigo)
-        snapAntigo.forEach((docSnap) => {
-          const data = docSnap.data()
-          const uid = data.uid || docSnap.id
-          if (!uidsSet.has(uid)) {
-            resultado.push({ id: docSnap.id, uid, ...data })
-          }
-        })
-
-        if (!cancelado) setPerfis(resultado)
-      } catch (e) {
-        console.error('[BuscarFreelas] erro ao carregar perfis:', e)
-      } finally {
-        if (!cancelado) setCarregando(false)
+    let ativo = true
+    async function loadEstab() {
+      if (!usuario?.uid) return
+      const ref = doc(db, 'usuarios', usuario.uid)
+      const snap = await getDoc(ref)
+      if (ativo) {
+        setEstab(snap.exists() ? { id: snap.id, ...snap.data() } : null)
       }
     }
+    loadEstab()
+    return () => { ativo = false }
+  }, [usuario?.uid])
 
-    carregarPerfis()
-
-    return () => {
-      cancelado = true
-    }
+  useEffect(() => {
+    setCarregando(true)
+    const qUsuarios = collection(db, 'usuarios')
+    const unsub = onSnapshot(qUsuarios, (snap) => {
+      const todos = []
+      snap.forEach((d) => todos.push({ id: d.id, ...d.data() }))
+      const freelas = todos.filter((u) => {
+        const role = (u?.tipo || u?.tipoUsuario || '').toLowerCase().trim()
+        return role === 'freela' || role === 'freelancer'
+      })
+      setFreelasRaw(freelas)
+      setCarregando(false)
+    }, (err) => {
+      console.error('[BuscarFreelas] onSnapshot usuarios erro:', err)
+      setCarregando(false)
+    })
+    return () => unsub()
   }, [])
 
-  const filtrados = useMemo(() => {
-    return perfis
-      .map((freela) => {
-        const distanciaKm =
-          freela?.coordenadas && usuario?.coordenadas
-            ? calcularDistancia(
-                usuario.coordenadas.latitude,
-                usuario.coordenadas.longitude,
-                freela.coordenadas.latitude,
-                freela.coordenadas.longitude
-              )
-            : null
-        return { ...freela, distanciaKm }
+  useEffect(() => {
+    const qStatusOnline = query(collection(db, 'status'), where('state', '==', 'online'))
+    const unsub = onSnapshot(qStatusOnline, (snap) => {
+      const setNovo = new Set()
+      snap.forEach((d) => setNovo.add(d.id))
+      setOnlineSet(setNovo)
+    }, (err) => {
+      console.error('[BuscarFreelas] onSnapshot status erro:', err)
+    })
+    return () => unsub()
+  }, [])
+
+  useEffect(() => {
+    if (!usuario?.uid) return
+    const qChamadasAtivas = query(
+      collection(db, 'chamadas'),
+      where('contratanteUid', '==', usuario.uid),
+      where('status', 'in', ACTIVE_STATUSES)
+    )
+    const unsub = onSnapshot(qChamadasAtivas, (snap) => {
+      const setIds = new Set()
+      snap.forEach((d) => {
+        const data = d.data()
+        if (data?.freelaUid) setIds.add(data.freelaUid)
       })
-      .filter(
-        (f) =>
-          !filtroFuncao ||
-          f?.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
-      )
-      .sort((a, b) => (a.distanciaKm ?? Infinity) - (b.distanciaKm ?? Infinity))
-  }, [perfis, filtroFuncao, usuario])
+      setFreelasComChamadaAtiva(setIds)
+    }, (err) => {
+      console.warn('[BuscarFreelas] onSnapshot chamadas ativas erro:', err)
+    })
+    return () => unsub()
+  }, [usuario?.uid])
+
+  const freelasDecorados = useMemo(() => {
+    const E = normalizeLocation(estab?.localizacao)
+
+    return freelasRaw
+      .map((f) => {
+        const F = normalizeLocation(f?.localizacao)
+        const distanciaKm = (E && F)
+          ? calcularDistancia(E.lat, E.lon, F.lat, F.lon)
+          : null
+
+        const online = onlineSet.has(f.id)
+        const hasChamadaAtiva = freelasComChamadaAtiva.has(f.id)
+
+        return { ...f, online, distanciaKm, hasChamadaAtiva }
+      })
+      .filter((f) => {
+        const ff = (filtroFuncao || '').trim().toLowerCase()
+        const okFuncao = ff
+          ? (String(f.funcao || '').toLowerCase().includes(ff) ||
+             String(f.especialidade || '').toLowerCase().includes(ff))
+          : true
+
+        const okOnline = apenasOnline ? Boolean(f.online) === true : true
+
+        return okFuncao && okOnline
+      })
+      .sort((a, b) => {
+        if (a.online !== b.online) return a.online ? -1 : 1
+        if (a.distanciaKm == null && b.distanciaKm == null) return 0
+        if (a.distanciaKm == null) return 1
+        if (b.distanciaKm == null) return -1
+        return a.distanciaKm - b.distanciaKm
+      })
+  }, [freelasRaw, onlineSet, estab?.localizacao, filtroFuncao, apenasOnline, freelasComChamadaAtiva])
 
   return (
-    <div className="p-4 pb-20">
-      <div className="max-w-4xl mx-auto mb-4 flex flex-col sm:flex-row gap-3 sm:items-center">
-        <input
-          type="text"
-          placeholder="Buscar por função..."
-          value={filtroFuncao}
-          onChange={(e) => setFiltroFuncao(e.target.value)}
-          className="w-full px-4 py-2 rounded-lg shadow-sm border border-gray-300 focus:ring-2 focus:ring-orange-400"
-        />
-      </div>
-
-      {carregando ? (
-        <p className="text-center text-orange-700">🔄 Carregando freelancers...</p>
-      ) : filtrados.length === 0 ? (
-        <p className="text-center text-gray-500">Nenhum freela encontrado.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
-          {filtrados.map((freela) => {
-            const uid = freela.uid || freela.id
-            const isOnline = estaOnline(usuariosOnline[uid], Date.now())
-
-            console.log('DEBUG FREELA', uid, usuariosOnline[uid])
-
-            return (
-              <div
-                key={uid}
-                className="cursor-pointer"
-                onClick={() => setModalFreela({ ...freela, isOnline })}
-              >
-                <ProfissionalCardMini
-                  freela={freela}
-                  usuario={usuario}
-                  isOnline={isOnline}
-                />
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {modalFreela && (
-        <ModalFreelaDetalhes
-          freela={modalFreela}
-          isOnline={modalFreela.isOnline}
-          onClose={() => setModalFreela(null)}
-        />
-      )}
+    <div className="space-y-4">
+      {/* UI de filtros e cards */}
     </div>
   )
 }
