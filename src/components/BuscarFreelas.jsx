@@ -10,12 +10,13 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/firebase';
-import FreelaCard from './FreelaCard';
-import { calcularDistancia } from '@/utils/geo';
+import ProfissionalCardMini from '@/components/ProfissionalCardMini';
+import ModalFreelaDetalhes from '@/components/ModalFreelaDetalhes';
+import { calcularDistancia } from '@/utils/distancia';
 import { containsContactInfo } from '@/utils/validation';
-import { estaOnline, TTL_PADRAO_MS } from '@/utils/presence';
-import { useFreelasOnline } from '@/hooks/useFreelasOnline';
-import { useFreelasAll } from '@/hooks/useFreelasAll';
+import { estaOnline, TTL_PADRAO_MS } from '@/utils/bootPresence';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useRealtimePresence } from '@/hooks/useRealtimePresence';
 
 export default function BuscarFreelas({
   usuario,
