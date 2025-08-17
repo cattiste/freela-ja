@@ -13,7 +13,6 @@ import { db } from '@/firebase';
 import ProfissionalCardMini from '@/components/ProfissionalCardMini';
 import ModalFreelaDetalhes from '@/components/ModalFreelaDetalhes';
 import { calcularDistancia } from '@/utils/distancia';
-import { estaOnline, TTL_PADRAO_MS } from '@/utils/bootPresence';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useRealtimePresence } from '@/hooks/useRealtimePresence';
 
