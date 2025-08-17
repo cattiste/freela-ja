@@ -29,9 +29,10 @@ export default function PainelFreela() {
   })
   const [chamadaAtiva, setChamadaAtiva] = useState(null)
 
-  // presença online
+  // ✅ Ativa presença online
   useRealtimePresence(usuario)
 
+  // 🔔 Alertas de notificações
   useEffect(() => {
     if (!usuario?.uid) return
 
@@ -77,6 +78,7 @@ export default function PainelFreela() {
     }
   }, [usuario?.uid])
 
+  // 📡 Chamada ativa (para checkin, etc.)
   useEffect(() => {
     if (!usuario?.uid) return
     const q = query(
@@ -94,7 +96,6 @@ export default function PainelFreela() {
   if (carregando) return <div className="text-center mt-10">Verificando autenticação...</div>
   if (!usuario?.uid) return <div className="text-center mt-10">Usuário não autenticado.</div>
 
-  // Guarda: se o usuário logado não for freela
   const role = (usuario?.tipo || usuario?.tipoUsuario || '').toLowerCase()
   if (role && role !== 'freela') {
     return (
