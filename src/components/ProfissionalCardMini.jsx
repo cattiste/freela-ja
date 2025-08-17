@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast'
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 
-export default function ProfissionalCardMini({ freela, usuario }) {
+export default function ProfissionalCardMini({ freela, usuario, isOnline }) {
   const chamarFreela = async () => {
     try {
       if (!usuario?.uid || !freela?.uid) {
@@ -21,15 +21,8 @@ export default function ProfissionalCardMini({ freela, usuario }) {
         valorDiaria: freela.valorDiaria || null,
         status: 'pendente',
         criadoEm: serverTimestamp(),
-        ...(usuario.tipo === 'contratante'
-          ? {
-              contratanteUid: usuario.uid,
-              contratanteNome: usuario.nome || '',
-            }
-          : {
-              pessoaFisicaUid: usuario.uid,
-              pessoaFisicaNome: usuario.nome || '',
-            }),
+        contratanteUid: usuario.uid,
+        contratanteNome: usuario.nome || '',
       }
 
       await setDoc(doc(db, 'chamadas', chamadaId), novaChamada)
@@ -50,10 +43,10 @@ export default function ProfissionalCardMini({ freela, usuario }) {
         />
         <span
           className={`absolute top-0 right-0 text-[10px] font-semibold px-2 py-[2px] rounded-full ${
-            freela.online ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'
+            isOnline ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'
           }`}
         >
-          {freela.online ? 'Online' : 'Offline'}
+          {isOnline ? 'Online' : 'Offline'}
         </span>
       </div>
 
