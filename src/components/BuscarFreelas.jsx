@@ -19,7 +19,7 @@ import { useRealtimePresence } from '@/hooks/useRealtimePresence';
 export default function BuscarFreelas({
   usuario,
   usuariosOnline = {},
-  ttlMs = TTL_PADRAO_MS,
+  
 }) {
   const [onlineUids, setOnlineUids] = useState([]);
   const [filtroFuncao, setFiltroFuncao] = useState('');
