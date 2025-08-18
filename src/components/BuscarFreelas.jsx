@@ -4,6 +4,7 @@ import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '@/firebase';
 import useStatusRTDB from '@/hooks/useStatusRTDB';
 import ProfissionalCardMini from './ProfissionalCardMini';
+import ProfissionalCard from './ProfissionalCard';
 import ModalFreelaDetalhes from './ModalFreelaDetalhes';
 
 export default function BuscarFreelas({ usuario }) {
