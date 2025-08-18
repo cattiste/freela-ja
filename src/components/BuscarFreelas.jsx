@@ -1,4 +1,3 @@
-// src/components/BuscarFreelas.jsx
 import React, { useEffect, useMemo, useState } from 'react'
 import { collection, query, where, getDocs, limit } from 'firebase/firestore'
 import { db } from '@/firebase'
