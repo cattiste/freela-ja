@@ -1,12 +1,13 @@
+
+// src/components/BuscarFreelas.jsx
 import React, { useEffect, useMemo, useState } from 'react'
 import {
   collection, query, where, addDoc, serverTimestamp,
   getDocs, limit
 } from 'firebase/firestore'
 import { db } from '@/firebase'
+import { FaStar, FaRegStar } from 'react-icons/fa'
 
-// ---------------------------------------------
-// util: distância geodésica (km)
 function calcularDistancia(lat1, lon1, lat2, lon2) {
   const toRad = (x) => (x * Math.PI) / 180
   const R = 6371
@@ -19,10 +20,7 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
   return R * c
 }
 
-// ---------------------------------------------
-// presença com TTL
-const TTL_MS = 120_000 // 2 minutos
-
+const TTL_MS = 120_000
 function toMillis(v) {
   if (!v) return null
   if (typeof v === 'number') return v
@@ -45,58 +43,67 @@ function estaOnline(rec) {
   return flag && now - ts <= TTL_MS
 }
 
-// ---------------------------------------------
-// card
+function Estrelas({ media }) {
+  const cheias = Math.floor(media)
+  const meia = media % 1 >= 0.5
+  const vazias = 5 - cheias - (meia ? 1 : 0)
+  return (
+    <div className="flex justify-center mt-1 text-yellow-400">
+      {[...Array(cheias)].map((_, i) => <FaStar key={'c'+i} />)}
+      {meia && <FaStar className="opacity-50" />}
+      {[...Array(vazias)].map((_, i) => <FaRegStar key={'v'+i} />)}
+    </div>
+  )
+}
+
 function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao, setObservacao }) {
   const uid = freela.uid || freela.id
-  return (
-    <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100">
-      <div className="flex flex-col items-center">
-        <img
-          src={freela.foto || 'https://via.placeholder.com/80'}
-          alt={freela.nome}
-          className="w-20 h-20 rounded-full object-cover border-2 border-orange-400"
-        />
-        <h3 className="mt-2 text-lg font-bold text-orange-700">{freela.nome}</h3>
-        <p className="text-sm text-gray-600">{freela.funcao}</p>
-        {freela.especialidades && (
-          <p className="text-xs text-gray-500 text-center">{Array.isArray(freela.especialidades)
-            ? freela.especialidades.join(', ')
-            : freela.especialidades}</p>
-        )}
-        {freela.valorDiaria && (
-          <p className="text-sm font-semibold text-orange-700 mt-1">
-            💰 R$ {freela.valorDiaria}
-          </p>
-        )}
-        {distancia != null && (
-          <p className="text-sm text-gray-600 mt-1">📍 {distancia.toFixed(1)} km</p>
-        )}
-        {online && (
-          <div className="flex items-center gap-2 mt-1">
-            <span className="w-2 h-2 rounded-full bg-green-500" />
-            <span className="text-xs text-green-700">🟢 Online agora</span>
-          </div>
-        )}
-      </div>
 
+  return (
+    <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100 flex flex-col items-center">
+      <img
+        src={freela.foto || 'https://via.placeholder.com/80'}
+        alt={freela.nome}
+        className="w-20 h-20 rounded-full object-cover border-2 border-orange-400"
+      />
+      <h3 className="mt-2 text-lg font-bold text-orange-700">{freela.nome}</h3>
+      <p className="text-sm text-gray-600">{freela.funcao}</p>
+      {freela.especialidades && (
+        <p className="text-xs text-gray-500 text-center">
+          {Array.isArray(freela.especialidades) ? freela.especialidades.join(', ') : freela.especialidades}
+        </p>
+      )}
+      {freela.mediaAvaliacoes ? (
+        <Estrelas media={freela.mediaAvaliacoes} />
+      ) : (
+        <p className="text-xs text-gray-400">(sem avaliações)</p>
+      )}
+      {freela.valorDiaria && (
+        <p className="text-sm font-semibold text-orange-700 mt-1">💰 R$ {freela.valorDiaria}</p>
+      )}
+      {distancia != null && (
+        <p className="text-sm text-gray-600 mt-1">📍 {distancia.toFixed(1)} km</p>
+      )}
+      {online && (
+        <div className="flex items-center gap-1 mt-1">
+          <span className="w-2 h-2 rounded-full bg-green-500" />
+          <span className="text-xs text-green-700">Online agora</span>
+        </div>
+      )}
       <textarea
         rows={2}
         className="w-full mt-3 px-2 py-1 border rounded text-sm"
-        placeholder="Instruções para o freela"
+        placeholder="Instruções (ex: roupa preta)"
         value={observacao[uid] || ''}
-        onChange={(e) =>
-          setObservacao((prev) => ({ ...prev, [uid]: e.target.value }))
-        }
+        onChange={(e) => setObservacao((prev) => ({ ...prev, [uid]: e.target.value }))}
       />
-
       <button
         onClick={() => onChamar(freela)}
         disabled={!online || chamando === uid}
-        className={`mt-3 w-full py-2 rounded-lg font-bold text-white ${
+        className={`mt-3 w-full py-2 rounded-lg font-bold transition ${
           online
-            ? 'bg-green-600 hover:bg-green-700'
-            : 'bg-gray-400 cursor-not-allowed'
+            ? 'bg-green-600 hover:bg-green-700 text-white'
+            : 'bg-gray-400 text-white cursor-not-allowed'
         }`}
       >
         {chamando === uid ? 'Chamando...' : '📞 Chamar'}
@@ -105,7 +112,6 @@ function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao,
   )
 }
 
-// ---------------------------------------------
 export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
   const [freelas, setFreelas] = useState([])
   const [filtro, setFiltro] = useState('')
@@ -150,13 +156,12 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         return { ...f, distancia, online }
       })
       .filter((f) => !filtro || f.funcao?.toLowerCase().includes(filtro.toLowerCase()))
-      .sort((a, b) => (b.online ? 1 : 0) - (a.online ? 1 : 0)) // online primeiro
+      .sort((a, b) => (b.online ? 1 : 0) - (a.online ? 1 : 0))
   }, [freelas, filtro, usuario, usuariosOnline])
 
   const chamar = async (freela) => {
     const uid = freela.uid || freela.id
     setChamando(uid)
-
     try {
       await addDoc(collection(db, 'chamadas'), {
         freelaUid: uid,
@@ -169,7 +174,6 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         status: 'pendente',
         criadoEm: serverTimestamp(),
       })
-
       alert(`✅ ${freela.nome} foi chamado com sucesso!`)
     } catch (err) {
       console.error('Erro ao chamar freela:', err)
@@ -181,10 +185,7 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
 
   return (
     <div className="min-h-screen bg-cover bg-center p-4 pb-20"
-      style={{
-        backgroundImage: `url('/img/fundo-login.jpg')`,
-        backgroundAttachment: 'fixed',
-      }}>
+      style={{ backgroundImage: `url('/img/fundo-login.jpg')`, backgroundAttachment: 'fixed' }}>
       <div className="max-w-4xl mx-auto mb-4">
         <input
           type="text"

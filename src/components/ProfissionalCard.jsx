@@ -52,6 +52,10 @@ export default function ProfissionalCard({ prof, onChamar }) {
         <strong>Função:</strong> {prof.funcao || 'Não informado'}
       </p>
 
+      <p className="text-gray-700 mt-1">
+        <strong>Especialidades:</strong> {prof.especialidades || 'Não informado'}
+      </p>
+
       {prof.endereco && (
         <p className="text-gray-700 mt-1">
           <strong>Endereço:</strong> {prof.endereco}
