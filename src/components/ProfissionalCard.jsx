@@ -17,15 +17,21 @@ function Estrelas({ media }) {
   );
 }
 
-export default function ProfissionalCard({ prof, onChamar, chamando, observacao = {}, setObservacao = () => {} }) {
+export default function ProfissionalCard({
+  prof,
+  onChamar,
+  chamando,
+  observacao = {},
+  setObservacao = () => {},
+}) {
   const [avaliacoes, setAvaliacoes] = useState([]);
   const [media, setMedia] = useState(null);
-  const [distancia, setDistancia] = useState('—');
+  const freelaUid = prof.uid || prof.id;
 
   useEffect(() => {
     async function loadAvaliacoes() {
-      if (!prof?.id) return;
-      const q = query(collection(db, 'avaliacoesFreelas'), where('freelaUid', '==', prof.id));
+      if (!freelaUid) return;
+      const q = query(collection(db, 'avaliacoesFreelas'), where('freelaUid', '==', freelaUid));
       const snap = await getDocs(q);
       const lista = snap.docs.map(doc => doc.data());
       setAvaliacoes(lista);
@@ -36,26 +42,26 @@ export default function ProfissionalCard({ prof, onChamar, chamando, observacao 
     }
 
     loadAvaliacoes();
-  }, [prof?.id]);
-
-  useEffect(() => {
-    if (prof?.distanciaKm) {
-      setDistancia(`${prof.distanciaKm.toFixed(1)} km`);
-    }
-  }, [prof?.distanciaKm]);
-
-  const freelaUid = prof.uid || prof.id;
+  }, [freelaUid]);
 
   return (
     <div className="bg-white rounded-xl shadow-md p-4 text-center max-w-sm mx-auto">
-      <h2 className="text-lg font-bold text-orange-700">{prof.nome}</h2>
+      <img
+        src={prof.fotoUrl || prof.foto || 'https://via.placeholder.com/100'}
+        alt={prof.nome}
+        className="w-24 h-24 rounded-full object-cover mx-auto border-2 border-orange-400 shadow"
+      />
+
+      <h2 className="text-lg font-bold text-orange-700 mt-2">{prof.nome}</h2>
       <p className="text-sm text-gray-600">{prof.funcao}</p>
       {prof.especialidades && (
         <p className="text-xs text-gray-500">
           {Array.isArray(prof.especialidades) ? prof.especialidades.join(', ') : prof.especialidades}
         </p>
       )}
+
       {media && <Estrelas media={media} />}
+
       {avaliacoes.length > 0 && (
         <ul className="mt-2 text-left text-xs text-gray-700 max-h-24 overflow-y-auto">
           {avaliacoes.slice(0, 3).map((a, i) => (
@@ -65,7 +71,8 @@ export default function ProfissionalCard({ prof, onChamar, chamando, observacao 
       )}
 
       <p className="text-sm mt-2">
-        <strong>Distância:</strong> {distancia}
+        <strong>Distância:</strong>{' '}
+        {prof.distanciaKm != null ? `${prof.distanciaKm.toFixed(1)} km` : '—'}
       </p>
 
       <textarea
