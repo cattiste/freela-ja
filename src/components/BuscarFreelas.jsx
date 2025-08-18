@@ -49,12 +49,6 @@ function statusOnline(status, now, ttl = 3000) {
 }
 
 export default function BuscarFreelas({ usuario }) {
-  const [freelas, setFreelas] = useState([]);
-  const [filtroFuncao, setFiltroFuncao] = useState('');
-  const [observacao, setObservacao] = useState({});
-  const [chamando, setChamando] = useState(null);
-  const usuariosOnline = useStatusRTDB();
-  const ttlMs = 120000;
   const usuariosOnline = useStatusRTDB() // ✅ usa aqui direto
   const now = Date.now()
   const onlineUids = useMemo(() => {
