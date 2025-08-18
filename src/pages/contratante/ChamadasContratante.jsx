@@ -62,29 +62,29 @@ export default function ChamadasContratante({ contratante }) {
     })
   }, [chamadas])
 
-    async function confirmarConvite(ch) {
+    async function confirmarChamada(ch) {
       try {
         await updateDoc(doc(db, 'chamadas', ch.id), {
           status: 'confirmada',
           confirmadaEm: serverTimestamp()
         })
-        toast.success('✅ Convite confirmado!')
+        toast.success('✅ Chamada confirmado!')
       } catch (e) {
-        console.error('[ChamadasContratante] confirmarConvite erro:', e)
-        toast.error('Erro ao confirmar convite.')
+        console.error('[ChamadasContratante] confirmarChamada erro:', e)
+        toast.error('Erro ao confirmar chamada.')
       }
     }
 
-  async function cancelarConvite(ch) {
+  async function cancelarChamada(ch) {
     try {
       await updateDoc(doc(db, 'chamadas', ch.id), {
         status: 'cancelada_por_falta_de_pagamento',
         canceladaEm: serverTimestamp()
       })
-      toast.success('❌ Convite cancelado.')
+      toast.success('❌ Chamada cancelada.')
     } catch (e) {
-      console.error('[ChamadasContratante] cancelarConvite erro:', e)
-      toast.error('Erro ao cancelar convite.')
+      console.error('[ChamadasContratante] cancelarChamada erro:', e)
+      toast.error('Erro ao cancelar chamada.')
     }
   }
 
