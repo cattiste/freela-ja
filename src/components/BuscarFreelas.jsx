@@ -38,7 +38,7 @@ function toMillis(v) {
   return null;
 }
 
-function statusOnline(status, now, ttl = 3000) {
+function estaOnline(status, now, ttl = TTL_PADRAO_MS) {
   if (!status) return false;
   const flag = status.state === 'online' || status.online === true;
   const ts =
