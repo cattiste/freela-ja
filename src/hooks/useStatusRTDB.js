@@ -7,12 +7,13 @@ export default function useStatusRTDB() {
   const [usuariosOnline, setUsuariosOnline] = useState({});
 
   useEffect(() => {
-    const statusRef = ref(rtdb, '/status');
-
-    const unsubscribe = onValue(statusRef, (snapshot) => {
-      const data = snapshot.val() || {};
-      setUsuariosOnline(data);
-    });
+  const statusRef = ref(rtdb, `status/${uid}`);
+  console.log('[RTDB] Registrando listener para status...');
+  onValue(statusRef, (snap) => {
+    console.log('[RTDB] status atualizado:', snap.val());
+    setStatus(snap.val());
+  });
+}, []);
 
     return () => unsubscribe();
   }, []);
