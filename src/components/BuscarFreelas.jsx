@@ -159,29 +159,44 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
       .sort((a, b) => (b.online ? 1 : 0) - (a.online ? 1 : 0))
   }, [freelas, filtro, usuario, usuariosOnline])
 
-  const chamar = async (freela) => {
-    const uid = freela.uid || freela.id
-    setChamando(uid)
-    try {
-      await addDoc(collection(db, 'chamadas'), {
-        freelaUid: uid,
-        freelaNome: freela.nome,
-        valorDiaria: freela.valorDiaria || null,
-        chamadorUid: usuario.uid,
-        chamadorNome: usuario.nome || '',
-        tipoChamador: usuario.tipo || usuario.tipoUsuario || '',
-        observacao: observacao[uid] || '',
-        status: 'pendente',
-        criadoEm: serverTimestamp(),
-      })
-      alert(`✅ ${freela.nome} foi chamado com sucesso!`)
-    } catch (err) {
-      console.error('Erro ao chamar freela:', err)
-      alert('Erro ao chamar freelancer.')
-    } finally {
-      setChamando(null)
+const chamar = async (freela) => {
+  const uid = freela.uid || freela.id
+  setChamando(uid)
+
+  try {
+    // Verifica se já existe chamada ativa
+    const snap = await getDocs(query(
+      collection(db, 'chamadas'),
+      where('freelaUid', '==', uid),
+      where('contratanteUid', '==', usuario.uid),
+      where('status', 'in', ['pendente', 'aceita'])
+    ))
+
+    if (!snap.empty) {
+      alert('⚠️ Você já chamou esse freela e a chamada está ativa.')
+      return
     }
+
+    await addDoc(collection(db, 'chamadas'), {
+      freelaUid: uid,
+      freelaNome: freela.nome,
+      valorDiaria: freela.valorDiaria || null,
+      contratanteUid: usuario.uid,
+      contratanteNome: usuario.nome || '',
+      tipoContratante: usuario.tipo || usuario.tipoUsuario || '',
+      observacao: observacao[uid] || '',
+      status: 'pendente',
+      criadoEm: serverTimestamp()
+    })
+
+    alert(`✅ ${freela.nome} foi chamado com sucesso!`)
+  } catch (err) {
+    console.error('Erro ao chamar freela:', err)
+    alert('Erro ao chamar freelancer.')
+  } finally {
+    setChamando(null)
   }
+}
 
   return (
     <div className="min-h-screen bg-cover bg-center p-4 pb-20"
