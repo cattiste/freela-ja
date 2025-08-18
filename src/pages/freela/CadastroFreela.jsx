@@ -1,34 +1,42 @@
 // src/pages/freela/CadastroFreela.jsx
-import React, { useEffect, useState } from 'react'
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
+import React, { useEffect, useState } from 'react';
+import { 
+  doc, 
+  getDoc, 
+  setDoc, 
+  serverTimestamp, 
+  GeoPoint 
+} from 'firebase/firestore';
 import {
   onAuthStateChanged,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   fetchSignInMethodsForEmail,
-} from 'firebase/auth'
-import { useNavigate } from 'react-router-dom'
-import { auth, db } from '@/firebase'
-import { uploadFoto } from '@/utils/uploadFoto'
-import { formatarCPF, validarCPF, apenasNumeros } from '@/utils/cpf'
-import ContratoPrestacaoServico from '@/components/ContratoPrestacaoServico'
+} from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
+import { auth, db } from '@/firebase';
+import { uploadFoto } from '@/utils/uploadFoto';
+import { formatarCPF, validarCPF, apenasNumeros } from '@/utils/cpf';
+import ContratoPrestacaoServico from '@/components/ContratoPrestacaoServico';
 
-const VERSAO_CONTRATO = '1.0.0'
+const VERSAO_CONTRATO = '1.0.0';
 
 export default function CadastroFreela() {
-  const navigate = useNavigate()
-  const [carregando, setCarregando] = useState(true)
-  const [salvando, setSalvando] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  const navigate = useNavigate();
+  const [carregando, setCarregando] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [obtendoLocalizacao, setObtendoLocalizacao] = useState(false);
 
-  const [modoEdicao, setModoEdicao] = useState(false)
-  const [forcarCriacao, setForcarCriacao] = useState(false)
+  const [modoEdicao, setModoEdicao] = useState(false);
+  const [forcarCriacao, setForcarCriacao] = useState(false);
 
-  const [contratoOk, setContratoOk] = useState(false)
-  const [contratoDefaultChecked, setContratoDefaultChecked] = useState(false)
+  const [contratoOk, setContratoOk] = useState(false);
+  const [contratoDefaultChecked, setContratoDefaultChecked] = useState(false);
+  const [localizacao, setLocalizacao] = useState(null);
 
-  const [cred, setCred] = useState({ email: '', senha: '' })
-  const [cpfErro, setCpfErro] = useState('')
+  const [cred, setCred] = useState({ email: '', senha: '' });
+  const [cpfErro, setCpfErro] = useState('');
 
   const [form, setForm] = useState({
     nome: '',
@@ -40,187 +48,221 @@ export default function CadastroFreela() {
     cidade: '',
     endereco: '',
     foto: ''
-  })
+  });
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       try {
         if (user) {
-          setModoEdicao(true)
-          const ref = doc(db, 'usuarios', user.uid)
-          const snap = await getDoc(ref)
+          setModoEdicao(true);
+          const ref = doc(db, 'usuarios', user.uid);
+          const snap = await getDoc(ref);
           if (snap.exists()) {
-            const u = snap.data()
+            const u = snap.data();
             setForm({
               nome: u.nome || '',
               cpf: u.cpf ? formatarCPF(u.cpf) : '',
               funcao: u.funcao || '',
-              especialidades: Array.isArray(u.especialidades) ? u.especialidades.join(', ') : (u.especialidades || ''),
+              especialidades: Array.isArray(u.especialidades) 
+                ? u.especialidades.join(', ') 
+                : (u.especialidades || ''),
               valorDiaria: u.valorDiaria || '',
               celular: u.celular || '',
               cidade: u.cidade || '',
               endereco: u.endereco || '',
               foto: u.foto || ''
-            })
+            });
             if (u.aceitouContrato && u.versaoContrato === VERSAO_CONTRATO) {
-              setContratoOk(true)
-              setContratoDefaultChecked(true)
+              setContratoOk(true);
+              setContratoDefaultChecked(true);
+            }
+            if (u.localizacao) {
+              setLocalizacao(u.localizacao);
             }
           }
         } else {
-          setModoEdicao(false)
+          setModoEdicao(false);
         }
       } catch (e) {
-        console.error('Erro ao carregar usuário:', e)
+        console.error('Erro ao carregar usuário:', e);
       } finally {
-        setCarregando(false)
+        setCarregando(false);
       }
-    })
-    return () => unsub()
-  }, [])
+    });
+    return () => unsub();
+  }, []);
 
-  const handleChange = (e) => setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
-  const handleCred = (e) => setCred((prev) => ({ ...prev, [e.target.name]: e.target.value }))
-
-  // máscara + validação leve onChange / onBlur
-  const handleCpfChange = (e) => {
-    const mascarado = formatarCPF(e.target.value)
-    setForm((prev) => ({ ...prev, cpf: mascarado }))
-    const dig = apenasNumeros(mascarado)
-    if (dig.length === 11) {
-      setCpfErro(validarCPF(dig) ? '' : 'CPF inválido')
+  const obterLocalizacao = () => {
+    if (navigator.geolocation) {
+      setObtendoLocalizacao(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setLocalizacao(new GeoPoint(latitude, longitude));
+          setObtendoLocalizacao(false);
+        },
+        (error) => {
+          console.error("Erro ao obter localização:", error);
+          alert("Não foi possível obter sua localização automaticamente.");
+          setObtendoLocalizacao(false);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
     } else {
-      setCpfErro('')
+      alert("Seu navegador não suporta geolocalização.");
     }
-  }
+  };
+
+  const handleChange = (e) => setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleCred = (e) => setCred((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+
+  const handleCpfChange = (e) => {
+    const mascarado = formatarCPF(e.target.value);
+    setForm((prev) => ({ ...prev, cpf: mascarado }));
+    const dig = apenasNumeros(mascarado);
+    if (dig.length === 11) {
+      setCpfErro(validarCPF(dig) ? '' : 'CPF inválido');
+    } else {
+      setCpfErro('');
+    }
+  };
+
   const handleCpfBlur = () => {
-    const dig = apenasNumeros(form.cpf)
-    if (!dig) return setCpfErro('')
-    setCpfErro(validarCPF(dig) ? '' : 'CPF inválido')
-  }
+    const dig = apenasNumeros(form.cpf);
+    if (!dig) return setCpfErro('');
+    setCpfErro(validarCPF(dig) ? '' : 'CPF inválido');
+  };
 
   const onSelectFoto = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
     try {
-      setUploading(true)
-      const url = await uploadFoto(file)
-      setForm((p) => ({ ...p, foto: url }))
+      setUploading(true);
+      const url = await uploadFoto(file);
+      setForm((p) => ({ ...p, foto: url }));
     } catch (err) {
-      console.error(err)
-      alert('Não foi possível enviar a foto.')
+      console.error(err);
+      alert('Não foi possível enviar a foto.');
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
-  }
+  };
 
   const salvar = async (e) => {
-    e.preventDefault()
-    if (!contratoOk) return
-    setSalvando(true)
+    e.preventDefault();
+    if (!contratoOk) return;
+    setSalvando(true);
     try {
-      const wantsNewAccount = forcarCriacao || (!!cred.email.trim() || !!cred.senha)
-      let uid = auth.currentUser?.uid
+      const wantsNewAccount = forcarCriacao || (!!cred.email.trim() || !!cred.senha);
+      let uid = auth.currentUser?.uid;
 
       if (!uid && !wantsNewAccount) {
-        alert('Informe e-mail e senha para criar a conta.')
-        setSalvando(false)
-        return
+        alert('Informe e-mail e senha para criar a conta.');
+        setSalvando(false);
+        return;
       }
 
       if (wantsNewAccount) {
-        const email = cred.email.trim()
-        const senha = cred.senha
+        const email = cred.email.trim();
+        const senha = cred.senha;
 
         if (!email) {
-          alert('Informe o e-mail.')
-          setSalvando(false)
-          return
+          alert('Informe o e-mail.');
+          setSalvando(false);
+          return;
         }
         if (!senha || senha.length < 6) {
-          alert('Senha deve ter ao menos 6 caracteres.')
-          setSalvando(false)
-          return
+          alert('Senha deve ter ao menos 6 caracteres.');
+          setSalvando(false);
+          return;
         }
 
-        const methods = await fetchSignInMethodsForEmail(auth, email)
+        const methods = await fetchSignInMethodsForEmail(auth, email);
         if (methods.length > 0) {
           if (!methods.includes('password')) {
-            alert('Este e-mail já está cadastrado por outro método (ex.: Google). Entre pelo mesmo método ou use outro e-mail.')
-            setSalvando(false)
-            return
+            alert('Este e-mail já está cadastrado por outro método (ex.: Google). Entre pelo mesmo método ou use outro e-mail.');
+            setSalvando(false);
+            return;
           }
           try {
-            const userCred = await signInWithEmailAndPassword(auth, email, senha)
-            uid = userCred.user.uid
+            const userCred = await signInWithEmailAndPassword(auth, email, senha);
+            uid = userCred.user.uid;
           } catch (err) {
             if (err?.code === 'auth/wrong-password') {
-              alert('Este e-mail já está cadastrado e a senha informada não confere.')
+              alert('Este e-mail já está cadastrado e a senha informada não confere.');
             } else {
-              alert(`Não foi possível entrar com este e-mail (${err?.code || 'erro'}).`)
+              alert(`Não foi possível entrar com este e-mail (${err?.code || 'erro'}).`);
             }
-            setSalvando(false)
-            return
+            setSalvando(false);
+            return;
           }
         } else {
-          const userCred = await createUserWithEmailAndPassword(auth, email, senha)
-          uid = userCred.user.uid
+          const userCred = await createUserWithEmailAndPassword(auth, email, senha);
+          uid = userCred.user.uid;
         }
       }
 
-      // validações obrigatórias
-      if (!form.nome?.trim()) return alert('Informe seu nome.')
-      if (!form.funcao?.trim()) return alert('Informe sua função.')
+      // Validações obrigatórias
+      if (!form.nome?.trim()) {
+        alert('Informe seu nome.');
+        setSalvando(false);
+        return;
+      }
+      if (!form.funcao?.trim()) {
+        alert('Informe sua função.');
+        setSalvando(false);
+        return;
+      }
 
-      const cpfNum = apenasNumeros(form.cpf)
+      const cpfNum = apenasNumeros(form.cpf);
       if (!cpfNum || cpfNum.length !== 11 || !validarCPF(cpfNum)) {
-        alert('Informe um CPF válido.')
-        setSalvando(false)
-        return
+        alert('Informe um CPF válido.');
+        setSalvando(false);
+        return;
       }
 
       if (!uid) {
-        alert('Não foi possível identificar o usuário.')
-        setSalvando(false)
-        return
+        alert('Não foi possível identificar o usuário.');
+        setSalvando(false);
+        return;
       }
 
-      const ref = doc(db, 'usuarios', uid)
+      const ref = doc(db, 'usuarios', uid);
       const payload = {
-       uid,
-       email: auth.currentUser?.email || cred.email || '',
-       nome: form.nome.trim(),
-       cpf: cpfNum,
-       funcao: form.funcao.trim(),
-       especialidades: form.especialidades
-         ? form.especialidades.split(',').map((s) => s.trim()).filter(Boolean)
-         : [],
-       valorDiaria: form.valorDiaria !== '' ? Number(form.valorDiaria) : null,
-       celular: form.celular.trim(),
-       cidade: form.cidade.trim(),
-       endereco: form.endereco.trim(),
-       foto: form.foto || '',
-       tipo: 'freela', // ✅ agora padrão da plataforma
-       aceitouContrato: true,
-       versaoContrato: VERSAO_CONTRATO,
-       dataAceiteContrato: serverTimestamp(),
-       atualizadoEm: serverTimestamp(),
-       criadoEm: serverTimestamp()
-     }
+        uid,
+        email: auth.currentUser?.email || cred.email || '',
+        nome: form.nome.trim(),
+        cpf: cpfNum,
+        funcao: form.funcao.trim(),
+        especialidades: form.especialidades
+          ? form.especialidades.split(',').map((s) => s.trim()).filter(Boolean)
+          : [],
+        valorDiaria: form.valorDiaria !== '' ? Number(form.valorDiaria) : null,
+        celular: form.celular.trim(),
+        cidade: form.cidade.trim(),
+        endereco: form.endereco.trim(),
+        foto: form.foto || '',
+        tipo: 'freela',
+        aceitouContrato: true,
+        versaoContrato: VERSAO_CONTRATO,
+        dataAceiteContrato: serverTimestamp(),
+        localizacao,
+        atualizadoEm: serverTimestamp(),
+        criadoEm: serverTimestamp()
+      };
 
-
-      await setDoc(ref, payload, { merge: true })
-      alert('✅ Cadastro salvo com sucesso!')
-      navigate('/painelfreela')
+      await setDoc(ref, payload, { merge: true });
+      alert('✅ Cadastro salvo com sucesso!');
+      navigate('/painelfreela');
     } catch (e2) {
-      console.error('Erro ao salvar cadastro:', e2)
-      alert('Erro ao salvar cadastro.')
+      console.error('Erro ao salvar cadastro:', e2);
+      alert('Erro ao salvar cadastro.');
     } finally {
-      setSalvando(false)
+      setSalvando(false);
     }
-  }
+  };
 
-  if (carregando) return <div className="p-6 text-center text-orange-600">Carregando...</div>
+  if (carregando) return <div className="p-6 text-center text-orange-600">Carregando...</div>;
 
   return (
     <div className="min-h-screen p-6 bg-orange-50 flex justify-center items-center">
@@ -228,7 +270,11 @@ export default function CadastroFreela() {
         <div className="flex items-start justify-between">
           <h1 className="text-2xl font-bold text-orange-700">🧑‍🍳 Cadastro de Freela</h1>
           {modoEdicao && !forcarCriacao && (
-            <button type="button" onClick={() => setForcarCriacao(true)} className="text-sm underline text-orange-700">
+            <button 
+              type="button" 
+              onClick={() => setForcarCriacao(true)} 
+              className="text-sm underline text-orange-700 hover:text-orange-800"
+            >
               Criar nova conta (usar outro e-mail)
             </button>
           )}
@@ -270,7 +316,13 @@ export default function CadastroFreela() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="col-span-1">
             <label className="block text-sm font-medium mb-1">Nome *</label>
-            <input name="nome" value={form.nome} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
+            <input 
+              name="nome" 
+              value={form.nome} 
+              onChange={handleChange} 
+              className="w-full border rounded px-3 py-2" 
+              required 
+            />
           </div>
           <div className="col-span-1">
             <label className="block text-sm font-medium mb-1">CPF *</label>
@@ -293,60 +345,128 @@ export default function CadastroFreela() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1">Função *</label>
-            <input name="funcao" value={form.funcao} onChange={handleChange} className="w-full border rounded px-3 py-2" placeholder="Ex: Churrasqueiro" required />
+            <input 
+              name="funcao" 
+              value={form.funcao} 
+              onChange={handleChange} 
+              className="w-full border rounded px-3 py-2" 
+              placeholder="Ex: Churrasqueiro" 
+              required 
+            />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Valor da diária (R$)</label>
-            <input name="valorDiaria" type="number" value={form.valorDiaria} onChange={handleChange} className="w-full border rounded px-3 py-2" />
+            <input 
+              name="valorDiaria" 
+              type="number" 
+              value={form.valorDiaria} 
+              onChange={handleChange} 
+              className="w-full border rounded px-3 py-2" 
+            />
           </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium mb-1">Especialidades (separadas por vírgula)</label>
-          <input name="especialidades" value={form.especialidades} onChange={handleChange} className="w-full border rounded px-3 py-2" placeholder="Grelha, Fogo de chão, Saladas" />
+          <input 
+            name="especialidades" 
+            value={form.especialidades} 
+            onChange={handleChange} 
+            className="w-full border rounded px-3 py-2" 
+            placeholder="Grelha, Fogo de chão, Saladas" 
+          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1">Celular</label>
-            <input name="celular" value={form.celular} onChange={handleChange} className="w-full border rounded px-3 py-2" />
+            <input 
+              name="celular" 
+              value={form.celular} 
+              onChange={handleChange} 
+              className="w-full border rounded px-3 py-2" 
+            />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Cidade</label>
-            <input name="cidade" value={form.cidade} onChange={handleChange} className="w-full border rounded px-3 py-2" />
+            <input 
+              name="cidade" 
+              value={form.cidade} 
+              onChange={handleChange} 
+              className="w-full border rounded px-3 py-2" 
+            />
           </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium mb-1">Endereço</label>
-          <input name="endereco" value={form.endereco} onChange={handleChange} className="w-full border rounded px-3 py-2" />
+          <input 
+            name="endereco" 
+            value={form.endereco} 
+            onChange={handleChange} 
+            className="w-full border rounded px-3 py-2" 
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Localização</label>
+          <button 
+            type="button" 
+            onClick={obterLocalizacao}
+            disabled={obtendoLocalizacao}
+            className="w-full bg-blue-100 text-blue-700 py-2 rounded mb-2 hover:bg-blue-200 transition disabled:opacity-50"
+          >
+            {obtendoLocalizacao ? 'Obtendo localização...' : 'Obter localização atual'}
+          </button>
+          {localizacao && (
+            <p className="text-sm text-gray-600">
+              Localização registrada: {localizacao.latitude.toFixed(4)}, {localizacao.longitude.toFixed(4)}
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
           <label className="block text-sm font-medium">Foto de perfil</label>
           {form.foto ? (
             <div className="flex items-center gap-3">
-              <img src={form.foto} alt="preview" className="w-16 h-16 rounded-full object-cover border" />
-              <button type="button" onClick={() => setForm((p) => ({ ...p, foto: '' }))} className="px-3 py-1 text-sm rounded bg-gray-100 hover:bg-gray-200">
+              <img 
+                src={form.foto} 
+                alt="preview" 
+                className="w-16 h-16 rounded-full object-cover border" 
+              />
+              <button 
+                type="button" 
+                onClick={() => setForm((p) => ({ ...p, foto: '' }))} 
+                className="px-3 py-1 text-sm rounded bg-gray-100 hover:bg-gray-200"
+              >
                 Trocar foto
               </button>
             </div>
           ) : (
-            <input type="file" accept="image/*" onChange={onSelectFoto} className="w-full" />
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={onSelectFoto} 
+              className="w-full" 
+            />
           )}
           {uploading && <p className="text-xs text-orange-600">Enviando foto...</p>}
         </div>
 
-        <ContratoPrestacaoServico versao={VERSAO_CONTRATO} defaultChecked={contratoDefaultChecked} onChange={setContratoOk} />
+        <ContratoPrestacaoServico 
+          versao={VERSAO_CONTRATO} 
+          defaultChecked={contratoDefaultChecked} 
+          onChange={setContratoOk} 
+        />
 
         <button
           type="submit"
-          disabled={salvando || uploading || !contratoOk}
+          disabled={salvando || uploading || !contratoOk || obtendoLocalizacao}
           className="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition disabled:opacity-50"
         >
           {salvando ? 'Salvando...' : (!modoEdicao || forcarCriacao) ? 'Criar conta e salvar' : 'Salvar alterações'}
         </button>
       </form>
     </div>
-  )
+  );
 }
