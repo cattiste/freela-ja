@@ -3,16 +3,12 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '@/firebase';
 import useStatusRTDB from '@/hooks/useStatusRTDB';
-import ProfissionalCardMini from './ProfissionalCardMini';
 import ProfissionalCard from './ProfissionalCard';
-import ModalFreelaDetalhes from './ModalFreelaDetalhes';
 
 export default function BuscarFreelas({ usuario }) {
   const [freelas, setFreelas] = useState([]);
   const [filtroFuncao, setFiltroFuncao] = useState('');
-  const [modalAberto, setModalAberto] = useState(false);
-  const [freelaSelecionado, setFreelaSelecionado] = useState(null);
-
+  const [observacoes, setObservacoes] = useState({});
   const usuariosOnline = useStatusRTDB();
   const now = Date.now();
 
@@ -38,26 +34,47 @@ export default function BuscarFreelas({ usuario }) {
     carregarFreelas();
   }, []);
 
-  const ordenarPorOnline = (lista) => {
-    return [...lista].sort((a, b) => {
-      const statusA = usuariosOnline[a.id];
-      const statusB = usuariosOnline[b.id];
-      return estaOnline(statusB) - estaOnline(statusA); // online em cima
-    });
+  const calcularDistancia = (lat1, lon1, lat2, lon2) => {
+    const toRad = (x) => (x * Math.PI) / 180;
+    const R = 6371;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(lat1)) *
+        Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
   };
 
   const filtrados = useMemo(() => {
-    return ordenarPorOnline(
-      freelas
-        .filter((f) =>
-          !filtroFuncao || f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
-        )
-        .map((f) => {
-          const status = usuariosOnline[f.id];
-          return { ...f, online: estaOnline(status) };
-        })
-    );
-  }, [freelas, filtroFuncao, usuariosOnline]);
+    return [...freelas]
+      .filter((f) =>
+        !filtroFuncao || f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
+      )
+      .map((f) => {
+        const status = usuariosOnline[f.id];
+        const online = estaOnline(status);
+        const distanciaKm =
+          f?.coordenadas && usuario?.coordenadas
+            ? calcularDistancia(
+                usuario.coordenadas.latitude,
+                usuario.coordenadas.longitude,
+                f.coordenadas.latitude,
+                f.coordenadas.longitude
+              )
+            : null;
+        return { ...f, online, distanciaKm };
+      })
+      .sort((a, b) => b.online - a.online); // Online em cima
+  }, [freelas, filtroFuncao, usuariosOnline, usuario]);
+
+  const handleChamar = (freela) => {
+    if (!freela.online) return;
+    console.log('Chamando freela:', freela.nome);
+    // Aqui você chama a função real de chamada
+  };
 
   return (
     <div className="p-4">
@@ -74,28 +91,18 @@ export default function BuscarFreelas({ usuario }) {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtrados.map((freela) => (
-            <div key={freela.id} onClick={() => {
-              setFreelaSelecionado(freela);
-              setModalAberto(true);
-            }}>
-              <ProfissionalCardMini freela={freela} online={freela.online} />
-            </div>
+            <ProfissionalCard
+              key={freela.id}
+              prof={freela}
+              online={freela.online}
+              distanciaKm={freela.distanciaKm}
+              observacao={observacoes[freela.id] || ''}
+              setObservacao={(texto) =>
+                setObservacoes((prev) => ({ ...prev, [freela.id]: texto }))
+              }
+              onChamar={() => handleChamar(freela)}
+            />
           ))}
-        </div>
-      )}
-
-      {/* Modal para exibir card completo */}
-      {modalAberto && freelaSelecionado && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-xl max-w-md w-full relative">
-            <button
-              onClick={() => setModalAberto(false)}
-              className="absolute top-2 right-2 text-gray-600 text-xl"
-            >
-              ×
-            </button>
-            <ProfissionalCard prof={freelaSelecionado} />
-          </div>
         </div>
       )}
     </div>
