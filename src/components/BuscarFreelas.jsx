@@ -169,7 +169,7 @@ const chamar = async (freela) => {
       collection(db, 'chamadas'),
       where('freelaUid', '==', uid),
       where('contratanteUid', '==', usuario.uid),
-      where('status', 'in', ['pendente', 'aceita'])
+      where('status', 'in', ['pendente', 'aceita', 'confirmada', 'em_andamento'])
     ))
 
     if (!snap.empty) {
