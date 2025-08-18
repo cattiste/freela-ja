@@ -1,18 +1,11 @@
-// src/components/BuscarFreelas.jsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react'
 import {
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
-  getDoc,
-  addDoc,
-  serverTimestamp,
-  limit,
-} from 'firebase/firestore';
-import { db } from '@/firebase';
-import useStatusRTDB from '@/hooks/useStatusRTDB';
+  collection, query, where, addDoc, serverTimestamp, getDocs, doc, getDoc, limit
+} from 'firebase/firestore'
+import { db } from '@/firebase'
+import useStatusRTDB from '@/hooks/useStatusRTDB' // ✅ importante
+
+const TTL_PADRAO_MS = 120_000 // 2 minutos
 
 // Utilidade de cálculo de distância
 function calcularDistancia(lat1, lon1, lat2, lon2) {
@@ -62,6 +55,13 @@ export default function BuscarFreelas({ usuario }) {
   const [chamando, setChamando] = useState(null);
   const usuariosOnline = useStatusRTDB();
   const ttlMs = 120000;
+  const usuariosOnline = useStatusRTDB() // ✅ usa aqui direto
+  const now = Date.now()
+  const onlineUids = useMemo(() => {
+    return Object.entries(usuariosOnline)
+      .filter(([_, v]) => estaOnline(v, now, TTL_PADRAO_MS))
+      .map(([k]) => k)
+  }, [usuariosOnline])
 
   useEffect(() => {
     async function carregarFreelas() {
