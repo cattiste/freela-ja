@@ -8,6 +8,7 @@ import ModalFreelaDetalhes from './ModalFreelaDetalhes';
 export default function BuscarFreelas({ usuario }) {
   const [freelas, setFreelas] = useState([]);
   const [filtroFuncao, setFiltroFuncao] = useState('');
+  const [modalAberto, setModalAberto] = useState(false);
   const [freelaSelecionado, setFreelaSelecionado] = useState(null);
 
   const usuariosOnline = useStatusRTDB();
@@ -23,9 +24,11 @@ export default function BuscarFreelas({ usuario }) {
   useEffect(() => {
     async function carregarFreelas() {
       try {
-        const snap = await getDocs(
-          query(collection(db, 'usuarios'), where('tipoUsuario', '==', 'freela'), limit(60))
-        );
+        const snap = await getDocs(query(
+          collection(db, 'usuarios'),
+          where('tipoUsuario', '==', 'freela'),
+          limit(60)
+        ));
         const lista = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
         setFreelas(lista);
       } catch (err) {
@@ -71,8 +74,14 @@ export default function BuscarFreelas({ usuario }) {
           {filtrados.map((freela) => (
             <div
               key={freela.id}
-              onClick={() => setFreelaSelecionado(freela)}
-              className="cursor-pointer"
+              onClick={() => {
+                const status = usuariosOnline[freela.id];
+                setFreelaSelecionado({
+                  ...freela,
+                  online: estaOnline(status)
+                });
+                setModalAberto(true);
+              }}
             >
               <ProfissionalCardMini freela={freela} online={freela.online} />
             </div>
@@ -80,11 +89,12 @@ export default function BuscarFreelas({ usuario }) {
         </div>
       )}
 
-      {freelaSelecionado && (
+      {/* Modal para exibir card completo */}
+      {modalAberto && freelaSelecionado && (
         <ModalFreelaDetalhes
           freela={freelaSelecionado}
+          onClose={() => setModalAberto(false)}
           isOnline={freelaSelecionado.online}
-          onClose={() => setFreelaSelecionado(null)}
         />
       )}
     </div>
