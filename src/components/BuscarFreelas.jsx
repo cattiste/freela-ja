@@ -1,211 +1,97 @@
-// src/components/BuscarFreelas.jsx
-import React, { useEffect, useMemo, useState } from 'react'
-import {
-  collection, query, where, addDoc, serverTimestamp,
-  getDocs, doc, getDoc, limit
-} from 'firebase/firestore'
-import { db } from '@/firebase'
+import React, { useEffect, useState, useMemo } from 'react';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { db } from '@/firebase';
+import useStatusRTDB from '@/hooks/useStatusRTDB';
+import ProfissionalCardMini from './ProfissionalCardMini';
+import ProfissionalCard from './ProfissionalCard';
 
-// ---------------------------------------------
-// util: distância geodésica (km)
-function calcularDistancia(lat1, lon1, lat2, lon2) {
-  const toRad = (x) => (x * Math.PI) / 180
-  const R = 6371
-  const dLat = toRad(lat2 - lat1)
-  const dLon = toRad(lon2 - lon1)
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return R * c
-}
+export default function BuscarFreelas({ usuario }) {
+  const [freelas, setFreelas] = useState([]);
+  const [filtroFuncao, setFiltroFuncao] = useState('');
+  const [modalAberto, setModalAberto] = useState(false);
+  const [freelaSelecionado, setFreelaSelecionado] = useState(null);
 
-// ---------------------------------------------
-// presença com TTL
-const TTL_MS = 120_000 // 2 minutos
+  const usuariosOnline = useStatusRTDB();
+  const now = Date.now();
 
-function toMillis(v) {
-  if (!v) return null
-  if (typeof v === 'number') return v
-  if (typeof v === 'string') return /^\d+$/.test(v) ? Number(v) : Date.parse(v)
-  if (typeof v === 'object') {
-    if (typeof v.toMillis === 'function') return v.toMillis()
-    if (typeof v.seconds === 'number') return v.seconds * 1000
-  }
-  return null
-}
-
-function estaOnline(rec) {
-  const now = Date.now()
-  if (!rec) return false
-  const flag = rec.online === true || rec.state === 'online'
-  const ts =
-    toMillis(rec.lastSeen) ??
-    toMillis(rec.ts) ??
-    toMillis(rec.last_changed)
-  return flag && now - ts <= TTL_MS
-}
-
-// ---------------------------------------------
-// card
-function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao, setObservacao }) {
-  const uid = freela.uid || freela.id
-  return (
-    <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100">
-      <div className="flex flex-col items-center">
-        <img
-          src={freela.foto || 'https://via.placeholder.com/80'}
-          alt={freela.nome}
-          className="w-20 h-20 rounded-full object-cover border-2 border-orange-400"
-        />
-        <h3 className="mt-2 text-lg font-bold text-orange-700">{freela.nome}</h3>
-        <p className="text-sm text-gray-600">{freela.funcao}</p>
-
-        {freela.valorDiaria && (
-          <p className="text-sm font-semibold text-orange-700 mt-1">
-            💰 R$ {freela.valorDiaria}
-          </p>
-        )}
-        {distancia != null && (
-          <p className="text-sm text-gray-600 mt-1">📍 {distancia.toFixed(1)} km</p>
-        )}
-        {online && (
-          <div className="flex items-center gap-2 mt-1">
-            <span className="w-2 h-2 rounded-full bg-green-500" />
-            <span className="text-xs text-green-700">🟢 Online agora</span>
-          </div>
-        )}
-      </div>
-
-      <textarea
-        rows={2}
-        className="w-full mt-3 px-2 py-1 border rounded text-sm"
-        placeholder="Instruções para o freela"
-        value={observacao[uid] || ''}
-        onChange={(e) =>
-          setObservacao((prev) => ({ ...prev, [uid]: e.target.value }))
-        }
-      />
-
-      <button
-        onClick={() => onChamar(freela)}
-        disabled={chamando === uid}
-        className="mt-3 w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700"
-      >
-        {chamando === uid ? 'Chamando...' : '📞 Chamar'}
-      </button>
-    </div>
-  )
-}
-
-// ---------------------------------------------
-export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
-  const [freelas, setFreelas] = useState([])
-  const [filtro, setFiltro] = useState('')
-  const [chamando, setChamando] = useState(null)
-  const [observacao, setObservacao] = useState({})
+  const estaOnline = (status) => {
+    if (!status) return false;
+    const ts = status?.last_changed || status?.lastSeen || status?.updatedAt;
+    const tsMs = typeof ts === 'number' ? ts : ts?.seconds ? ts.seconds * 1000 : 0;
+    return (status.state === 'online' || status.online) && now - tsMs <= 120000;
+  };
 
   useEffect(() => {
     async function carregarFreelas() {
-      const lista = []
-
-      const q1 = query(collection(db, 'usuarios'), where('tipoUsuario', '==', 'freela'), limit(60))
-      const q2 = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'), limit(60))
-
-      const [s1, s2] = await Promise.all([getDocs(q1), getDocs(q2)])
-      s1.forEach((d) => lista.push({ id: d.id, ...d.data() }))
-      s2.forEach((d) => lista.push({ id: d.id, ...d.data() }))
-
-      const unicos = new Map()
-      lista.forEach((f) => {
-        const id = f.uid || f.id
-        if (!unicos.has(id)) unicos.set(id, f)
-      })
-
-      setFreelas([...unicos.values()])
+      try {
+        const snap = await getDocs(query(collection(db, 'usuarios'), where('tipoUsuario', '==', 'freela'), limit(60)));
+        const lista = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
+        setFreelas(lista);
+      } catch (err) {
+        console.error('Erro ao carregar freelas:', err);
+      }
     }
+    carregarFreelas();
+  }, []);
 
-    carregarFreelas()
-  }, [])
+  const ordenarPorOnline = (lista) => {
+    return [...lista].sort((a, b) => {
+      const statusA = usuariosOnline[a.id];
+      const statusB = usuariosOnline[b.id];
+      return estaOnline(statusB) - estaOnline(statusA); // online em cima
+    });
+  };
 
   const filtrados = useMemo(() => {
-    return freelas
-      .map((f) => {
-        const distancia = f.coordenadas && usuario?.coordenadas
-          ? calcularDistancia(
-              usuario.coordenadas.latitude,
-              usuario.coordenadas.longitude,
-              f.coordenadas.latitude,
-              f.coordenadas.longitude
-            )
-          : null
-        const online = estaOnline(usuariosOnline[f.uid || f.id])
-        return { ...f, distancia, online }
-      })
-      .filter((f) => !filtro || f.funcao?.toLowerCase().includes(filtro.toLowerCase()))
-      .sort((a, b) => (b.online ? 1 : 0) - (a.online ? 1 : 0)) // online primeiro
-  }, [freelas, filtro, usuario, usuariosOnline])
-
-  const chamar = async (freela) => {
-    const uid = freela.uid || freela.id
-    setChamando(uid)
-
-    try {
-      await addDoc(collection(db, 'chamadas'), {
-        freelaUid: uid,
-        freelaNome: freela.nome,
-        valorDiaria: freela.valorDiaria || null,
-        chamadorUid: usuario.uid,
-        chamadorNome: usuario.nome || '',
-        tipoChamador: usuario.tipo || usuario.tipoUsuario || '',
-        observacao: observacao[uid] || '',
-        status: 'pendente',
-        criadoEm: serverTimestamp(),
-      })
-
-      alert(`✅ ${freela.nome} foi chamado com sucesso!`)
-    } catch (err) {
-      console.error('Erro ao chamar freela:', err)
-      alert('Erro ao chamar freelancer.')
-    } finally {
-      setChamando(null)
-    }
-  }
+    return ordenarPorOnline(
+      freelas
+        .filter((f) => !filtroFuncao || f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase()))
+        .map((f) => {
+          const status = usuariosOnline[f.id];
+          return { ...f, online: estaOnline(status) };
+        })
+    );
+  }, [freelas, filtroFuncao, usuariosOnline]);
 
   return (
-    <div className="min-h-screen bg-cover bg-center p-4 pb-20"
-      style={{
-        backgroundImage: `url('/img/fundo-login.jpg')`,
-        backgroundAttachment: 'fixed',
-      }}>
-      <div className="max-w-4xl mx-auto mb-4">
-        <input
-          type="text"
-          placeholder="Buscar por função..."
-          value={filtro}
-          onChange={(e) => setFiltro(e.target.value)}
-          className="w-full px-4 py-2 rounded-lg shadow-sm border border-gray-300 focus:ring-2 focus:ring-orange-400"
-        />
-      </div>
+    <div className="p-4">
+      <input
+        type="text"
+        placeholder="Buscar por função..."
+        className="w-full mb-4 px-4 py-2 border rounded"
+        value={filtroFuncao}
+        onChange={(e) => setFiltroFuncao(e.target.value)}
+      />
 
       {filtrados.length === 0 ? (
         <p className="text-center text-white">Nenhum freelancer encontrado.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
-          {filtrados.map((f) => (
-            <FreelaCard
-              key={f.uid || f.id}
-              freela={f}
-              online={f.online}
-              distancia={f.distancia}
-              onChamar={chamar}
-              chamando={chamando}
-              observacao={observacao}
-              setObservacao={setObservacao}
-            />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtrados.map((freela) => (
+            <div key={freela.id} onClick={() => {
+              setFreelaSelecionado(freela)
+              setModalAberto(true)
+            }}>
+              <ProfissionalCardMini freela={freela} online={freela.online} />
+            </div>
           ))}
         </div>
       )}
+
+      {/* Modal para exibir card completo */}
+      {modalAberto && freelaSelecionado && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-xl max-w-md w-full relative">
+            <button
+              onClick={() => setModalAberto(false)}
+              className="absolute top-2 right-2 text-gray-600 text-xl"
+            >
+              ×
+            </button>
+            <ProfissionalCard prof={freelaSelecionado} />
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
 }

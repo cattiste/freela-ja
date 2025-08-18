@@ -1,4 +1,3 @@
-// src/components/ProfissionalCardMini.jsx
 import React from 'react';
 import { FaStar, FaRegStar } from 'react-icons/fa';
 
@@ -25,9 +24,9 @@ export default function ProfissionalCardMini({
   usuario,
   onChamar,
   chamando,
-  online,
-  observacao,
-  setObservacao,
+  online = false,
+  observacao = {},
+  setObservacao = () => {},
 }) {
   const distanciaFormatada = freela.distanciaKm
     ? `${freela.distanciaKm.toFixed(1)} km`
@@ -36,7 +35,7 @@ export default function ProfissionalCardMini({
   const freelaUid = freela.uid || freela.id;
 
   return (
-    <div className="bg-white/90 rounded-lg shadow-lg p-4 flex flex-col items-center">
+    <div className="bg-white/90 rounded-lg shadow-lg p-4 flex flex-col items-center cursor-pointer">
       <div className="relative">
         <img
           src={freela.foto || 'https://via.placeholder.com/100'}
@@ -88,8 +87,12 @@ export default function ProfissionalCardMini({
 
       <button
         onClick={() => onChamar(freela)}
-        disabled={chamando === freelaUid}
-        className="mt-3 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded w-full disabled:opacity-50"
+        disabled={!online || chamando === freelaUid}
+        className={`mt-3 font-bold py-2 px-4 rounded w-full transition ${
+          online
+            ? 'bg-green-600 hover:bg-green-700 text-white'
+            : 'bg-gray-400 text-white cursor-not-allowed'
+        }`}
       >
         {chamando === freelaUid ? 'Chamando...' : 'Chamar'}
       </button>
