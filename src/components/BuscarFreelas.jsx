@@ -1,3 +1,4 @@
+// src/components/BuscarFreelas.jsx
 import React, { useEffect, useState, useMemo } from 'react';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -24,7 +25,9 @@ export default function BuscarFreelas({ usuario }) {
   useEffect(() => {
     async function carregarFreelas() {
       try {
-        const snap = await getDocs(query(collection(db, 'usuarios'), where('tipoUsuario', '==', 'freela'), limit(60)));
+        const snap = await getDocs(
+          query(collection(db, 'usuarios'), where('tipo', '==', 'freela'), limit(60))
+        );
         const lista = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
         setFreelas(lista);
       } catch (err) {
@@ -45,7 +48,9 @@ export default function BuscarFreelas({ usuario }) {
   const filtrados = useMemo(() => {
     return ordenarPorOnline(
       freelas
-        .filter((f) => !filtroFuncao || f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase()))
+        .filter((f) =>
+          !filtroFuncao || f.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
+        )
         .map((f) => {
           const status = usuariosOnline[f.id];
           return { ...f, online: estaOnline(status) };
@@ -69,8 +74,8 @@ export default function BuscarFreelas({ usuario }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtrados.map((freela) => (
             <div key={freela.id} onClick={() => {
-              setFreelaSelecionado(freela)
-              setModalAberto(true)
+              setFreelaSelecionado(freela);
+              setModalAberto(true);
             }}>
               <ProfissionalCardMini freela={freela} online={freela.online} />
             </div>
