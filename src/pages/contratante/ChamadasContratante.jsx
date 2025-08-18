@@ -11,6 +11,7 @@ import { toast } from 'react-hot-toast'
 const STATUS_LISTA = [
   'pendente',
   'aceita',
+  'confirmada', // ✅ Adicionado para evitar sumiço da chamada
   'checkin_freela',
   'em_andamento',
   'checkout_freela',
@@ -62,18 +63,18 @@ export default function ChamadasContratante({ contratante }) {
     })
   }, [chamadas])
 
-    async function confirmarChamada(ch) {
-      try {
-        await updateDoc(doc(db, 'chamadas', ch.id), {
-          status: 'confirmada',
-          confirmadaEm: serverTimestamp()
-        })
-        toast.success('✅ Chamada confirmado!')
-      } catch (e) {
-        console.error('[ChamadasContratante] confirmarChamada erro:', e)
-        toast.error('Erro ao confirmar chamada.')
-      }
+  async function confirmarChamada(ch) {
+    try {
+      await updateDoc(doc(db, 'chamadas', ch.id), {
+        status: 'confirmada',
+        confirmadaEm: serverTimestamp()
+      })
+      toast.success('✅ Chamada confirmada!')
+    } catch (e) {
+      console.error('[ChamadasContratante] confirmarChamada erro:', e)
+      toast.error('Erro ao confirmar chamada.')
     }
+  }
 
   async function cancelarChamada(ch) {
     try {
