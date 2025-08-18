@@ -12,6 +12,13 @@ import {
   limit,
 } from 'firebase/firestore'
 import { db } from '@/firebase'
+import useStatusRTDB from '@/hooks/useStatusRTDB'
+
+const usuariosOnline = useStatusRTDB();
+const now = Date.now();
+const uids = Object.entries(usuariosOnline)
+  .filter(([_, v]) => estaOnline(v, now, ttlMs))
+  .map(([k]) => k);
 
 // ---------------------------------------------
 // util: distância geodésica (km)
