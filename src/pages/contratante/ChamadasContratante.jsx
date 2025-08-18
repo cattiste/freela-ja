@@ -146,16 +146,16 @@ export default function ChamadasContratante({ contratante }) {
             {ch.status === 'aceita' && (
               <div className="flex flex-col sm:flex-row gap-2">
                 <button
-                  onClick={() => confirmarConvite(ch)}
+                  onClick={() => confirmarChamada(ch)}
                   className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
                 >
-                  ✅ Confirmar convite
+                  ✅ Confirmar Chamada
                 </button>
                 <button
-                  onClick={() => cancelarConvite(ch)}
+                  onClick={() => cancelarChamada(ch)}
                   className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition"
                 >
-                  ❌ Cancelar convite
+                  ❌ Cancelar Chamada
                 </button>
               </div>
             )}
