@@ -1,10 +1,10 @@
-// src/components/BuscarFreelas.jsx
+// ✅ BuscarFreelas.jsx atualizado
 import React, { useEffect, useState, useMemo } from 'react';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '@/firebase';
 import useStatusRTDB from '@/hooks/useStatusRTDB';
 import ProfissionalCardMini from './ProfissionalCardMini';
-import ProfissionalCard from './ProfissionalCard';
+import ModalFreelaDetalhes from './ModalFreelaDetalhes';
 
 export default function BuscarFreelas({ usuario }) {
   const [freelas, setFreelas] = useState([]);
@@ -41,7 +41,7 @@ export default function BuscarFreelas({ usuario }) {
     return [...lista].sort((a, b) => {
       const statusA = usuariosOnline[a.id];
       const statusB = usuariosOnline[b.id];
-      return estaOnline(statusB) - estaOnline(statusA); // online em cima
+      return estaOnline(statusB) - estaOnline(statusA);
     });
   };
 
@@ -73,23 +73,22 @@ export default function BuscarFreelas({ usuario }) {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtrados.map((freela) => (
-            <div key={freela.id}>
-             <ProfissionalCardMini
-               freela={freela}
-               online={freela.online}
-               onChamar={() => console.log('Chamando o freela', freela.nome)}
-               onAbrirModal={() => {
-                 setFreelaSelecionado(freela);
-                 setModalAberto(true);
-               }}
-             />
-           </div>
+            <ProfissionalCardMini
+              key={freela.id}
+              freela={freela}
+              online={freela.online}
+              onChamar={(f) => console.log('Chamando o freela', f.nome)}
+              onAbrirModal={() => {
+                setFreelaSelecionado(freela);
+                setModalAberto(true);
+              }}
+            />
           ))}
         </div>
       )}
 
       {modalAberto && freelaSelecionado && (
-        <ProfissionalCard
+        <ModalFreelaDetalhes
           freela={freelaSelecionado}
           isOnline={freelaSelecionado.online}
           onClose={() => setModalAberto(false)}
