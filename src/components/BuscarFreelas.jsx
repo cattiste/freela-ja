@@ -1,8 +1,7 @@
-// src/components/BuscarFreelas.jsx
 import React, { useEffect, useMemo, useState } from 'react'
 import {
   collection, query, where, addDoc, serverTimestamp,
-  getDocs, doc, getDoc, limit
+  getDocs, limit
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 
@@ -60,7 +59,11 @@ function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao,
         />
         <h3 className="mt-2 text-lg font-bold text-orange-700">{freela.nome}</h3>
         <p className="text-sm text-gray-600">{freela.funcao}</p>
-
+        {freela.especialidades && (
+          <p className="text-xs text-gray-500 text-center">{Array.isArray(freela.especialidades)
+            ? freela.especialidades.join(', ')
+            : freela.especialidades}</p>
+        )}
         {freela.valorDiaria && (
           <p className="text-sm font-semibold text-orange-700 mt-1">
             💰 R$ {freela.valorDiaria}
@@ -89,8 +92,12 @@ function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao,
 
       <button
         onClick={() => onChamar(freela)}
-        disabled={chamando === uid}
-        className="mt-3 w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700"
+        disabled={!online || chamando === uid}
+        className={`mt-3 w-full py-2 rounded-lg font-bold text-white ${
+          online
+            ? 'bg-green-600 hover:bg-green-700'
+            : 'bg-gray-400 cursor-not-allowed'
+        }`}
       >
         {chamando === uid ? 'Chamando...' : '📞 Chamar'}
       </button>
