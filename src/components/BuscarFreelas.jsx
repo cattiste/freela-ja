@@ -1,13 +1,10 @@
 // src/components/BuscarFreelas.jsx
 import React, { useEffect, useMemo, useState } from 'react'
-import {
-  collection, query, where, getDocs, limit
-} from 'firebase/firestore'
+import { collection, query, where, getDocs, limit } from 'firebase/firestore'
 import { db } from '@/firebase'
 import useStatusRTDB from '@/hooks/useStatusRTDB'
-import ProfissionalCardMini from './ProfissionalCardMini'
 
-const TTL_PADRAO_MS = 120_000
+const TTL_MS = 120_000 // 2 minutos
 
 function calcularDistancia(lat1, lon1, lat2, lon2) {
   const toRad = (x) => (x * Math.PI) / 180
@@ -16,8 +13,7 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
   const dLon = toRad(lon2 - lon1)
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLon / 2) ** 2
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   return R * c
 }
@@ -25,56 +21,44 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
 function toMillis(v) {
   if (!v) return null
   if (typeof v === 'number') return v
-  if (typeof v === 'string') {
-    const parsed = Date.parse(v)
-    if (!Number.isNaN(parsed)) return parsed
-    if (/^\d+$/.test(v)) return Number(v)
-    return null
-  }
+  if (typeof v === 'string') return Date.parse(v)
   if (typeof v === 'object') {
     if (typeof v.toMillis === 'function') return v.toMillis()
-    if (typeof v.seconds === 'number') return v.seconds * 1000
+    if (v.seconds) return v.seconds * 1000
   }
   return null
 }
 
-function estaOnline(status, now, ttl = TTL_PADRAO_MS) {
+function estaOnline(status, now = Date.now()) {
   if (!status) return false
-  const flag = status.state === 'online' || status.online === true
-  const ts = toMillis(status.lastSeen) || toMillis(status.last_changed) || toMillis(status.updatedAt)
-  return flag && now - ts <= ttl
+  const ts = toMillis(status.last_changed || status.updatedAt || status.lastSeen)
+  const ativo = status?.state === 'online' || status?.online === true
+  return ativo && ts && now - ts <= TTL_MS
 }
 
 export default function BuscarFreelas({ usuario }) {
   const [freelas, setFreelas] = useState([])
-  const [filtroFuncao, setFiltroFuncao] = useState('')
-  const [chamando, setChamando] = useState(null)
-  const [observacao, setObservacao] = useState({})
+  const [filtro, setFiltro] = useState('')
   const usuariosOnline = useStatusRTDB()
-  const now = Date.now()
 
   useEffect(() => {
     async function carregar() {
-      const snap = await getDocs(
-        query(collection(db, 'usuarios'), where('tipoUsuario', '==', 'freela'), limit(60))
-      )
-      const lista = []
-      snap.forEach((docu) => {
-        const data = docu.data()
-        const id = docu.id
-        if (data) lista.push({ ...data, id })
-      })
+      const q = query(collection(db, 'usuarios'), where('tipoUsuario', '==', 'freela'), limit(60))
+      const snap = await getDocs(q)
+      const lista = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
       setFreelas(lista)
     }
     carregar()
   }, [])
 
-  const freelasFiltrados = useMemo(() => {
+  const listaFinal = useMemo(() => {
     const agora = Date.now()
+
     return freelas
-      .map((f) => {
+      .map(f => {
         const status = usuariosOnline[f.uid || f.id]
         const online = estaOnline(status, agora)
+
         const distanciaKm =
           f?.coordenadas && usuario?.coordenadas
             ? calcularDistancia(
@@ -84,49 +68,51 @@ export default function BuscarFreelas({ usuario }) {
                 f.coordenadas.longitude
               )
             : null
-        return { ...f, online, distanciaKm }
-      })
-      .filter((f) => f.online)
-      .filter((f) =>
-        !filtroFuncao || f?.funcao?.toLowerCase().includes(filtroFuncao.toLowerCase())
-      )
-      .sort((a, b) => (a.distanciaKm ?? Infinity) - (b.distanciaKm ?? Infinity))
-  }, [freelas, usuariosOnline, filtroFuncao, usuario])
 
-  function handleChamar(freela) {
-    const freelaUid = freela.uid || freela.id
-    setChamando(freelaUid)
-    setTimeout(() => {
-      setChamando(null)
-      alert(`Chamada enviada para ${freela.nome}!\n\nObs: ${observacao[freelaUid] || '(sem observações)'}`)
-    }, 1000)
-  }
+        return {
+          ...f,
+          online,
+          distanciaKm
+        }
+      })
+      .filter(f => !filtro || f.funcao?.toLowerCase().includes(filtro.toLowerCase()))
+      .sort((a, b) => {
+        if (a.online && !b.online) return -1
+        if (!a.online && b.online) return 1
+        return (a.distanciaKm ?? Infinity) - (b.distanciaKm ?? Infinity)
+      })
+  }, [freelas, usuariosOnline, filtro, usuario])
 
   return (
-    <div className="p-4 max-w-5xl mx-auto">
+    <div className="p-4">
       <input
         type="text"
         placeholder="Buscar por função..."
-        className="w-full mb-4 px-4 py-2 border rounded shadow"
-        value={filtroFuncao}
-        onChange={(e) => setFiltroFuncao(e.target.value)}
+        className="w-full mb-4 px-4 py-2 border rounded"
+        value={filtro}
+        onChange={(e) => setFiltro(e.target.value)}
       />
 
-      {freelasFiltrados.length === 0 ? (
-        <p className="text-white text-center">Nenhum freelancer online encontrado.</p>
+      {listaFinal.length === 0 ? (
+        <p className="text-white text-center">Nenhum freelancer encontrado.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {freelasFiltrados.map((freela) => (
-            <ProfissionalCardMini
-              key={freela.uid || freela.id}
-              freela={freela}
-              usuario={usuario}
-              onChamar={handleChamar}
-              chamando={chamando}
-              observacao={observacao}
-              setObservacao={setObservacao}
-              online={freela.online}
-            />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {listaFinal.map((f) => (
+            <div key={f.id} className="bg-white rounded-xl shadow p-4 border border-orange-200">
+              <h3 className="text-orange-700 font-bold text-lg text-center">{f.nome}</h3>
+              <p className="text-sm text-gray-600 text-center">{f.funcao}</p>
+              {f.valorDiaria && (
+                <p className="text-center text-sm mt-1">💰 R$ {f.valorDiaria} / diária</p>
+              )}
+              {f.distanciaKm && (
+                <p className="text-center text-xs text-gray-500">
+                  📍 {f.distanciaKm.toFixed(1)} km de você
+                </p>
+              )}
+              <p className={`text-center mt-2 font-semibold ${f.online ? 'text-green-600' : 'text-gray-500'}`}>
+                {f.online ? '🟢 Online agora' : '🔴 Offline'}
+              </p>
+            </div>
           ))}
         </div>
       )}
