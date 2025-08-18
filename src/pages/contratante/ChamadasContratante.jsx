@@ -62,18 +62,18 @@ export default function ChamadasContratante({ contratante }) {
     })
   }, [chamadas])
 
-  async function confirmarConvite(ch) {
-    try {
-      await updateDoc(doc(db, 'chamadas', ch.id), {
-        status: 'aceita',
-        aceitaEm: serverTimestamp()
-      })
-      toast.success('✅ Convite confirmado!')
-    } catch (e) {
-      console.error('[ChamadasContratante] confirmarConvite erro:', e)
-      toast.error('Erro ao confirmar convite.')
+    async function confirmarConvite(ch) {
+      try {
+        await updateDoc(doc(db, 'chamadas', ch.id), {
+          status: 'confirmada',
+          confirmadaEm: serverTimestamp()
+        })
+        toast.success('✅ Convite confirmado!')
+      } catch (e) {
+        console.error('[ChamadasContratante] confirmarConvite erro:', e)
+        toast.error('Erro ao confirmar convite.')
+      }
     }
-  }
 
   async function cancelarConvite(ch) {
     try {
@@ -143,7 +143,7 @@ export default function ChamadasContratante({ contratante }) {
               <p className="text-sm text-gray-800"><strong>📝 Observação:</strong> {ch.observacao}</p>
             )}
 
-            {ch.status === 'pendente' && (
+            {ch.status === 'aceita' && (
               <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   onClick={() => confirmarConvite(ch)}
