@@ -74,17 +74,16 @@ export default function BuscarFreelas({ usuario }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtrados.map((freela) => (
             <div key={freela.id}>
-              <div onClick={() => {
-                setFreelaSelecionado(freela);
-                setModalAberto(true);
-              }}>
-                <ProfissionalCardMini
-                  freela={freela}
-                  online={freela.online}
-                  onChamar={() => console.log('Chamar freela', freela.nome)}
-                />
-              </div>
-            </div>
+             <ProfissionalCardMini
+               freela={freela}
+               online={freela.online}
+               onChamar={() => console.log('Chamando o freela', freela.nome)}
+               onAbrirModal={() => {
+                 setFreelaSelecionado(freela);
+                 setModalAberto(true);
+               }}
+             />
+           </div>
           ))}
         </div>
       )}

@@ -23,6 +23,7 @@ export default function ProfissionalCardMini({
   freela,
   usuario,
   onChamar,
+  onAbrirModal = () => {},
   chamando,
   online = false,
   observacao = {},
@@ -35,8 +36,8 @@ export default function ProfissionalCardMini({
   const freelaUid = freela.uid || freela.id;
 
   return (
-    <div className="bg-white/90 rounded-lg shadow-lg p-4 flex flex-col items-center cursor-pointer">
-      <div className="relative">
+    <div className="bg-white/90 rounded-lg shadow-lg p-4 flex flex-col items-center">
+      <div className="relative" onClick={onAbrirModal} style={{ cursor: 'pointer' }}>
         <img
           src={freela.foto || 'https://via.placeholder.com/100'}
           alt={freela.nome}
@@ -51,8 +52,12 @@ export default function ProfissionalCardMini({
         </span>
       </div>
 
-      <h2 className="mt-3 text-lg font-semibold text-center">{freela.nome}</h2>
-      <p className="text-sm text-gray-600 text-center">{freela.funcao}</p>
+      <h2 className="mt-3 text-lg font-semibold text-center" onClick={onAbrirModal} style={{ cursor: 'pointer' }}>
+        {freela.nome}
+      </h2>
+      <p className="text-sm text-gray-600 text-center" onClick={onAbrirModal} style={{ cursor: 'pointer' }}>
+        {freela.funcao}
+      </p>
 
       {/* ⭐ Estrelas de avaliação */}
       {freela.mediaAvaliacoes ? (
