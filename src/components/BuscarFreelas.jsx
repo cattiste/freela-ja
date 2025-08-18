@@ -73,29 +73,28 @@ export default function BuscarFreelas({ usuario }) {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtrados.map((freela) => (
-            <div key={freela.id} onClick={() => {
-              setFreelaSelecionado(freela);
-              setModalAberto(true);
-            }}>
-              <ProfissionalCardMini freela={freela} online={freela.online} />
+            <div key={freela.id}>
+              <div onClick={() => {
+                setFreelaSelecionado(freela);
+                setModalAberto(true);
+              }}>
+                <ProfissionalCardMini
+                  freela={freela}
+                  online={freela.online}
+                  onChamar={() => console.log('Chamar freela', freela.nome)}
+                />
+              </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Modal para exibir card completo */}
       {modalAberto && freelaSelecionado && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-xl max-w-md w-full relative">
-            <button
-              onClick={() => setModalAberto(false)}
-              className="absolute top-2 right-2 text-gray-600 text-xl"
-            >
-              ×
-            </button>
-            <ProfissionalCard prof={freelaSelecionado} />
-          </div>
-        </div>
+        <ProfissionalCard
+          freela={freelaSelecionado}
+          isOnline={freelaSelecionado.online}
+          onClose={() => setModalAberto(false)}
+        />
       )}
     </div>
   );

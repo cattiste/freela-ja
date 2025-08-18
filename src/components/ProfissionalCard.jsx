@@ -60,16 +60,13 @@ export default function ProfissionalCard({ freela, onClose, isOnline }) {
                   : freela.especialidades}
               </p>
             )}
-
             <p className="text-sm font-bold text-gray-800 mt-2">
               💰 Diária: R$ {Number(freela.valorDiaria || 0).toFixed(2)}
             </p>
-
             <p className="text-xs text-gray-600">
               📍 Distância:{' '}
               {freela.distanciaKm != null ? `${freela.distanciaKm.toFixed(1)} km` : '—'}
             </p>
-
             <div className="flex items-center justify-center mt-2 gap-2">
               <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`} />
               <span className={`text-xs ${isOnline ? 'text-green-700' : 'text-gray-500'}`}>
@@ -88,8 +85,7 @@ export default function ProfissionalCard({ freela, onClose, isOnline }) {
         {media !== null && (
           <div className="mt-4 text-sm text-gray-700 text-left">
             <p className="mb-1">
-              <strong>Avaliação média:</strong>{' '}
-              {media.toFixed(1)} ★ ({avaliacoes.length} avaliação{avaliacoes.length > 1 ? 'es' : ''})
+              <strong>Avaliação média:</strong> {media.toFixed(1)} ★ ({avaliacoes.length})
             </p>
             <div className="flex items-center gap-1 text-yellow-500 text-base">
               {[1, 2, 3, 4, 5].map((n) =>
