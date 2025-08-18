@@ -1,10 +1,10 @@
-// ✅ BuscarFreelas.jsx atualizado
+// src/components/BuscarFreelas.jsx
 import React, { useEffect, useState, useMemo } from 'react';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '@/firebase';
 import useStatusRTDB from '@/hooks/useStatusRTDB';
 import ProfissionalCardMini from './ProfissionalCardMini';
-import ModalFreelaDetalhes from './ModalFreelaDetalhes';
+import ProfissionalCard from './ProfissionalCard';
 
 export default function BuscarFreelas({ usuario }) {
   const [freelas, setFreelas] = useState([]);
@@ -41,7 +41,7 @@ export default function BuscarFreelas({ usuario }) {
     return [...lista].sort((a, b) => {
       const statusA = usuariosOnline[a.id];
       const statusB = usuariosOnline[b.id];
-      return estaOnline(statusB) - estaOnline(statusA);
+      return estaOnline(statusB) - estaOnline(statusA); // online em cima
     });
   };
 
@@ -73,26 +73,29 @@ export default function BuscarFreelas({ usuario }) {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtrados.map((freela) => (
-            <ProfissionalCardMini
-              key={freela.id}
-              freela={freela}
-              online={freela.online}
-              onChamar={(f) => console.log('Chamando o freela', f.nome)}
-              onAbrirModal={() => {
-                setFreelaSelecionado(freela);
-                setModalAberto(true);
-              }}
-            />
+            <div key={freela.id} onClick={() => {
+              setFreelaSelecionado(freela);
+              setModalAberto(true);
+            }}>
+              <ProfissionalCardMini freela={freela} online={freela.online} />
+            </div>
           ))}
         </div>
       )}
 
+      {/* Modal para exibir card completo */}
       {modalAberto && freelaSelecionado && (
-        <ModalFreelaDetalhes
-          freela={freelaSelecionado}
-          isOnline={freelaSelecionado.online}
-          onClose={() => setModalAberto(false)}
-        />
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-xl max-w-md w-full relative">
+            <button
+              onClick={() => setModalAberto(false)}
+              className="absolute top-2 right-2 text-gray-600 text-xl"
+            >
+              ×
+            </button>
+            <ProfissionalCard prof={freelaSelecionado} />
+          </div>
+        </div>
       )}
     </div>
   );
