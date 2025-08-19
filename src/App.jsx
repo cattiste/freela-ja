@@ -1,6 +1,7 @@
 // src/App.jsx
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import '@/styles/leaflet.css'
 
 // 🌐 Gerais
 import Home from '@/pages/gerais/Home'
@@ -18,6 +19,7 @@ import BuscarFreelas from '@/components/BuscarFreelas'
 import Privacidade from '@/pages/gerais/Privacidade'
 import Termos from '@/pages/gerais/Termos'
 import RequireRole from '@/components/RequireRole'
+
 
 // 👤 Freela
 import CadastroFreela from '@/pages/freela/CadastroFreela'

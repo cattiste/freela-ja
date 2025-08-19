@@ -1,4 +1,4 @@
-// ✅ ChamadasFreela.jsx – Atualizado
+// ✅ ChamadasFreela.jsx com geocodificação e salvamento de endereço
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -73,11 +73,21 @@ export default function ChamadasFreela() {
 
   async function fazerCheckIn(ch) {
     try {
+      let endereco = null
+
+      if (coordenadas) {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coordenadas.latitude}&lon=${coordenadas.longitude}`
+        const resp = await fetch(url, { headers: { 'User-Agent': 'freelaja.com.br' } })
+        const data = await resp.json()
+        endereco = data.display_name || null
+      }
+
       await updateDoc(doc(db, 'chamadas', ch.id), {
         status: 'checkin_freela',
         checkInFeitoPeloFreela: true,
         checkInFeitoPeloFreelaHora: serverTimestamp(),
         coordenadasCheckInFreela: coordenadas || null,
+        enderecoCheckInFreela: endereco || null,
       })
       toast.success('📍 Check-in realizado!')
     } catch (e) {
