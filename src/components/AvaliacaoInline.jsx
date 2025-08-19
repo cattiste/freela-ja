@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { db } from '@/firebase'
-import { updateDoc, doc, serverTimestamp, addDoc, collection } from 'firebase/firestore'
+import {
+  updateDoc,
+  doc,
+  serverTimestamp,
+  addDoc,
+  collection,
+  getDocs,
+  query,
+  where
+} from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
 
 export default function AvaliacaoInline({ chamada, tipo, usuario }) {
@@ -10,13 +19,24 @@ export default function AvaliacaoInline({ chamada, tipo, usuario }) {
   const [enviando, setEnviando] = useState(false)
 
   useEffect(() => {
-    // Corrigido: tipo "freela" avalia o CONTRATANTE (então verificamos avaliaçãoContratante)
-    if (tipo === 'freela') {
-      setEnviada(!!chamada?.avaliacaoContratante)
-    } else {
-      setEnviada(!!chamada?.avaliacaoFreela)
+    const verificarSeJaAvaliou = async () => {
+      if (!usuario?.uid || !chamada?.id) return
+
+      const colecao = tipo === 'freela' ? 'avaliacoesContratantes' : 'avaliacoesFreelas'
+      const campoUid = tipo === 'freela' ? 'contratanteUid' : 'freelaUid'
+
+      const q = query(
+        collection(db, colecao),
+        where('chamadaId', '==', chamada.id),
+        where(campoUid, '==', usuario.uid)
+      )
+
+      const snapshot = await getDocs(q)
+      setEnviada(!snapshot.empty)
     }
-  }, [chamada, tipo])
+
+    verificarSeJaAvaliou()
+  }, [chamada, tipo, usuario])
 
   const enviarAvaliacao = async () => {
     if (!comentario.trim()) return toast.error('Digite um comentário.')
