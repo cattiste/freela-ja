@@ -1,5 +1,6 @@
+// src/pages/contratante/AvaliacoesRecebidasContratante.jsx
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore'
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 
@@ -16,37 +17,32 @@ export default function AvaliacoesRecebidasContratante() {
       orderBy('criadoEm', 'desc')
     )
 
-    const unsubscribe = onSnapshot(q, (snap) => {
+    const unsub = onSnapshot(q, (snap) => {
       const docs = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
       setAvaliacoes(docs)
     })
 
-    return () => unsubscribe()
+    return () => unsub()
   }, [usuario?.uid])
 
-  if (!usuario) return null
+  if (!avaliacoes.length) {
+    return <p className="text-gray-500">Nenhuma avaliação recebida ainda.</p>
+  }
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-2 text-orange-700">⭐ Avaliações Recebidas</h2>
-      {avaliacoes.length === 0 ? (
-        <p className="text-gray-500">Ainda não há avaliações.</p>
-      ) : (
-        <ul className="space-y-3">
-          {avaliacoes.map((a) => (
-            <li key={a.id} className="border rounded p-3 bg-white shadow">
-              <div className="flex items-center mb-1">
-                <strong className="text-gray-700">Nota:</strong>
-                <span className="ml-2 text-yellow-500">{'⭐'.repeat(a.nota)}</span>
-              </div>
-              <p className="text-sm text-gray-600 italic">"{a.comentario}"</p>
-              <p className="text-xs text-gray-400 mt-1">
-                Chamada #{a.chamadaId?.slice(-5)}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="space-y-4">
+      {avaliacoes.map((av) => (
+        <div key={av.id} className="bg-white p-4 rounded shadow border">
+          <div className="flex items-center space-x-2 mb-2">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <span key={n} className={n <= av.nota ? 'text-yellow-500' : 'text-gray-300'}>
+                ⭐
+              </span>
+            ))}
+          </div>
+          <p className="text-sm text-gray-700">{av.comentario}</p>
+        </div>
+      ))}
     </div>
   )
 }
