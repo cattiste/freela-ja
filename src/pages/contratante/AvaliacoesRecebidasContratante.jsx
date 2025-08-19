@@ -1,6 +1,6 @@
 // src/pages/contratante/AvaliacoesRecebidasContratante.jsx
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, getDocs } from 'firebase/firestore'
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 
@@ -15,16 +15,14 @@ export default function AvaliacoesRecebidasContratante() {
 
       try {
         const q = query(
-          collection(db, 'chamadas'),
-          where('contratanteUid', '==', usuario.uid)
+          collection(db, 'avaliacoesContratantes'),
+          where('contratanteUid', '==', usuario.uid),
+          orderBy('criadoEm', 'desc')
         )
 
         const snap = await getDocs(q)
-        const avaliadas = snap.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(chamada => chamada.avaliacaoContratante?.nota)
-
-        setAvaliacoes(avaliadas)
+        const dados = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        setAvaliacoes(dados)
       } catch (err) {
         console.error('Erro ao buscar avaliações:', err)
       } finally {
@@ -49,15 +47,15 @@ export default function AvaliacoesRecebidasContratante() {
         ⭐ Avaliações Recebidas
       </h1>
 
-      {avaliacoes.map((chamada) => (
-        <div key={chamada.id} className="bg-white border p-4 rounded-xl shadow-sm">
+      {avaliacoes.map((avaliacao) => (
+        <div key={avaliacao.id} className="bg-white border p-4 rounded-xl shadow-sm">
           <p className="text-orange-700 font-semibold">
-            👨‍🍳 Freela: {chamada.freelaNome || '---'}
+            👨‍🍳 Freela: {avaliacao.freelaNome || '---'}
           </p>
           <p className="text-gray-800 italic mt-1">
-            "{chamada.avaliacaoContratante?.comentario || 'Sem comentário'}"
+            "{avaliacao.comentario || 'Sem comentário'}"
           </p>
-          <p className="text-yellow-600 mt-2">⭐ Nota: {chamada.avaliacaoContratante?.nota || '--'}</p>
+          <p className="text-yellow-600 mt-2">⭐ Nota: {avaliacao.nota || '--'}</p>
         </div>
       ))}
     </div>
