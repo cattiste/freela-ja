@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { db } from '@/firebase'
 import { updateDoc, doc, serverTimestamp, addDoc, collection } from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
@@ -6,17 +6,24 @@ import { toast } from 'react-hot-toast'
 export default function AvaliacaoInline({ chamada, tipo, usuario }) {
   const [nota, setNota] = useState(5)
   const [comentario, setComentario] = useState('')
-  const [enviada, setEnviada] = useState(
-    tipo === 'freela' ? !!chamada?.avaliacaoFreela : !!chamada?.avaliacaoContratante
-  )
+  const [enviada, setEnviada] = useState(false)
   const [enviando, setEnviando] = useState(false)
+
+  useEffect(() => {
+    // Corrigido: tipo "freela" avalia o CONTRATANTE (então verificamos avaliaçãoContratante)
+    if (tipo === 'freela') {
+      setEnviada(!!chamada?.avaliacaoContratante)
+    } else {
+      setEnviada(!!chamada?.avaliacaoFreela)
+    }
+  }, [chamada, tipo])
 
   const enviarAvaliacao = async () => {
     if (!comentario.trim()) return toast.error('Digite um comentário.')
     setEnviando(true)
     try {
       const chamadaRef = doc(db, 'chamadas', chamada.id)
-      const campo = tipo === 'freela' ? 'avaliacaoFreela' : 'avaliacaoContratante'
+      const campo = tipo === 'freela' ? 'avaliacaoContratante' : 'avaliacaoFreela'
       const payload = {
         nota,
         comentario,
@@ -35,7 +42,7 @@ export default function AvaliacaoInline({ chamada, tipo, usuario }) {
         return
       }
 
-      const colecao = tipo === 'freela' ? 'avaliacoesFreelas' : 'avaliacoesContratantes'
+      const colecao = tipo === 'freela' ? 'avaliacoesContratantes' : 'avaliacoesFreelas'
       await addDoc(collection(db, colecao), {
         nota,
         comentario,
@@ -57,7 +64,7 @@ export default function AvaliacaoInline({ chamada, tipo, usuario }) {
     }
   }
 
-  if (enviada || chamada?.avaliacaoFreela || chamada?.avaliacaoContratante) {
+  if (enviada) {
     return <div className="text-green-600 font-medium p-2">✅ Avaliação enviada</div>
   }
 
