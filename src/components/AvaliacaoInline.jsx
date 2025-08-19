@@ -23,17 +23,25 @@ export default function AvaliacaoInline({ chamada, tipo }) {
         [campo]: payload,
       })
 
-      // Novo: salvar em colecao separada
-      const avaliacaoExtra = {
+      // Novo: salvar também em colecao separada (para listagem de avaliações recebidas)
+      const freelaUid = chamada?.freelaUid
+      const contratanteUid = chamada?.estabelecimentoUid || chamada?.contratanteUid
+
+      if (!freelaUid || !contratanteUid) {
+        toast.error("Erro ao salvar avaliação: dados incompletos.")
+        setEnviando(false)
+        return
+      }
+
+      await addDoc(collection(db, 'avaliacoesFreelas'), {
         nota,
         comentario,
         criadoEm: serverTimestamp(),
         chamadaId: chamada.id,
         tipo,
-        freelaUid: chamada.freelaUid,
-        contratanteUid: chamada.estabelecimentoUid,
-      }
-      await addDoc(collection(db, 'avaliacoesFreelas'), avaliacaoExtra)
+        freelaUid,
+        contratanteUid,
+      })
 
       toast.success('Avaliação enviada!')
       setComentario('')
