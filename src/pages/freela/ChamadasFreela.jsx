@@ -1,4 +1,4 @@
-// ✅ ChamadasFreela.jsx com Avaliação e Respostas Rápidas
+// src/pages/freela/ChamadasFreela.jsx
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -12,8 +12,8 @@ import {
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
-import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import RespostasRapidasFreela from '@/components/RespostasRapidasFreela'
+import AvaliacaoContratante from '@/components/AvaliacaoContratante'
 
 export default function ChamadasFreela() {
   const { usuario } = useAuth()
@@ -167,7 +167,7 @@ export default function ChamadasFreela() {
             )}
 
             {ch.status === 'concluido' && (
-              <AvaliacaoContratanteInline chamada={ch} />
+              <AvaliacaoContratante chamada={ch} />
             )}
 
             <RespostasRapidasFreela chamadaId={ch.id} />
