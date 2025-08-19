@@ -12,7 +12,7 @@ import {
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
-import AvaliacaoContratante from '@/components/AvaliacaoContratante'
+import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import RespostasRapidasFreela from '@/components/RespostasRapidasFreela'
 
 export default function ChamadasFreela() {
