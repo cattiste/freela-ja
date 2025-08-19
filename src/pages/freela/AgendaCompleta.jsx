@@ -2,6 +2,7 @@ import React from 'react'
 import AgendaFreela from './AgendaFreela'
 import VagasDisponiveis from './VagasDisponiveis'
 import EventosDisponiveis from './EventosDisponiveis'
+import { useAuth } from '@/context/AuthContext'
 
 export default function AgendaCompleta({ freela }) {
   return (
