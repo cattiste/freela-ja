@@ -6,14 +6,20 @@ import { toast } from 'react-hot-toast'
 export default function CardAvaliacaoFreela({ chamada, usuario }) {
   const [nota, setNota] = useState(0)
   const [comentario, setComentario] = useState('')
-  const [enviada, setEnviada] = useState(chamada.avaliacaoFreela !== undefined)
+  const [enviada, setEnviada] = useState(!!chamada.avaliacaoFreela)
+  const [enviando, setEnviando] = useState(false)
 
   const enviarAvaliacao = async () => {
     if (nota === 0 || comentario.trim() === '') {
       toast.error('Preencha todos os campos antes de enviar.')
       return
     }
+    if (!chamada?.freelaUid || !usuario?.uid) {
+      toast.error('Dados incompletos para avaliação.')
+      return
+    }
 
+    setEnviando(true)
     try {
       await addDoc(collection(db, 'avaliacoesFreelas'), {
         freelaUid: chamada.freelaUid,
@@ -23,15 +29,19 @@ export default function CardAvaliacaoFreela({ chamada, usuario }) {
         criadoEm: serverTimestamp(),
       })
 
-      setEnviada(true)
       toast.success('Avaliação enviada com sucesso!')
+      setEnviada(true)
     } catch (error) {
       console.error(error)
       toast.error('Erro ao enviar avaliação.')
+    } finally {
+      setEnviando(false)
     }
   }
 
-  if (enviada) return null
+  if (enviada || chamada.avaliacaoFreela) {
+    return <div className="text-green-600 font-medium p-2">✅ Avaliação enviada</div>
+  }
 
   return (
     <div className="p-2">
@@ -55,6 +65,7 @@ export default function CardAvaliacaoFreela({ chamada, usuario }) {
       />
       <button
         onClick={enviarAvaliacao}
+        disabled={enviando}
         className="bg-blue-600 text-white px-4 py-1 mt-2 rounded"
       >
         Enviar Avaliação

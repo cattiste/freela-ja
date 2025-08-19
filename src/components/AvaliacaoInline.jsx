@@ -1,71 +1,90 @@
 import React, { useState } from 'react'
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
+import { updateDoc, doc, serverTimestamp, addDoc, collection } from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
 
-export default function AvaliacaoInline({ chamada, usuario, tipo }) {
-  const [nota, setNota] = useState(0)
+export default function AvaliacaoInline({ chamada, tipo, usuario }) {
+  const [nota, setNota] = useState(5)
   const [comentario, setComentario] = useState('')
   const [enviada, setEnviada] = useState(
-    tipo === 'freela' ? !!chamada.avaliacaoFreela : !!chamada.avaliacaoContratante
+    tipo === 'freela' ? !!chamada?.avaliacaoFreela : !!chamada?.avaliacaoContratante
   )
+  const [enviando, setEnviando] = useState(false)
 
   const enviarAvaliacao = async () => {
-    if (nota === 0 || comentario.trim() === '') {
-      toast.error('Preencha todos os campos.')
-      return
-    }
-
+    if (!comentario.trim()) return toast.error('Digite um comentário.')
+    setEnviando(true)
     try {
-      const dados = {
+      const chamadaRef = doc(db, 'chamadas', chamada.id)
+      const campo = tipo === 'freela' ? 'avaliacaoFreela' : 'avaliacaoContratante'
+      const payload = {
         nota,
         comentario,
         criadoEm: serverTimestamp(),
       }
+      await updateDoc(chamadaRef, {
+        [campo]: payload,
+      })
 
-      if (tipo === 'freela') {
-        dados.freelaUid = chamada.freelaUid
-        dados.contratanteUid = usuario.uid
-        await addDoc(collection(db, 'avaliacoesFreelas'), dados)
-      } else {
-        dados.freelaUid = usuario.uid
-        dados.contratanteUid = chamada.estabelecimentoUid
-        await addDoc(collection(db, 'avaliacoesContratantes'), dados)
+      const freelaUid = chamada?.freelaUid
+      const contratanteUid = chamada?.estabelecimentoUid || chamada?.contratanteUid || usuario?.uid
+
+      if (!freelaUid || !contratanteUid) {
+        toast.error("Erro ao salvar avaliação: dados incompletos.")
+        setEnviando(false)
+        return
       }
 
+      const colecao = tipo === 'freela' ? 'avaliacoesFreelas' : 'avaliacoesContratantes'
+      await addDoc(collection(db, colecao), {
+        nota,
+        comentario,
+        criadoEm: serverTimestamp(),
+        chamadaId: chamada.id,
+        tipo,
+        freelaUid,
+        contratanteUid,
+      })
+
       toast.success('Avaliação enviada!')
+      setComentario('')
       setEnviada(true)
-    } catch (err) {
-      console.error(err)
-      toast.error('Erro ao enviar.')
+    } catch (e) {
+      console.error(e)
+      toast.error('Erro ao enviar avaliação')
+    } finally {
+      setEnviando(false)
     }
   }
 
-  if (enviada) return null
+  if (enviada || chamada?.avaliacaoFreela || chamada?.avaliacaoContratante) {
+    return <div className="text-green-600 font-medium p-2">✅ Avaliação enviada</div>
+  }
 
   return (
-    <div className="p-2">
-      <p className="font-medium">Deixe sua avaliação:</p>
-      <div className="flex gap-2 my-2">
+    <div className="bg-white p-4 rounded-lg border mt-4">
+      <p className="font-semibold mb-2">Deixe sua avaliação:</p>
+      <div className="flex gap-2 mb-2">
         {[1, 2, 3, 4, 5].map((n) => (
           <button
             key={n}
+            className={`px-3 py-1 rounded-full border ${n <= nota ? 'bg-yellow-400 text-black' : 'bg-gray-100'}`}
             onClick={() => setNota(n)}
-            className={`text-xl ${nota >= n ? 'text-yellow-500' : 'text-gray-300'}`}
           >
-            ⭐
+            {n} ⭐
           </button>
         ))}
       </div>
       <textarea
         value={comentario}
         onChange={(e) => setComentario(e.target.value)}
-        className="w-full border rounded p-1"
         placeholder="Escreva um comentário..."
+        className="w-full p-2 border rounded mb-2"
       />
       <button
         onClick={enviarAvaliacao}
-        className="bg-blue-600 text-white px-4 py-1 mt-2 rounded"
+        disabled={enviando}
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
       >
         Enviar Avaliação
       </button>
