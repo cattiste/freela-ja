@@ -1,49 +1,19 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { db } from '@/firebase'
-import {
-  updateDoc,
-  doc,
-  serverTimestamp,
-  addDoc,
-  collection,
-  getDocs,
-  query,
-  where
-} from 'firebase/firestore'
+import { updateDoc, doc, serverTimestamp, addDoc, collection } from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
 
-export default function AvaliacaoInline({ chamada, tipo, usuario }) {
+export default function AvaliacaoInline({ chamada, tipo }) {
   const [nota, setNota] = useState(5)
   const [comentario, setComentario] = useState('')
-  const [enviada, setEnviada] = useState(false)
   const [enviando, setEnviando] = useState(false)
-
-  useEffect(() => {
-    const verificarSeJaAvaliou = async () => {
-      if (!usuario?.uid || !chamada?.id) return
-
-      const colecao = tipo === 'freela' ? 'avaliacoesContratantes' : 'avaliacoesFreelas'
-      const campoUid = tipo === 'freela' ? 'contratanteUid' : 'freelaUid'
-
-      const q = query(
-        collection(db, colecao),
-        where('chamadaId', '==', chamada.id),
-        where(campoUid, '==', usuario.uid)
-      )
-
-      const snapshot = await getDocs(q)
-      setEnviada(!snapshot.empty)
-    }
-
-    verificarSeJaAvaliou()
-  }, [chamada, tipo, usuario])
 
   const enviarAvaliacao = async () => {
     if (!comentario.trim()) return toast.error('Digite um comentário.')
     setEnviando(true)
     try {
       const chamadaRef = doc(db, 'chamadas', chamada.id)
-      const campo = tipo === 'freela' ? 'avaliacaoContratante' : 'avaliacaoFreela'
+      const campo = tipo === 'freela' ? 'avaliacaoFreela' : 'avaliacaoContratante'
       const payload = {
         nota,
         comentario,
@@ -53,39 +23,26 @@ export default function AvaliacaoInline({ chamada, tipo, usuario }) {
         [campo]: payload,
       })
 
-      const freelaUid = chamada?.freelaUid
-      const contratanteUid = chamada?.estabelecimentoUid || chamada?.contratanteUid || usuario?.uid
-
-      if (!freelaUid || !contratanteUid) {
-        toast.error("Erro ao salvar avaliação: dados incompletos.")
-        setEnviando(false)
-        return
-      }
-
-      const colecao = tipo === 'freela' ? 'avaliacoesContratantes' : 'avaliacoesFreelas'
-      await addDoc(collection(db, colecao), {
+      // Novo: salvar em colecao separada
+      const avaliacaoExtra = {
         nota,
         comentario,
         criadoEm: serverTimestamp(),
         chamadaId: chamada.id,
         tipo,
-        freelaUid,
-        contratanteUid,
-      })
+        freelaUid: chamada.freelaUid,
+        contratanteUid: chamada.estabelecimentoUid,
+      }
+      await addDoc(collection(db, 'avaliacoesFreelas'), avaliacaoExtra)
 
       toast.success('Avaliação enviada!')
       setComentario('')
-      setEnviada(true)
     } catch (e) {
       console.error(e)
       toast.error('Erro ao enviar avaliação')
     } finally {
       setEnviando(false)
     }
-  }
-
-  if (enviada) {
-    return <div className="text-green-600 font-medium p-2">✅ Avaliação enviada</div>
   }
 
   return (
