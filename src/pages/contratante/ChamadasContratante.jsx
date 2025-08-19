@@ -9,7 +9,7 @@ import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import AvaliacaoInline from '@/components/AvaliacaoInline'
+import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import MensagensRecebidasContratante from '@/components/MensagensRecebidasContratante'
 
 const STATUS_LISTA = [
