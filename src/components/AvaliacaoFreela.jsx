@@ -1,126 +1,50 @@
-// src/components/AvaliacaoFreela.jsx
-import React, { useEffect, useState } from 'react'
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  doc,
-  setDoc,
-  updateDoc,
-  serverTimestamp
-} from 'firebase/firestore'
+
+import React, { useState } from 'react'
 import { db } from '@/firebase'
-import toast from 'react-hot-toast'
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { toast } from 'react-hot-toast'
 
-export default function AvaliacaoFreela({ contratante }) {
-  const [chamadas, setChamadas] = useState([])
-  const [nota, setNota] = useState({})
-  const [comentario, setComentario] = useState({})
-  const [enviando, setEnviando] = useState(null)
+export default function AvaliacaoFreela({ chamada, usuario }) {
+  const [nota, setNota] = useState(0)
+  const [comentario, setComentario] = useState('')
+  const [enviado, setEnviado] = useState(false)
 
-  useEffect(() => {
-    if (!contratante?.uid) return
-
-    const q = query(
-      collection(db, 'chamadas'),
-      where('contratanteUid', '==', contratante.uid),
-      where('status', 'in', ['concluido', 'finalizada']),
-      where('avaliacaoFreelaFeita', '==', false)
-    )
-
-    const unsubscribe = onSnapshot(q, (snap) => {
-      const lista = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      setChamadas(lista)
-    })
-
-    return () => unsubscribe()
-  }, [contratante])
-
-  const handleEnviar = async (chamada) => {
-    const id = chamada.id
-    const notaEnviada = nota[id]
-    const texto = comentario[id] || ''
-
-    if (!notaEnviada) {
-      toast.error('Dê uma nota antes de enviar.')
-      return
-    }
-
-    setEnviando(id)
-
+  const enviarAvaliacao = async () => {
+    if (!nota || !comentario) return toast.error('Preencha todos os campos')
     try {
-      const docId = `${id}_${chamada.freelaUid}`
-      await setDoc(doc(db, 'avaliacoesFreelas', docId), {
-        chamadaId: id,
-        freelaUid: chamada.freelaUid,
-        contratanteUid: contratante.uid,
-        nota: notaEnviada,
-        comentario: texto,
-        criadoEm: serverTimestamp()
+      await addDoc(collection(db, 'avaliacoesFreelas'), {
+        freelaUid: usuario.uid,
+        contratanteUid: chamada.estabelecimentoUid || chamada.pfUid,
+        chamadaId: chamada.id,
+        nota,
+        comentario,
+        criadoEm: serverTimestamp(),
       })
-
-      await updateDoc(doc(db, 'chamadas', id), {
-        avaliacaoFreelaFeita: true
-      })
-
-      toast.success('✅ Avaliação enviada com sucesso!')
-    } catch (err) {
-      console.error(err)
-      toast.error('Erro ao enviar avaliação.')
-    } finally {
-      setEnviando(null)
+      toast.success('Avaliação enviada!')
+      setEnviado(true)
+    } catch (error) {
+      console.error(error)
+      toast.error('Erro ao enviar avaliação')
     }
   }
 
-  if (chamadas.length === 0) {
-    return <p className="text-center text-gray-600 mt-6">Nenhuma avaliação pendente.</p>
-  }
+  if (enviado) return <p className="text-green-600 font-bold mt-2">✅ Avaliação enviada!</p>
 
   return (
-    <div className="space-y-4">
-      {chamadas.map((chamada) => (
-        <div key={chamada.id} className="p-4 bg-white rounded-xl shadow border border-orange-100">
-          <h3 className="text-orange-700 font-bold text-lg mb-1">
-            Avaliar freelancer: {chamada.freelaNome}
-          </h3>
-          <p className="text-sm text-gray-600 mb-2">
-            Serviço finalizado • Valor diário: R$ {chamada.valorDiaria}
-          </p>
-
-          <div className="flex gap-1 mb-2">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <button
-                key={n}
-                onClick={() => setNota(prev => ({ ...prev, [chamada.id]: n }))}
-                className={`w-8 h-8 rounded-full text-white font-bold ${
-                  nota[chamada.id] >= n ? 'bg-orange-500' : 'bg-gray-300'
-                }`}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-
-          <textarea
-            placeholder="Comentário (opcional)"
-            value={comentario[chamada.id] || ''}
-            onChange={(e) =>
-              setComentario((prev) => ({ ...prev, [chamada.id]: e.target.value }))
-            }
-            className="w-full p-2 border rounded text-sm mb-2"
-            rows={2}
-          />
-
-          <button
-            onClick={() => handleEnviar(chamada)}
-            disabled={enviando === chamada.id || !nota[chamada.id]}
-            className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 transition disabled:opacity-50"
-          >
-            {enviando === chamada.id ? 'Enviando...' : 'Enviar Avaliação'}
-          </button>
-        </div>
-      ))}
+    <div className="mt-4">
+      <p className="font-semibold mb-1">Deixe sua avaliação:</p>
+      <div className="flex gap-2 mb-2">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button key={n} onClick={() => setNota(n)} className={\`text-2xl \${nota >= n ? 'text-yellow-400' : 'text-gray-300'}\`}>⭐</button>
+        ))}
+      </div>
+      <textarea
+        className="w-full p-2 border rounded mb-2 text-black"
+        placeholder="Comentário"
+        value={comentario}
+        onChange={(e) => setComentario(e.target.value)}
+      />
+      <button onClick={enviarAvaliacao} className="bg-blue-600 text-white px-4 py-2 rounded">Enviar Avaliação</button>
     </div>
   )
 }
