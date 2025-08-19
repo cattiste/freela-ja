@@ -1,96 +1,63 @@
 import React, { useState } from 'react'
-import {
-  addDoc,
-  collection,
-  serverTimestamp,
-  doc,
-  updateDoc
-} from 'firebase/firestore'
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
+import { toast } from 'react-hot-toast'
 
-export default function CardAvaliacaoFreela({ chamada, onAvaliado }) {
-  const [nota, setNota] = useState(5)
+export default function CardAvaliacaoFreela({ chamada, usuario }) {
+  const [nota, setNota] = useState(0)
   const [comentario, setComentario] = useState('')
-  const [enviando, setEnviando] = useState(false)
-
-  const freela = chamada?.freela || {}
-
-  const nome = freela?.nome || chamada.freelaNome || 'Freela'
-  const foto = freela?.foto || chamada.freelaFoto || 'https://via.placeholder.com/60'
+  const [enviada, setEnviada] = useState(chamada.avaliacaoFreela !== undefined)
 
   const enviarAvaliacao = async () => {
-    try {
-      setEnviando(true)
+    if (nota === 0 || comentario.trim() === '') {
+      toast.error('Preencha todos os campos antes de enviar.')
+      return
+    }
 
-      // ✅ Agora criando uma nova avaliação SEM sobrescrever
+    try {
       await addDoc(collection(db, 'avaliacoesFreelas'), {
-        tipo: 'freela',
-        freelaUid: freela.uid || chamada.freelaUid,
-        contratanteUid: chamada.contratanteUid,
-        chamadaId: chamada.id,
+        freelaUid: chamada.freelaUid,
+        contratanteUid: usuario.uid,
         nota,
         comentario,
-        data: serverTimestamp()
+        criadoEm: serverTimestamp(),
       })
 
-      // ✅ Ainda atualiza a própria chamada com o campo de avaliação
-      await updateDoc(doc(db, 'chamadas', chamada.id), {
-        avaliacaoFreela: {
-          nota,
-          comentario,
-          criadoEm: serverTimestamp()
-        }
-      })
-
-      if (onAvaliado) onAvaliado(chamada.id)
+      setEnviada(true)
+      toast.success('Avaliação enviada com sucesso!')
     } catch (error) {
-      console.error('Erro ao enviar avaliação:', error)
-      alert('Erro ao enviar avaliação.')
-    } finally {
-      setEnviando(false)
+      console.error(error)
+      toast.error('Erro ao enviar avaliação.')
     }
   }
 
+  if (enviada) return null
+
   return (
-    <div className="bg-white p-4 rounded-xl shadow-md border border-orange-200 mb-4">
-      <div className="flex items-center gap-4 mb-2">
-        <img
-          src={foto}
-          alt={nome}
-          className="w-16 h-16 rounded-full object-cover border border-orange-400"
-        />
-        <div>
-          <h3 className="text-lg font-bold text-orange-700">{nome}</h3>
-          <p className="text-sm text-gray-600">
-            {freela.funcao || chamada.freelaFuncao || 'Função não informada'}
-          </p>
-        </div>
+    <div className="p-2">
+      <p className="font-medium">Deixe sua avaliação:</p>
+      <div className="flex gap-2 my-2">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            onClick={() => setNota(n)}
+            className={`text-xl ${nota >= n ? 'text-yellow-500' : 'text-gray-300'}`}
+          >
+            ⭐
+          </button>
+        ))}
       </div>
-
-      <label className="block text-sm font-semibold text-gray-700 mt-2">Nota (1 a 5)</label>
-      <input
-        type="number"
-        min="1"
-        max="5"
-        value={nota}
-        onChange={(e) => setNota(parseInt(e.target.value))}
-        className="border border-gray-300 rounded px-2 py-1 w-20"
-      />
-
-      <label className="block text-sm font-semibold text-gray-700 mt-2">Comentário (opcional)</label>
       <textarea
         value={comentario}
         onChange={(e) => setComentario(e.target.value)}
-        className="border border-gray-300 rounded w-full px-3 py-2 mt-1"
-        rows={3}
+        className="w-full border rounded p-1"
+        placeholder="Escreva um comentário..."
       />
-
       <button
         onClick={enviarAvaliacao}
-        disabled={enviando}
-        className="mt-3 bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 disabled:opacity-50"
+        className="bg-blue-600 text-white px-4 py-1 mt-2 rounded"
       >
-        {enviando ? 'Enviando...' : 'Enviar Avaliação'}
+        Enviar Avaliação
       </button>
     </div>
   )
