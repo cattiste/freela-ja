@@ -1,63 +1,95 @@
 // src/pages/contratante/AvaliacoesRecebidasContratante.jsx
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore'
+import { collection, query, where, getDocs, limit } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 
-export default function AvaliacoesRecebidasContratante() {
+export default function AvaliacoesRecebidasContratante({ contratanteUid }) {
   const { usuario } = useAuth()
+  const uid = contratanteUid || usuario?.uid
   const [avaliacoes, setAvaliacoes] = useState([])
   const [carregando, setCarregando] = useState(true)
+  const [erroPermissao, setErroPermissao] = useState(false)
 
   useEffect(() => {
     const buscarAvaliacoes = async () => {
-      if (!usuario?.uid) return
+      if (!uid) return
 
       try {
         const q = query(
           collection(db, 'avaliacoesContratantes'),
-          where('contratanteUid', '==', usuario.uid),
-          orderBy('criadoEm', 'desc') // ordena pela data, se existir
+          where('contratanteUid', '==', uid),
+          limit(10)
         )
 
-        const snap = await getDocs(q)
-        const docs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-        setAvaliacoes(docs)
+        const snapshot = await getDocs(q)
+        const lista = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        
+        setAvaliacoes(lista)
       } catch (err) {
         console.error('Erro ao buscar avaliações:', err)
+        if (err?.code === 'permission-denied') setErroPermissao(true)
       } finally {
         setCarregando(false)
       }
     }
 
     buscarAvaliacoes()
-  }, [usuario])
+  }, [uid])
 
-  if (carregando) {
-    return <div className="text-center text-orange-600 mt-10">🔄 Carregando avaliações recebidas...</div>
+  if (!uid) {
+    return (
+      <div className="text-center text-red-600 mt-10">
+        ⚠️ Acesso não autorizado. Faça login novamente.
+      </div>
+    )
   }
 
-  if (avaliacoes.length === 0) {
-    return <div className="text-center text-gray-600 mt-10">Nenhuma avaliação recebida ainda.</div>
+  if (carregando) {
+    return (
+      <div className="text-center text-orange-600 mt-10">
+        🔄 Carregando avaliações recebidas...
+      </div>
+    )
+  }
+
+  if (erroPermissao) {
+    return (
+      <div className="text-center text-red-500 mt-6 text-sm">
+        ❌ Sem permissão para visualizar as avaliações. Verifique suas regras do Firestore.
+      </div>
+    )
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-xl font-bold text-blue-700 text-center mb-4">
+    <div className="p-4 bg-white rounded-xl shadow col-span-1">
+      <h1 className="text-xl font-bold text-blue-700 mb-4 text-center">
         ⭐ Avaliações Recebidas
       </h1>
 
-      {avaliacoes.map((avaliacao) => (
-        <div key={avaliacao.id} className="bg-white border p-4 rounded-xl shadow-sm">
-          <p className="text-orange-700 font-semibold">
-            👨‍🍳 Freela: {avaliacao.freelaNome || '---'}
-          </p>
-          <p className="text-gray-800 italic mt-1">
-            "{avaliacao.comentario || 'Sem comentário'}"
-          </p>
-          <p className="text-yellow-600 mt-2">⭐ Nota: {avaliacao.nota || '--'}</p>
+      {avaliacoes.length === 0 ? (
+        <p className="text-center text-gray-600">
+          Nenhuma avaliação recebida ainda.
+        </p>
+      ) : (
+        <div className="space-y-4">
+          {avaliacoes.map((avaliacao) => (
+            <div key={avaliacao.id} className="bg-gray-50 border p-3 rounded-xl shadow-sm">
+              <p className="text-sm text-gray-800">
+                <strong>Freela:</strong>{' '}
+                {avaliacao.FreelaNome || '---'}
+              </p>
+              <p className="text-sm text-gray-600 italic">
+                "{avaliacao.comentario || 'Sem comentário'}"
+              </p>
+              <p className="text-yellow-600 mt-1">⭐ Nota: {avaliacao.nota || '---'}</p>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   )
 }
