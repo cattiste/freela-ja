@@ -1,72 +1,96 @@
-import React, { useState } from 'react'
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import React, { useState, useEffect } from 'react'
 import { db } from '@/firebase'
+import {
+  updateDoc,
+  doc,
+  serverTimestamp,
+  addDoc,
+  collection
+} from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
 
 export default function CardAvaliacaoFreela({ chamada, usuario }) {
-  const [nota, setNota] = useState(0)
+  const [nota, setNota] = useState(5)
   const [comentario, setComentario] = useState('')
-  const [enviada, setEnviada] = useState(!!chamada.avaliacaoFreela)
+  const [enviada, setEnviada] = useState(false)
   const [enviando, setEnviando] = useState(false)
 
-  const enviarAvaliacao = async () => {
-    if (nota === 0 || comentario.trim() === '') {
-      toast.error('Preencha todos os campos antes de enviar.')
-      return
-    }
-    if (!chamada?.freelaUid || !usuario?.uid) {
-      toast.error('Dados incompletos para avaliação.')
-      return
-    }
+  useEffect(() => {
+    setEnviada(!!chamada?.avaliacaoFreela)
+  }, [chamada])
 
+  const enviarAvaliacao = async () => {
+    if (!comentario.trim()) return toast.error('Digite um comentário.')
     setEnviando(true)
     try {
-      await addDoc(collection(db, 'avaliacoesFreelas'), {
-        freelaUid: chamada.freelaUid,
-        contratanteUid: usuario.uid,
+      const chamadaRef = doc(db, 'chamadas', chamada.id)
+      const payload = {
         nota,
         comentario,
         criadoEm: serverTimestamp(),
+      }
+      await updateDoc(chamadaRef, {
+        avaliacaoFreela: payload,
       })
 
-      toast.success('Avaliação enviada com sucesso!')
+      const freelaUid = chamada?.freelaUid
+      const contratanteUid = chamada?.estabelecimentoUid || chamada?.contratanteUid || usuario?.uid
+
+      if (!freelaUid || !contratanteUid) {
+        toast.error("Erro ao salvar avaliação: dados incompletos.")
+        setEnviando(false)
+        return
+      }
+
+      await addDoc(collection(db, 'avaliacoesFreelas'), {
+        nota,
+        comentario,
+        criadoEm: serverTimestamp(),
+        chamadaId: chamada.id,
+        tipo: 'contratante',
+        freelaUid,
+        contratanteUid,
+      })
+
+      toast.success('Avaliação enviada!')
+      setComentario('')
       setEnviada(true)
-    } catch (error) {
-      console.error(error)
-      toast.error('Erro ao enviar avaliação.')
+    } catch (e) {
+      console.error(e)
+      toast.error('Erro ao enviar avaliação')
     } finally {
       setEnviando(false)
     }
   }
 
-  if (enviada || chamada.avaliacaoFreela) {
+  if (enviada) {
     return <div className="text-green-600 font-medium p-2">✅ Avaliação enviada</div>
   }
 
   return (
-    <div className="p-2">
-      <p className="font-medium">Deixe sua avaliação:</p>
-      <div className="flex gap-2 my-2">
+    <div className="bg-white p-4 rounded-lg border mt-4">
+      <p className="font-semibold mb-2">Avalie o freelancer:</p>
+      <div className="flex gap-2 mb-2">
         {[1, 2, 3, 4, 5].map((n) => (
           <button
             key={n}
+            className={`px-3 py-1 rounded-full border ${n <= nota ? 'bg-yellow-400 text-black' : 'bg-gray-100'}`}
             onClick={() => setNota(n)}
-            className={`text-xl ${nota >= n ? 'text-yellow-500' : 'text-gray-300'}`}
           >
-            ⭐
+            {n} ⭐
           </button>
         ))}
       </div>
       <textarea
         value={comentario}
         onChange={(e) => setComentario(e.target.value)}
-        className="w-full border rounded p-1"
         placeholder="Escreva um comentário..."
+        className="w-full p-2 border rounded mb-2"
       />
       <button
         onClick={enviarAvaliacao}
         disabled={enviando}
-        className="bg-blue-600 text-white px-4 py-1 mt-2 rounded"
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
       >
         Enviar Avaliação
       </button>
