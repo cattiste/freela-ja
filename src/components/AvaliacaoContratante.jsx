@@ -1,3 +1,4 @@
+// src/components/AvaliacaoContratante.jsx
 import React, { useState, useEffect } from 'react'
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -9,9 +10,8 @@ export default function AvaliacaoContratante({ chamadaId, contratanteUid, freela
   const [jaAvaliado, setJaAvaliado] = useState(false)
   const [carregando, setCarregando] = useState(true)
 
-  const docId = `${chamadaId}_${freelaUid}`
+  const docId = `${chamadaId}_${contratanteUid}` // ✅ corrigido para evitar conflito
 
-  // Verifica se já avaliou essa chamada
   useEffect(() => {
     async function checarAvaliacao() {
       const docRef = doc(db, 'avaliacoesContratantes', docId)
@@ -58,7 +58,7 @@ export default function AvaliacaoContratante({ chamadaId, contratanteUid, freela
       <h2 className="text-xl font-semibold mb-4">Avalie o Contratante</h2>
 
       <div className="flex gap-1 mb-4">
-        {[1,2,3,4,5].map(star => (
+        {[1, 2, 3, 4, 5].map(star => (
           <button
             key={star}
             type="button"
