@@ -1,3 +1,4 @@
+// ✅ ChamadasFreela.jsx – Atualizado
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -57,20 +58,6 @@ export default function ChamadasFreela() {
     )
   }, [])
 
-  function calcularDistancia(lat1, lon1, lat2, lon2) {
-    const R = 6371e3 // metros
-    const toRad = (x) => (x * Math.PI) / 180
-    const dLat = toRad(lat2 - lat1)
-    const dLon = toRad(lon2 - lon1)
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(toRad(lat1)) *
-        Math.cos(toRad(lat2)) *
-        Math.sin(dLon / 2) ** 2
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-    return R * c
-  }
-
   async function aceitarChamada(ch) {
     try {
       await updateDoc(doc(db, 'chamadas', ch.id), {
@@ -85,30 +72,12 @@ export default function ChamadasFreela() {
   }
 
   async function fazerCheckIn(ch) {
-    const localEstab = ch.coordenadasEstabelecimento
-    if (!localEstab || !coordenadas) {
-      toast.error('Localização não disponível.')
-      return
-    }
-
-    const distancia = calcularDistancia(
-      coordenadas.latitude,
-      coordenadas.longitude,
-      localEstab.latitude,
-      localEstab.longitude
-    )
-
-    if (distancia > 15) {
-      toast.error('Você precisa estar no local para fazer check-in.')
-      return
-    }
-
     try {
       await updateDoc(doc(db, 'chamadas', ch.id), {
         status: 'checkin_freela',
         checkInFeitoPeloFreela: true,
         checkInFeitoPeloFreelaHora: serverTimestamp(),
-        coordenadasCheckInFreela: coordenadas,
+        coordenadasCheckInFreela: coordenadas || null,
       })
       toast.success('📍 Check-in realizado!')
     } catch (e) {
@@ -148,21 +117,13 @@ export default function ChamadasFreela() {
             <h2 className="font-semibold text-orange-600 text-lg">
               Chamada #{ch.id.slice(-5)}
             </h2>
-            <p>
-              <strong>Contratante:</strong> {ch.contratanteNome || ch.contratanteUid}
-            </p>
-            <p>
-              <strong>Status:</strong> {ch.status}
-            </p>
+            <p><strong>Contratante:</strong> {ch.contratanteNome || ch.contratanteUid}</p>
+            <p><strong>Status:</strong> {ch.status}</p>
             {typeof ch.valorDiaria === 'number' && (
-              <p>
-                <strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}
-              </p>
+              <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>
             )}
             {ch.observacao && (
-              <p>
-                <strong>📝 Observação:</strong> {ch.observacao}
-              </p>
+              <p><strong>📝 Observação:</strong> {ch.observacao}</p>
             )}
 
             {ch.status === 'pendente' && (

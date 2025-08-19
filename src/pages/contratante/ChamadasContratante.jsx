@@ -1,4 +1,4 @@
-// src/pages/contratante/ChamadasContratante.jsx
+// ✅ ChamadasContratante.jsx – Atualizado com exibição do ponto de check-in do freela
 import React, { useEffect, useMemo, useState } from 'react'
 import {
   collection, query, where, onSnapshot,
@@ -11,7 +11,7 @@ import { toast } from 'react-hot-toast'
 const STATUS_LISTA = [
   'pendente',
   'aceita',
-  'confirmada', // ✅ Adicionado para evitar sumiço da chamada
+  'confirmada',
   'checkin_freela',
   'em_andamento',
   'checkout_freela',
@@ -37,19 +37,15 @@ export default function ChamadasContratante({ contratante }) {
       where('status', 'in', STATUS_LISTA)
     )
 
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-        setChamadas(docs)
-        setLoading(false)
-      },
-      (err) => {
-        console.error('[ChamadasContratante] onSnapshot erro:', err)
-        toast.error('Falha ao carregar chamadas.')
-        setLoading(false)
-      }
-    )
+    const unsub = onSnapshot(q, (snap) => {
+      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      setChamadas(docs)
+      setLoading(false)
+    }, (err) => {
+      console.error('[ChamadasContratante] onSnapshot erro:', err)
+      toast.error('Falha ao carregar chamadas.')
+      setLoading(false)
+    })
 
     return () => unsub()
   }, [estab?.uid])
@@ -143,38 +139,32 @@ export default function ChamadasContratante({ contratante }) {
             {ch.observacao && (
               <p className="text-sm text-gray-800"><strong>📝 Observação:</strong> {ch.observacao}</p>
             )}
+            {ch.coordenadasCheckInFreela && (
+              <p className="text-sm text-gray-700">
+                <strong>📍 Local do Check-in do Freela:</strong>{' '}
+                {ch.coordenadasCheckInFreela.latitude.toFixed(6)}, {ch.coordenadasCheckInFreela.longitude.toFixed(6)}
+              </p>
+            )}
 
             {ch.status === 'aceita' && (
               <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  onClick={() => confirmarChamada(ch)}
-                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
-                >
+                <button onClick={() => confirmarChamada(ch)} className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
                   ✅ Confirmar Chamada
                 </button>
-                <button
-                  onClick={() => cancelarChamada(ch)}
-                  className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition"
-                >
+                <button onClick={() => cancelarChamada(ch)} className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition">
                   ❌ Cancelar Chamada
                 </button>
               </div>
             )}
 
             {ch.status === 'checkin_freela' && (
-              <button
-                onClick={() => confirmarCheckInFreela(ch)}
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-              >
+              <button onClick={() => confirmarCheckInFreela(ch)} className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
                 📍 Confirmar check-in do freela
               </button>
             )}
 
             {ch.status === 'checkout_freela' && (
-              <button
-                onClick={() => confirmarCheckOutFreela(ch)}
-                className="w-full bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition"
-              >
+              <button onClick={() => confirmarCheckOutFreela(ch)} className="w-full bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition">
                 ⏳ Confirmar check-out do freela
               </button>
             )}
