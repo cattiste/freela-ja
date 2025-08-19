@@ -5,10 +5,7 @@ import {
   doc,
   serverTimestamp,
   addDoc,
-  collection,
-  getDocs,
-  query,
-  where
+  collection
 } from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
 
@@ -19,24 +16,12 @@ export default function AvaliacaoInline({ chamada, tipo, usuario }) {
   const [enviando, setEnviando] = useState(false)
 
   useEffect(() => {
-    const verificarSeJaAvaliou = async () => {
-      if (!usuario?.uid || !chamada?.id) return
-
-      const colecao = tipo === 'freela' ? 'avaliacoesContratantes' : 'avaliacoesFreelas'
-      const campoUid = tipo === 'freela' ? 'contratanteUid' : 'freelaUid'
-
-      const q = query(
-        collection(db, colecao),
-        where('chamadaId', '==', chamada.id),
-        where(campoUid, '==', usuario.uid)
-      )
-
-      const snapshot = await getDocs(q)
-      setEnviada(!snapshot.empty)
+    if (tipo === 'freela') {
+      setEnviada(!!chamada?.avaliacaoContratante)
+    } else {
+      setEnviada(!!chamada?.avaliacaoFreela)
     }
-
-    verificarSeJaAvaliou()
-  }, [chamada, tipo, usuario])
+  }, [chamada, tipo])
 
   const enviarAvaliacao = async () => {
     if (!comentario.trim()) return toast.error('Digite um comentário.')
