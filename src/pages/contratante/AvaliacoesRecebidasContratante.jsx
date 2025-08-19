@@ -17,12 +17,12 @@ export default function AvaliacoesRecebidasContratante() {
         const q = query(
           collection(db, 'avaliacoesContratantes'),
           where('contratanteUid', '==', usuario.uid),
-          orderBy('criadoEm', 'desc')
+          orderBy('criadoEm', 'desc') // ordena pela data, se existir
         )
 
         const snap = await getDocs(q)
-        const dados = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-        setAvaliacoes(dados)
+        const docs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        setAvaliacoes(docs)
       } catch (err) {
         console.error('Erro ao buscar avaliações:', err)
       } finally {
