@@ -1,4 +1,3 @@
-// src/components/AvaliacaoInline.jsx
 import React, { useState } from 'react'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -14,32 +13,15 @@ export default function AvaliacaoInline({ chamada }) {
   const enviarAvaliacao = async () => {
     if (!nota || !comentario) return toast.error('Preencha todos os campos')
 
-    const ehContratante = usuario?.uid === chamada?.estabelecimentoUid || usuario?.uid === chamada?.pessoaFisicaUid
-
-    const dados = {
-      chamadaId: chamada.id,
-      nota,
-      comentario,
-      criadoEm: serverTimestamp(),
-    }
-
     try {
-      if (ehContratante) {
-        // Contratante avaliando o freela
-        await addDoc(collection(db, 'avaliacoesFreelas'), {
-          ...dados,
-          contratanteUid: usuario.uid,
-          freelaUid: chamada.freelaUid,
-        })
-      } else {
-        // Freela avaliando o contratante
-        await addDoc(collection(db, 'avaliacoesContratantes'), {
-          ...dados,
-          freelaUid: usuario.uid,
-          contratanteUid: chamada.estabelecimentoUid || chamada.pessoaFisicaUid,
-        })
-      }
-
+      await addDoc(collection(db, 'avaliacoesFreelas'), {
+        chamadaId: chamada.id,
+        contratanteUid: chamada.estabelecimentoUid || chamada.contratanteUid || '',
+        freelaUid: chamada.freelaUid || '',
+        nota,
+        comentario,
+        criadoEm: serverTimestamp()
+      })
       setEnviado(true)
       toast.success('Avaliação enviada!')
     } catch (e) {
