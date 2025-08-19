@@ -12,7 +12,7 @@ import {
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
-import AvaliacaoInline from '@/components/AvaliacaoInline'
+import AvaliacaoContratanteInline from '@/components/AvaliacaoContratanteInline'
 import RespostasRapidasFreela from '@/components/RespostasRapidasFreela'
 
 export default function ChamadasFreela() {
@@ -167,7 +167,7 @@ export default function ChamadasFreela() {
             )}
 
             {ch.status === 'concluido' && (
-              <AvaliacaoInline chamada={ch} tipo="contratante" />
+              <AvaliacaoContratanteInline chamada={ch} />
             )}
 
             <RespostasRapidasFreela chamadaId={ch.id} />
