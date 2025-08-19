@@ -1,4 +1,4 @@
-// ✅ ChamadasFreela.jsx com geocodificação e salvamento de endereço
+// ✅ ChamadasFreela.jsx com Avaliação e Respostas Rápidas
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -12,6 +12,8 @@ import {
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
+import AvaliacaoInline from '@/components/AvaliacaoInline'
+import RespostasRapidasFreela from '@/components/RespostasRapidasFreela'
 
 export default function ChamadasFreela() {
   const { usuario } = useAuth()
@@ -32,6 +34,7 @@ export default function ChamadasFreela() {
         'em_andamento',
         'checkout_freela',
         'concluido',
+        'finalizada',
       ])
     )
 
@@ -162,6 +165,12 @@ export default function ChamadasFreela() {
                 ⏳ Fazer Check-out
               </button>
             )}
+
+            {ch.status === 'concluido' && (
+              <AvaliacaoInline chamada={ch} tipo="contratante" />
+            )}
+
+            <RespostasRapidasFreela chamadaId={ch.id} />
 
             {(ch.status === 'concluido' || ch.status === 'finalizada') && (
               <span className="text-green-600 font-bold block text-center">

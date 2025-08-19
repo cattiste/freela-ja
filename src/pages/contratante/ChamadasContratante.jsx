@@ -1,4 +1,4 @@
-// ✅ ChamadasContratante.jsx com endereço, mapa e data formatada
+// ✅ ChamadasContratante.jsx com Avaliação e Mensagens Recebidas
 import React, { useEffect, useMemo, useState } from 'react'
 import {
   collection, query, where, onSnapshot,
@@ -8,8 +8,9 @@ import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
-import '@/styles/leaflet.css'
-
+import 'leaflet/dist/leaflet.css'
+import AvaliacaoInline from '@/components/AvaliacaoInline'
+import MensagensRecebidasContratante from '@/components/MensagensRecebidasContratante'
 
 const STATUS_LISTA = [
   'pendente', 'aceita', 'confirmada', 'checkin_freela',
@@ -122,13 +123,8 @@ export default function ChamadasContratante({ contratante }) {
               <p><strong>Status:</strong> {ch.status}</p>
               {typeof ch.valorDiaria === 'number' && <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>}
               {ch.observacao && <p className="text-sm text-gray-800"><strong>📝 Observação:</strong> {ch.observacao}</p>}
-
-              {dataHora && (
-                <p className="text-sm text-gray-700">🕓 Check-in: {dataHora}</p>
-              )}
-              {ch.enderecoCheckInFreela && (
-                <p className="text-sm text-gray-700">🏠 Endereço: {ch.enderecoCheckInFreela}</p>
-              )}
+              {dataHora && (<p className="text-sm text-gray-700">🕓 Check-in: {dataHora}</p>)}
+              {ch.enderecoCheckInFreela && (<p className="text-sm text-gray-700">🏠 Endereço: {ch.enderecoCheckInFreela}</p>)}
               {pos && (
                 <>
                   <p className="text-sm text-gray-700">
@@ -139,20 +135,17 @@ export default function ChamadasContratante({ contratante }) {
                       className="text-blue-600 underline ml-2"
                     >Ver no Google Maps</a>
                   </p>
-                  <MapContainer
-                    center={[pos.latitude, pos.longitude]}
-                    zoom={18}
-                    scrollWheelZoom={false}
-                    style={{ height: 200, borderRadius: 8 }}
-                    className="mt-2"
-                  >
-                    <TileLayer
-                      attribution='&copy; OpenStreetMap'
-                      url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-                    />
+                  <MapContainer center={[pos.latitude, pos.longitude]} zoom={18} scrollWheelZoom={false} style={{ height: 200, borderRadius: 8 }} className="mt-2">
+                    <TileLayer attribution='&copy; OpenStreetMap' url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' />
                     <Marker position={[pos.latitude, pos.longitude]} />
                   </MapContainer>
                 </>
+              )}
+
+              <MensagensRecebidasContratante chamadaId={ch.id} />
+
+              {ch.status === 'concluido' && (
+                <AvaliacaoInline chamada={ch} tipo="freela" />
               )}
 
               {ch.status === 'aceita' && (
