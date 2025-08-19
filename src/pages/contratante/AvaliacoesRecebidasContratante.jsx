@@ -1,6 +1,6 @@
 // src/pages/contratante/AvaliacoesRecebidasContratante.jsx
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, getDocs, limit } from 'firebase/firestore'
+import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 
@@ -19,6 +19,7 @@ export default function AvaliacoesRecebidasContratante({ contratanteUid }) {
         const q = query(
           collection(db, 'avaliacoesContratantes'),
           where('contratanteUid', '==', uid),
+          orderBy('criadoEm', 'desc'),
           limit(10)
         )
 
@@ -80,7 +81,7 @@ export default function AvaliacoesRecebidasContratante({ contratanteUid }) {
             <div key={avaliacao.id} className="bg-gray-50 border p-3 rounded-xl shadow-sm">
               <p className="text-sm text-gray-800">
                 <strong>Freela:</strong>{' '}
-                {avaliacao.FreelaNome || '---'}
+                {avaliacao.freelaNome || '---'}
               </p>
               <p className="text-sm text-gray-600 italic">
                 "{avaliacao.comentario || 'Sem comentário'}"
