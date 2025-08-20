@@ -17,7 +17,7 @@ export default function AvaliacoesRecebidasContratante({ contratanteUid }) {
 
       try {
         const q = query(
-          collection(db, 'avaliacoesContratantes'),
+          collection(db, 'avaliacoesFreelas'),
           where('contratanteUid', '==', uid),
           orderBy('criadoEm', 'desc'),
           limit(10)

@@ -17,7 +17,7 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
 
       try {
         const q = query(
-          collection(db, 'avaliacoesFreelas'),
+          collection(db, 'avaliacoesContratantes'),
           where('freelaUid', '==', uid),
           limit(10)
         )
