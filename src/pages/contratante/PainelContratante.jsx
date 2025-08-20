@@ -105,7 +105,7 @@ export default function PainelContratante() {
       const snap = await getDocs(q)
       const pendentes = snap.docs
         .map((d) => ({ id: d.id, ...d.data() }))
-        .filter((c) => !c.avaliacaoFreela?.nota)
+        .filter((c) => !c.avaliadoPeloContratante)
       setAvaliacoesPendentes(pendentes)
     } catch (err) {
       console.error('[PainelContratante] erro aval pendentes:', err)
