@@ -145,7 +145,7 @@ export default function ChamadasContratante({ contratante }) {
               <MensagensRecebidasContratante chamadaId={ch.id} />
 
               {ch.status === 'concluido' && (
-                <AvaliacaoContratante chamada={ch} tipo="freela" />
+                <AvaliacaoFreela chamada={ch} tipo="freela" />
               )}
 
               {ch.status === 'aceita' && (
