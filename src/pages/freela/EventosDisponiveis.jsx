@@ -8,6 +8,7 @@ import {
   addDoc,
   Timestamp,
 } from 'firebase/firestore'
+import { useAuth } from '@/context/AuthContext'
 
 export default function EventosDisponiveis({ freela }) {
   const { usuario } = useAuth()
