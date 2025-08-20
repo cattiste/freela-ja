@@ -58,6 +58,9 @@ export default function PublicarVaga({ contratante, vaga = null, onSucesso }) {
     if (form.tipo === 'freela' && !form.valorDiaria) {
       return toast.error('Informe o valor da diária.')
     }
+    if (form.tipo === 'clt' && !form.salario) {
+      return toast.error('Informe o valor do salario para CLT.')    
+    }
     if (form.tipo === 'clt' && !form.endereco) {
       return toast.error('Informe o endereço para CLT.')
     }
