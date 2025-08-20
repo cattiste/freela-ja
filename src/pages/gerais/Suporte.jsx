@@ -57,70 +57,86 @@ export default function Suporte() {
 
   if (!emailSalvo) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6">
-        <h1 className="text-2xl font-bold mb-4">📩 Central de Suporte</h1>
-        <p className="mb-2 text-gray-600">Informe seu e-mail para começar a conversar com o time de suporte:</p>
-        <input
-          type="email"
-          placeholder="seuemail@exemplo.com"
-          className="border px-3 py-2 rounded w-full max-w-sm text-center mb-3"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <button
-          onClick={() => {
-            if (!email.includes('@')) return toast.error('E-mail inválido')
-            localStorage.setItem('suporte_email', email)
-            setEmailSalvo(true)
-          }}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Acessar chat
-        </button>
+      <div
+        className="min-h-screen bg-cover bg-center bg-no-repeat relative"
+        style={{ backgroundImage: "url('/img/fundo-login.jpg')" }}
+      >
+        <div className="absolute inset-0 bg-black/60 z-0" />
+        <div className="relative z-10 flex flex-col items-center justify-center text-white px-4 py-10">
+          <div className="bg-white text-black p-6 rounded-lg shadow max-w-md w-full text-center">
+            <h1 className="text-2xl font-bold mb-4">📩 Central de Suporte</h1>
+            <p className="mb-2 text-gray-600">Informe seu e-mail para começar a conversar com o time de suporte:</p>
+            <input
+              type="email"
+              placeholder="seuemail@exemplo.com"
+              className="border px-3 py-2 rounded w-full mb-3 text-center"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <button
+              onClick={() => {
+                if (!email.includes('@')) return toast.error('E-mail inválido')
+                localStorage.setItem('suporte_email', email)
+                setEmailSalvo(true)
+              }}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full"
+            >
+              Acessar chat
+            </button>
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="p-4 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">💬 Suporte ao Cliente</h1>
+    <div
+      className="min-h-screen bg-cover bg-center bg-no-repeat relative"
+      style={{ backgroundImage: "url('/img/fundo-login.jpg')" }}
+    >
+      <div className="absolute inset-0 bg-black/60 z-0" />
+      <div className="relative z-10 flex flex-col items-center justify-center px-4 py-10 text-white">
+        <div className="bg-white text-black p-6 rounded-lg shadow max-w-xl w-full">
+          <h1 className="text-2xl font-bold mb-4">💬 Suporte ao Cliente</h1>
 
-      <div className="mb-4">
-        <p className="text-sm text-gray-600">
-          E-mail: <strong>{email}</strong>
-        </p>
-        <p className="text-sm text-gray-600">
-          Precisa de ajuda? Nossa equipe vai responder por aqui mesmo.
-        </p>
-      </div>
-
-      <div className="border rounded p-3 h-96 overflow-y-auto bg-gray-50 mb-4">
-        {mensagens.length === 0 && (
-          <p className="text-gray-400 text-sm">Nenhuma mensagem ainda.</p>
-        )}
-        {mensagens.map((m) => (
-          <div
-            key={m.id}
-            className={`mb-2 p-2 rounded text-sm max-w-[80%] ${m.tipo === 'admin' ? 'bg-blue-100 text-blue-800 ml-auto' : 'bg-gray-200'}`}
-          >
-            <strong>{m.tipo === 'admin' ? '👩‍💼 Suporte' : '👤 Você'}:</strong> {m.mensagem}
+          <div className="mb-2">
+            <p className="text-sm text-gray-600">
+              E-mail: <strong>{email}</strong>
+            </p>
+            <p className="text-sm text-gray-600">
+              Precisa de ajuda? Nossa equipe vai responder por aqui mesmo.
+            </p>
           </div>
-        ))}
-      </div>
 
-      <textarea
-        className="w-full p-2 border rounded mb-2"
-        rows={3}
-        placeholder="Digite sua mensagem..."
-        value={mensagem}
-        onChange={(e) => setMensagem(e.target.value)}
-      />
-      <button
-        onClick={enviarMensagem}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-      >
-        Enviar mensagem
-      </button>
+          <div className="border rounded p-3 h-80 overflow-y-auto bg-gray-50 mb-4">
+            {mensagens.length === 0 && (
+              <p className="text-gray-400 text-sm">Nenhuma mensagem ainda.</p>
+            )}
+            {mensagens.map((m) => (
+              <div
+                key={m.id}
+                className={`mb-2 p-2 rounded text-sm max-w-[80%] ${m.tipo === 'admin' ? 'bg-blue-100 text-blue-800 ml-auto' : 'bg-gray-200'}`}
+              >
+                <strong>{m.tipo === 'admin' ? '👩‍💼 Suporte' : '👤 Você'}:</strong> {m.mensagem}
+              </div>
+            ))}
+          </div>
+
+          <textarea
+            className="w-full p-2 border rounded mb-2"
+            rows={3}
+            placeholder="Digite sua mensagem..."
+            value={mensagem}
+            onChange={(e) => setMensagem(e.target.value)}
+          />
+          <button
+            onClick={enviarMensagem}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Enviar mensagem
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

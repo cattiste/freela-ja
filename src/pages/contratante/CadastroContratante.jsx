@@ -158,9 +158,15 @@ export default function CadastroContratante() {
   if (carregando) return <div className="p-6 text-orange-600">Carregando...</div>;
 
   return (
-    <div className="min-h-screen p-6 bg-orange-50 flex justify-center items-center">
-      <form onSubmit={salvar} className="bg-white w-full max-w-xl rounded-2xl shadow p-6 space-y-4">
-        <h1 className="text-2xl font-bold text-orange-700">Cadastro do Contratante</h1>
+     <div
+      className="min-h-screen bg-cover bg-center bg-no-repeat relative"
+      style={{ backgroundImage: "url('/img/fundo-login.jpg')" }}
+    >
+      <div className="absolute inset-0 bg-black/60 z-0" />
+      <div className="relative z-10 flex flex-col items-center justify-center text-white px-4 py-10">
+        <div className="bg-white text-black p-6 rounded-lg shadow max-w-lg w-full">
+          <h1 className="text-2xl font-bold mb-4 text-center">Cadastro de Contratante</h1>
+          <FormularioCadastroContratante />
 
         {(!modoEdicao || forcarCriacao) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
