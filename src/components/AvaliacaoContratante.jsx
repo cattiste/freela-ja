@@ -39,7 +39,7 @@ export default function AvaliacaoContratante({ chamada }) {
       <p className="font-semibold">Deixe sua avaliação:</p>
       <div className="flex gap-2 mb-2">
         {[1, 2, 3, 4, 5].map((n) => (
-          <button key={n} onClick={() => setNota(n)} className={`text-2xl ${nota >= n ? 'text-yellow-400' : 'text-gray-300'}`}>⭐</button>
+          <button key={n} onClick={() => setNota(n)} className={`text-2xl ${nota >= n ? 'text-yellow-400' : 'text-gray-300'}`}> {n} ⭐</button>
         ))}
       </div>
       <textarea
