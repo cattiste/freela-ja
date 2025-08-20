@@ -1,4 +1,4 @@
-// ✅ ChamadasFreela.jsx com ciclo de botões corrigido e Avaliação funcionando
+// ✅ ChamadasFreela.jsx com Avaliação e Respostas Rápidas
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -12,7 +12,7 @@ import {
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
-import AvaliacaoInline from '@/components/AvaliacaoInline'
+import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import RespostasRapidasFreela from '@/components/RespostasRapidasFreela'
 
 export default function ChamadasFreela() {
@@ -148,7 +148,7 @@ export default function ChamadasFreela() {
               </button>
             )}
 
-            {['aceita', 'confirmada'].includes(ch.status) && (
+            {ch.status === 'confirmada' && (
               <button
                 onClick={() => fazerCheckIn(ch)}
                 className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
@@ -157,7 +157,7 @@ export default function ChamadasFreela() {
               </button>
             )}
 
-            {['checkin_freela', 'em_andamento'].includes(ch.status) && (
+            {ch.status === 'em_andamento' && (
               <button
                 onClick={() => fazerCheckOut(ch)}
                 className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition"
@@ -166,13 +166,13 @@ export default function ChamadasFreela() {
               </button>
             )}
 
-            {['concluido', 'finalizada'].includes(ch.status) && (
-              <AvaliacaoInline chamada={ch} tipo="contratante" />
+            {ch.status === 'concluido' && (
+              <AvaliacaoContratanteInline chamada={ch} />
             )}
 
             <RespostasRapidasFreela chamadaId={ch.id} />
 
-            {['concluido', 'finalizada'].includes(ch.status) && (
+            {(ch.status === 'concluido' || ch.status === 'finalizada') && (
               <span className="text-green-600 font-bold block text-center">
                 ✅ Finalizada
               </span>
