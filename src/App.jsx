@@ -3,6 +3,8 @@ import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import '@/styles/leaflet.css'
 
+import { useAuth } from '@/context/AuthContext'
+
 // 🌐 Gerais
 import Home from '@/pages/gerais/Home'
 import Sobre from '@/pages/gerais/Sobre'
@@ -20,8 +22,7 @@ import Privacidade from '@/pages/gerais/Privacidade'
 import Termos from '@/pages/gerais/Termos'
 import RequireRole from '@/components/RequireRole'
 import Suporte from '@/pages/gerais/Suporte'
-
-
+import PainelSuporte from '@/pages/suporte/PainelSuporte'
 
 // 👤 Freela
 import CadastroFreela from '@/pages/freela/CadastroFreela'
@@ -38,6 +39,8 @@ import PublicarVaga from '@/pages/contratante/PublicarVaga'
 import PagamentoChamada from '@/pages/contratante/PagamentoChamada'
 
 export default function App() {
+  const { usuario } = useAuth()
+
   return (
     <BrowserRouter>
       <Routes>
@@ -56,8 +59,12 @@ export default function App() {
         <Route path="/admin" element={<DashboardAdmin />} />
         <Route path="/privacidade" element={<Privacidade />} />
         <Route path="/termos" element={<Termos />} />
-        <Route path="/painel-suporte" element={usuario?.tipo === 'suporte' ? <PainelSuporte /> : <Navigate to="/" />} />
         <Route path="/suporte" element={<Suporte />} />
+        <Route path="/painel-suporte" element={
+          usuario?.tipo === 'suporte'
+            ? <PainelSuporte />
+            : <Navigate to="/" />
+        } />
 
         {/* 👤 Freela */}
         <Route path="/cadastrofreela" element={<CadastroFreela />} />

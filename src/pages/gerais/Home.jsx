@@ -1,7 +1,13 @@
 // src/pages/gerais/Home.jsx
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { UserPlus, LogIn, Info, Briefcase, MessageCircleMore } from 'lucide-react'
+import {
+  UserPlus,
+  LogIn,
+  Info,
+  Briefcase,
+  MessageCircleMore
+} from 'lucide-react'
 
 export default function Home() {
   return (
