@@ -1,154 +1,151 @@
 // src/pages/admin/DashboardAdmin.jsx
 import React, { useEffect, useState } from 'react'
-import { useAuth } from '@/context/AuthContext'
-import {
-  collection,
-  getDocs,
-  query,
-  orderBy,
-  limit
-} from 'firebase/firestore'
+import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore'
 import { db } from '@/firebase'
+import { useAuth } from '@/context/AuthContext'
 
 export default function DashboardAdmin() {
   const { usuario } = useAuth()
-  const [chamadas, setChamadas] = useState([])
-  const [usuarios, setUsuarios] = useState([])
 
-  const [totalChamadas, setTotalChamadas] = useState(0)
-  const [chamadasAtivas, setChamadasAtivas] = useState(0)
-  const [chamadasFaturadas, setChamadasFaturadas] = useState(0)
-  const [faturamentoBruto, setFaturamentoBruto] = useState(0)
+  const [usuarios, setUsuarios] = useState([])
+  const [chamadas, setChamadas] = useState([])
 
   useEffect(() => {
     if (!usuario || usuario.tipo !== 'admin') return
 
-    const carregarChamadas = async () => {
+    // 🔹 Carregar todos os usuários
+    const fetchUsuarios = async () => {
       try {
-        const snap = await getDocs(collection(db, 'chamadas'))
-        const chamadasData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-        setChamadas(chamadasData)
-
-        setTotalChamadas(chamadasData.length)
-
-        const ativas = chamadasData.filter(c => ['aceita', 'checkin_freela', 'em_andamento'].includes(c.status)).length
-        const concluido = chamadasData.filter(c => c.status === 'concluido')
-
-        setChamadasAtivas(ativas)
-        setChamadasFaturadas(concluido.length)
-
-        const total = concluido.reduce((soma, c) => soma + (Number(c.valorDiaria) || 0), 0)
-        setFaturamentoBruto(total)
-
-      } catch (err) {
-        console.error('Erro ao carregar chamadas:', err)
+        const q = query(collection(db, 'usuarios'))
+        const snapshot = await getDocs(q)
+        const lista = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+        setUsuarios(lista)
+      } catch (error) {
+        console.error('Erro ao buscar usuários:', error)
       }
     }
 
-    const carregarUsuarios = async () => {
+    // 🔹 Carregar todas as chamadas
+    const fetchChamadas = async () => {
       try {
-        const snap = await getDocs(collection(db, 'usuarios'))
-        const usuariosData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-        setUsuarios(usuariosData)
-      } catch (err) {
-        console.error('Erro ao carregar usuários:', err)
+        const q = query(collection(db, 'chamadas'))
+        const snapshot = await getDocs(q)
+        const lista = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+        setChamadas(lista)
+      } catch (error) {
+        console.error('Erro ao buscar chamadas:', error)
       }
     }
 
-    carregarChamadas()
-    carregarUsuarios()
+    fetchUsuarios()
+    fetchChamadas()
   }, [usuario])
 
-  const ultimasChamadas = chamadas
-    .sort((a, b) => b.criadoEm?.seconds - a.criadoEm?.seconds)
-    .slice(0, 10)
+  // 🔢 Totais
+  const totalChamadas = chamadas.length
+  const chamadasAtivas = chamadas.filter((c) =>
+    ['aceita', 'em_andamento', 'checkin_freela'].includes(c.status)
+  ).length
+  const chamadasFaturadas = chamadas.filter((c) => c.status === 'concluido').length
 
-  const chamadaPorStatus = (status) =>
-    chamadas.filter(c => c.status === status)
+  const faturamentoBruto = chamadas
+    .filter((c) => c.valorDiaria)
+    .reduce((acc, cur) => acc + Number(cur.valorDiaria), 0)
+
+  const comissao = faturamentoBruto * 0.2
 
   return (
-    <div className="p-4 max-w-6xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold text-orange-600">📊 Painel Administrativo</h1>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">📊 Painel Administrativo</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-4 border rounded shadow">
-          <h2 className="text-lg font-semibold text-orange-700">Total de Chamadas</h2>
-          <p className="text-2xl font-bold">{totalChamadas}</p>
+      {/* RESUMO */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="border p-4 rounded-xl border-orange-300 text-orange-800">
+          <h2 className="font-semibold">Total de Chamadas</h2>
+          <p className="text-2xl">{totalChamadas}</p>
         </div>
-        <div className="p-4 border rounded shadow">
-          <h2 className="text-lg font-semibold text-green-700">Chamadas Ativas</h2>
-          <p className="text-2xl font-bold">{chamadasAtivas}</p>
+        <div className="border p-4 rounded-xl border-green-300 text-green-800">
+          <h2 className="font-semibold">Chamadas Ativas</h2>
+          <p className="text-2xl">{chamadasAtivas}</p>
         </div>
-        <div className="p-4 border rounded shadow">
-          <h2 className="text-lg font-semibold text-blue-700">Chamadas Faturadas</h2>
-          <p className="text-2xl font-bold">{chamadasFaturadas}</p>
+        <div className="border p-4 rounded-xl border-blue-300 text-blue-800">
+          <h2 className="font-semibold">Chamadas Faturadas</h2>
+          <p className="text-2xl">{chamadasFaturadas}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="p-4 border rounded shadow">
-          <h2 className="text-lg font-semibold">💰 Faturamento Bruto</h2>
-          <p className="text-2xl font-bold">R$ {faturamentoBruto.toFixed(2)}</p>
+      {/* FATURAMENTO */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="border p-4 rounded-xl border-yellow-300">
+          <h2 className="font-semibold mb-1">💰 Faturamento Bruto</h2>
+          <p className="text-xl font-bold">R$ {faturamentoBruto.toFixed(2)}</p>
         </div>
-        <div className="p-4 border rounded shadow">
-          <h2 className="text-lg font-semibold">🧾 Comissão da Plataforma (20%)</h2>
-          <p className="text-2xl font-bold">R$ {(faturamentoBruto * 0.2).toFixed(2)}</p>
+        <div className="border p-4 rounded-xl border-indigo-300">
+          <h2 className="font-semibold mb-1">🧾 Comissão da Plataforma (20%)</h2>
+          <p className="text-xl font-bold">R$ {comissao.toFixed(2)}</p>
         </div>
       </div>
 
-      <div className="p-4 border rounded shadow">
-        <h2 className="text-xl font-bold text-orange-600 mb-2">👥 Todos os Usuários</h2>
+      {/* ÚLTIMAS 10 CHAMADAS */}
+      <div className="border p-4 rounded-xl mb-6">
+        <h2 className="font-semibold text-orange-700 mb-2">🙋‍♂️ Últimas 10 Chamadas</h2>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b">
-              <th className="text-left p-2">Nome</th>
-              <th className="text-left p-2">Tipo</th>
-              <th className="text-left p-2">Email</th>
-              <th className="text-left p-2">UID</th>
+              <th className="text-left">ID</th>
+              <th>Status</th>
+              <th>Freela</th>
+              <th>Contratante</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...chamadas].reverse().slice(0, 10).map((c) => (
+              <tr key={c.id} className="border-b">
+                <td>{c.id}</td>
+                <td>{c.status}</td>
+                <td>{c.freelaUid}</td>
+                <td>{c.contratanteUid}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* LISTA DE USUÁRIOS */}
+      <div className="border p-4 rounded-xl mb-6">
+        <h2 className="font-semibold text-blue-800 mb-2">👥 Todos os Usuários</h2>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b">
+              <th className="text-left">Nome</th>
+              <th>Tipo</th>
+              <th>Email</th>
+              <th>UID</th>
             </tr>
           </thead>
           <tbody>
             {usuarios.map((u) => (
               <tr key={u.id} className="border-b">
-                <td className="p-2">{u.nome}</td>
-                <td className="p-2">{u.tipo}</td>
-                <td className="p-2">{u.email}</td>
-                <td className="p-2 text-xs">{u.id}</td>
+                <td>{u.nome}</td>
+                <td>{u.tipo}</td>
+                <td>{u.email}</td>
+                <td>{u.id}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <div className="p-4 border rounded shadow">
-        <h2 className="text-xl font-bold text-orange-600 mb-2">📞 Últimas 10 Chamadas</h2>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b">
-              <th className="text-left p-2">ID</th>
-              <th className="text-left p-2">Status</th>
-              <th className="text-left p-2">Freela</th>
-              <th className="text-left p-2">Contratante</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ultimasChamadas.map((c) => (
-              <tr key={c.id} className="border-b">
-                <td className="p-2 text-xs">{c.id}</td>
-                <td className="p-2">{c.status}</td>
-                <td className="p-2">{c.freelaNome}</td>
-                <td className="p-2">{c.contratanteNome}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="p-4 border rounded shadow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* CHAMADAS POR STATUS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {['pendente', 'aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'concluido', 'rejeitada', 'cancelada_por_falta_de_pagamento'].map((status) => (
-          <div key={status} className="bg-gray-50 p-3 rounded border shadow">
-            <h3 className="font-semibold mb-1 capitalize">📁 Chamadas: {status.replaceAll('_', ' ')}</h3>
-            <p className="text-lg font-bold">{chamadaPorStatus(status).length}</p>
+          <div key={status} className="border p-4 rounded-xl">
+            <h2 className="font-semibold">📁 Chamadas: {status.replace(/_/g, ' ').toUpperCase()}</h2>
+            <ul className="list-disc ml-4">
+              {chamadas.filter((c) => c.status === status).map((c) => (
+                <li key={c.id}>{c.id}</li>
+              ))}
+            </ul>
           </div>
         ))}
       </div>
