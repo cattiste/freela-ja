@@ -1,4 +1,3 @@
-// src/components/AvaliacaoContratante.jsx
 import React, { useState } from 'react'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -15,7 +14,7 @@ export default function AvaliacaoContratante({ chamada }) {
     if (!nota || !comentario) return toast.error('Preencha todos os campos')
 
     try {
-      await addDoc(collection(db, 'avaliacoesContratantes'), {
+      await addDoc(collection(db, 'avaliacoesContratante'), {
         chamadaId: chamada.id,
         freelaUid: usuario.uid,
         contratanteUid: chamada.contratanteUid,
@@ -36,9 +35,11 @@ export default function AvaliacaoContratante({ chamada }) {
   return (
     <div className="mt-2 border rounded p-2">
       <p className="font-semibold">Deixe sua avaliação:</p>
-      <div className="flex gap-2 mb-2">
+      <div className="flex space-x-2 my-2">
         {[1, 2, 3, 4, 5].map((n) => (
-          <button key={n} onClick={() => setNota(n)} className={`text-2xl ${nota >= n ? 'text-yellow-400' : 'text-gray-300'}`}>⭐</button>
+          <button key={n} onClick={() => setNota(n)} className={nota === n ? 'text-yellow-500' : 'text-gray-400'}>
+            {n} ⭐
+          </button>
         ))}
       </div>
       <textarea
