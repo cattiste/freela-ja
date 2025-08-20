@@ -8,10 +8,11 @@ import {
   addDoc,
   updateDoc,
   doc,
-  serverTimestamp,
+  serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
+import jsPDF from 'jspdf'
 
 export default function PainelSuporte() {
   const [autenticado, setAutenticado] = useState(false)
@@ -20,20 +21,29 @@ export default function PainelSuporte() {
   const [resposta, setResposta] = useState({})
   const [resolvidas, setResolvidas] = useState({})
   const [emailSelecionado, setEmailSelecionado] = useState(null)
+  const [busca, setBusca] = useState('')
+  const [darkMode, setDarkMode] = useState(false)
+
   const senhaCorreta = 'suporte2025'
+  const audio = typeof Audio !== 'undefined' ? new Audio('/notificacao.mp3') : null
 
   useEffect(() => {
     const savedAuth = localStorage.getItem('suporte_autenticado')
     if (savedAuth === 'true') setAutenticado(true)
+    const savedMode = localStorage.getItem('modo_escuro')
+    if (savedMode === 'true') setDarkMode(true)
   }, [])
 
   useEffect(() => {
     if (!autenticado) return
 
     const q = query(collection(db, 'suporte_mensagens'), orderBy('criadoEm'))
+    let previousCount = mensagens.length
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const msgs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+      if (msgs.length > previousCount && audio) audio.play()
+      previousCount = msgs.length
       setMensagens(msgs)
     }, (error) => {
       toast.error('Erro ao carregar mensagens')
@@ -74,14 +84,26 @@ export default function PainelSuporte() {
     }
   }
 
+  const exportarPDF = (email) => {
+    const docPDF = new jsPDF()
+    docPDF.text(`Conversa com: ${email}`, 10, 10)
+    const msgs = mensagens.filter((m) => m.email === email)
+    let y = 20
+    msgs.forEach((m) => {
+      const linha = `${m.tipo === 'admin' ? 'Suporte' : m.nome || 'Usuário'}: ${m.mensagem}`
+      docPDF.text(linha, 10, y)
+      y += 10
+    })
+    docPDF.save(`conversa-${email}.pdf`)
+  }
+
   const mensagensPorEmail = mensagens.reduce((acc, msg) => {
     if (!acc[msg.email]) acc[msg.email] = []
     acc[msg.email].push(msg)
     return acc
   }, {})
 
-  const listaEmails = Object.keys(mensagensPorEmail)
-
+  const listaEmails = Object.keys(mensagensPorEmail).filter(e => e.includes(busca.toLowerCase()))
   const mensagensNaoResolvidas = mensagens.filter(m => !m.resolvido && m.tipo !== 'admin')
   const totalNaoResolvidas = mensagensNaoResolvidas.length
 
@@ -115,33 +137,64 @@ export default function PainelSuporte() {
   }
 
   return (
-    <div className="p-4 max-w-6xl mx-auto">
+    <div className={`p-4 max-w-6xl mx-auto ${darkMode ? 'bg-gray-900 text-white min-h-screen' : ''}`}>
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">📊 Painel de Suporte</h1>
-        {totalNaoResolvidas > 0 && (
-          <div className="bg-red-600 text-white px-3 py-1 rounded-full text-sm">
-            {totalNaoResolvidas} pendente{totalNaoResolvidas > 1 ? 's' : ''}
-          </div>
-        )}
+        <div className="flex gap-4 items-center">
+          <input
+            type="text"
+            placeholder="Buscar e-mail..."
+            className="border px-2 py-1 rounded text-sm text-black"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+          <button
+            onClick={() => {
+              const novo = !darkMode
+              setDarkMode(novo)
+              localStorage.setItem('modo_escuro', String(novo))
+            }}
+            className="text-sm border px-3 py-1 rounded"
+          >
+            {darkMode ? '🌞 Claro' : '🌙 Escuro'}
+          </button>
+          {totalNaoResolvidas > 0 && (
+            <div className="bg-red-600 text-white px-3 py-1 rounded-full text-sm">
+              {totalNaoResolvidas} pendente{totalNaoResolvidas > 1 ? 's' : ''}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Lista de clientes */}
       <div className="mb-6 flex gap-2 overflow-x-auto">
-        {listaEmails.map((email) => (
-          <button
-            key={email}
-            onClick={() => setEmailSelecionado(email)}
-            className={`px-4 py-2 rounded border ${emailSelecionado === email ? 'bg-blue-600 text-white' : 'bg-white text-blue-600'} hover:bg-blue-500 hover:text-white`}
-          >
-            {email}
-          </button>
-        ))}
+        {listaEmails.map((email) => {
+          const naoResolvidas = mensagensPorEmail[email].filter(m => !m.resolvido && m.tipo !== 'admin').length
+          return (
+            <button
+              key={email}
+              onClick={() => setEmailSelecionado(email)}
+              className={`px-4 py-2 rounded border flex items-center gap-1 ${emailSelecionado === email ? 'bg-blue-600 text-white' : 'bg-white text-blue-600'} hover:bg-blue-500 hover:text-white`}
+            >
+              {email}
+              {naoResolvidas > 0 && <span className="text-xs bg-red-600 text-white px-2 py-0.5 rounded-full">{naoResolvidas}</span>}
+            </button>
+          )
+        })}
       </div>
 
       {/* Conversa com o cliente */}
       {emailSelecionado && (
-        <div className="border rounded p-4 bg-gray-50 shadow">
-          <h2 className="font-semibold mb-2">📨 Conversa com: {emailSelecionado}</h2>
+        <div className="border rounded p-4 bg-gray-50 shadow dark:bg-gray-800">
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="font-semibold">📨 Conversa com: {emailSelecionado}</h2>
+            <button
+              onClick={() => exportarPDF(emailSelecionado)}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              📄 Exportar PDF
+            </button>
+          </div>
 
           <div className="mb-4 space-y-1">
             {mensagensPorEmail[emailSelecionado].map((m) => (
