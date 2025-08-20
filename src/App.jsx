@@ -50,10 +50,17 @@ export default function App() {
         <Route path="/eventoconfirmado" element={<EventoConfirmado />} />
         <Route path="/meuseventos" element={<EventosPendentes />} />
         <Route path="/freela/buscareventos" element={<BuscarEventos />} />
-        <Route path="/pagamentopix" element={<PagamentoPix />} />
-        <Route path="/admin" element={<DashboardAdmin />} />
+        <Route path="/pagamentopix" element={<PagamentoPix />} />        
         <Route path="/privacidade" element={<Privacidade />} />
         <Route path="/termos" element={<Termos />} />
+        <Route
+          path="/admin"
+          element={
+            usuario?.tipo === 'admin'
+              ? <DashboardAdmin />
+              : <Navigate to="/" />
+          }
+        />
 
         {/* 👤 Freela */}
         <Route path="/cadastrofreela" element={<CadastroFreela />} />
