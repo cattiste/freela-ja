@@ -167,7 +167,11 @@ export default function CadastroContratante() {
         <div className="bg-white text-black p-6 rounded-lg shadow max-w-lg w-full">
           <h1 className="text-2xl font-bold mb-4 text-center">Cadastro de Contratante</h1>
           <FormularioCadastroContratante />
-
+        </div>
+      </div>
+    </div>
+  )
+}
         {(!modoEdicao || forcarCriacao) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
