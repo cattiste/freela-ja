@@ -19,6 +19,8 @@ import BuscarFreelas from '@/components/BuscarFreelas'
 import Privacidade from '@/pages/gerais/Privacidade'
 import Termos from '@/pages/gerais/Termos'
 import RequireRole from '@/components/RequireRole'
+import Suporte from '@/pages/gerais/Suporte'
+
 
 
 // 👤 Freela
@@ -55,7 +57,7 @@ export default function App() {
         <Route path="/privacidade" element={<Privacidade />} />
         <Route path="/termos" element={<Termos />} />
         <Route path="/painel-suporte" element={usuario?.tipo === 'suporte' ? <PainelSuporte /> : <Navigate to="/" />} />
-
+        <Route path="/suporte" element={<Suporte />} />
 
         {/* 👤 Freela */}
         <Route path="/cadastrofreela" element={<CadastroFreela />} />

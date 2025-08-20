@@ -1,7 +1,7 @@
 // src/pages/gerais/Home.jsx
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { UserPlus, LogIn, Info, Briefcase } from 'lucide-react'
+import { UserPlus, LogIn, Info, Briefcase, MessageCircleMore } from 'lucide-react'
 
 export default function Home() {
   return (
@@ -65,6 +65,15 @@ export default function Home() {
           >
             <Info className="w-5 h-5" />
             Sobre
+          </Link>
+
+          {/* Suporte */}
+          <Link
+            to="/suporte"
+            className="w-full px-6 py-3 rounded-lg font-semibold bg-orange-600 hover:bg-orange-700 transition duration-200 shadow flex items-center justify-center gap-2"
+          >
+            <MessageCircleMore className="w-5 h-5" />
+            Suporte
           </Link>
         </div>
       </div>
