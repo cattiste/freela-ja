@@ -2,14 +2,15 @@ import React, { useState } from 'react'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
-import toast from 'react-hot-toast'
+import { toast } from 'react-hot-toast'
 
 export default function PublicarVaga() {
   const { usuario } = useAuth()
+
   const [form, setForm] = useState({
     titulo: '',
     descricao: '',
-    tipo: 'freela', // ou 'clt'
+    tipo: 'freela',
     valorDiaria: '',
     valorSalario: ''
   })
@@ -17,62 +18,59 @@ export default function PublicarVaga() {
   const publicar = async () => {
     const { titulo, descricao, tipo, valorDiaria, valorSalario } = form
 
-    if (!titulo || !descricao) return toast.error('Preencha todos os campos obrigatórios')
+    if (!titulo || !descricao) return toast.error('Preencha todos os campos.')
 
     const payload = {
       titulo,
       descricao,
       tipo,
-      publicadoPor: usuario.uid,
+      publicadoPor: usuario?.uid,
       criadoEm: serverTimestamp()
     }
 
     if (tipo === 'freela') {
-      if (!valorDiaria) return toast.error('Informe o valor da diária para freela.')
+      if (!valorDiaria) return toast.error('Informe o valor da diária.')
       payload.valorDiaria = Number(valorDiaria)
     }
 
     if (tipo === 'clt') {
-      if (!valorSalario) return toast.error('Informe o valor do salário para CLT.')
+      if (!valorSalario) return toast.error('Informe o salário.')
       payload.valorSalario = Number(valorSalario)
     }
 
     try {
       await addDoc(collection(db, 'vagas'), payload)
       toast.success('Vaga publicada com sucesso!')
-      setForm({
-        titulo: '',
-        descricao: '',
-        tipo: 'freela',
-        valorDiaria: '',
-        valorSalario: ''
-      })
-    } catch (e) {
-      console.error('Erro ao publicar vaga:', e)
-      toast.error('Erro ao publicar vaga')
+      setForm({ titulo: '', descricao: '', tipo: 'freela', valorDiaria: '', valorSalario: '' })
+    } catch (error) {
+      console.error('Erro ao publicar vaga:', error)
+      toast.error('Erro ao publicar vaga.')
     }
   }
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">Publicar Vaga</h1>
+    <div className="p-4 bg-white rounded-lg shadow max-w-xl mx-auto mt-4">
+      <h1 className="text-2xl font-bold mb-4">Publicar Vaga</h1>
 
+      <label className="block mb-2">Título da Vaga</label>
       <input
-        className="border p-2 mb-2 w-full"
-        placeholder="Título da Vaga"
+        className="w-full p-2 border rounded mb-4"
+        placeholder="Título da vaga"
         value={form.titulo}
         onChange={(e) => setForm({ ...form, titulo: e.target.value })}
       />
 
+      <label className="block mb-2">Descrição</label>
       <textarea
-        className="border p-2 mb-2 w-full"
+        className="w-full p-2 border rounded mb-4"
         placeholder="Descrição"
         value={form.descricao}
         onChange={(e) => setForm({ ...form, descricao: e.target.value })}
       />
 
+      <label className="block mb-2">Tipo</label>
       <select
-        className="border p-2 mb-2 w-full"
+        className="w-full p-2 border rounded mb-4"
         value={form.tipo}
         onChange={(e) => setForm({ ...form, tipo: e.target.value })}
       >
@@ -81,26 +79,32 @@ export default function PublicarVaga() {
       </select>
 
       {form.tipo === 'freela' && (
-        <input
-          className="border p-2 mb-2 w-full"
-          placeholder="Valor da Diária (R$)"
-          value={form.valorDiaria}
-          onChange={(e) => setForm({ ...form, valorDiaria: e.target.value })}
-        />
+        <>
+          <label className="block mb-2">Valor da Diária (R$)</label>
+          <input
+            className="w-full p-2 border rounded mb-4"
+            placeholder="Valor da diária"
+            value={form.valorDiaria}
+            onChange={(e) => setForm({ ...form, valorDiaria: e.target.value })}
+          />
+        </>
       )}
 
       {form.tipo === 'clt' && (
-        <input
-          className="border p-2 mb-2 w-full"
-          placeholder="Salário (R$)"
-          value={form.valorSalario}
-          onChange={(e) => setForm({ ...form, valorSalario: e.target.value })}
-        />
+        <>
+          <label className="block mb-2">Salário (R$)</label>
+          <input
+            className="w-full p-2 border rounded mb-4"
+            placeholder="Salário mensal"
+            value={form.valorSalario}
+            onChange={(e) => setForm({ ...form, valorSalario: e.target.value })}
+          />
+        </>
       )}
 
       <button
         onClick={publicar}
-        className="bg-blue-600 text-white px-4 py-2 rounded"
+        className="w-full bg-orange-600 text-white py-2 px-4 rounded hover:bg-orange-700 transition"
       >
         Publicar
       </button>
