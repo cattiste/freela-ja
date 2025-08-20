@@ -167,7 +167,7 @@ export default function ChamadasFreela() {
             )}
 
             {ch.status === 'concluido' && (
-              <AvaliacaoFreela chamada={ch} tipo="contratante" />
+              <AvaliacaoContratante chamada={ch} tipo="contratante" />
             )}
 
             <RespostasRapidasFreela chamadaId={ch.id} />
