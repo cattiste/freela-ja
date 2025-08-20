@@ -173,6 +173,21 @@ export default function PublicarVaga({ contratante, vaga = null, onSucesso }) {
           </div>
         )}
       </div>
+      {form.tipo === 'clt' && (
+          <div>
+            <label className="block font-medium text-sm mb-1">
+              Valor do Salario (R$) *
+            </label>
+            <input
+              type="number"
+              name="valorSalario"
+              value={form.valorSalario}
+              onChange={handleChange}
+              className="w-full border px-3 py-2 rounded"
+              required
+            />
+          </div>
+        )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
