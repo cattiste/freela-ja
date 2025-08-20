@@ -15,12 +15,12 @@ export default function AvaliacaoContratante({ chamada }) {
 
     try {
       await addDoc(collection(db, 'avaliacoesContratante'), {
+        contratanteUid: usuario.uid,
+        freelaUid: chamada.freelaUid,
         chamadaId: chamada.id,
-        freelaUid: usuario.uid,
-        contratanteUid: chamada.contratanteUid,
         nota,
         comentario,
-        criadoEm: serverTimestamp()
+        criadoEm: serverTimestamp(),
       })
       setEnviado(true)
       toast.success('Avaliação enviada!')
