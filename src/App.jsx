@@ -63,9 +63,8 @@ export default function App() {
         <Route path="/privacidade" element={<Privacidade />} />
         <Route path="/termos" element={<Termos />} />
         <Route path="/suporte" element={<Suporte />} />
-        <Route path="/painel-suporte" element={<PainelSuporte />} />
+       <Route path="/painel-suporte" element={<PainelSuporte />} />
 
-        
 
         {/* 👤 Freela */}
         <Route path="/cadastrofreela" element={<CadastroFreela />} />
@@ -102,7 +101,7 @@ export default function App() {
         {/* <Route path="*" element={<NotFound />} /> */}
       </Routes>
       <BotFlutuanteFAQ />
-      <BrowserRouter>    
+       
     </BrowserRouter>
   )
 }
