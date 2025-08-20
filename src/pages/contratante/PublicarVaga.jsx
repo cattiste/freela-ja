@@ -1,3 +1,4 @@
+
 // src/pages/contratante/PublicarVaga.jsx
 import React, { useEffect, useState } from 'react'
 import { collection, addDoc, updateDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore'
@@ -15,12 +16,12 @@ export default function PublicarVaga({ contratante, vaga = null, onSucesso }) {
     funcao: '',
     tipo: 'freela',
     valorDiaria: '',
+    salario: '',
     datas: [],
     urgente: false
   })
   const [enviando, setEnviando] = useState(false)
 
-  // Pré-preenche campos se for edição
   useEffect(() => {
     if (vaga) {
       setForm({
@@ -31,6 +32,7 @@ export default function PublicarVaga({ contratante, vaga = null, onSucesso }) {
         funcao: vaga.funcao || '',
         tipo: vaga.tipo || 'freela',
         valorDiaria: vaga.valorDiaria || '',
+        salario: vaga.salario || '',
         datas: vaga.datas || [],
         urgente: vaga.urgente || false
       })
@@ -47,8 +49,6 @@ export default function PublicarVaga({ contratante, vaga = null, onSucesso }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-
-    // Validações básicas
     if (!form.titulo || !form.descricao || !form.cidade || !form.funcao) {
       return toast.error('Preencha todos os campos obrigatórios.')
     }
@@ -58,8 +58,8 @@ export default function PublicarVaga({ contratante, vaga = null, onSucesso }) {
     if (form.tipo === 'freela' && !form.valorDiaria) {
       return toast.error('Informe o valor da diária.')
     }
-    if (form.tipo === 'clt' && !form.endereco) {
-      return toast.error('Informe o endereço para CLT.')
+    if (form.tipo === 'clt' && (!form.endereco || !form.salario)) {
+      return toast.error('Informe o endereço e o salário para CLT.')
     }
     if (!contratante?.uid) {
       return toast.error('Usuário não autenticado.')
@@ -67,7 +67,6 @@ export default function PublicarVaga({ contratante, vaga = null, onSucesso }) {
 
     setEnviando(true)
     try {
-      // Converte datas do DatePicker para Timestamp
       const datasParaFirestore = form.datas.map(d => {
         const jsDate = d.toDate ? d.toDate() : d
         return Timestamp.fromDate(jsDate)
@@ -81,9 +80,10 @@ export default function PublicarVaga({ contratante, vaga = null, onSucesso }) {
         funcao: form.funcao,
         tipo: form.tipo,
         valorDiaria: form.valorDiaria ? Number(form.valorDiaria) : null,
+        salario: form.salario ? Number(form.salario) : null,
         datas: datasParaFirestore,
         urgente: form.urgente,
-        status: 'aberta',              // para ser listada no painel do freela
+        status: 'aberta',
         dataPublicacao: serverTimestamp(),
         criadoEm: serverTimestamp(),
         contratanteUid: contratante.uid,
@@ -91,12 +91,10 @@ export default function PublicarVaga({ contratante, vaga = null, onSucesso }) {
       }
 
       if (vaga && vaga.id) {
-        const ref = doc(db, 'vagas', vaga.id)
-        await updateDoc(ref, payload)
+        await updateDoc(doc(db, 'vagas', vaga.id), payload)
         toast.success('Vaga atualizada com sucesso.')
       } else {
-        const ref = collection(db, 'vagas')
-        await addDoc(ref, payload)
+        await addDoc(collection(db, 'vagas'), payload)
         toast.success('Vaga publicada com sucesso.')
       }
 
@@ -121,128 +119,67 @@ export default function PublicarVaga({ contratante, vaga = null, onSucesso }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block font-medium text-sm mb-1">Título *</label>
-          <input
-            type="text"
-            name="titulo"
-            value={form.titulo}
-            onChange={handleChange}
-            className="w-full border px-3 py-2 rounded"
-            required
-          />
+          <input type="text" name="titulo" value={form.titulo} onChange={handleChange} className="w-full border px-3 py-2 rounded" required />
         </div>
         <div>
           <label className="block font-medium text-sm mb-1">Função *</label>
-          <input
-            type="text"
-            name="funcao"
-            value={form.funcao}
-            onChange={handleChange}
-            className="w-full border px-3 py-2 rounded"
-            required
-          />
+          <input type="text" name="funcao" value={form.funcao} onChange={handleChange} className="w-full border px-3 py-2 rounded" required />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block font-medium text-sm mb-1">Cidade *</label>
-          <input
-            type="text"
-            name="cidade"
-            value={form.cidade}
-            onChange={handleChange}
-            className="w-full border px-3 py-2 rounded"
-            required
-          />
+          <input type="text" name="cidade" value={form.cidade} onChange={handleChange} className="w-full border px-3 py-2 rounded" required />
         </div>
         {form.tipo === 'clt' && (
-          <div>
-            <label className="block font-medium text-sm mb-1">Endereço *</label>
-            <input
-              type="text"
-              name="endereco"
-              value={form.endereco}
-              onChange={handleChange}
-              className="w-full border px-3 py-2 rounded"
-              required
-            />
-          </div>
+          <>
+            <div>
+              <label className="block font-medium text-sm mb-1">Endereço *</label>
+              <input type="text" name="endereco" value={form.endereco} onChange={handleChange} className="w-full border px-3 py-2 rounded" required />
+            </div>
+            <div>
+              <label className="block font-medium text-sm mb-1">Salário (R$) *</label>
+              <input type="number" name="salario" value={form.salario} onChange={handleChange} className="w-full border px-3 py-2 rounded" required />
+            </div>
+          </>
         )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block font-medium text-sm mb-1">Tipo da Vaga *</label>
-          <select
-            name="tipo"
-            value={form.tipo}
-            onChange={handleChange}
-            className="w-full border px-3 py-2 rounded"
-          >
+          <select name="tipo" value={form.tipo} onChange={handleChange} className="w-full border px-3 py-2 rounded">
             <option value="freela">Freela</option>
             <option value="clt">CLT</option>
           </select>
         </div>
         {form.tipo === 'freela' && (
           <div>
-            <label className="block font-medium text-sm mb-1">
-              Valor da diária (R$) *
-            </label>
-            <input
-              type="number"
-              name="valorDiaria"
-              value={form.valorDiaria}
-              onChange={handleChange}
-              className="w-full border px-3 py-2 rounded"
-              required
-            />
+            <label className="block font-medium text-sm mb-1">Valor da diária (R$) *</label>
+            <input type="number" name="valorDiaria" value={form.valorDiaria} onChange={handleChange} className="w-full border px-3 py-2 rounded" required />
           </div>
         )}
       </div>
 
       {form.tipo === 'freela' && (
         <div>
-          <label className="block font-medium text-sm mb-1">
-            Datas agendadas *
-          </label>
-          <DatePicker
-            multiple
-            value={form.datas}
-            onChange={(datas) => setForm(prev => ({ ...prev, datas }))}
-            format="DD/MM/YYYY"
-            className="orange"
-            placeholder="Selecione datas"
-          />
+          <label className="block font-medium text-sm mb-1">Datas agendadas *</label>
+          <DatePicker multiple value={form.datas} onChange={(datas) => setForm(prev => ({ ...prev, datas }))} format="DD/MM/YYYY" className="orange" placeholder="Selecione datas" />
         </div>
       )}
 
       <div className="flex items-center gap-2 mt-2">
-        <input
-          type="checkbox"
-          name="urgente"
-          checked={form.urgente}
-          onChange={handleChange}
-        />
+        <input type="checkbox" name="urgente" checked={form.urgente} onChange={handleChange} />
         <label className="text-sm">Vaga urgente</label>
       </div>
 
       <div>
         <label className="block font-medium text-sm mb-1">Descrição *</label>
-        <textarea
-          name="descricao"
-          value={form.descricao}
-          onChange={handleChange}
-          rows={4}
-          className="w-full border px-3 py-2 rounded"
-          required
-        />
+        <textarea name="descricao" value={form.descricao} onChange={handleChange} rows={4} className="w-full border px-3 py-2 rounded" required />
       </div>
 
-      <button
-        type="submit"
-        disabled={enviando}
-        className="bg-orange-600 text-white px-6 py-2 rounded hover:bg-orange-700 transition disabled:opacity-50"
-      >
+      <button type="submit" disabled={enviando} className="bg-orange-600 text-white px-6 py-2 rounded hover:bg-orange-700 transition disabled:opacity-50">
         {enviando ? 'Salvando...' : vaga ? 'Atualizar Vaga' : 'Publicar Vaga'}
       </button>
     </form>
