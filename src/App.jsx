@@ -54,6 +54,8 @@ export default function App() {
         <Route path="/admin" element={<DashboardAdmin />} />
         <Route path="/privacidade" element={<Privacidade />} />
         <Route path="/termos" element={<Termos />} />
+        <Route path="/painel-suporte" element={usuario?.tipo === 'suporte' ? <PainelSuporte /> : <Navigate to="/" />} />
+
 
         {/* 👤 Freela */}
         <Route path="/cadastrofreela" element={<CadastroFreela />} />
