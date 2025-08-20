@@ -15,24 +15,30 @@ export default function PublicarVaga() {
   })
 
   const publicar = async () => {
-    if (!form.titulo || !form.descricao) {
-      return toast.error('Preencha todos os campos obrigatórios')
+    const { titulo, descricao, tipo, valorDiaria, valorSalario } = form
+
+    if (!titulo || !descricao) return toast.error('Preencha todos os campos obrigatórios')
+
+    const payload = {
+      titulo,
+      descricao,
+      tipo,
+      publicadoPor: usuario.uid,
+      criadoEm: serverTimestamp()
     }
 
-    if (form.tipo === 'freela' && !form.valorDiaria) {
-      return toast.error('Informe o valor da diária para freela.')
+    if (tipo === 'freela') {
+      if (!valorDiaria) return toast.error('Informe o valor da diária para freela.')
+      payload.valorDiaria = Number(valorDiaria)
     }
 
-    if (form.tipo === 'clt' && !form.valorSalario) {
-      return toast.error('Informe o valor do salário para CLT.')
+    if (tipo === 'clt') {
+      if (!valorSalario) return toast.error('Informe o valor do salário para CLT.')
+      payload.valorSalario = Number(valorSalario)
     }
 
     try {
-      await addDoc(collection(db, 'vagas'), {
-        ...form,
-        publicadoPor: usuario.uid,
-        criadoEm: serverTimestamp()
-      })
+      await addDoc(collection(db, 'vagas'), payload)
       toast.success('Vaga publicada com sucesso!')
       setForm({
         titulo: '',
