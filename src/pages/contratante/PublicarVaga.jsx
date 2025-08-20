@@ -181,8 +181,7 @@ export default function PublicarVaga({ contratante, vaga = null, onSucesso }) {
             <input
               type="number"
               name="valorSalario"
-              value={form.valorSalario}
-              onChange={handleChange}
+              value={form.valorSalario}              
               className="w-full border px-3 py-2 rounded"
               required
             />
