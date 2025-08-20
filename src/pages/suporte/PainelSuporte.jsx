@@ -82,6 +82,9 @@ export default function PainelSuporte() {
 
   const listaEmails = Object.keys(mensagensPorEmail)
 
+  const mensagensNaoResolvidas = mensagens.filter(m => !m.resolvido && m.tipo !== 'admin')
+  const totalNaoResolvidas = mensagensNaoResolvidas.length
+
   if (!autenticado) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -113,7 +116,14 @@ export default function PainelSuporte() {
 
   return (
     <div className="p-4 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">📊 Painel de Suporte</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">📊 Painel de Suporte</h1>
+        {totalNaoResolvidas > 0 && (
+          <div className="bg-red-600 text-white px-3 py-1 rounded-full text-sm">
+            {totalNaoResolvidas} pendente{totalNaoResolvidas > 1 ? 's' : ''}
+          </div>
+        )}
+      </div>
 
       {/* Lista de clientes */}
       <div className="mb-6 flex gap-2 overflow-x-auto">
