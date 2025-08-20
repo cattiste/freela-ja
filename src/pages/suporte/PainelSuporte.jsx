@@ -1,6 +1,15 @@
 // src/pages/suporte/PainelSuporte.jsx
 import React, { useEffect, useState } from 'react'
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  addDoc,
+  updateDoc,
+  doc,
+  serverTimestamp,
+} from 'firebase/firestore'
 import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
 
@@ -10,11 +19,17 @@ export default function PainelSuporte() {
   const [mensagens, setMensagens] = useState([])
   const [resposta, setResposta] = useState({})
   const [emailsUnicos, setEmailsUnicos] = useState([])
+  const [resolvidas, setResolvidas] = useState({})
 
-  const senhaCorreta = 'suporte2025' // 🔐 Altere aqui a senha de acesso ao painel
+  const senhaCorreta = 'suporte2025'
 
   useEffect(() => {
-    if (!autenticado) return // só conecta após autenticação
+    const savedAuth = localStorage.getItem('suporte_autenticado')
+    if (savedAuth === 'true') setAutenticado(true)
+  }, [])
+
+  useEffect(() => {
+    if (!autenticado) return
 
     const q = query(collection(db, 'suporte_mensagens'), orderBy('criadoEm'))
 
@@ -43,12 +58,23 @@ export default function PainelSuporte() {
         tipo: 'admin',
         remetenteUid: null,
         criadoEm: serverTimestamp(),
+        resolvido: false
       })
       toast.success('Resposta enviada!')
       setResposta((prev) => ({ ...prev, [email]: '' }))
     } catch (error) {
       console.error(error)
       toast.error('Erro ao enviar resposta')
+    }
+  }
+
+  const marcarResolvido = async (msgId) => {
+    try {
+      await updateDoc(doc(db, 'suporte_mensagens', msgId), { resolvido: true })
+      setResolvidas((prev) => ({ ...prev, [msgId]: true }))
+    } catch (error) {
+      toast.error('Erro ao marcar como resolvido')
+      console.error(error)
     }
   }
 
@@ -67,6 +93,7 @@ export default function PainelSuporte() {
           onClick={() => {
             if (senha === senhaCorreta) {
               setAutenticado(true)
+              localStorage.setItem('suporte_autenticado', 'true')
               toast.success('Acesso liberado!')
             } else {
               toast.error('Senha incorreta')
@@ -81,7 +108,7 @@ export default function PainelSuporte() {
   }
 
   return (
-    <div className="p-4 max-w-5xl mx-auto">
+    <div className="p-4 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">📊 Painel de Suporte</h1>
 
       {emailsUnicos.length === 0 ? (
@@ -98,10 +125,19 @@ export default function PainelSuporte() {
                   key={m.id}
                   className={`mb-1 p-2 rounded text-sm ${m.tipo === 'admin'
                     ? 'bg-blue-100 text-blue-800'
-                    : 'bg-gray-100'
-                  }`}
+                    : 'bg-gray-100'} flex justify-between items-center`}
                 >
-                  <strong>{m.tipo === 'admin' ? '💼 Suporte:' : `👤 ${m.nome || 'Usuário'}:`}</strong> {m.mensagem}
+                  <span>
+                    <strong>{m.tipo === 'admin' ? '💼 Suporte:' : `👤 ${m.nome || 'Usuário'}:`}</strong> {m.mensagem}
+                  </span>
+                  {!m.resolvido && m.tipo !== 'admin' && (
+                    <button
+                      onClick={() => marcarResolvido(m.id)}
+                      className="text-xs text-green-700 hover:underline"
+                    >
+                      Marcar como resolvido
+                    </button>
+                  )}
                 </div>
               ))}
 
