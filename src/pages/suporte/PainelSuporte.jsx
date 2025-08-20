@@ -18,9 +18,8 @@ export default function PainelSuporte() {
   const [senha, setSenha] = useState('')
   const [mensagens, setMensagens] = useState([])
   const [resposta, setResposta] = useState({})
-  const [emailsUnicos, setEmailsUnicos] = useState([])
   const [resolvidas, setResolvidas] = useState({})
-
+  const [emailSelecionado, setEmailSelecionado] = useState(null)
   const senhaCorreta = 'suporte2025'
 
   useEffect(() => {
@@ -36,9 +35,6 @@ export default function PainelSuporte() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const msgs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
       setMensagens(msgs)
-
-      const emails = Array.from(new Set(msgs.map(m => m.email)))
-      setEmailsUnicos(emails)
     }, (error) => {
       toast.error('Erro ao carregar mensagens')
       console.error(error)
@@ -78,6 +74,14 @@ export default function PainelSuporte() {
     }
   }
 
+  const mensagensPorEmail = mensagens.reduce((acc, msg) => {
+    if (!acc[msg.email]) acc[msg.email] = []
+    acc[msg.email].push(msg)
+    return acc
+  }, {})
+
+  const listaEmails = Object.keys(mensagensPorEmail)
+
   if (!autenticado) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -111,52 +115,60 @@ export default function PainelSuporte() {
     <div className="p-4 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">📊 Painel de Suporte</h1>
 
-      {emailsUnicos.length === 0 ? (
-        <p className="text-gray-500">Nenhuma mensagem ainda.</p>
-      ) : (
-        emailsUnicos.map((email) => (
-          <div key={email} className="mb-6 border rounded p-4 bg-gray-50 shadow">
-            <h2 className="font-semibold mb-2">{email}</h2>
+      {/* Lista de clientes */}
+      <div className="mb-6 flex gap-2 overflow-x-auto">
+        {listaEmails.map((email) => (
+          <button
+            key={email}
+            onClick={() => setEmailSelecionado(email)}
+            className={`px-4 py-2 rounded border ${emailSelecionado === email ? 'bg-blue-600 text-white' : 'bg-white text-blue-600'} hover:bg-blue-500 hover:text-white`}
+          >
+            {email}
+          </button>
+        ))}
+      </div>
 
-            {mensagens
-              .filter((m) => m.email === email)
-              .map((m) => (
-                <div
-                  key={m.id}
-                  className={`mb-1 p-2 rounded text-sm ${m.tipo === 'admin'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-gray-100'} flex justify-between items-center`}
-                >
-                  <span>
-                    <strong>{m.tipo === 'admin' ? '💼 Suporte:' : `👤 ${m.nome || 'Usuário'}:`}</strong> {m.mensagem}
-                  </span>
-                  {!m.resolvido && m.tipo !== 'admin' && (
-                    <button
-                      onClick={() => marcarResolvido(m.id)}
-                      className="text-xs text-green-700 hover:underline"
-                    >
-                      Marcar como resolvido
-                    </button>
-                  )}
-                </div>
-              ))}
+      {/* Conversa com o cliente */}
+      {emailSelecionado && (
+        <div className="border rounded p-4 bg-gray-50 shadow">
+          <h2 className="font-semibold mb-2">📨 Conversa com: {emailSelecionado}</h2>
 
-            <textarea
-              className="w-full mt-3 mb-2 p-2 border rounded"
-              rows={3}
-              placeholder="Responder..."
-              value={resposta[email] || ''}
-              onChange={(e) => setResposta({ ...resposta, [email]: e.target.value })}
-            />
-
-            <button
-              onClick={() => handleResponder(email)}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              Enviar resposta
-            </button>
+          <div className="mb-4 space-y-1">
+            {mensagensPorEmail[emailSelecionado].map((m) => (
+              <div
+                key={m.id}
+                className={`p-2 rounded text-sm ${m.tipo === 'admin' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100'} flex justify-between items-center`}
+              >
+                <span>
+                  <strong>{m.tipo === 'admin' ? '💼 Suporte:' : `👤 ${m.nome || 'Usuário'}:`}</strong> {m.mensagem}
+                </span>
+                {!m.resolvido && m.tipo !== 'admin' && (
+                  <button
+                    onClick={() => marcarResolvido(m.id)}
+                    className="text-xs text-green-700 hover:underline"
+                  >
+                    Marcar como resolvido
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
-        ))
+
+          <textarea
+            className="w-full mt-3 mb-2 p-2 border rounded"
+            rows={3}
+            placeholder="Responder..."
+            value={resposta[emailSelecionado] || ''}
+            onChange={(e) => setResposta({ ...resposta, [emailSelecionado]: e.target.value })}
+          />
+
+          <button
+            onClick={() => handleResponder(emailSelecionado)}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Enviar resposta
+          </button>
+        </div>
       )}
     </div>
   )
