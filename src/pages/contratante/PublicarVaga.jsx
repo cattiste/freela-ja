@@ -1,113 +1,250 @@
-import React, { useState } from 'react'
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+// src/pages/contratante/PublicarVaga.jsx
+import React, { useEffect, useState } from 'react'
+import { collection, addDoc, updateDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
-import { useAuth } from '@/context/AuthContext'
+import DatePicker from 'react-multi-date-picker'
 import { toast } from 'react-hot-toast'
+import '@/styles/orange.css'
 
-export default function PublicarVaga() {
-  const { usuario } = useAuth()
-
+export default function PublicarVaga({ contratante, vaga = null, onSucesso }) {
   const [form, setForm] = useState({
     titulo: '',
     descricao: '',
+    cidade: '',
+    endereco: '',
+    funcao: '',
     tipo: 'freela',
     valorDiaria: '',
-    valorSalario: ''
+    datas: [],
+    urgente: false
   })
+  const [enviando, setEnviando] = useState(false)
 
-  const publicar = async () => {
-    const { titulo, descricao, tipo, valorDiaria, valorSalario } = form
+  // Pré-preenche campos se for edição
+  useEffect(() => {
+    if (vaga) {
+      setForm({
+        titulo: vaga.titulo || '',
+        descricao: vaga.descricao || '',
+        cidade: vaga.cidade || '',
+        endereco: vaga.endereco || '',
+        funcao: vaga.funcao || '',
+        tipo: vaga.tipo || 'freela',
+        valorDiaria: vaga.valorDiaria || '',
+        datas: vaga.datas || [],
+        urgente: vaga.urgente || false
+      })
+    }
+  }, [vaga])
 
-    if (!titulo || !descricao) return toast.error('Preencha todos os campos.')
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target
+    setForm(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }))
+  }
 
-    const payload = {
-      titulo,
-      descricao,
-      tipo,
-      publicadoPor: usuario?.uid,
-      criadoEm: serverTimestamp()
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    // Validações básicas
+    if (!form.titulo || !form.descricao || !form.cidade || !form.funcao) {
+      return toast.error('Preencha todos os campos obrigatórios.')
+    }
+    if (form.tipo === 'freela' && form.datas.length === 0) {
+      return toast.error('Selecione pelo menos uma data para Freela.')
+    }
+    if (form.tipo === 'freela' && !form.valorDiaria) {
+      return toast.error('Informe o valor da diária.')
+    }
+    if (form.tipo === 'clt' && !form.endereco) {
+      return toast.error('Informe o endereço para CLT.')
+    }
+    if (!contratante?.uid) {
+      return toast.error('Usuário não autenticado.')
     }
 
-    if (tipo === 'freela') {
-      if (!valorDiaria) return toast.error('Informe o valor da diária.')
-      payload.valorDiaria = Number(valorDiaria)
-    }
-
-    if (tipo === 'clt') {
-      if (!valorSalario) return toast.error('Informe o salário.')
-      payload.valorSalario = Number(valorSalario)
-    }
-
+    setEnviando(true)
     try {
-      await addDoc(collection(db, 'vagas'), payload)
-      toast.success('Vaga publicada com sucesso!')
-      setForm({ titulo: '', descricao: '', tipo: 'freela', valorDiaria: '', valorSalario: '' })
-    } catch (error) {
-      console.error('Erro ao publicar vaga:', error)
-      toast.error('Erro ao publicar vaga.')
+      // Converte datas do DatePicker para Timestamp
+      const datasParaFirestore = form.datas.map(d => {
+        const jsDate = d.toDate ? d.toDate() : d
+        return Timestamp.fromDate(jsDate)
+      })
+
+      const payload = {
+        titulo: form.titulo,
+        descricao: form.descricao,
+        cidade: form.cidade,
+        endereco: form.endereco || '',
+        funcao: form.funcao,
+        tipo: form.tipo,
+        valorDiaria: form.valorDiaria ? Number(form.valorDiaria) : null,
+        datas: datasParaFirestore,
+        urgente: form.urgente,
+        status: 'aberta',              // para ser listada no painel do freela
+        dataPublicacao: serverTimestamp(),
+        criadoEm: serverTimestamp(),
+        contratanteUid: contratante.uid,
+        contratanteNome: contratante.nome
+      }
+
+      if (vaga && vaga.id) {
+        const ref = doc(db, 'vagas', vaga.id)
+        await updateDoc(ref, payload)
+        toast.success('Vaga atualizada com sucesso.')
+      } else {
+        const ref = collection(db, 'vagas')
+        await addDoc(ref, payload)
+        toast.success('Vaga publicada com sucesso.')
+      }
+
+      onSucesso?.()
+    } catch (err) {
+      console.error('Erro ao salvar vaga:', err)
+      toast.error(`Falha ao salvar vaga: ${err.message}`)
+    } finally {
+      setEnviando(false)
     }
   }
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow max-w-xl mx-auto mt-4">
-      <h1 className="text-2xl font-bold mb-4">Publicar Vaga</h1>
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4 max-w-2xl bg-white p-6 rounded-xl shadow-md"
+    >
+      <h2 className="text-2xl font-bold text-orange-600">
+        {vaga ? '✏️ Editar Vaga' : '📢 Publicar Nova Vaga'}
+      </h2>
 
-      <label className="block mb-2">Título da Vaga</label>
-      <input
-        className="w-full p-2 border rounded mb-4"
-        placeholder="Título da vaga"
-        value={form.titulo}
-        onChange={(e) => setForm({ ...form, titulo: e.target.value })}
-      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block font-medium text-sm mb-1">Título *</label>
+          <input
+            type="text"
+            name="titulo"
+            value={form.titulo}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+            required
+          />
+        </div>
+        <div>
+          <label className="block font-medium text-sm mb-1">Função *</label>
+          <input
+            type="text"
+            name="funcao"
+            value={form.funcao}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+            required
+          />
+        </div>
+      </div>
 
-      <label className="block mb-2">Descrição</label>
-      <textarea
-        className="w-full p-2 border rounded mb-4"
-        placeholder="Descrição"
-        value={form.descricao}
-        onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block font-medium text-sm mb-1">Cidade *</label>
+          <input
+            type="text"
+            name="cidade"
+            value={form.cidade}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+            required
+          />
+        </div>
+        {form.tipo === 'clt' && (
+          <div>
+            <label className="block font-medium text-sm mb-1">Endereço *</label>
+            <input
+              type="text"
+              name="endereco"
+              value={form.endereco}
+              onChange={handleChange}
+              className="w-full border px-3 py-2 rounded"
+              required
+            />
+          </div>
+        )}
+      </div>
 
-      <label className="block mb-2">Tipo</label>
-      <select
-        className="w-full p-2 border rounded mb-4"
-        value={form.tipo}
-        onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-      >
-        <option value="freela">Freela</option>
-        <option value="clt">CLT</option>
-      </select>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block font-medium text-sm mb-1">Tipo da Vaga *</label>
+          <select
+            name="tipo"
+            value={form.tipo}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+          >
+            <option value="freela">Freela</option>
+            <option value="clt">CLT</option>
+          </select>
+        </div>
+        {form.tipo === 'freela' && (
+          <div>
+            <label className="block font-medium text-sm mb-1">
+              Valor da diária (R$) *
+            </label>
+            <input
+              type="number"
+              name="valorDiaria"
+              value={form.valorDiaria}
+              onChange={handleChange}
+              className="w-full border px-3 py-2 rounded"
+              required
+            />
+          </div>
+        )}
+      </div>
 
       {form.tipo === 'freela' && (
-        <>
-          <label className="block mb-2">Valor da Diária (R$)</label>
-          <input
-            className="w-full p-2 border rounded mb-4"
-            placeholder="Valor da diária"
-            value={form.valorDiaria}
-            onChange={(e) => setForm({ ...form, valorDiaria: e.target.value })}
+        <div>
+          <label className="block font-medium text-sm mb-1">
+            Datas agendadas *
+          </label>
+          <DatePicker
+            multiple
+            value={form.datas}
+            onChange={(datas) => setForm(prev => ({ ...prev, datas }))}
+            format="DD/MM/YYYY"
+            className="orange"
+            placeholder="Selecione datas"
           />
-        </>
+        </div>
       )}
 
-      {form.tipo === 'clt' && (
-        <>
-          <label className="block mb-2">Salário (R$)</label>
-          <input
-            className="w-full p-2 border rounded mb-4"
-            placeholder="Salário mensal"
-            value={form.valorSalario}
-            onChange={(e) => setForm({ ...form, valorSalario: e.target.value })}
-          />
-        </>
-      )}
+      <div className="flex items-center gap-2 mt-2">
+        <input
+          type="checkbox"
+          name="urgente"
+          checked={form.urgente}
+          onChange={handleChange}
+        />
+        <label className="text-sm">Vaga urgente</label>
+      </div>
+
+      <div>
+        <label className="block font-medium text-sm mb-1">Descrição *</label>
+        <textarea
+          name="descricao"
+          value={form.descricao}
+          onChange={handleChange}
+          rows={4}
+          className="w-full border px-3 py-2 rounded"
+          required
+        />
+      </div>
 
       <button
-        onClick={publicar}
-        className="w-full bg-orange-600 text-white py-2 px-4 rounded hover:bg-orange-700 transition"
+        type="submit"
+        disabled={enviando}
+        className="bg-orange-600 text-white px-6 py-2 rounded hover:bg-orange-700 transition disabled:opacity-50"
       >
-        Publicar
+        {enviando ? 'Salvando...' : vaga ? 'Atualizar Vaga' : 'Publicar Vaga'}
       </button>
-    </div>
+    </form>
   )
 }
