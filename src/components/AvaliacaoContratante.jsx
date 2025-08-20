@@ -14,7 +14,7 @@ export default function AvaliacaoContratante({ chamada }) {
     if (!nota || !comentario) return toast.error('Preencha todos os campos')
 
     try {
-      await addDoc(collection(db, 'avaliacoesContratante'), {
+      await addDoc(collection(db, 'avaliacoesContratantes'), {
         contratanteUid: usuario.uid,
         freelaUid: chamada.freelaUid,
         chamadaId: chamada.id,
