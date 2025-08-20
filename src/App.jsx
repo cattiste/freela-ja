@@ -23,6 +23,7 @@ import Termos from '@/pages/gerais/Termos'
 import RequireRole from '@/components/RequireRole'
 import Suporte from '@/pages/gerais/Suporte'
 import PainelSuporte from '@/pages/suporte/PainelSuporte'
+import BotFlutuanteFAQ from '@/components/BotFlutuanteFAQ'
 
 // 👤 Freela
 import CadastroFreela from '@/pages/freela/CadastroFreela'
@@ -37,6 +38,8 @@ import PainelContratante from '@/pages/contratante/PainelContratante'
 import EditarPerfilContratante from '@/pages/contratante/EditarPerfilContratante'
 import PublicarVaga from '@/pages/contratante/PublicarVaga'
 import PagamentoChamada from '@/pages/contratante/PagamentoChamada'
+
+
 
 export default function App() {
   const { usuario } = useAuth()
@@ -100,6 +103,8 @@ export default function App() {
         {/* 404 opcional */}
         {/* <Route path="*" element={<NotFound />} /> */}
       </Routes>
+      <BotFlutuanteFAQ />
+      <BrowserRouter>    
     </BrowserRouter>
   )
 }
