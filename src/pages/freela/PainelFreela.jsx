@@ -1,4 +1,4 @@
-// src/pages/freela/PainelFreela.jsx
+
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
@@ -29,10 +29,8 @@ export default function PainelFreela() {
   })
   const [chamadaAtiva, setChamadaAtiva] = useState(null)
 
-  // ✅ Ativa presença online
   useRealtimePresence(usuario)
 
-  // 🔔 Alertas de notificações
   useEffect(() => {
     if (!usuario?.uid) return
 
@@ -78,7 +76,6 @@ export default function PainelFreela() {
     }
   }, [usuario?.uid])
 
-  // 📡 Chamada ativa (para checkin, etc.)
   useEffect(() => {
     if (!usuario?.uid) return
     const q = query(
@@ -118,7 +115,7 @@ export default function PainelFreela() {
           </div>
         )
       case 'agenda':
-        return <AgendaCompleta freelaId={usuario.uid} />
+        return <AgendaCompleta freela={usuario} />
       case 'chamadas':
         return <ChamadasFreela />
       case 'avaliacoes':
