@@ -1,4 +1,4 @@
-// src/pages/freela/ChamadasFreela.jsx
+// ✅ ChamadasFreela.jsx com ciclo de botões corrigido e Avaliação funcionando
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -12,8 +12,8 @@ import {
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
+import AvaliacaoInline from '@/components/AvaliacaoInline'
 import RespostasRapidasFreela from '@/components/RespostasRapidasFreela'
-import AvaliacaoContratante from '@/components/AvaliacaoContratante'
 
 export default function ChamadasFreela() {
   const { usuario } = useAuth()
@@ -148,7 +148,7 @@ export default function ChamadasFreela() {
               </button>
             )}
 
-            {ch.status === 'confirmada' && (
+            {['aceita', 'confirmada'].includes(ch.status) && (
               <button
                 onClick={() => fazerCheckIn(ch)}
                 className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
@@ -157,7 +157,7 @@ export default function ChamadasFreela() {
               </button>
             )}
 
-            {ch.status === 'em_andamento' && (
+            {['checkin_freela', 'em_andamento'].includes(ch.status) && (
               <button
                 onClick={() => fazerCheckOut(ch)}
                 className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition"
@@ -166,13 +166,13 @@ export default function ChamadasFreela() {
               </button>
             )}
 
-            {ch.status === 'concluido' && (
-              <AvaliacaoContratante chamada={ch} />
+            {['concluido', 'finalizada'].includes(ch.status) && (
+              <AvaliacaoInline chamada={ch} tipo="contratante" />
             )}
 
             <RespostasRapidasFreela chamadaId={ch.id} />
 
-            {(ch.status === 'concluido' || ch.status === 'finalizada') && (
+            {['concluido', 'finalizada'].includes(ch.status) && (
               <span className="text-green-600 font-bold block text-center">
                 ✅ Finalizada
               </span>
