@@ -11,18 +11,22 @@ export default function PainelSuporte() {
   const [resposta, setResposta] = useState({})
   const [emailsUnicos, setEmailsUnicos] = useState([])
 
-  const senhaCorreta = 'suporte2025' // 🔐 MUDE AQUI SUA SENHA
+  const senhaCorreta = 'suporte2025' // 🔐 Altere aqui a senha de acesso ao painel
 
   useEffect(() => {
-    if (!autenticado) return
+    if (!autenticado) return // só conecta após autenticação
 
     const q = query(collection(db, 'suporte_mensagens'), orderBy('criadoEm'))
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const msgs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
       setMensagens(msgs)
 
       const emails = Array.from(new Set(msgs.map(m => m.email)))
       setEmailsUnicos(emails)
+    }, (error) => {
+      toast.error('Erro ao carregar mensagens')
+      console.error(error)
     })
 
     return () => unsubscribe()
@@ -44,7 +48,7 @@ export default function PainelSuporte() {
       setResposta((prev) => ({ ...prev, [email]: '' }))
     } catch (error) {
       console.error(error)
-      toast.error('Erro ao enviar')
+      toast.error('Erro ao enviar resposta')
     }
   }
 
@@ -80,34 +84,44 @@ export default function PainelSuporte() {
     <div className="p-4 max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">📊 Painel de Suporte</h1>
 
-      {emailsUnicos.map((email) => (
-        <div key={email} className="mb-6 border rounded p-4 bg-gray-50 shadow">
-          <h2 className="font-semibold mb-2">{email}</h2>
+      {emailsUnicos.length === 0 ? (
+        <p className="text-gray-500">Nenhuma mensagem ainda.</p>
+      ) : (
+        emailsUnicos.map((email) => (
+          <div key={email} className="mb-6 border rounded p-4 bg-gray-50 shadow">
+            <h2 className="font-semibold mb-2">{email}</h2>
 
-          {mensagens
-            .filter((m) => m.email === email)
-            .map((m) => (
-              <div key={m.id} className={`mb-1 p-2 rounded text-sm ${m.tipo === 'admin' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100'}`}>
-                <strong>{m.tipo === 'admin' ? '💼 Suporte:' : `👤 ${m.nome || 'Usuário'}:`}</strong> {m.mensagem}
-              </div>
-            ))}
+            {mensagens
+              .filter((m) => m.email === email)
+              .map((m) => (
+                <div
+                  key={m.id}
+                  className={`mb-1 p-2 rounded text-sm ${m.tipo === 'admin'
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-gray-100'
+                  }`}
+                >
+                  <strong>{m.tipo === 'admin' ? '💼 Suporte:' : `👤 ${m.nome || 'Usuário'}:`}</strong> {m.mensagem}
+                </div>
+              ))}
 
-          <textarea
-            className="w-full mt-3 mb-2 p-2 border rounded"
-            rows={3}
-            placeholder="Responder..."
-            value={resposta[email] || ''}
-            onChange={(e) => setResposta({ ...resposta, [email]: e.target.value })}
-          />
+            <textarea
+              className="w-full mt-3 mb-2 p-2 border rounded"
+              rows={3}
+              placeholder="Responder..."
+              value={resposta[email] || ''}
+              onChange={(e) => setResposta({ ...resposta, [email]: e.target.value })}
+            />
 
-          <button
-            onClick={() => handleResponder(email)}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Enviar resposta
-          </button>
-        </div>
-      ))}
+            <button
+              onClick={() => handleResponder(email)}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Enviar resposta
+            </button>
+          </div>
+        ))
+      )}
     </div>
   )
 }
