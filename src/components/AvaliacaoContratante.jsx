@@ -1,7 +1,5 @@
-
-// src/components/AvaliacaoContratante.jsx
 import React, { useState } from 'react'
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { addDoc, collection, serverTimestamp, doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
@@ -18,12 +16,17 @@ export default function AvaliacaoContratante({ chamada }) {
     try {
       await addDoc(collection(db, 'avaliacoesContratantes'), {
         chamadaId: chamada.id,
-        freelaUid: chamada.freelaUid,              // freela que está sendo avaliado
-        contratanteUid: usuario.uid,               // quem está avaliando = contratante logado
+        freelaUid: chamada.freelaUid,
+        contratanteUid: usuario.uid,
         nota,
         comentario,
         criadoEm: serverTimestamp()
       })
+
+      await updateDoc(doc(db, 'chamadas', chamada.id), {
+        avaliadoPeloContratante: true
+      })
+
       setEnviado(true)
       toast.success('Avaliação enviada!')
     } catch (e) {
@@ -39,9 +42,7 @@ export default function AvaliacaoContratante({ chamada }) {
       <p className="font-semibold">Deixe sua avaliação:</p>
       <div className="flex gap-2 mb-2">
         {[1, 2, 3, 4, 5].map((n) => (
-          <button key={n} onClick={() => setNota(n)} className={nota === n ? 'text-yellow-500' : 'text-gray-400'}>
-            {n} ⭐
-          </button>
+          <button key={n} onClick={() => setNota(n)} className={\`text-2xl \${nota >= n ? 'text-yellow-400' : 'text-gray-300'}\`}> {n} ⭐</button>
         ))}
       </div>
       <textarea

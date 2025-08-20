@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { addDoc, collection, serverTimestamp, doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
@@ -16,12 +16,17 @@ export default function AvaliacaoFreela({ chamada }) {
     try {
       await addDoc(collection(db, 'avaliacoesFreelas'), {
         chamadaId: chamada.id,
-        freelaUid: usuario.uid,                  // freela logado que está avaliando
-        contratanteUid: chamada.contratanteUid,  // contratante que está sendo avaliado
+        freelaUid: usuario.uid,
+        contratanteUid: chamada.contratanteUid,
         nota,
         comentario,
         criadoEm: serverTimestamp()
       })
+
+      await updateDoc(doc(db, 'chamadas', chamada.id), {
+        avaliadoPorFreela: true
+      })
+
       setEnviado(true)
       toast.success('Avaliação enviada!')
     } catch (e) {
@@ -35,11 +40,9 @@ export default function AvaliacaoFreela({ chamada }) {
   return (
     <div className="mt-2 border rounded p-2">
       <p className="font-semibold">Deixe sua avaliação:</p>
-      <div className="flex space-x-2 my-2">
+      <div className="flex gap-2 mb-2">
         {[1, 2, 3, 4, 5].map((n) => (
-          <button key={n} onClick={() => setNota(n)} className={nota === n ? 'text-yellow-500' : 'text-gray-400'}>
-            {n} ⭐
-          </button>
+          <button key={n} onClick={() => setNota(n)} className={\`text-2xl \${nota >= n ? 'text-yellow-400' : 'text-gray-300'}\`}> {n} ⭐</button>
         ))}
       </div>
       <textarea
