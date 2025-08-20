@@ -17,7 +17,7 @@ export default function AvaliacaoFreela({ chamada }) {
       await addDoc(collection(db, 'avaliacoesContratantes'), {
         chamadaId: chamada.id,
         freelaUid: usuario.uid,
-        contratanteUid: chamada.estabelecimentoUid || chamada.contratanteUid || '',
+        contratanteUid: chamada.contratanteUid,
         nota,
         comentario,
         criadoEm: serverTimestamp()
