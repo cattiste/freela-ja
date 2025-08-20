@@ -84,6 +84,7 @@ export default function PublicarVaga({ contratante, vaga = null, onSucesso }) {
         funcao: form.funcao,
         tipo: form.tipo,
         valorDiaria: form.valorDiaria ? Number(form.valorDiaria) : null,
+        valorSalario: form.valorSalario ? Number(form.valorSalario) : null,
         datas: datasParaFirestore,
         urgente: form.urgente,
         status: 'aberta',              // para ser listada no painel do freela
