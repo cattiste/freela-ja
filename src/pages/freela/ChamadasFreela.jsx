@@ -1,4 +1,4 @@
-// ✅ ChamadasFreela.jsx com Avaliação e Respostas Rápidas
+
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -25,22 +25,15 @@ export default function ChamadasFreela() {
 
     const q = query(
       collection(db, 'chamadas'),
-      where('freelaUid', '==', usuario.uid),
-      where('status', 'in', [
-        'pendente',
-        'aceita',
-        'confirmada',
-        'checkin_freela',
-        'em_andamento',
-        'checkout_freela',
-        'concluido',
-        'finalizada',
-      ])
+      where('freelaUid', '==', usuario.uid)
     )
 
     const unsub = onSnapshot(q, (snap) => {
       const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-      setChamadas(docs)
+      const filtradas = docs.filter((ch) =>
+        !((ch.status === 'concluido' || ch.status === 'finalizada') && ch.avaliadoPorFreela)
+      )
+      setChamadas(filtradas)
     })
 
     return () => unsub()
@@ -166,7 +159,7 @@ export default function ChamadasFreela() {
               </button>
             )}
 
-            {ch.status === 'concluido' && (
+            {ch.status === 'concluido' && !ch.avaliadoPorFreela && (
               <AvaliacaoFreela chamada={ch} />
             )}
 

@@ -1,8 +1,6 @@
+
 import React, { useEffect, useMemo, useState } from 'react'
-import {
-  collection, query, where, onSnapshot,
-  updateDoc, doc, serverTimestamp
-} from 'firebase/firestore'
+import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
@@ -33,7 +31,10 @@ export default function ChamadasContratante({ contratante }) {
     )
     const unsub = onSnapshot(q, (snap) => {
       const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-      setChamadas(docs)
+      const filtradas = docs.filter((ch) =>
+        !((ch.status === 'concluido' || ch.status === 'finalizada') && ch.avaliadoPeloContratante)
+      )
+      setChamadas(filtradas)
       setLoading(false)
     }, (err) => {
       console.error('[ChamadasContratante] onSnapshot erro:', err)
@@ -127,7 +128,7 @@ export default function ChamadasContratante({ contratante }) {
               {pos && (
                 <>
                   <p className="text-sm text-gray-700">
-                    📍 Coordenadas: {pos.latitude.toFixed(6)}, {pos.longitude.toFixed(6)} {' '}
+                    📍 Coordenadas: {pos.latitude.toFixed(6)}, {pos.longitude.toFixed(6)}{' '}
                     <a
                       href={`https://www.google.com/maps?q=${pos.latitude},${pos.longitude}`}
                       target="_blank" rel="noopener noreferrer"
@@ -143,7 +144,7 @@ export default function ChamadasContratante({ contratante }) {
 
               <MensagensRecebidasContratante chamadaId={ch.id} />
 
-              {ch.status === 'concluido' && (                
+              {ch.status === 'concluido' && !ch.avaliadoPeloContratante && (
                 <AvaliacaoContratante chamada={ch} />
               )}
 
