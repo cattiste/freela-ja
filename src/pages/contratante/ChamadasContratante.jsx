@@ -1,15 +1,14 @@
-// ✅ ChamadasContratante.jsx com Avaliação e Mensagens Recebidas
+import React, { useEffect, useMemo, useState } from 'react'
+import {
+  collection, query, where, onSnapshot,
+  updateDoc, doc, serverTimestamp
+} from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
-
-// Leaflet
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-
-// Componentes
 import AvaliacaoContratante from '@/components/AvaliacaoContratante'
-import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import MensagensRecebidasContratante from '@/components/MensagensRecebidasContratante'
 
 const STATUS_LISTA = [
