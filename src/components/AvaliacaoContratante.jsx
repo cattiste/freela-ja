@@ -1,3 +1,5 @@
+
+// src/components/AvaliacaoContratante.jsx
 import React, { useState } from 'react'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -15,12 +17,12 @@ export default function AvaliacaoContratante({ chamada }) {
 
     try {
       await addDoc(collection(db, 'avaliacoesContratantes'), {
-        contratanteUid: usuario.uid,
-        freelaUid: chamada.freelaUid,
         chamadaId: chamada.id,
+        freelaUid: usuario.uid,
+        contratanteUid: chamada.contratanteUid,
         nota,
         comentario,
-        criadoEm: serverTimestamp(),
+        criadoEm: serverTimestamp()
       })
       setEnviado(true)
       toast.success('Avaliação enviada!')
@@ -35,11 +37,9 @@ export default function AvaliacaoContratante({ chamada }) {
   return (
     <div className="mt-2 border rounded p-2">
       <p className="font-semibold">Deixe sua avaliação:</p>
-      <div className="flex space-x-2 my-2">
+      <div className="flex gap-2 mb-2">
         {[1, 2, 3, 4, 5].map((n) => (
-          <button key={n} onClick={() => setNota(n)} className={nota === n ? 'text-yellow-500' : 'text-gray-400'}>
-            {n} ⭐
-          </button>
+          <button key={n} onClick={() => setNota(n)} className={`text-2xl ${nota >= n ? 'text-yellow-400' : 'text-gray-300'}`}>⭐</button>
         ))}
       </div>
       <textarea
