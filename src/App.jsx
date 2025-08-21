@@ -113,6 +113,7 @@ export default function App() {
         <Route path="/publicarvaga" element={<PublicarVaga />} />
         <Route path="/pagamentochamada/:id" element={<PagamentoChamada />} />
         <Route path="/contratante/chamadascontratante" element={<Navigate to="/contratante/ativas" />} />
+        <Route path="/acesso-negado" element={<AcessoNegado />} />
 
         {/* 404 opcional */}
         {/* <Route path="*" element={<NotFound />} /> */}
@@ -120,10 +121,6 @@ export default function App() {
       <BotFlutuanteFAQ />
        
     </BrowserRouter>
-
-    <Routes>
-      {/* outras rotas */}
-      <Route path="/acesso-negado" element={<AcessoNegado />} />
-    </Routes>
+    
   )
 }
