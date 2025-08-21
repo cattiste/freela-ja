@@ -3,6 +3,8 @@ import { collection, getDocs, query, orderBy } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import { doc, updateDoc } from 'firebase/firestore'
+import ValidacoesPendentesAdmin from '@/pages/admin/ValidacoesPendentesAdmin'
+
 
 export default function DashboardAdmin() {
   const { usuario } = useAuth()
