@@ -64,6 +64,7 @@ export default function App() {
         <Route path="/termos" element={<Termos />} />
         <Route path="/suporte" element={<Suporte />} />
        <Route path="/painel-suporte" element={<PainelSuporte />} />
+       <Route path="/admin/validacoes" element={<ValidacoesPendentesAdmin />} />
 
         {/* 👤 Freela */}
         <Route path="/cadastrofreela" element={<CadastroFreela />} />

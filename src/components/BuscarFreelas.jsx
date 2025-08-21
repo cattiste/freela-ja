@@ -1,5 +1,3 @@
-
-// src/components/BuscarFreelas.jsx
 import React, { useEffect, useMemo, useState } from 'react'
 import {
   collection, query, where, addDoc, serverTimestamp,
@@ -37,9 +35,7 @@ function estaOnline(rec) {
   if (!rec) return false
   const flag = rec.online === true || rec.state === 'online'
   const ts =
-    toMillis(rec.lastSeen) ??
-    toMillis(rec.ts) ??
-    toMillis(rec.last_changed)
+    toMillis(rec.lastSeen) ?? toMillis(rec.ts) ?? toMillis(rec.last_changed)
   return flag && now - ts <= TTL_MS
 }
 
@@ -49,9 +45,9 @@ function Estrelas({ media }) {
   const vazias = 5 - cheias - (meia ? 1 : 0)
   return (
     <div className="flex justify-center mt-1 text-yellow-400">
-      {[...Array(cheias)].map((_, i) => <FaStar key={'c'+i} />)}
+      {[...Array(cheias)].map((_, i) => <FaStar key={'c' + i} />)}
       {meia && <FaStar className="opacity-50" />}
-      {[...Array(vazias)].map((_, i) => <FaRegStar key={'v'+i} />)}
+      {[...Array(vazias)].map((_, i) => <FaRegStar key={'v' + i} />)}
     </div>
   )
 }
@@ -156,47 +152,53 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         return { ...f, distancia, online }
       })
       .filter((f) => !filtro || f.funcao?.toLowerCase().includes(filtro.toLowerCase()))
-      .sort((a, b) => (b.online ? 1 : 0) - (a.online ? 1 : 0))
+      .sort((a, b) => {
+        if (a.online && !b.online) return -1
+        if (!a.online && b.online) return 1
+        if (a.distancia != null && b.distancia != null) {
+          return a.distancia - b.distancia
+        }
+        return 0
+      })
   }, [freelas, filtro, usuario, usuariosOnline])
 
-const chamar = async (freela) => {
-  const uid = freela.uid || freela.id
-  setChamando(uid)
+  const chamar = async (freela) => {
+    const uid = freela.uid || freela.id
+    setChamando(uid)
 
-  try {
-    // Verifica se já existe chamada ativa
-    const snap = await getDocs(query(
-      collection(db, 'chamadas'),
-      where('freelaUid', '==', uid),
-      where('contratanteUid', '==', usuario.uid),
-      where('status', 'in', ['pendente', 'aceita', 'confirmada', 'em_andamento'])
-    ))
+    try {
+      const snap = await getDocs(query(
+        collection(db, 'chamadas'),
+        where('freelaUid', '==', uid),
+        where('contratanteUid', '==', usuario.uid),
+        where('status', 'in', ['pendente', 'aceita', 'confirmada', 'em_andamento'])
+      ))
 
-    if (!snap.empty) {
-      alert('⚠️ Você já chamou esse freela e a chamada está ativa.')
-      return
+      if (!snap.empty) {
+        alert('⚠️ Você já chamou esse freela e a chamada está ativa.')
+        return
+      }
+
+      await addDoc(collection(db, 'chamadas'), {
+        freelaUid: uid,
+        freelaNome: freela.nome,
+        valorDiaria: freela.valorDiaria || null,
+        contratanteUid: usuario.uid,
+        contratanteNome: usuario.nome || '',
+        tipoContratante: usuario.tipo || usuario.tipoUsuario || '',
+        observacao: observacao[uid] || '',
+        status: 'pendente',
+        criadoEm: serverTimestamp()
+      })
+
+      alert(`✅ ${freela.nome} foi chamado com sucesso!`)
+    } catch (err) {
+      console.error('Erro ao chamar freela:', err)
+      alert('Erro ao chamar freelancer.')
+    } finally {
+      setChamando(null)
     }
-
-    await addDoc(collection(db, 'chamadas'), {
-      freelaUid: uid,
-      freelaNome: freela.nome,
-      valorDiaria: freela.valorDiaria || null,
-      contratanteUid: usuario.uid,
-      contratanteNome: usuario.nome || '',
-      tipoContratante: usuario.tipo || usuario.tipoUsuario || '',
-      observacao: observacao[uid] || '',
-      status: 'pendente',
-      criadoEm: serverTimestamp()
-    })
-
-    alert(`✅ ${freela.nome} foi chamado com sucesso!`)
-  } catch (err) {
-    console.error('Erro ao chamar freela:', err)
-    alert('Erro ao chamar freelancer.')
-  } finally {
-    setChamando(null)
   }
-}
 
   return (
     <div className="min-h-screen bg-cover bg-center p-4 pb-20"

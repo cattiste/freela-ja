@@ -1,31 +1,36 @@
-// src/pages/admin/DashboardAdmin.jsx
 import React, { useEffect, useState } from 'react'
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore'
+import { collection, getDocs, query, orderBy } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
+import { doc, updateDoc } from 'firebase/firestore'
 
 export default function DashboardAdmin() {
   const { usuario } = useAuth()
 
   const [usuarios, setUsuarios] = useState([])
   const [chamadas, setChamadas] = useState([])
+  const [pendentes, setPendentes] = useState([])
 
   useEffect(() => {
     if (!usuario || usuario.tipo !== 'admin') return
 
-    // 🔹 Carregar todos os usuários
     const fetchUsuarios = async () => {
       try {
         const q = query(collection(db, 'usuarios'))
         const snapshot = await getDocs(q)
         const lista = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
         setUsuarios(lista)
+
+        // Extra: filtra os com validação pendente
+        const listaPendentes = snapshot.docs
+          .filter(doc => doc.data().validacao === 'pendente')
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+        setPendentes(listaPendentes)
       } catch (error) {
         console.error('Erro ao buscar usuários:', error)
       }
     }
 
-    // 🔹 Carregar todas as chamadas
     const fetchChamadas = async () => {
       try {
         const q = query(collection(db, 'chamadas'))
@@ -41,7 +46,15 @@ export default function DashboardAdmin() {
     fetchChamadas()
   }, [usuario])
 
-  // 🔢 Totais
+  const atualizarStatus = async (id, novoStatus) => {
+    try {
+      await updateDoc(doc(db, 'usuarios', id), { validacao: novoStatus })
+      setPendentes((prev) => prev.filter((u) => u.id !== id))
+    } catch (err) {
+      console.error('Erro ao atualizar status de validação:', err)
+    }
+  }
+
   const totalChamadas = chamadas.length
   const chamadasAtivas = chamadas.filter((c) =>
     ['aceita', 'em_andamento', 'checkin_freela'].includes(c.status)
@@ -137,8 +150,17 @@ export default function DashboardAdmin() {
       </div>
 
       {/* CHAMADAS POR STATUS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {['pendente', 'aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'concluido', 'rejeitada', 'cancelada_por_falta_de_pagamento'].map((status) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+        {[
+          'pendente',
+          'aceita',
+          'checkin_freela',
+          'em_andamento',
+          'checkout_freela',
+          'concluido',
+          'rejeitada',
+          'cancelada_por_falta_de_pagamento',
+        ].map((status) => (
           <div key={status} className="border p-4 rounded-xl">
             <h2 className="font-semibold">📁 Chamadas: {status.replace(/_/g, ' ').toUpperCase()}</h2>
             <ul className="list-disc ml-4">
@@ -149,6 +171,40 @@ export default function DashboardAdmin() {
           </div>
         ))}
       </div>
+
+      {/* VALIDAÇÕES PENDENTES */}
+      {pendentes.length > 0 && (
+        <div className="mt-10 border p-4 rounded-xl bg-white shadow">
+          <h2 className="text-lg font-bold text-red-600 mb-4">🛡️ Validações Pendentes</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {pendentes.map((usuario) => (
+              <div key={usuario.id} className="border rounded-lg p-4 shadow-sm">
+                <p className="font-semibold mb-2">
+                  {usuario.nome || 'Sem nome'} ({usuario.email})
+                </p>
+                <div className="flex gap-4 mb-4">
+                  <img src={usuario.documentoFrente} alt="Frente" className="w-40 rounded border" />
+                  <img src={usuario.documentoVerso} alt="Verso" className="w-40 rounded border" />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded"
+                    onClick={() => atualizarStatus(usuario.id, 'aprovada')}
+                  >
+                    ✅ Aprovar
+                  </button>
+                  <button
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded"
+                    onClick={() => atualizarStatus(usuario.id, 'reprovada')}
+                  >
+                    ❌ Reprovar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

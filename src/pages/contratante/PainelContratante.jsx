@@ -19,6 +19,8 @@ import HistoricoChamadasContratante from '@/components/HistoricoChamadasContrata
 import ChamadasContratante from '@/pages/contratante/ChamadasContratante'
 import Calendar from 'react-calendar'
 import { useRealtimePresence } from '@/hooks/useRealtimePresence'
+import ValidacaoDocumento from '@/components/ValidacaoDocumento'
+
 
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
@@ -194,7 +196,12 @@ export default function PainelContratante() {
   function renderConteudo() {
     switch (abaSelecionada) {
       case 'perfil':
-        return renderPerfil()
+        return (
+          <>
+            {renderPerfil()}
+            <ValidacaoDocumento />
+          </>
+        )
       case 'buscar':
         return <BuscarFreelas usuario={contratante} usuariosOnline={usuariosOnline} />
       case 'agendas':

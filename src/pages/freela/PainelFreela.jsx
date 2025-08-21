@@ -15,6 +15,8 @@ import ConfiguracoesFreela from '@/pages/freela/ConfiguracoesFreela'
 import HistoricoFreela from '@/pages/freela/HistoricoTrabalhosFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
+import ValidacaoDocumento from '@/components/ValidacaoDocumento'
+
 
 import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 
@@ -125,7 +127,12 @@ export default function PainelFreela() {
       case 'vagas':
         return <Vagas freelaId={usuario.uid} />
       case 'config':
-        return <ConfiguracoesFreela />
+        return (
+          <>
+            <ConfiguracoesFreela />
+            <ValidacaoDocumento />
+          </>
+        )
       case 'historico':
         return <HistoricoFreela freelaId={usuario.uid} />
       case 'recebimentos':
