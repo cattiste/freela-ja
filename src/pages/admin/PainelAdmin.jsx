@@ -1,6 +1,6 @@
 // src/pages/admin/PainelAdmin.jsx
 import React from 'react'
-import DashboardAdmin from '@/components/DashboardAdmin'
+import DashboardAdmin from './admin/DashboardAdmin'
 
 export default function PainelAdmin() {
   return (
