@@ -24,6 +24,8 @@ import RequireRole from '@/components/RequireRole'
 import Suporte from '@/pages/gerais/Suporte'
 import PainelSuporte from '@/pages/suporte/PainelSuporte'
 import BotFlutuanteFAQ from '@/components/BotFlutuanteFAQ'
+import ValidacoesPendentesAdmin from '@/pages/admin/ValidacoesPendentesAdmin'
+
 
 // 👤 Freela
 import CadastroFreela from '@/pages/freela/CadastroFreela'
