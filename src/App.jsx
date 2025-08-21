@@ -25,7 +25,7 @@ import Suporte from '@/pages/gerais/Suporte'
 import PainelSuporte from '@/pages/suporte/PainelSuporte'
 import BotFlutuanteFAQ from '@/components/BotFlutuanteFAQ'
 import ValidacoesPendentesAdmin from '@/pages/admin/ValidacoesPendentesAdmin'
-import VerificacaoEmail from '@/pages/gerais/VerificacaoEmail'
+import VerificarEmail from '@/pages/gerais/VerificarEmail'
 
 
 
