@@ -9,7 +9,7 @@ export default function RequireAdmin({ children }) {
   if (carregando) return <p>Carregando...</p>
 
   if (!usuario || usuario.tipo !== 'admin') {
-    return <Navigate to="/" replace />
+    return <Navigate to="/acesso-negado" replace />
   }
 
   return children

@@ -29,7 +29,7 @@ import VerificarEmail from '@/pages/gerais/VerificarEmail'
 import LoginAdmin from '@/pages/admin/LoginAdmin'
 import PainelAdmin from '@/pages/admin/PainelAdmin'
 import RequireAdmin from '@/components/RequireAdmin'
-
+import AcessoNegado from '@/pages/gerais/AcessoNegado'
 
 // 👤 Freela
 import CadastroFreela from '@/pages/freela/CadastroFreela'
@@ -120,5 +120,10 @@ export default function App() {
       <BotFlutuanteFAQ />
        
     </BrowserRouter>
+
+    <Routes>
+      {/* outras rotas */}
+      <Route path="/acesso-negado" element={<AcessoNegado />} />
+    </Routes>
   )
 }
