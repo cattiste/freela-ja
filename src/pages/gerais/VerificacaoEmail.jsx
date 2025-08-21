@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import emailjs from 'emailjs-com' // ✅ certo
+import emailjs from 'emailjs-com' 
 
 import { toast } from 'react-hot-toast'
 import { doc, updateDoc } from 'firebase/firestore'
