@@ -28,6 +28,7 @@ import ValidacoesPendentesAdmin from '@/pages/admin/ValidacoesPendentesAdmin'
 import VerificarEmail from '@/pages/gerais/VerificarEmail'
 import LoginAdmin from '@/pages/admin/LoginAdmin'
 import PainelAdmin from '@/pages/admin/PainelAdmin'
+import RequireAdmin from '@/auth/RequireAdmin'
 
 
 // 👤 Freela
