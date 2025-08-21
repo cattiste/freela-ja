@@ -140,6 +140,7 @@ export default function CadastroContratante() {
       celular: form.celular,
       endereco: form.endereco,
       especialidade: form.especialidade,
+      email: form.email,
       foto: form.foto,
       tipo: 'contratante',
       tipoConta,
@@ -231,6 +232,14 @@ export default function CadastroContratante() {
           onChange={handleChange} 
           placeholder="Especialidade" 
           className="w-full border px-3 py-2 rounded" 
+        />        
+        <input
+          type="email"
+          placeholder="E-mail"
+          className="input"
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          required
         />
 
         <div>
