@@ -150,10 +150,15 @@ export default function CadastroContratante() {
       atualizadoEm: serverTimestamp()
     };
 
-    await setDoc(doc(db, 'usuarios', uid), payload, { merge: true });
-    alert('✅ Cadastro salvo com sucesso!');
-    navigate('/painelcontratante');
-  };
+    await setDoc(ref, payload, { merge: true });
+      alert('✅ Cadastro salvo com sucesso!');
+      navigate('/verificar-email', {
+        state: {
+          nome: form.nome,
+          email: form.email
+      }
+    });
+
 
   if (carregando) return <div className="p-6 text-orange-600">Carregando...</div>;
 

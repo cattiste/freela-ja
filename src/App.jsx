@@ -25,6 +25,8 @@ import Suporte from '@/pages/gerais/Suporte'
 import PainelSuporte from '@/pages/suporte/PainelSuporte'
 import BotFlutuanteFAQ from '@/components/BotFlutuanteFAQ'
 import ValidacoesPendentesAdmin from '@/pages/admin/ValidacoesPendentesAdmin'
+import VerificacaoEmail from '@/pages/gerais/VerificacaoEmail'
+
 
 
 // 👤 Freela
@@ -67,6 +69,8 @@ export default function App() {
         <Route path="/suporte" element={<Suporte />} />
        <Route path="/painel-suporte" element={<PainelSuporte />} />
        <Route path="/admin/validacoes" element={<ValidacoesPendentesAdmin />} />
+       <Route path="/verificar-email" element={<VerificacaoEmail />} />
+
 
         {/* 👤 Freela */}
         <Route path="/cadastrofreela" element={<CadastroFreela />} />

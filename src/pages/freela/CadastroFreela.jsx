@@ -253,14 +253,12 @@ export default function CadastroFreela() {
 
       await setDoc(ref, payload, { merge: true });
       alert('✅ Cadastro salvo com sucesso!');
-      navigate('/painelfreela');
-    } catch (e2) {
-      console.error('Erro ao salvar cadastro:', e2);
-      alert('Erro ao salvar cadastro.');
-    } finally {
-      setSalvando(false);
-    }
-  };
+      navigate('/verificar-email', {
+        state: {
+          nome: form.nome,
+          email: form.email
+      }
+    });
 
   if (carregando) return <div className="p-6 text-center text-orange-600">Carregando...</div>;
 
