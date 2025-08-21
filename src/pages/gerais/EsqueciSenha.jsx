@@ -1,89 +1,75 @@
-import React, { useRef, useState } from 'react'
+import React, { useState } from 'react'
 import { sendPasswordResetEmail } from 'firebase/auth'
 import { auth } from '@/firebase'
 import { Link } from 'react-router-dom'
 
 export default function EsqueciSenha() {
   const [email, setEmail] = useState('')
-  const [enviando, setEnviando] = useState(false)
-  const [msg, setMsg] = useState('')
+  const [mensagem, setMensagem] = useState('')
   const [erro, setErro] = useState('')
-  const inputRef = useRef(null)
+  const [enviado, setEnviado] = useState(false)
+  const [carregando, setCarregando] = useState(false)
 
-  const submit = async (e) => {
+  const handleEnviar = async (e) => {
     e.preventDefault()
-    if (enviando) return
-    setMsg('')
     setErro('')
-
-    const emailNorm = email.trim().toLowerCase()
-    if (!emailNorm) {
-      setErro('Informe seu e-mail.')
-      inputRef.current?.focus()
-      return
-    }
+    setMensagem('')
+    setCarregando(true)
 
     try {
-      setEnviando(true)
-      await sendPasswordResetEmail(auth, emailNorm, {
-        // Se tiver domínio/rota próprios, habilite:
-        // url: 'https://seu-dominio.com/login',
-        // handleCodeInApp: false,
-      })
-      setMsg('Enviamos um link de redefinição para seu e-mail. Confira a caixa de entrada e o spam.')
+      await sendPasswordResetEmail(auth, email.trim().toLowerCase())
+      setEnviado(true)
+      setMensagem('E-mail enviado com sucesso! Verifique sua caixa de entrada.')
     } catch (err) {
-      const code = err?.code || ''
-      if (code === 'auth/invalid-email') setErro('E-mail inválido.')
-      else if (code === 'auth/user-not-found') {
-        // Segurança: mantém mensagem neutra (evita revelar se há conta)
-        setMsg('Se existir uma conta para este e-mail, você receberá um link de redefinição.')
+      console.error(err)
+      if (err.code === 'auth/user-not-found') {
+        setErro('Usuário não encontrado com esse e-mail.')
+      } else if (err.code === 'auth/invalid-email') {
+        setErro('E-mail inválido.')
       } else {
-        setErro('Não foi possível enviar o e-mail agora. Tente novamente.')
+        setErro('Erro ao enviar e-mail. Tente novamente.')
       }
     } finally {
-      setEnviando(false)
+      setCarregando(false)
     }
   }
 
   return (
-    <div className="min-h-screen p-6 bg-orange-50 flex justify-center items-center">
-      <form
-        onSubmit={submit}
-        className="bg-white w-full max-w-md rounded-2xl shadow p-6 space-y-4"
-      >
-        <h1 className="text-2xl font-bold text-orange-700 text-center">Recuperar senha</h1>
+    <div className="min-h-screen bg-cover bg-center bg-no-repeat relative" style={{ backgroundImage: "url('/img/fundo-login.jpg')" }}>
+      <div className="absolute inset-0 bg-black bg-opacity-50 z-0" />
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-6">
+        <h2 className="text-2xl font-bold text-white mb-6 drop-shadow">Recuperar Senha</h2>
 
-        <div>
-          <label className="block text-sm font-medium mb-1" htmlFor="email">E-mail</label>
+        <form onSubmit={handleEnviar} className="w-full max-w-md bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg space-y-4">
           <input
-            id="email"
-            ref={inputRef}
             type="email"
+            placeholder="Digite seu e-mail"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500"
-            placeholder="voce@exemplo.com"
             required
-            autoComplete="email"
-            inputMode="email"
+            className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
           />
-        </div>
 
-        <button
-          type="submit"
-          disabled={enviando}
-          className="w-full bg-orange-600 text-white py-2 rounded-xl hover:bg-orange-700 transition disabled:opacity-60"
-        >
-          {enviando ? 'Enviando...' : 'Enviar link de redefinição'}
-        </button>
+          <button
+            type="submit"
+            disabled={carregando}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition duration-300 disabled:opacity-60"
+          >
+            {carregando ? 'Enviando...' : 'Enviar link de recuperação'}
+          </button>
 
-        {erro && <p className="text-sm text-center text-red-600">{erro}</p>}
-        {msg && <p className="text-sm text-center text-gray-700">{msg}</p>}
+          {mensagem && <p className="text-green-600 text-center text-sm">{mensagem}</p>}
+          {erro && <p className="text-red-600 text-center text-sm">{erro}</p>}
+        </form>
 
-        <div className="text-center text-sm mt-2">
-          <Link to="/login" className="text-orange-600 hover:underline">Voltar ao login</Link>
-        </div>
-      </form>
+        {enviado && (
+          <p className="text-sm text-white mt-4">
+            <Link to="/login" className="underline text-blue-200">
+              Voltar para o login
+            </Link>
+          </p>
+        )}
+      </div>
     </div>
   )
 }
