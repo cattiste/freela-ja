@@ -26,7 +26,8 @@ import PainelSuporte from '@/pages/suporte/PainelSuporte'
 import BotFlutuanteFAQ from '@/components/BotFlutuanteFAQ'
 import ValidacoesPendentesAdmin from '@/pages/admin/ValidacoesPendentesAdmin'
 import VerificarEmail from '@/pages/gerais/VerificarEmail'
-
+import LoginAdmin from '@/pages/admin/LoginAdmin'
+import PainelAdmin from '@/pages/admin/PainelAdmin'
 
 
 // 👤 Freela
@@ -63,13 +64,22 @@ export default function App() {
         <Route path="/meuseventos" element={<EventosPendentes />} />
         <Route path="/freela/buscareventos" element={<BuscarEventos />} />
         <Route path="/pagamentopix" element={<PagamentoPix />} />
-        <Route path="/admin" element={<DashboardAdmin />} />
+        <Route
+          path="/admin"
+          element={
+            <RequireAdmin>
+              <DashboardAdmin />
+            </RequireAdmin>
+          }
+       />
         <Route path="/privacidade" element={<Privacidade />} />
         <Route path="/termos" element={<Termos />} />
         <Route path="/suporte" element={<Suporte />} />
        <Route path="/painel-suporte" element={<PainelSuporte />} />
        <Route path="/admin/validacoes" element={<ValidacoesPendentesAdmin />} />
        <Route path="/verificar-email" element={<VerificarEmail />} />
+       <Route path="/admin" element={<LoginAdmin />} />
+       <Route path="/painel-admin" element={<DashboardAdmin />} />
 
 
         {/* 👤 Freela */}
