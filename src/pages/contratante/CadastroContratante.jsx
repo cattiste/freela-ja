@@ -2,10 +2,11 @@
 import React, { useEffect, useState } from 'react';
 import { auth, db } from '@/firebase';
 import { uploadFoto } from '@/utils/uploadFoto';
-import { createUserWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+import { createUserWithEmailAndPassword, onAuthStateChanged, sendEmailVerification } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc, GeoPoint } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import ContratoPrestacaoServico from '@/components/ContratoPrestacaoServico';
+
 
 const VERSAO_CONTRATO = '1.0.0';
 
@@ -112,54 +113,62 @@ export default function CadastroContratante() {
   };
 
   const salvar = async (e) => {
-    e.preventDefault();
-    if (!contratoOk) return;
-    let uid = auth.currentUser?.uid;
-    const wantsNewAccount = forcarCriacao || (!!cred.email && !!cred.senha);
-    if (!uid && !wantsNewAccount) return alert('Preencha e-mail e senha.');
+  e.preventDefault()
+  if (!contratoOk) return
 
-    if (wantsNewAccount) {
-      if (!cred.email.trim()) return alert('E-mail obrigatório');
-      if (!cred.senha || cred.senha.length < 6) return alert('Senha muito curta');
-      const credUser = await createUserWithEmailAndPassword(auth, cred.email.trim(), cred.senha);
-      uid = credUser.user.uid;
-    }
+  let uid = auth.currentUser?.uid
+  const wantsNewAccount = forcarCriacao || (!!cred.email && !!cred.senha)
+  let user = auth.currentUser
 
-    if (!form.nome || !form.cpfOuCnpj || !form.endereco) {
-      return alert('Preencha os campos obrigatórios.');
-    }
+  // Criar nova conta
+  if (!uid && wantsNewAccount) {
+    if (!cred.email.trim()) return alert('E-mail obrigatório')
+    if (!cred.senha || cred.senha.length < 6) return alert('Senha muito curta')
 
-    const rawDoc = form.cpfOuCnpj.replace(/\D/g, '');
-    const tipoConta = rawDoc.length > 11 ? 'comercial' : 'pessoa_fisica';
+    const userCredential = await createUserWithEmailAndPassword(auth, cred.email, cred.senha)
+    user = userCredential.user
+    uid = user.uid
 
-    const payload = {
-      uid,
-      email: auth.currentUser?.email || cred.email || '',
+    await sendEmailVerification(user)
+    alert('✅ Verifique seu e-mail para ativar sua conta!')
+  }
+
+  if (!form.nome || !form.cpfOuCnpj || !form.endereco) {
+    return alert('Preencha os campos obrigatórios.')
+  }
+
+  const rawDoc = form.cpfOuCnpj.replace(/\D/g, '')
+  const tipoConta = rawDoc.length > 11 ? 'comercial' : 'pessoa_fisica'
+
+  const payload = {
+    uid,
+    email: user?.email || '',
+    nome: form.nome,
+    cpfOuCnpj: form.cpfOuCnpj,
+    celular: form.celular,
+    endereco: form.endereco,
+    especialidade: form.especialidade,
+    foto: form.foto,
+    tipo: 'contratante',
+    tipoConta,
+    aceitouContrato: true,
+    versaoContrato: VERSAO_CONTRATO,
+    localizacao,
+    criadoEm: serverTimestamp(),
+    atualizadoEm: serverTimestamp()
+  }
+
+  const ref = doc(db, 'usuarios', uid)
+  await setDoc(ref, payload, { merge: true })
+
+  alert('✅ Cadastro salvo com sucesso!')
+  navigate('/verificar-email', {
+    state: {
       nome: form.nome,
-      cpfOuCnpj: form.cpfOuCnpj,
-      celular: form.celular,
-      endereco: form.endereco,
-      especialidade: form.especialidade,
-      email: form.email,
-      foto: form.foto,
-      tipo: 'contratante',
-      tipoConta,
-      aceitouContrato: true,
-      versaoContrato: VERSAO_CONTRATO,
-      localizacao,
-      criadoEm: serverTimestamp(),
-      atualizadoEm: serverTimestamp()
-    };
-
-    await setDoc(ref, payload, { merge: true });
-      alert('✅ Cadastro salvo com sucesso!');
-      navigate('/verificar-email', {
-        state: {
-          nome: form.nome,
-          email: form.email
-      }
-    });
-  };
+      email: user?.email
+    }
+  })
+}
 
   if (carregando) return <div className="p-6 text-orange-600">Carregando...</div>;
 
