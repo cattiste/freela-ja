@@ -69,7 +69,7 @@ export default function App() {
         <Route path="/suporte" element={<Suporte />} />
        <Route path="/painel-suporte" element={<PainelSuporte />} />
        <Route path="/admin/validacoes" element={<ValidacoesPendentesAdmin />} />
-       <Route path="/verificar-email" element={<VerificacaoEmail />} />
+       <Route path="/verificar-email" element={<VerificarEmail />} />
 
 
         {/* 👤 Freela */}
