@@ -257,9 +257,16 @@ export default function CadastroFreela() {
         state: {
           nome: form.nome,
           email: form.email
-      }
-    });
-      
+        }
+      });
+    } catch (e) {
+      console.error('Erro ao salvar cadastro:', e);
+      alert('Erro ao salvar cadastro.');
+    } finally {
+      setSalvando(false);
+    }
+  };
+
 
   if (carregando) return <div className="p-6 text-center text-orange-600">Carregando...</div>;
 
