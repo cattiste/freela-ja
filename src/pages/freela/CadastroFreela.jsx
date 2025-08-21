@@ -259,6 +259,8 @@ export default function CadastroFreela() {
           email: form.email
       }
     });
+  };
+  
 
   if (carregando) return <div className="p-6 text-center text-orange-600">Carregando...</div>;
 

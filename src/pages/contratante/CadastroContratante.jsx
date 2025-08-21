@@ -158,7 +158,7 @@ export default function CadastroContratante() {
           email: form.email
       }
     });
-
+  };
 
   if (carregando) return <div className="p-6 text-orange-600">Carregando...</div>;
 
