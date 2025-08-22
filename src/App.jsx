@@ -1,4 +1,3 @@
-// src/App.jsx
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import '@/styles/leaflet.css'
@@ -21,14 +20,13 @@ import BuscarFreelas from '@/components/BuscarFreelas'
 import Privacidade from '@/pages/gerais/Privacidade'
 import Termos from '@/pages/gerais/Termos'
 import RequireRole from '@/components/RequireRole'
+import RequireAdmin from '@/components/RequireAdmin'
 import Suporte from '@/pages/gerais/Suporte'
 import PainelSuporte from '@/pages/suporte/PainelSuporte'
 import BotFlutuanteFAQ from '@/components/BotFlutuanteFAQ'
 import ValidacoesPendentesAdmin from '@/pages/admin/ValidacoesPendentesAdmin'
 import VerificarEmail from '@/pages/gerais/VerificarEmail'
 import LoginAdmin from '@/pages/admin/LoginAdmin'
-import PainelAdmin from '@/pages/admin/PainelAdmin'
-import RequireAdmin from '@/components/RequireAdmin'
 import AcessoNegado from '@/pages/gerais/AcessoNegado'
 
 // 👤 Freela
@@ -45,14 +43,13 @@ import EditarPerfilContratante from '@/pages/contratante/EditarPerfilContratante
 import PublicarVaga from '@/pages/contratante/PublicarVaga'
 import PagamentoChamada from '@/pages/contratante/PagamentoChamada'
 
-
-
 export default function App() {
   const { usuario } = useAuth()
 
   return (
     <BrowserRouter>
       <Routes>
+
         {/* 🌐 Gerais */}
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
@@ -65,23 +62,25 @@ export default function App() {
         <Route path="/meuseventos" element={<EventosPendentes />} />
         <Route path="/freela/buscareventos" element={<BuscarEventos />} />
         <Route path="/pagamentopix" element={<PagamentoPix />} />
-        <Route
-          path="/admin"
-          element={
-            <RequireAdmin>
-              <DashboardAdmin />
-            </RequireAdmin>
-          }
-       />
         <Route path="/privacidade" element={<Privacidade />} />
         <Route path="/termos" element={<Termos />} />
         <Route path="/suporte" element={<Suporte />} />
-       <Route path="/painel-suporte" element={<PainelSuporte />} />
-       <Route path="/admin/validacoes" element={<ValidacoesPendentesAdmin />} />
-       <Route path="/verificar-email" element={<VerificarEmail />} />
-       <Route path="/admin" element={<LoginAdmin />} />
-       <Route path="/painel-admin" element={<DashboardAdmin />} />
+        <Route path="/painel-suporte" element={<PainelSuporte />} />
+        <Route path="/verificar-email" element={<VerificarEmail />} />
+        <Route path="/acesso-negado" element={<AcessoNegado />} />
 
+        {/* 🛡️ Admin */}
+        <Route path="/admin" element={<LoginAdmin />} />
+        <Route path="/painel-admin" element={
+          <RequireAdmin>
+            <DashboardAdmin />
+          </RequireAdmin>
+        } />
+        <Route path="/admin/validacoes" element={
+          <RequireAdmin>
+            <ValidacoesPendentesAdmin />
+          </RequireAdmin>
+        } />
 
         {/* 👤 Freela */}
         <Route path="/cadastrofreela" element={<CadastroFreela />} />
@@ -113,14 +112,13 @@ export default function App() {
         <Route path="/publicarvaga" element={<PublicarVaga />} />
         <Route path="/pagamentochamada/:id" element={<PagamentoChamada />} />
         <Route path="/contratante/chamadascontratante" element={<Navigate to="/contratante/ativas" />} />
-        <Route path="/acesso-negado" element={<AcessoNegado />} />
 
         {/* 404 opcional */}
         {/* <Route path="*" element={<NotFound />} /> */}
+
       </Routes>
+
       <BotFlutuanteFAQ />
-       
     </BrowserRouter>
-    
   )
 }
