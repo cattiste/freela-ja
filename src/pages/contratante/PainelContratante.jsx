@@ -70,7 +70,7 @@ export default function PainelContratante() {
   const [agendaPerfil, setAgendaPerfil] = useState({})
 
   useEffect(() => {
-  if (usuario?.statusDocumentos === 'aprovado') {
+  if (usuario?.statusDocumentos === 'aprovada') {
     toast.success('✅ Documentos verificados com sucesso!')
   }
 }, [usuario?.statusDocumentos])
