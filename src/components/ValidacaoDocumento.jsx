@@ -1,32 +1,39 @@
 // src/components/ValidacaoDocumento.jsx
-import React, { useState } from 'react'
-import { db } from '@/firebase'
-import { doc, updateDoc } from 'firebase/firestore'
-import { useAuth } from '@/context/AuthContext'
-import axios from 'axios'
+import React, { useEffect, useState } from 'react'
+import { auth, db } from '@/firebase'
+import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { uploadImage } from '@/utils/uploadImage' // ajuste se necessário
+import toast from 'react-hot-toast'
 
 export default function ValidacaoDocumento() {
-  const { usuario } = useAuth()
+  const usuario = auth.currentUser
   const [frente, setFrente] = useState(null)
   const [verso, setVerso] = useState(null)
-  const [enviando, setEnviando] = useState(false)
+  const [carregando, setCarregando] = useState(false)
+  const [validado, setValidado] = useState(null)
 
-  const handleUpload = async (file) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('upload_preset', 'preset-publico')
+  useEffect(() => {
+    const fetchValidacao = async () => {
+      if (!usuario) return
+      const snap = await getDoc(doc(db, 'usuarios', usuario.uid))
+      if (snap.exists()) {
+        const data = snap.data()
+        setValidado(data.validacao) // "aprovada", "pendente", etc.
+      }
+    }
+    fetchValidacao()
+  }, [usuario])
 
-    const res = await axios.post('https://api.cloudinary.com/v1_1/dbemvuau3/image/upload', formData)
-    return res.data.secure_url
-  }
-
-  const enviarDocumentos = async () => {
-    if (!frente || !verso) return alert('Envie frente e verso do documento.')
-    setEnviando(true)
+  const enviar = async () => {
+    if (!frente || !verso || !usuario) {
+      toast.error('Envie frente e verso do documento.')
+      return
+    }
 
     try {
-      const urlFrente = await handleUpload(frente)
-      const urlVerso = await handleUpload(verso)
+      setCarregando(true)
+      const urlFrente = await uploadImage(frente)
+      const urlVerso = await uploadImage(verso)
 
       await updateDoc(doc(db, 'usuarios', usuario.uid), {
         documentoFrente: urlFrente,
@@ -34,39 +41,48 @@ export default function ValidacaoDocumento() {
         validacao: 'pendente'
       })
 
-      alert('Documentos enviados com sucesso! Aguarde a validação.')
+      toast.success('Documentos enviados para validação.')
+      setValidado('pendente')
     } catch (err) {
       console.error(err)
-      alert('Erro ao enviar documentos.')
+      toast.error('Erro ao enviar documentos.')
     } finally {
-      setEnviando(false)
+      setCarregando(false)
     }
   }
 
+  if (validado === 'aprovada') {
+    return (
+      <div className="mt-6 p-4 border border-green-400 bg-green-50 rounded text-green-700 text-center font-semibold">
+        ✅ Documentos verificados com sucesso.
+      </div>
+    )
+  }
+
   return (
-    <div className="p-4 bg-white rounded-lg shadow">
-      <h2 className="text-lg font-bold mb-2">Validação de Identidade</h2>
-      <p className="text-sm mb-4 text-gray-600">
-        Envie uma foto da <strong>frente</strong> e do <strong>verso</strong> do seu RG ou CNH. Seus dados serão usados apenas para validação de segurança.
+    <div className="mt-6 border-t pt-4">
+      <h3 className="font-semibold mb-2">Validação de Identidade</h3>
+      <p className="text-sm text-gray-600 mb-4">
+        Envie uma foto da <b>frente</b> e do <b>verso</b> do seu RG ou CNH.
+        Seus dados serão usados apenas para validação de segurança.
       </p>
-
-      <div className="mb-2">
-        <label className="block text-sm font-medium">Frente do documento</label>
-        <input type="file" accept="image/*" onChange={(e) => setFrente(e.target.files[0])} />
+      <div className="space-y-2">
+        <input type="file" onChange={(e) => setFrente(e.target.files[0])} />
+        <input type="file" onChange={(e) => setVerso(e.target.files[0])} />
+        <button
+          className="bg-green-600 text-white px-4 py-2 rounded"
+          onClick={enviar}
+          disabled={carregando}
+        >
+          {carregando ? 'Enviando...' : 'Enviar Documentos'}
+        </button>
       </div>
 
-      <div className="mb-4">
-        <label className="block text-sm font-medium">Verso do documento</label>
-        <input type="file" accept="image/*" onChange={(e) => setVerso(e.target.files[0])} />
-      </div>
-
-      <button
-        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded disabled:opacity-50"
-        onClick={enviarDocumentos}
-        disabled={enviando}
-      >
-        {enviando ? 'Enviando...' : 'Enviar Documentos'}
-      </button>
+      {validado === 'pendente' && (
+        <p className="mt-3 text-sm text-yellow-700">
+          ⚠️ Seus documentos estão em análise. Aguarde a validação.
+        </p>
+      )}
     </div>
   )
 }
