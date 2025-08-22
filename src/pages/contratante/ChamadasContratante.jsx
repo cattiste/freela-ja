@@ -32,8 +32,10 @@ export default function ChamadasContratante({ contratante }) {
     const unsub = onSnapshot(q, (snap) => {
       const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
       const filtradas = docs.filter((ch) =>
-        !((ch.status === 'concluido' || ch.status === 'finalizada') && ch.avaliadoPeloContratante)
-      )
+       ch.status !== 'rejeitada' &&
+       !(ch.status === 'concluido' && ch.avaliadoPeloContratante) &&
+       ch.status !== 'finalizada'
+    )
       setChamadas(filtradas)
       setLoading(false)
     }, (err) => {

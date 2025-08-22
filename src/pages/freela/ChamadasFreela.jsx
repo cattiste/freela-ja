@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -31,7 +30,9 @@ export default function ChamadasFreela() {
     const unsub = onSnapshot(q, (snap) => {
       const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
       const filtradas = docs.filter((ch) =>
-        !((ch.status === 'concluido' || ch.status === 'finalizada') && ch.avaliadoPorFreela)
+       ch.status !== 'rejeitada' &&
+       !(ch.status === 'concluido' && ch.avaliadoPorFreela) &&
+       ch.status !== 'finalizada'
       )
       setChamadas(filtradas)
     })
@@ -66,12 +67,13 @@ export default function ChamadasFreela() {
       toast.error('Erro ao aceitar chamada.')
     }
   }
-  const rejeitarChamada = async (id) => {
+
+  async function rejeitarChamada(id) {
     try {
       await updateDoc(doc(db, 'chamadas', id), {
         status: 'rejeitada'
       })
-      toast.success('Chamada rejeitada.')
+      toast.success('❌ Chamada rejeitada.')
     } catch (err) {
       console.error(err)
       toast.error('Erro ao rejeitar chamada.')
@@ -144,21 +146,21 @@ export default function ChamadasFreela() {
             )}
 
             {ch.status === 'pendente' && (
-  <>
-    <button
-      className="bg-green-600 text-white px-4 py-2 rounded mr-2"
-      onClick={() => aceitarChamada(ch)}
-    >
-      ✅ Aceitar Chamada
-    </button>
-    <button
-      className="bg-red-600 text-white px-4 py-2 rounded"
-      onClick={() => rejeitarChamada(ch.id)}
-    >
-      ❌ Rejeitar Chamada
-    </button>
-  </>
-)}
+              <>
+                <button
+                  className="bg-green-600 text-white px-4 py-2 rounded mr-2"
+                  onClick={() => aceitarChamada(ch)}
+                >
+                  ✅ Aceitar Chamada
+                </button>
+                <button
+                  className="bg-red-600 text-white px-4 py-2 rounded"
+                  onClick={() => rejeitarChamada(ch.id)}
+                >
+                  ❌ Rejeitar Chamada
+                </button>
+              </>
+            )}
 
             {ch.status === 'confirmada' && (
               <button
