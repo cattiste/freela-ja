@@ -66,6 +66,17 @@ export default function ChamadasFreela() {
       toast.error('Erro ao aceitar chamada.')
     }
   }
+  const rejeitarChamada = async (id) => {
+    try {
+      await updateDoc(doc(db, 'chamadas', id), {
+        status: 'rejeitada'
+      })
+      toast.success('Chamada rejeitada.')
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao rejeitar chamada.')
+    }
+  }
 
   async function fazerCheckIn(ch) {
     try {
