@@ -172,4 +172,5 @@ return (
       Sair da Conta
     </button>
   </div>
-})
+ )
+}
