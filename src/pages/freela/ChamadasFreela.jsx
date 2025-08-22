@@ -143,22 +143,22 @@ export default function ChamadasFreela() {
               <p><strong>📝 Observação:</strong> {ch.observacao}</p>
             )}
 
-            {chamada.status === 'pendente' && (
-              <>
-                <button
-                  className="bg-green-600 text-white px-4 py-2 rounded mr-2"
-                  onClick={() => aceitarChamada(chamada.id)}
-                >
-                  ✅ Aceitar Chamada
-                </button>
-                <button
-                   className="bg-red-600 text-white px-4 py-2 rounded"
-                   onClick={() => rejeitarChamada(chamada.id)}
-                >
-                   ❌ Rejeitar Chamada
-                </button>
-              </>
-            )}
+            {ch.status === 'pendente' && (
+  <>
+    <button
+      className="bg-green-600 text-white px-4 py-2 rounded mr-2"
+      onClick={() => aceitarChamada(ch)}
+    >
+      ✅ Aceitar Chamada
+    </button>
+    <button
+      className="bg-red-600 text-white px-4 py-2 rounded"
+      onClick={() => rejeitarChamada(ch.id)}
+    >
+      ❌ Rejeitar Chamada
+    </button>
+  </>
+)}
 
             {ch.status === 'confirmada' && (
               <button
