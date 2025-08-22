@@ -241,15 +241,8 @@ export default function CadastroContratante() {
           onChange={handleChange} 
           placeholder="Especialidade" 
           className="w-full border px-3 py-2 rounded" 
-        />        
-        <input
-          type="email"
-          placeholder="E-mail"
-          className="input"
-          value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-          required
-        />
+        />    
+        
 
         <div>
           <label>Foto (opcional)</label>
