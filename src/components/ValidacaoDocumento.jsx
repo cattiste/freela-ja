@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import { auth, db } from '@/firebase'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
-import { uploadImage } from '@/utils/uploadImage' // ajuste se necessário
+import { uploadImage } from '@/utils/uploadFoto' // ajuste se necessário
 import toast from 'react-hot-toast'
 
 export default function ValidacaoDocumento() {
