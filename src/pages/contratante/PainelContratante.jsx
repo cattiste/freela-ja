@@ -70,6 +70,12 @@ export default function PainelContratante() {
   const [agendaPerfil, setAgendaPerfil] = useState({})
 
   useEffect(() => {
+  if (usuario?.statusDocumentos === 'aprovado') {
+    toast.success('✅ Documentos verificados com sucesso!')
+  }
+}, [usuario?.statusDocumentos])
+
+  useEffect(() => {
     if (!contratante?.uid) return
     ;(async () => {
       try {
@@ -199,7 +205,7 @@ export default function PainelContratante() {
         return (
           <>
             {renderPerfil()}
-            <ValidacaoDocumento />
+            {usuario?.statusDocumentos !== 'aprovado' && <ValidacaoDocumento />}
           </>
         )
       case 'buscar':

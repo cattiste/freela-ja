@@ -16,6 +16,7 @@ import HistoricoFreela from '@/pages/freela/HistoricoTrabalhosFreela'
 import AgendaCompleta from '@/pages/freela/AgendaCompleta'
 import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 import ValidacaoDocumento from '@/components/ValidacaoDocumento'
+import toast from 'react-hot-toast'
 
 
 import { useRealtimePresence } from '@/hooks/useRealtimePresence'
@@ -32,6 +33,12 @@ export default function PainelFreela() {
   const [chamadaAtiva, setChamadaAtiva] = useState(null)
 
   useRealtimePresence(usuario)
+
+  useEffect(() => {
+    if (usuario?.statusDocumentos === 'aprovado') {
+     toast.success('✅ Documentos verificados com sucesso')
+    }
+  }, [usuario?.statusDocumentos])
 
   useEffect(() => {
     if (!usuario?.uid) return
@@ -128,11 +135,13 @@ export default function PainelFreela() {
         return <Vagas freelaId={usuario.uid} />
       case 'config':
         return (
-          <>
-            <ConfiguracoesFreela />
-            <ValidacaoDocumento />
-          </>
-        )
+      <>
+        <ConfiguracoesFreela />
+        {usuario?.statusDocumentos !== 'aprovado' && (
+          <ValidacaoDocumento />
+        )}
+      </>
+    )
       case 'historico':
         return <HistoricoFreela freelaId={usuario.uid} />
       case 'recebimentos':
