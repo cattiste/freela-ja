@@ -1,7 +1,8 @@
+// src/components/BuscarFreelas.jsx
 import React, { useEffect, useMemo, useState } from 'react'
 import {
   collection, query, where, addDoc, serverTimestamp,
-  getDocs, limit
+  getDocs, limit, setDoc, doc
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { FaStar, FaRegStar } from 'react-icons/fa'
@@ -179,7 +180,7 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         return
       }
 
-      await addDoc(collection(db, 'chamadas'), {
+      const chamadaRef = await addDoc(collection(db, 'chamadas'), {
         freelaUid: uid,
         freelaNome: freela.nome,
         valorDiaria: freela.valorDiaria || null,
@@ -187,6 +188,18 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         contratanteNome: usuario.nome || '',
         tipoContratante: usuario.tipo || usuario.tipoUsuario || '',
         observacao: observacao[uid] || '',
+        status: 'pendente',
+        criadoEm: serverTimestamp()
+      })
+
+      // 🔁 Criar espelho do freela na coleção pagamentos_usuarios
+      const pagamentoRef = doc(db, 'pagamentos_usuarios', chamadaRef.id)
+      await setDoc(pagamentoRef, {
+        chamadaId: chamadaRef.id,
+        freelaUid: uid,
+        freelaNome: freela.nome,
+        pixFreela: freela.chavePix || '',
+        valorDiaria: freela.valorDiaria || 0,
         status: 'pendente',
         criadoEm: serverTimestamp()
       })
