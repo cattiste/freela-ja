@@ -15,17 +15,19 @@ import toast from 'react-hot-toast'
 
 export default function ChamadasContratante() {
   const { usuario } = useAuth()
+
   const [chamadas, setChamadas] = useState([])
   const [senha, setSenha] = useState('')
   const [loadingPagamento, setLoadingPagamento] = useState(null)
   const [modalAberto, setModalAberto] = useState(false)
+  const [salvandoCartao, setSalvandoCartao] = useState(false)
+
   const [cartao, setCartao] = useState({
     numero: '', validade: '', cvv: '', nome: '', cpf: ''
   })
-  const [salvandoCartao, setSalvandoCartao] = useState(false)
-  const [cartaoSalvo, setCartaoSalvo] = useState(null) // <-- MOVER PARA AQUI
+  const [cartaoSalvo, setCartaoSalvo] = useState(null) // ✅ Agora no local certo!
 
-
+  // Buscar chamadas
   useEffect(() => {
     if (!usuario?.uid) return
 
@@ -41,37 +43,52 @@ export default function ChamadasContratante() {
       setChamadas(lista)
     })
 
-  // dentro do componente ChamadasContratante
-const [cartaoSalvo, setCartaoSalvo] = useState(null)
-
-useEffect(() => {
-  async function carregarCartao() {
-    if (!usuario?.uid) return
-
-    try {
-      const r = await fetch("http://localhost:8080/listarCartao", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uid: usuario.uid }),
-      })
-      const res = await r.json()
-      if (res.sucesso) {
-        setCartaoSalvo(res.cartao)
-      }
-    } catch (err) {
-      console.error("Erro ao buscar cartão salvo:", err)
-    }
-  }
-
-  carregarCartao()
-}, [usuario?.uid])
-
-
     return () => unsubscribe()
   }, [usuario?.uid])
 
+  // Buscar cartão salvo
+  useEffect(() => {
+    async function carregarCartao() {
+      if (!usuario?.uid) return
 
-  
+      try {
+        const r = await fetch("http://localhost:8080/listarCartao", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uid: usuario.uid }),
+        })
+        const res = await r.json()
+        if (res.sucesso) {
+          setCartaoSalvo(res.cartao)
+        }
+      } catch (err) {
+        console.error("Erro ao buscar cartão salvo:", err)
+      }
+    }
+
+    carregarCartao()
+  }, [usuario?.uid])
+
+  const cadastrarCartao = async () => {
+    setSalvandoCartao(true)
+    try {
+      const resposta = await fetch('http://localhost:8080/cadastrarCartao', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: usuario.uid, ...cartao })
+      })
+      const res = await resposta.json()
+      if (!res.sucesso) throw new Error(res.erro)
+      toast.success('Cartão cadastrado com sucesso!')
+      setModalAberto(false)
+      setCartao({ numero: '', validade: '', cvv: '', nome: '', cpf: '' })
+    } catch (err) {
+      toast.error(`Erro ao cadastrar cartão: ${err.message}`)
+    } finally {
+      setSalvandoCartao(false)
+    }
+  }
+
   const confirmarPagamento = async (chamada) => {
     if (!senha) {
       toast.error('Digite sua senha para confirmar o pagamento')
@@ -104,26 +121,6 @@ useEffect(() => {
     }
   }
 
-  const cadastrarCartao = async () => {
-    setSalvandoCartao(true)
-    try {
-      const resposta = await fetch('http://localhost:8080/cadastrarCartao', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: usuario.uid, ...cartao })
-      })
-      const res = await resposta.json()
-      if (!res.sucesso) throw new Error(res.erro)
-      toast.success('Cartão cadastrado com sucesso!')
-      setModalAberto(false)
-      setCartao({ numero: '', validade: '', cvv: '', nome: '', cpf: '' })
-    } catch (err) {
-      toast.error(`Erro ao cadastrar cartão: ${err.message}`)
-    } finally {
-      setSalvandoCartao(false)
-    }
-  }
-
   const confirmarCheckIn = async (id) => {
     await updateDoc(doc(db, 'chamadas', id), {
       status: 'checkin_confirmado',
@@ -153,6 +150,7 @@ useEffect(() => {
         </button>
       </div>
 
+      {/* Modal do Cartão */}
       {modalAberto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-xl max-w-md w-full shadow-xl space-y-3">
@@ -183,19 +181,21 @@ useEffect(() => {
         </div>
       )}
 
+      {/* Cartão salvo */}
       <div className="mb-4 bg-white rounded-xl shadow p-4 border border-gray-300">
-  <h2 className="text-lg font-bold text-orange-700 mb-2">💳 Cartão Cadastrado</h2>
+        <h2 className="text-lg font-bold text-orange-700 mb-2">💳 Cartão Cadastrado</h2>
+        {cartaoSalvo ? (
+          <p className="text-gray-700">
+            <strong>Nome:</strong> {cartaoSalvo.nome}<br />
+            <strong>Final:</strong> **** **** **** {cartaoSalvo.ultimos4}<br />
+            <strong>Validade:</strong> {cartaoSalvo.validade}
+          </p>
+        ) : (
+          <p className="text-gray-500">Nenhum cartão cadastrado ainda.</p>
+        )}
+      </div>
 
-  {cartaoSalvo ? (
-    <p className="text-gray-700">
-      <strong>Nome:</strong> {cartaoSalvo.nome}<br />
-      <strong>Final:</strong> **** **** **** {cartaoSalvo.ultimos4}<br />
-      <strong>Validade:</strong> {cartaoSalvo.validade}
-    </p>
-  ) : (
-    <p className="text-gray-500">Nenhum cartão cadastrado ainda.</p>
-  )}
-</div>
+      {/* Chamadas */}
       {chamadas.length === 0 ? (
         <p className="text-center text-gray-600">Nenhuma chamada ativa no momento.</p>
       ) : (
