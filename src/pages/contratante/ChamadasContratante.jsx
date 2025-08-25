@@ -39,9 +39,37 @@ export default function ChamadasContratante() {
       setChamadas(lista)
     })
 
+  // dentro do componente ChamadasContratante
+const [cartaoSalvo, setCartaoSalvo] = useState(null)
+
+useEffect(() => {
+  async function carregarCartao() {
+    if (!usuario?.uid) return
+
+    try {
+      const r = await fetch("http://localhost:8080/listarCartao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid: usuario.uid }),
+      })
+      const res = await r.json()
+      if (res.sucesso) {
+        setCartaoSalvo(res.cartao)
+      }
+    } catch (err) {
+      console.error("Erro ao buscar cartão salvo:", err)
+    }
+  }
+
+  carregarCartao()
+}, [usuario?.uid])
+
+
     return () => unsubscribe()
   }, [usuario?.uid])
 
+
+  
   const confirmarPagamento = async (chamada) => {
     if (!senha) {
       toast.error('Digite sua senha para confirmar o pagamento')
@@ -153,6 +181,19 @@ export default function ChamadasContratante() {
         </div>
       )}
 
+      <div className="mb-4 bg-white rounded-xl shadow p-4 border border-gray-300">
+  <h2 className="text-lg font-bold text-orange-700 mb-2">💳 Cartão Cadastrado</h2>
+
+  {cartaoSalvo ? (
+    <p className="text-gray-700">
+      <strong>Nome:</strong> {cartaoSalvo.nome}<br />
+      <strong>Final:</strong> **** **** **** {cartaoSalvo.ultimos4}<br />
+      <strong>Validade:</strong> {cartaoSalvo.validade}
+    </p>
+  ) : (
+    <p className="text-gray-500">Nenhum cartão cadastrado ainda.</p>
+  )}
+</div>
       {chamadas.length === 0 ? (
         <p className="text-center text-gray-600">Nenhuma chamada ativa no momento.</p>
       ) : (
