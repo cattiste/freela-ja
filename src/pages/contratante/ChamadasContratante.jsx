@@ -23,6 +23,8 @@ export default function ChamadasContratante() {
     numero: '', validade: '', cvv: '', nome: '', cpf: ''
   })
   const [salvandoCartao, setSalvandoCartao] = useState(false)
+  const [cartaoSalvo, setCartaoSalvo] = useState(null) // <-- MOVER PARA AQUI
+
 
   useEffect(() => {
     if (!usuario?.uid) return
