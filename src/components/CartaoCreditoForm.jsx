@@ -1,82 +1,110 @@
 // src/components/CartaoCreditoForm.jsx
 import React, { useState } from 'react'
-import { doc, setDoc } from 'firebase/firestore'
-import { db } from '@/firebase'
 import toast from 'react-hot-toast'
 
-export default function CartaoCreditoForm({ uid, onSuccess }) {
-  const [numero, setNumero] = useState('')
-  const [validade, setValidade] = useState('')
-  const [cvv, setCvv] = useState('')
-  const [nome, setNome] = useState('')
-  const [salvando, setSalvando] = useState(false)
+export default function CartaoCreditoForm({ uid }) {
+  const [form, setForm] = useState({
+    numero: '',
+    validade: '',
+    cvv: '',
+    nome: '',
+    cpf: '',
+  })
+  const [carregando, setCarregando] = useState(false)
 
-  const salvarCartao = async () => {
-    if (!numero || !validade || !cvv || !nome) {
-      toast.error('Preencha todos os campos')
-      return
-    }
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
+  }
 
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    setCarregando(true)
     try {
-      setSalvando(true)
-      await setDoc(doc(db, 'cartoes', uid), {
-        numero,
-        validade,
-        cvv,
-        nome,
-        criadoEm: new Date()
+      const resposta = await fetch('http://localhost:8080/cadastrarCartao', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid, ...form }),
       })
-      toast.success('Cartão salvo com sucesso')
-      onSuccess()
+      const json = await resposta.json()
+      if (!json.sucesso) throw new Error(json.erro)
+
+      toast.success('✅ Cartão salvo com sucesso!')
     } catch (err) {
-      console.error('Erro ao salvar cartão:', err)
-      toast.error('Erro ao salvar cartão')
+      toast.error(`Erro: ${err.message}`)
     } finally {
-      setSalvando(false)
+      setCarregando(false)
     }
   }
 
   return (
-    <div className="bg-white p-4 rounded-xl border border-orange-300 shadow mb-4">
-      <h3 className="text-lg font-bold text-orange-700 mb-2">💳 Cadastro de Cartão</h3>
-      <input
-        type="text"
-        placeholder="Número do cartão"
-        className="input"
-        value={numero}
-        onChange={(e) => setNumero(e.target.value)}
-      />
-      <div className="flex gap-2 mt-2">
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-md mx-auto bg-white shadow-lg rounded-lg p-4 border border-orange-200"
+    >
+      <h2 className="text-lg font-bold mb-3 text-orange-700">💳 Cadastro de Cartão</h2>
+
+      <div className="space-y-3">
         <input
           type="text"
-          placeholder="Validade (MM/AA)"
-          className="input"
-          value={validade}
-          onChange={(e) => setValidade(e.target.value)}
+          name="numero"
+          placeholder="Número do Cartão"
+          maxLength={19}
+          value={form.numero}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          required
         />
         <input
           type="text"
+          name="validade"
+          placeholder="Validade (MM/AA)"
+          value={form.validade}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          required
+        />
+        <input
+          type="text"
+          name="cvv"
           placeholder="CVV"
-          className="input"
-          value={cvv}
-          onChange={(e) => setCvv(e.target.value)}
+          maxLength={4}
+          value={form.cvv}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          required
+        />
+        <input
+          type="text"
+          name="nome"
+          placeholder="Nome Impresso no Cartão"
+          value={form.nome}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          required
+        />
+        <input
+          type="text"
+          name="cpf"
+          placeholder="CPF do Titular"
+          value={form.cpf}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          required
         />
       </div>
-      <input
-        type="text"
-        placeholder="Nome impresso no cartão"
-        className="input mt-2"
-        value={nome}
-        onChange={(e) => setNome(e.target.value)}
-      />
+
+      <p className="text-xs text-gray-500 mt-2">
+        🔒 Para sua segurança, <strong>não armazenamos</strong> os dados de seu cartão de crédito.
+      </p>
+
       <button
-        onClick={salvarCartao}
-        className="mt-4 w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
-        disabled={salvando}
+        type="submit"
+        disabled={carregando}
+        className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white py-2 rounded font-bold"
       >
-        {salvando ? 'Salvando...' : 'Salvar Cartão'}
+        {carregando ? 'Salvando...' : 'Salvar Cartão'}
       </button>
-      <p className="text-xs text-gray-500 mt-2">Para sua segurança, não armazenamos os dados do seu cartão de crédito.</p>
-    </div>
+    </form>
   )
 }
