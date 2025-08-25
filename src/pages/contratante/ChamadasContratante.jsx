@@ -21,6 +21,8 @@ export default function ChamadasContratante() {
   const [loadingPagamento, setLoadingPagamento] = useState(null)
   const [modalAberto, setModalAberto] = useState(false)
   const [salvandoCartao, setSalvandoCartao] = useState(false)
+  const API_URL = "https://us-central1-freelaja-web-50254.cloudfunctions.net/api"
+
 
   const [cartao, setCartao] = useState({
     numero: '', validade: '', cvv: '', nome: '', cpf: ''
@@ -52,7 +54,7 @@ export default function ChamadasContratante() {
       if (!usuario?.uid) return
 
       try {
-        const r = await fetch("http://localhost:8080/listarCartao", {
+        const r = await fetch(${API_URL}/listarCartao, { {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ uid: usuario.uid }),
@@ -72,7 +74,7 @@ export default function ChamadasContratante() {
   const cadastrarCartao = async () => {
     setSalvandoCartao(true)
     try {
-      const resposta = await fetch('http://localhost:8080/cadastrarCartao', {
+      const resposta = await fetch(${API_URL}/cadastrarCartao, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: usuario.uid, ...cartao })
@@ -97,7 +99,7 @@ export default function ChamadasContratante() {
 
     setLoadingPagamento(chamada.id)
     try {
-      const r1 = await fetch('http://localhost:8080/confirmarPagamento', {
+      const r1 = await fetch(`${API_URL}/confirmarPagamento`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: usuario.uid, senha })
@@ -105,7 +107,7 @@ export default function ChamadasContratante() {
       const res1 = await r1.json()
       if (!res1.sucesso) throw new Error(res1.erro)
 
-      const r2 = await fetch('http://localhost:8080/pagarFreela', {
+      const r2 = await fetch(`${API_URL}/pagarFreela`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chamadaId: chamada.id })
