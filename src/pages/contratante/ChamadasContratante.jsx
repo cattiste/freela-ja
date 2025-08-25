@@ -12,13 +12,17 @@ import {
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
-import CartaoCreditoForm from '@/components/CartaoCreditoForm'
 
 export default function ChamadasContratante() {
   const { usuario } = useAuth()
   const [chamadas, setChamadas] = useState([])
   const [senha, setSenha] = useState('')
   const [loadingPagamento, setLoadingPagamento] = useState(null)
+  const [modalAberto, setModalAberto] = useState(false)
+  const [cartao, setCartao] = useState({
+    numero: '', validade: '', cvv: '', nome: '', cpf: ''
+  })
+  const [salvandoCartao, setSalvandoCartao] = useState(false)
 
   useEffect(() => {
     if (!usuario?.uid) return
@@ -49,19 +53,17 @@ export default function ChamadasContratante() {
       const r1 = await fetch('http://localhost:8080/confirmarPagamento', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: usuario.uid, senha }),
+        body: JSON.stringify({ uid: usuario.uid, senha })
       })
       const res1 = await r1.json()
-
       if (!res1.sucesso) throw new Error(res1.erro)
 
       const r2 = await fetch('http://localhost:8080/pagarFreela', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chamadaId: chamada.id }),
+        body: JSON.stringify({ chamadaId: chamada.id })
       })
       const res2 = await r2.json()
-
       if (!res2.sucesso) throw new Error(res2.erro)
 
       toast.success('Pagamento realizado com sucesso!')
@@ -72,10 +74,30 @@ export default function ChamadasContratante() {
     }
   }
 
+  const cadastrarCartao = async () => {
+    setSalvandoCartao(true)
+    try {
+      const resposta = await fetch('http://localhost:8080/cadastrarCartao', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: usuario.uid, ...cartao })
+      })
+      const res = await resposta.json()
+      if (!res.sucesso) throw new Error(res.erro)
+      toast.success('Cartão cadastrado com sucesso!')
+      setModalAberto(false)
+      setCartao({ numero: '', validade: '', cvv: '', nome: '', cpf: '' })
+    } catch (err) {
+      toast.error(`Erro ao cadastrar cartão: ${err.message}`)
+    } finally {
+      setSalvandoCartao(false)
+    }
+  }
+
   const confirmarCheckIn = async (id) => {
     await updateDoc(doc(db, 'chamadas', id), {
       status: 'checkin_confirmado',
-      checkInConfirmadoPeloContratanteHora: serverTimestamp(),
+      checkInConfirmadoPeloContratanteHora: serverTimestamp()
     })
     toast.success('✅ Check-in confirmado')
   }
@@ -83,7 +105,7 @@ export default function ChamadasContratante() {
   const confirmarCheckOut = async (id) => {
     await updateDoc(doc(db, 'chamadas', id), {
       status: 'concluido',
-      checkOutConfirmadoPeloContratanteHora: serverTimestamp(),
+      checkOutConfirmadoPeloContratanteHora: serverTimestamp()
     })
     toast.success('✅ Check-out confirmado')
   }
@@ -92,7 +114,44 @@ export default function ChamadasContratante() {
     <div className="p-4 max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold text-orange-700 text-center mb-4">📡 Chamadas Ativas</h1>
 
-      <CartaoCreditoForm />
+      <div className="text-center mb-4">
+        <button
+          onClick={() => setModalAberto(true)}
+          className="bg-orange-600 text-white px-6 py-2 rounded-full shadow hover:bg-orange-700 transition"
+        >
+          ➕ Cadastrar Cartão
+        </button>
+      </div>
+
+      {modalAberto && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl max-w-md w-full shadow-xl space-y-3">
+            <h2 className="text-xl font-bold text-orange-700 mb-2">Cadastrar Cartão</h2>
+            <input type="text" placeholder="Número do Cartão" className="w-full border p-2 rounded"
+              value={cartao.numero} onChange={e => setCartao({ ...cartao, numero: e.target.value })} />
+            <div className="flex gap-2">
+              <input type="text" placeholder="Validade (MM/AAAA)" className="w-1/2 border p-2 rounded"
+                value={cartao.validade} onChange={e => setCartao({ ...cartao, validade: e.target.value })} />
+              <input type="text" placeholder="CVV" className="w-1/2 border p-2 rounded"
+                value={cartao.cvv} onChange={e => setCartao({ ...cartao, cvv: e.target.value })} />
+            </div>
+            <input type="text" placeholder="Nome impresso no cartão" className="w-full border p-2 rounded"
+              value={cartao.nome} onChange={e => setCartao({ ...cartao, nome: e.target.value })} />
+            <input type="text" placeholder="CPF do titular" className="w-full border p-2 rounded"
+              value={cartao.cpf} onChange={e => setCartao({ ...cartao, cpf: e.target.value })} />
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setModalAberto(false)} className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancelar</button>
+              <button
+                onClick={cadastrarCartao}
+                disabled={salvandoCartao}
+                className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+              >
+                {salvandoCartao ? 'Salvando...' : 'Salvar Cartão'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {chamadas.length === 0 ? (
         <p className="text-center text-gray-600">Nenhuma chamada ativa no momento.</p>
