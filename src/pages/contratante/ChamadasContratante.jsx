@@ -13,23 +13,24 @@ import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
 
+const API_URL = 'https://us-central1-freelaja-web-50254.cloudfunctions.net/api'
+
 export default function ChamadasContratante() {
   const { usuario } = useAuth()
-
   const [chamadas, setChamadas] = useState([])
   const [senha, setSenha] = useState('')
   const [loadingPagamento, setLoadingPagamento] = useState(null)
-  const [modalAberto, setModalAberto] = useState(false)
-  const [salvandoCartao, setSalvandoCartao] = useState(false)
-  const API_URL = "https://us-central1-freelaja-web-50254.cloudfunctions.net/api"
-
+  const [cartaoSalvo, setCartaoSalvo] = useState(null)
+  const [mostrarFormCartao, setMostrarFormCartao] = useState(false)
 
   const [cartao, setCartao] = useState({
-    numero: '', validade: '', cvv: '', nome: '', cpf: ''
+    numero: '',
+    vencimento: '',
+    cvv: '',
+    nome: '',
+    cpf: ''
   })
-  const [cartaoSalvo, setCartaoSalvo] = useState(null) // ✅ Agora no local certo!
 
-  // Buscar chamadas
   useEffect(() => {
     if (!usuario?.uid) return
 
@@ -48,46 +49,43 @@ export default function ChamadasContratante() {
     return () => unsubscribe()
   }, [usuario?.uid])
 
-  // Buscar cartão salvo
+  // 🔐 Buscar cartão
   useEffect(() => {
-    async function carregarCartao() {
-      if (!usuario?.uid) return
-
+    const buscarCartao = async () => {
       try {
-        const r = await fetch(${API_URL}/listarCartao, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ uid: usuario.uid }),
+        const r = await fetch(`${API_URL}/listarCartao`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid: usuario.uid })
         })
         const res = await r.json()
-        if (res.sucesso) {
-          setCartaoSalvo(res.cartao)
-        }
-      } catch (err) {
-        console.error("Erro ao buscar cartão salvo:", err)
+        if (res.sucesso) setCartaoSalvo(res.cartao)
+      } catch (e) {
+        console.error('Erro ao buscar cartão salvo:', e)
       }
     }
 
-    carregarCartao()
+    if (usuario?.uid) buscarCartao()
   }, [usuario?.uid])
 
+  // 💳 Cadastrar cartão
   const cadastrarCartao = async () => {
-    setSalvandoCartao(true)
     try {
-      const resposta = await fetch(${API_URL}/cadastrarCartao, {
+      const r = await fetch(`${API_URL}/cadastrarCartao`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: usuario.uid, ...cartao })
       })
-      const res = await resposta.json()
-      if (!res.sucesso) throw new Error(res.erro)
-      toast.success('Cartão cadastrado com sucesso!')
-      setModalAberto(false)
-      setCartao({ numero: '', validade: '', cvv: '', nome: '', cpf: '' })
+      const res = await r.json()
+      if (res.sucesso) {
+        toast.success('Cartão salvo com sucesso!')
+        setCartaoSalvo(cartao)
+        setMostrarFormCartao(false)
+      } else {
+        throw new Error(res.erro)
+      }
     } catch (err) {
-      toast.error(`Erro ao cadastrar cartão: ${err.message}`)
-    } finally {
-      setSalvandoCartao(false)
+      toast.error('Erro ao salvar cartão: ' + err.message)
     }
   }
 
@@ -102,7 +100,7 @@ export default function ChamadasContratante() {
       const r1 = await fetch(`${API_URL}/confirmarPagamento`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: usuario.uid, senha })
+        body: JSON.stringify({ uid: usuario.uid, senha }),
       })
       const res1 = await r1.json()
       if (!res1.sucesso) throw new Error(res1.erro)
@@ -110,7 +108,7 @@ export default function ChamadasContratante() {
       const r2 = await fetch(`${API_URL}/pagarFreela`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chamadaId: chamada.id })
+        body: JSON.stringify({ chamadaId: chamada.id }),
       })
       const res2 = await r2.json()
       if (!res2.sucesso) throw new Error(res2.erro)
@@ -126,7 +124,7 @@ export default function ChamadasContratante() {
   const confirmarCheckIn = async (id) => {
     await updateDoc(doc(db, 'chamadas', id), {
       status: 'checkin_confirmado',
-      checkInConfirmadoPeloContratanteHora: serverTimestamp()
+      checkInConfirmadoPeloContratanteHora: serverTimestamp(),
     })
     toast.success('✅ Check-in confirmado')
   }
@@ -134,7 +132,7 @@ export default function ChamadasContratante() {
   const confirmarCheckOut = async (id) => {
     await updateDoc(doc(db, 'chamadas', id), {
       status: 'concluido',
-      checkOutConfirmadoPeloContratanteHora: serverTimestamp()
+      checkOutConfirmadoPeloContratanteHora: serverTimestamp(),
     })
     toast.success('✅ Check-out confirmado')
   }
@@ -143,61 +141,39 @@ export default function ChamadasContratante() {
     <div className="p-4 max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold text-orange-700 text-center mb-4">📡 Chamadas Ativas</h1>
 
-      <div className="text-center mb-4">
-        <button
-          onClick={() => setModalAberto(true)}
-          className="bg-orange-600 text-white px-6 py-2 rounded-full shadow hover:bg-orange-700 transition"
-        >
-          ➕ Cadastrar Cartão
-        </button>
-      </div>
+      <div className="bg-white border border-blue-300 p-3 rounded-lg mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="font-bold text-blue-600">💳 Cartão Cadastrado</span>
+          {!mostrarFormCartao && (
+            <button onClick={() => setMostrarFormCartao(true)} className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm">
+              + Cadastrar Cartão
+            </button>
+          )}
+        </div>
 
-      {/* Modal do Cartão */}
-      {modalAberto && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl max-w-md w-full shadow-xl space-y-3">
-            <h2 className="text-xl font-bold text-orange-700 mb-2">Cadastrar Cartão</h2>
-            <input type="text" placeholder="Número do Cartão" className="w-full border p-2 rounded"
-              value={cartao.numero} onChange={e => setCartao({ ...cartao, numero: e.target.value })} />
+        {cartaoSalvo ? (
+          <p className="text-sm">Cartão final {cartaoSalvo.numero?.slice(-4)}</p>
+        ) : (
+          <p className="text-sm text-gray-500">Nenhum cartão cadastrado ainda.</p>
+        )}
+
+        {mostrarFormCartao && (
+          <div className="bg-gray-100 p-4 mt-2 rounded-lg space-y-2">
+            <input type="text" placeholder="Número do cartão" className="input w-full" value={cartao.numero} onChange={e => setCartao({ ...cartao, numero: e.target.value })} />
             <div className="flex gap-2">
-              <input type="text" placeholder="Validade (MM/AAAA)" className="w-1/2 border p-2 rounded"
-                value={cartao.validade} onChange={e => setCartao({ ...cartao, validade: e.target.value })} />
-              <input type="text" placeholder="CVV" className="w-1/2 border p-2 rounded"
-                value={cartao.cvv} onChange={e => setCartao({ ...cartao, cvv: e.target.value })} />
+              <input type="text" placeholder="MM/AA" className="input w-1/2" value={cartao.vencimento} onChange={e => setCartao({ ...cartao, vencimento: e.target.value })} />
+              <input type="text" placeholder="CVV" className="input w-1/2" value={cartao.cvv} onChange={e => setCartao({ ...cartao, cvv: e.target.value })} />
             </div>
-            <input type="text" placeholder="Nome impresso no cartão" className="w-full border p-2 rounded"
-              value={cartao.nome} onChange={e => setCartao({ ...cartao, nome: e.target.value })} />
-            <input type="text" placeholder="CPF do titular" className="w-full border p-2 rounded"
-              value={cartao.cpf} onChange={e => setCartao({ ...cartao, cpf: e.target.value })} />
-            <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setModalAberto(false)} className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancelar</button>
-              <button
-                onClick={cadastrarCartao}
-                disabled={salvandoCartao}
-                className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
-              >
-                {salvandoCartao ? 'Salvando...' : 'Salvar Cartão'}
-              </button>
+            <input type="text" placeholder="Nome do titular" className="input w-full" value={cartao.nome} onChange={e => setCartao({ ...cartao, nome: e.target.value })} />
+            <input type="text" placeholder="CPF" className="input w-full" value={cartao.cpf} onChange={e => setCartao({ ...cartao, cpf: e.target.value })} />
+            <div className="flex justify-end gap-2 mt-2">
+              <button onClick={() => setMostrarFormCartao(false)} className="bg-gray-300 px-3 py-1 rounded">Cancelar</button>
+              <button onClick={cadastrarCartao} className="bg-green-600 text-white px-3 py-1 rounded">Salvar Cartão</button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Cartão salvo */}
-      <div className="mb-4 bg-white rounded-xl shadow p-4 border border-gray-300">
-        <h2 className="text-lg font-bold text-orange-700 mb-2">💳 Cartão Cadastrado</h2>
-        {cartaoSalvo ? (
-          <p className="text-gray-700">
-            <strong>Nome:</strong> {cartaoSalvo.nome}<br />
-            <strong>Final:</strong> **** **** **** {cartaoSalvo.ultimos4}<br />
-            <strong>Validade:</strong> {cartaoSalvo.validade}
-          </p>
-        ) : (
-          <p className="text-gray-500">Nenhum cartão cadastrado ainda.</p>
         )}
       </div>
 
-      {/* Chamadas */}
       {chamadas.length === 0 ? (
         <p className="text-center text-gray-600">Nenhuma chamada ativa no momento.</p>
       ) : (
