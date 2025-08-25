@@ -8,6 +8,8 @@ import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import AvaliacaoContratante from '@/components/AvaliacaoContratante'
 import MensagensRecebidasContratante from '@/components/MensagensRecebidasContratante'
+import PagamentoCartaoModal from '@/components/PagamentoCartaoModal'
+
 
 const STATUS_LISTA = [
   'pendente', 'aceita', 'confirmada', 'checkin_freela',
@@ -119,54 +121,66 @@ export default function ChamadasContratante({ contratante }) {
             : null
 
           return (
-            <div key={ch.id} className="bg-white shadow p-4 rounded-xl mb-4 border border-orange-200 space-y-2">
-              <h2 className="font-semibold text-orange-600 text-lg">Chamada #{ch?.id?.slice(-5)}</h2>
-              <p><strong>Freela:</strong> {ch.freelaNome || ch.freelaUid}</p>
-              <p><strong>Status:</strong> {ch.status}</p>
-              {typeof ch.valorDiaria === 'number' && <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>}
-              {ch.observacao && <p className="text-sm text-gray-800"><strong>📝 Observação:</strong> {ch.observacao}</p>}
-              {dataHora && (<p className="text-sm text-gray-700">🕓 Check-in: {dataHora}</p>)}
-              {ch.enderecoCheckInFreela && (<p className="text-sm text-gray-700">🏠 Endereço: {ch.enderecoCheckInFreela}</p>)}
-              {pos && (
-                <>
-                  <p className="text-sm text-gray-700">
-                    📍 Coordenadas: {pos.latitude.toFixed(6)}, {pos.longitude.toFixed(6)}{' '}
-                    <a
-                      href={`https://www.google.com/maps?q=${pos.latitude},${pos.longitude}`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="text-blue-600 underline ml-2"
-                    >Ver no Google Maps</a>
-                  </p>
-                  <MapContainer center={[pos.latitude, pos.longitude]} zoom={18} scrollWheelZoom={false} style={{ height: 200, borderRadius: 8 }} className="mt-2">
-                    <TileLayer attribution='&copy; OpenStreetMap' url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' />
-                    <Marker position={[pos.latitude, pos.longitude]} />
-                  </MapContainer>
-                </>
-              )}
+  <div key={ch.id} className="bg-white shadow p-4 rounded-xl mb-4 border border-orange-200 space-y-2">
+    <h2 className="font-semibold text-orange-600 text-lg">Chamada #{ch?.id?.slice(-5)}</h2>
+    <p><strong>Freela:</strong> {ch.freelaNome || ch.freelaUid}</p>
+    <p><strong>Status:</strong> {ch.status}</p>
+    {typeof ch.valorDiaria === 'number' && <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>}
+    {ch.observacao && <p className="text-sm text-gray-800"><strong>📝 Observação:</strong> {ch.observacao}</p>}
+    {dataHora && (<p className="text-sm text-gray-700">🕓 Check-in: {dataHora}</p>)}
+    {ch.enderecoCheckInFreela && (<p className="text-sm text-gray-700">🏠 Endereço: {ch.enderecoCheckInFreela}</p>)}
 
-              <MensagensRecebidasContratante chamadaId={ch.id} />
+    {pos && (
+      <>
+        <p className="text-sm text-gray-700">
+          📍 Coordenadas: {pos.latitude.toFixed(6)}, {pos.longitude.toFixed(6)}{' '}
+          <a
+            href={`https://www.google.com/maps?q=${pos.latitude},${pos.longitude}`}
+            target="_blank" rel="noopener noreferrer"
+            className="text-blue-600 underline ml-2"
+          >Ver no Google Maps</a>
+        </p>
+        <MapContainer center={[pos.latitude, pos.longitude]} zoom={18} scrollWheelZoom={false} style={{ height: 200, borderRadius: 8 }} className="mt-2">
+          <TileLayer attribution='&copy; OpenStreetMap' url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' />
+          <Marker position={[pos.latitude, pos.longitude]} />
+        </MapContainer>
+      </>
+    )}
 
-              {ch.status === 'concluido' && !ch.avaliadoPeloContratante && (
-                <AvaliacaoContratante chamada={ch} />
-              )}
+    <MensagensRecebidasContratante chamadaId={ch.id} />
 
-              {ch.status === 'aceita' && (
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <button onClick={() => confirmarChamada(ch)} className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">✅ Confirmar Chamada</button>
-                  <button onClick={() => cancelarChamada(ch)} className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition">❌ Cancelar Chamada</button>
-                </div>
-              )}
-              {ch.status === 'checkin_freela' && (
-                <button onClick={() => confirmarCheckInFreela(ch)} className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">📍 Confirmar check-in do freela</button>
-              )}
-              {ch.status === 'checkout_freela' && (
-                <button onClick={() => confirmarCheckOutFreela(ch)} className="w-full bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition">⏳ Confirmar check-out do freela</button>
-              )}
-              {(ch.status === 'concluido' || ch.status === 'finalizada') && (
-                <span className="text-green-600 font-bold block text-center mt-2">✅ Finalizada</span>
-              )}
-            </div>
-          )
+    {/* AVALIAÇÃO */}
+    {ch.status === 'concluido' && !ch.avaliadoPeloContratante && (
+      <AvaliacaoContratante chamada={ch} />
+    )}
+
+    {/* PAGAMENTO COM CARTÃO */}
+    {ch.status === 'aceita' && (!ch.pagamento?.status || ch.pagamento?.status !== 'pago') && (
+      <PagamentoCartaoModal chamada={ch} contratante={estab} />
+    )}
+
+    {/* BOTÕES DE CONTROLE */}
+    {ch.status === 'aceita' && (
+      <div className="flex flex-col sm:flex-row gap-2">
+        <button onClick={() => confirmarChamada(ch)} className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">✅ Confirmar Chamada</button>
+        <button onClick={() => cancelarChamada(ch)} className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition">❌ Cancelar Chamada</button>
+      </div>
+    )}
+
+    {ch.status === 'checkin_freela' && (
+      <button onClick={() => confirmarCheckInFreela(ch)} className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">📍 Confirmar check-in do freela</button>
+    )}
+
+    {ch.status === 'checkout_freela' && (
+      <button onClick={() => confirmarCheckOutFreela(ch)} className="w-full bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition">⏳ Confirmar check-out do freela</button>
+    )}
+
+    {(ch.status === 'concluido' || ch.status === 'finalizada') && (
+      <span className="text-green-600 font-bold block text-center mt-2">✅ Finalizada</span>
+    )}
+  </div>
+)
+
         })
       )}
     </div>
