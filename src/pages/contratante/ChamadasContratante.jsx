@@ -12,6 +12,7 @@ import {
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
+import CartaoCreditoForm from '@/components/CartaoCreditoForm'
 
 export default function ChamadasContratante() {
   const { usuario } = useAuth()
@@ -90,6 +91,8 @@ export default function ChamadasContratante() {
   return (
     <div className="p-4 max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold text-orange-700 text-center mb-4">📡 Chamadas Ativas</h1>
+
+      <CartaoCreditoForm />
 
       {chamadas.length === 0 ? (
         <p className="text-center text-gray-600">Nenhuma chamada ativa no momento.</p>
