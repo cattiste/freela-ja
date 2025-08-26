@@ -1,4 +1,3 @@
-// src/pages/contratante/ChamadasContratante.jsx
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -11,9 +10,8 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
-import toast from 'react-hot-toast'
 import CartaoCreditoForm from '@/components/CartaoCreditoForm'
-
+import toast from 'react-hot-toast'
 
 const API_URL = 'https://us-central1-freelaja-web-50254.cloudfunctions.net/api'
 
@@ -24,14 +22,6 @@ export default function ChamadasContratante() {
   const [loadingPagamento, setLoadingPagamento] = useState(null)
   const [cartaoSalvo, setCartaoSalvo] = useState(null)
   const [mostrarFormCartao, setMostrarFormCartao] = useState(false)
-
-  const [cartao, setCartao] = useState({
-    numero: '',
-    vencimento: '',
-    cvv: '',
-    nome: '',
-    cpf: ''
-  })
 
   useEffect(() => {
     if (!usuario?.uid) return
@@ -51,7 +41,6 @@ export default function ChamadasContratante() {
     return () => unsubscribe()
   }, [usuario?.uid])
 
-  // 🔐 Buscar cartão
   useEffect(() => {
     const buscarCartao = async () => {
       try {
@@ -69,27 +58,6 @@ export default function ChamadasContratante() {
 
     if (usuario?.uid) buscarCartao()
   }, [usuario?.uid])
-
-  // 💳 Cadastrar cartão
-  const cadastrarCartao = async () => {
-    try {
-      const r = await fetch(`${API_URL}/cadastrarCartao`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: usuario.uid, ...cartao })
-      })
-      const res = await r.json()
-      if (res.sucesso) {
-        toast.success('Cartão salvo com sucesso!')
-        setCartaoSalvo(cartao)
-        setMostrarFormCartao(false)
-      } else {
-        throw new Error(res.erro)
-      }
-    } catch (err) {
-      toast.error('Erro ao salvar cartão: ' + err.message)
-    }
-  }
 
   const confirmarPagamento = async (chamada) => {
     if (!senha) {
@@ -160,10 +128,10 @@ export default function ChamadasContratante() {
         )}
 
         {mostrarFormCartao && (
-           <div className="bg-gray-100 p-4 mt-2 rounded-lg space-y-2">
-             <CartaoCreditoForm onClose={() => setMostrarFormCartao(false)} />
-           </div>
-)}
+          <div className="bg-gray-100 p-4 mt-2 rounded-lg space-y-2">
+            <CartaoCreditoForm onClose={() => setMostrarFormCartao(false)} />
+          </div>
+        )}
       </div>
 
       {chamadas.length === 0 ? (
@@ -195,13 +163,6 @@ export default function ChamadasContratante() {
                     {loadingPagamento === chamada.id ? 'Pagando...' : 'Pagar Chamada'}
                   </button>
                 </>
-                <button
-                   onClick={() => pagarComPix(chamada)}
-                   className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
-                >
-                   Pagar com Pix
-                </button>
-
               )}
               {chamada.status === 'checkin_freela' && (
                 <button
