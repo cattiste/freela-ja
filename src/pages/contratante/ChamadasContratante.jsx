@@ -91,8 +91,10 @@ export default function ChamadasContratante() {
   }
 
   const pagarComCartao = async (chamada) => {
-    if (!senha) return toast.error('Digite sua senha de pagamento')
-
+    if (!senha) {
+      toast.error('Digite sua senha de pagamento')
+      return
+    }
     setLoadingPagamento(chamada.id)
     try {
       const r1 = await fetch(`${API_URL}/confirmarPagamento`, {
