@@ -1,49 +1,73 @@
 // CartaoCreditoForm.jsx
 import React, { useState } from 'react'
-import { db } from '@/firebase'
-import { doc, setDoc } from 'firebase/firestore'
 import { useAuth } from '@/context/AuthContext'
-import { toast } from 'react-hot-toast'
+import { db } from '@/firebase'
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore'
+import axios from 'axios'
 
-export default function CartaoCreditoForm({ onClose }) {
+export default function CartaoCreditoForm() {
   const { usuario } = useAuth()
-  const [nome, setNome] = useState('')
   const [numero, setNumero] = useState('')
-  const [vencimento, setVencimento] = useState('')
+  const [nome, setNome] = useState('')
+  const [validade, setValidade] = useState('')
   const [cvv, setCvv] = useState('')
-  const [cpf, setCpf] = useState('')
-  const [senha, setSenha] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const salvarCartao = async () => {
-    if (!usuario?.uid) return toast.error('Usuário não autenticado.')
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
 
     try {
-      await setDoc(doc(db, 'pagamentos_usuarios', usuario.uid), {
-        nome,
-        numero,
-        vencimento,
-        cvv,
-        cpf,
-        senhaPagamento: senha
+      const [mes, ano] = validade.split('/')
+      const body = {
+        brand: 'visa', // ou 'mastercard'
+        number: numero,
+        expiration_month: mes.trim(),
+        expiration_year: '20' + ano.trim(),
+        cvv: cvv.trim(),
+        holder: {
+          name: nome,
+        },
+      }
+
+      // Gera token de pagamento com a API da Gerencianet
+      const res = await axios.post('https://api-pix.gerencianet.com.br/v1/tokenize-card', body, {
+        headers: {
+          'Authorization': `Bearer ${process.env.REACT_APP_GN_API_TOKEN}`, // ou direto do backend com segurança
+        }
       })
-      toast.success('Cartão salvo com sucesso')
-      onClose?.()
+
+      const payment_token = res.data.payment_token
+      const ultimos4 = numero.slice(-4)
+
+      // Salva o cartão no Firestore
+      await updateDoc(doc(db, 'usuarios', usuario.uid), {
+        cartoes: arrayUnion({
+          payment_token,
+          ultimos4,
+          nomeTitular: nome
+        })
+      })
+
+      alert('Cartão salvo com sucesso!')
     } catch (err) {
       console.error(err)
-      toast.error('Erro ao salvar cartão')
+      alert('Erro ao salvar cartão. Verifique os dados.')
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome" className="input" />
-      <input value={numero} onChange={e => setNumero(e.target.value)} placeholder="Número do cartão" className="input" />
-      <input value={vencimento} onChange={e => setVencimento(e.target.value)} placeholder="Validade (MM/AA)" className="input" />
-      <input value={cvv} onChange={e => setCvv(e.target.value)} placeholder="CVV" className="input" />
-      <input value={cpf} onChange={e => setCpf(e.target.value)} placeholder="CPF" className="input" />
-      <input value={senha} onChange={e => setSenha(e.target.value)} placeholder="Senha para pagamento" type="password" className="input" />
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <input value={numero} onChange={e => setNumero(e.target.value)} placeholder="Número do cartão" required />
+      <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome do titular" required />
+      <input value={validade} onChange={e => setValidade(e.target.value)} placeholder="Validade (MM/AA)" required />
+      <input value={cvv} onChange={e => setCvv(e.target.value)} placeholder="CVV" required />
 
-      <button onClick={salvarCartao} className="btn btn-primary w-full">Salvar Cartão</button>
-    </div>
+      <button type="submit" disabled={loading}>
+        {loading ? 'Salvando...' : 'Salvar Cartão'}
+      </button>
+    </form>
   )
 }
