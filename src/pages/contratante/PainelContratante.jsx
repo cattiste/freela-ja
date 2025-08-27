@@ -24,6 +24,9 @@ import ValidacaoDocumento from '@/components/ValidacaoDocumento'
 
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
+import CartoesSalvos from '@/components/CartoesSalvos'
+
+<CartoesSalvos />
 
 // ErrorBoundary simples
 class ErrorBoundary extends React.Component {
