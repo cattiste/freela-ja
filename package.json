@@ -9,16 +9,19 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.7",
     "@heroicons/react": "^2.2.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "emailjs-com": "^3.2.0",
     "firebase": "^11.9.1",
     "gerencianet": "^1.0.3",
+    "gn-api-sdk-node": "^3.0.4",
     "haversine-distance": "^1.2.4",
     "jspdf": "^3.0.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.525.0",
+    "node-fetch": "^3.3.2",
     "react": "^18.3.1",
     "react-calendar": "^6.0.0",
     "react-dom": "^18.3.1",
@@ -29,14 +32,15 @@
     "react-leaflet": "^4.2.1",
     "react-multi-date-picker": "^4.5.2",
     "react-router-dom": "^6.14.1",
-    "remask": "^1.2.2"
+    "remask": "^1.2.2",
+    "sdk-node-apis-efi": "^1.2.25"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.5.2",
     "autoprefixer": "^10.4.17",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.1",
-    "vite": "^5.0.10"
+    "vite": "^7.1.3"
   },
   "engines": {
     "node": "22.x"
