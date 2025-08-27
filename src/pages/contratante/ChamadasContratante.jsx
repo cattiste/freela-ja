@@ -12,8 +12,10 @@ import {
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
+import SelecionarCartaoModal from '@/components/SelecionarCartaoModal'
 
-const API_URL = 'https://us-central1-freelaja-web-50254.cloudfunctions.net/api'
+const API_URL = 'https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api'
+
 
 export default function ChamadasContratante() {
   const { usuario } = useAuth()
@@ -22,6 +24,7 @@ export default function ChamadasContratante() {
   const [loadingPagamento, setLoadingPagamento] = useState(null)
   const [cartaoSalvo, setCartaoSalvo] = useState(null)
   const [mostrarFormCartao, setMostrarFormCartao] = useState(false)
+  const [abrirModalCartao, setAbrirModalCartao] = useState(false)
 
   const [cartao, setCartao] = useState({
     numero: '',
@@ -207,21 +210,21 @@ export default function ChamadasContratante() {
 
             <div className="flex flex-col sm:flex-row gap-2">
               {chamada.status === 'aceita' && (
-                <>
-                  <input
-                    type="password"
-                    placeholder="Senha de pagamento"
-                    className="input w-full sm:w-auto"
-                    value={senha}
-                    onChange={(e) => setSenha(e.target.value)}
-                  />
-                  <button
-                    onClick={() => pagarComCartao(chamada)}
-                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                    disabled={loadingPagamento === chamada.id}
-                  >
-                    {loadingPagamento === chamada.id ? 'Pagando...' : 'Pagar com Cartão'}
-                  </button>
+                <button
+                   onClick={() => setAbrirModalCartao(true)}
+                   className="bg-blue-600 text-white px-4 py-2 rounded mt-2"
+                >
+                   Pagar com Cartão Salvo
+                </button>
+              )}
+
+               {abrirModalCartao && (
+                 <SelecionarCartaoModal
+                   chamadaId={chamada.id}
+                   valor={chamada.valor}
+                   onClose={() => setAbrirModalCartao(false)}
+                 />
+              )}
                   <button
                     onClick={() => pagarComPix(chamada)}
                     className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
