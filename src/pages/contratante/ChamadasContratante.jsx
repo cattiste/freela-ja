@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
+
 import toast from 'react-hot-toast'
 import SelecionarCartaoModal from '@/components/SelecionarCartaoModal'
 
@@ -209,30 +210,30 @@ export default function ChamadasContratante() {
             {chamada.observacao && <p><strong>📄 Observação:</strong> {chamada.observacao}</p>}
 
             <div className="flex flex-col sm:flex-row gap-2">
-              {chamada.status === 'aceita' && (
-                <button
-                   onClick={() => setAbrirModalCartao(true)}
-                   className="bg-blue-600 text-white px-4 py-2 rounded mt-2"
-                >
-                   Pagar com Cartão Salvo
-                </button>
-              )}
-
-               {abrirModalCartao && (
-                 <SelecionarCartaoModal
-                   chamadaId={chamada.id}
-                   valor={chamada.valor}
-                   onClose={() => setAbrirModalCartao(false)}
-                 />
-              )}
-                  <button
-                    onClick={() => pagarComPix(chamada)}
-                    className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
-                  >
-                    Pagar com Pix
-                  </button>
-                </>
-              )}
+  {chamada.status === 'aceita' && (
+    <>
+      <input
+        type="password"
+        placeholder="Senha de pagamento"
+        className="input w-full sm:w-auto"
+        value={senha}
+        onChange={(e) => setSenha(e.target.value)}
+      />
+      <button
+        onClick={() => pagarComCartao(chamada)}
+        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        disabled={loadingPagamento === chamada.id}
+      >
+        {loadingPagamento === chamada.id ? 'Pagando...' : 'Pagar com Cartão'}
+      </button>
+      <button
+        onClick={() => pagarComPix(chamada)}
+        className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
+      >
+        Pagar com Pix
+      </button>
+    </>
+  )}
               {chamada.status === 'checkin_freela' && (
                 <button
                   onClick={() => confirmarCheckIn(chamada.id)}
