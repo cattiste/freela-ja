@@ -69,23 +69,16 @@ export default function ChamadasContratante() {
   if (usuario?.uid) buscarCartao();
 }, [usuario?.uid]);
 
-
   const cadastrarCartao = async () => {
   try {
-    const functions = getFunctions();
-    const salvarCartao = httpsCallable(functions, 'salvarCartao');
-
-    const resultado = await salvarCartao({
-      uid: usuario.uid,
-      numeroCartao: cartao.numero,
-      validade: cartao.vencimento,
-      cvv: cartao.cvv,
-      nomeTitular: cartao.nome,
-      cpf: cartao.cpf,
-      senhaPagamento: cartao.senha
-    });
-
-    toast.success('Cartão salvo com sucesso!');
+    const salvarCartao = httpsCallable(getFunctions(), 'salvarCartao');
+const resultado = await salvarCartao({
+  uid: usuario.uid,
+  numeroCartao: '1234567812341234',  // Número apenas temporário, não será salvo inteiro!
+  bandeira: 'visa',
+  senhaPagamento: '1234'
+});
+toast.success(resultado.data.mensagem);
     setCartaoSalvo(cartao);
     setMostrarFormCartao(false);
   } catch (err) {
