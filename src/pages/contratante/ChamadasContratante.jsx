@@ -52,22 +52,22 @@ export default function ChamadasContratante() {
 
   // Buscar cartão salvo
   useEffect(() => {
-    const buscarCartao = async () => {
-      try {
-        const r = await fetch(`${API_URL}/listarCartao`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ uid: usuario.uid })
-        })
-        const res = await r.json()
-        if (res.sucesso) setCartaoSalvo(res.cartao)
-      } catch (e) {
-        console.error('Erro ao buscar cartão salvo:', e)
+  const buscarCartao = async () => {
+    try {
+      const functions = getFunctions();
+      const listarCartao = httpsCallable(functions, 'listarCartao');
+      const resultado = await listarCartao({ uid: usuario.uid });
+      if (resultado?.data) {
+        setCartaoSalvo(resultado.data);
       }
+    } catch (e) {
+      console.error('Erro ao buscar cartão salvo via onCall:', e);
     }
+  };
 
-    if (usuario?.uid) buscarCartao()
-  }, [usuario?.uid])
+  if (usuario?.uid) buscarCartao();
+}, [usuario?.uid]);
+
 
   const cadastrarCartao = async () => {
     try {
