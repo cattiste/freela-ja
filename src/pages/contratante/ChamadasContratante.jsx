@@ -17,6 +17,16 @@ import SelecionarCartaoModal from '@/components/SelecionarCartaoModal'
 
 const API_URL = 'https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api'
 
+import { getFunctions, httpsCallable } from 'firebase/functions';
+
+const salvarCartao = httpsCallable(getFunctions(), 'salvarCartao');
+const resultado = await salvarCartao({
+  uid: usuario.uid,
+  ultimos4: '1234',
+  bandeira: 'visa'
+});
+toast.success(resultado.data.mensagem);
+
 
 export default function ChamadasContratante() {
   const { usuario } = useAuth()
