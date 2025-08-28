@@ -72,7 +72,8 @@ export default function ChamadasContratante() {
 
   const cadastrarCartao = async () => {
   try {
-    const salvarCartao = httpsCallable(getFunctions(), 'salvarCartao');
+const functions = getFunctions(app, 'southamerica-east1');
+const salvarCartao = httpsCallable(functions, 'salvarCartao');
 const resultado = await salvarCartao({
   uid: usuario.uid,
   numeroCartao: '1234567812341234',  // Número apenas temporário, não será salvo inteiro!
@@ -88,55 +89,51 @@ toast.success(resultado.data.mensagem);
   }
 };
 
-  const pagarComCartao = async (chamada) => {
-    if (!senha) {
-      toast.error('Digite sua senha de pagamento')
-      return
-    }
-    setLoadingPagamento(chamada.id)
-    try {
-      const r1 = await fetch(`${API_URL}/confirmarPagamentoComSenha`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: usuario.uid, senha }),
-      })
-      const res1 = await r1.json()
-      if (!res1.sucesso) throw new Error(res1.erro)
-
-      const r2 = await fetch(`${API_URL}/pagarFreela`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chamadaId: chamada.id }),
-      })
-      const res2 = await r2.json()
-      if (!res2.sucesso) throw new Error(res2.erro)
-
-      toast.success('Pagamento com cartão realizado com sucesso!')
-    } catch (err) {
-      toast.error(`Erro: ${err.message}`)
-    } finally {
-      setLoadingPagamento(null)
-    }
+ const pagarComCartao = async (chamada) => {
+  if (!senha) {
+    toast.error('Digite sua senha de pagamento');
+    return;
   }
+
+  setLoadingPagamento(chamada.id);
+
+  try {
+    const functions = getFunctions(app, 'southamerica-east1');
+    
+    const confirmar = httpsCallable(functions, 'confirmarPagamentoComSenha');
+    const pagar = httpsCallable(functions, 'pagarFreela');
+
+    const r1 = await confirmar({ uid: usuario.uid, senha });
+    if (!r1.data?.sucesso) throw new Error(r1.data?.erro || 'Erro na confirmação');
+
+    const r2 = await pagar({ chamadaId: chamada.id });
+    if (!r2.data?.sucesso) throw new Error(r2.data?.erro || 'Erro no pagamento');
+
+    toast.success('Pagamento com cartão realizado com sucesso!');
+  } catch (err) {
+    toast.error(`Erro: ${err.message}`);
+  } finally {
+    setLoadingPagamento(null);
+  }
+};
 
   const pagarComPix = async (chamada) => {
-    try {
-      const r = await fetch(`${API_URL}/gerarPix`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chamadaId: chamada.id })
-      })
-      const res = await r.json()
-      if (res.sucesso) {
-        toast.success('Pix gerado com sucesso!')
-        window.open(res.qrCodeUrl, '_blank')
-      } else {
-        throw new Error(res.erro)
-      }
-    } catch (err) {
-      toast.error('Erro ao gerar Pix: ' + err.message)
+  try {
+    const functions = getFunctions(app, 'southamerica-east1');
+    const gerarPix = httpsCallable(functions, 'gerarPix');
+    const res = await gerarPix({ chamadaId: chamada.id });
+
+    if (res.data?.sucesso) {
+      toast.success('Pix gerado com sucesso!');
+      window.open(res.data.qrCodeUrl, '_blank');
+    } else {
+      throw new Error(res.data?.erro || 'Erro ao gerar Pix');
     }
+  } catch (err) {
+    toast.error('Erro ao gerar Pix: ' + err.message);
   }
+};
+
 
   const confirmarCheckIn = async (id) => {
     await updateDoc(doc(db, 'chamadas', id), {
