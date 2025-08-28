@@ -12,9 +12,8 @@ import {
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
-import { getFunctions, httpsCallable } from 'firebase/functions';
-
-const API_URL = 'https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api'
+import { getFunctions, httpsCallable } from 'firebase/functions'
+import { app } from '@/firebase' // certifique-se que 'app' está exportado no firebase.js
 
 export default function ChamadasContratante() {
   const { usuario } = useAuth()
@@ -53,92 +52,87 @@ export default function ChamadasContratante() {
 
   // Buscar cartão salvo
   useEffect(() => {
-  const buscarCartao = async () => {
-    try {
-      const functions = getFunctions(app, 'southamerica-east1'); // ✅ força a região correta
-
-      const listarCartao = httpsCallable(functions, 'listarCartao');
-      const resultado = await listarCartao({ uid: usuario.uid });
-      if (resultado?.data) {
-        setCartaoSalvo(resultado.data);
+    const buscarCartao = async () => {
+      try {
+        const functions = getFunctions(app, 'southamerica-east1')
+        const listarCartao = httpsCallable(functions, 'listarCartao')
+        const resultado = await listarCartao({ uid: usuario.uid })
+        if (resultado?.data) {
+          setCartaoSalvo(resultado.data)
+        }
+      } catch (e) {
+        console.error('Erro ao buscar cartão salvo:', e)
       }
-    } catch (e) {
-      console.error('Erro ao buscar cartão salvo via onCall:', e);
     }
-  };
 
-  if (usuario?.uid) buscarCartao();
-}, [usuario?.uid]);
+    if (usuario?.uid) buscarCartao()
+  }, [usuario?.uid])
 
   const cadastrarCartao = async () => {
-  try {
-const functions = getFunctions(app, 'southamerica-east1');
-const salvarCartao = httpsCallable(functions, 'salvarCartao');
-const resultado = await salvarCartao({
-  uid: usuario.uid,
-  numeroCartao: '1234567812341234',  // Número apenas temporário, não será salvo inteiro!
-  bandeira: 'visa',
-  senhaPagamento: '1234'
-});
-toast.success(resultado.data.mensagem);
-    setCartaoSalvo(cartao);
-    setMostrarFormCartao(false);
-  } catch (err) {
-    toast.error('Erro ao salvar cartão: ' + err.message);
-    console.error(err);
-  }
-};
-
- const pagarComCartao = async (chamada) => {
-  if (!senha) {
-    toast.error('Digite sua senha de pagamento');
-    return;
+    try {
+      const functions = getFunctions(app, 'southamerica-east1')
+      const salvarCartao = httpsCallable(functions, 'salvarCartao')
+      const resultado = await salvarCartao({
+        uid: usuario.uid,
+        numeroCartao: cartao.numero,
+        bandeira: 'visa',
+        senhaPagamento: cartao.senha
+      })
+      toast.success(resultado.data.mensagem)
+      setCartaoSalvo(cartao)
+      setMostrarFormCartao(false)
+    } catch (err) {
+      toast.error('Erro ao salvar cartão: ' + err.message)
+      console.error(err)
+    }
   }
 
-  setLoadingPagamento(chamada.id);
+  const pagarComCartao = async (chamada) => {
+    if (!senha) {
+      toast.error('Digite sua senha de pagamento')
+      return
+    }
+    setLoadingPagamento(chamada.id)
+    try {
+      const functions = getFunctions(app, 'southamerica-east1')
+      const confirmar = httpsCallable(functions, 'confirmarPagamentoComSenha')
+      const pagar = httpsCallable(functions, 'pagarFreela')
 
-  try {
-    const functions = getFunctions(app, 'southamerica-east1');
-    
-    const confirmar = httpsCallable(functions, 'confirmarPagamentoComSenha');
-    const pagar = httpsCallable(functions, 'pagarFreela');
+      const r1 = await confirmar({ uid: usuario.uid, senha })
+      if (!r1.data?.sucesso) throw new Error(r1.data?.erro || 'Erro na confirmação')
 
-    const r1 = await confirmar({ uid: usuario.uid, senha });
-    if (!r1.data?.sucesso) throw new Error(r1.data?.erro || 'Erro na confirmação');
+      const r2 = await pagar({ chamadaId: chamada.id })
+      if (!r2.data?.sucesso) throw new Error(r2.data?.erro || 'Erro no pagamento')
 
-    const r2 = await pagar({ chamadaId: chamada.id });
-    if (!r2.data?.sucesso) throw new Error(r2.data?.erro || 'Erro no pagamento');
-
-    toast.success('Pagamento com cartão realizado com sucesso!');
-  } catch (err) {
-    toast.error(`Erro: ${err.message}`);
-  } finally {
-    setLoadingPagamento(null);
+      toast.success('Pagamento com cartão realizado com sucesso!')
+    } catch (err) {
+      toast.error(`Erro: ${err.message}`)
+    } finally {
+      setLoadingPagamento(null)
+    }
   }
-};
 
   const pagarComPix = async (chamada) => {
-  try {
-    const functions = getFunctions(app, 'southamerica-east1');
-    const gerarPix = httpsCallable(functions, 'gerarPix');
-    const res = await gerarPix({ chamadaId: chamada.id });
+    try {
+      const functions = getFunctions(app, 'southamerica-east1')
+      const gerarPix = httpsCallable(functions, 'gerarPix')
+      const res = await gerarPix({ chamadaId: chamada.id })
 
-    if (res.data?.sucesso) {
-      toast.success('Pix gerado com sucesso!');
-      window.open(res.data.qrCodeUrl, '_blank');
-    } else {
-      throw new Error(res.data?.erro || 'Erro ao gerar Pix');
+      if (res.data?.sucesso) {
+        toast.success('Pix gerado com sucesso!')
+        window.open(res.data.qrCodeUrl, '_blank')
+      } else {
+        throw new Error(res.data?.erro || 'Erro ao gerar Pix')
+      }
+    } catch (err) {
+      toast.error('Erro ao gerar Pix: ' + err.message)
     }
-  } catch (err) {
-    toast.error('Erro ao gerar Pix: ' + err.message);
   }
-};
-
 
   const confirmarCheckIn = async (id) => {
     await updateDoc(doc(db, 'chamadas', id), {
       status: 'checkin_confirmado',
-      checkInConfirmadoPeloContratanteHora: serverTimestamp(),
+      checkInConfirmadoPeloContratanteHora: serverTimestamp()
     })
     toast.success('✅ Check-in confirmado')
   }
@@ -146,7 +140,7 @@ toast.success(resultado.data.mensagem);
   const confirmarCheckOut = async (id) => {
     await updateDoc(doc(db, 'chamadas', id), {
       status: 'concluido',
-      checkOutConfirmadoPeloContratanteHora: serverTimestamp(),
+      checkOutConfirmadoPeloContratanteHora: serverTimestamp()
     })
     toast.success('✅ Check-out confirmado')
   }
@@ -159,7 +153,10 @@ toast.success(resultado.data.mensagem);
         <div className="flex items-center justify-between mb-2">
           <span className="font-bold text-blue-600">💳 Cartão Cadastrado</span>
           {!mostrarFormCartao && (
-            <button onClick={() => setMostrarFormCartao(true)} className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm">
+            <button
+              onClick={() => setMostrarFormCartao(true)}
+              className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm"
+            >
               + Cadastrar Cartão
             </button>
           )}
@@ -173,17 +170,57 @@ toast.success(resultado.data.mensagem);
 
         {mostrarFormCartao && (
           <div className="bg-gray-100 p-4 mt-2 rounded-lg space-y-2">
-            <input type="text" placeholder="Número do cartão" className="input w-full" value={cartao.numero} onChange={e => setCartao({ ...cartao, numero: e.target.value })} />
+            <input
+              type="text"
+              placeholder="Número do cartão"
+              className="input w-full"
+              value={cartao.numero}
+              onChange={(e) => setCartao({ ...cartao, numero: e.target.value })}
+            />
             <div className="flex gap-2">
-              <input type="text" placeholder="MM/AA" className="input w-1/2" value={cartao.vencimento} onChange={e => setCartao({ ...cartao, vencimento: e.target.value })} />
-              <input type="text" placeholder="CVV" className="input w-1/2" value={cartao.cvv} onChange={e => setCartao({ ...cartao, cvv: e.target.value })} />
+              <input
+                type="text"
+                placeholder="MM/AA"
+                className="input w-1/2"
+                value={cartao.vencimento}
+                onChange={(e) => setCartao({ ...cartao, vencimento: e.target.value })}
+              />
+              <input
+                type="text"
+                placeholder="CVV"
+                className="input w-1/2"
+                value={cartao.cvv}
+                onChange={(e) => setCartao({ ...cartao, cvv: e.target.value })}
+              />
             </div>
-            <input type="text" placeholder="Nome do titular" className="input w-full" value={cartao.nome} onChange={e => setCartao({ ...cartao, nome: e.target.value })} />
-            <input type="text" placeholder="CPF" className="input w-full" value={cartao.cpf} onChange={e => setCartao({ ...cartao, cpf: e.target.value })} />
-            <input type="password" placeholder="Senha para pagamento" className="input w-full" value={cartao.senha} onChange={e => setCartao({ ...cartao, senha: e.target.value })} />
+            <input
+              type="text"
+              placeholder="Nome do titular"
+              className="input w-full"
+              value={cartao.nome}
+              onChange={(e) => setCartao({ ...cartao, nome: e.target.value })}
+            />
+            <input
+              type="text"
+              placeholder="CPF"
+              className="input w-full"
+              value={cartao.cpf}
+              onChange={(e) => setCartao({ ...cartao, cpf: e.target.value })}
+            />
+            <input
+              type="password"
+              placeholder="Senha para pagamento"
+              className="input w-full"
+              value={cartao.senha}
+              onChange={(e) => setCartao({ ...cartao, senha: e.target.value })}
+            />
             <div className="flex justify-end gap-2 mt-2">
-              <button onClick={() => setMostrarFormCartao(false)} className="bg-gray-300 px-3 py-1 rounded">Cancelar</button>
-              <button onClick={cadastrarCartao} className="bg-green-600 text-white px-3 py-1 rounded">Salvar Cartão</button>
+              <button onClick={() => setMostrarFormCartao(false)} className="bg-gray-300 px-3 py-1 rounded">
+                Cancelar
+              </button>
+              <button onClick={cadastrarCartao} className="bg-green-600 text-white px-3 py-1 rounded">
+                Salvar Cartão
+              </button>
             </div>
           </div>
         )}
@@ -193,12 +230,25 @@ toast.success(resultado.data.mensagem);
         <p className="text-center text-gray-600">Nenhuma chamada ativa no momento.</p>
       ) : (
         chamadas.map((chamada) => (
-          <div key={chamada.id} className="bg-white shadow-md rounded-xl p-4 mb-4 space-y-2 border border-orange-300">
+          <div
+            key={chamada.id}
+            className="bg-white shadow-md rounded-xl p-4 mb-4 space-y-2 border border-orange-300"
+          >
             <h2 className="text-lg font-semibold text-orange-600">Chamada #{chamada.id.slice(-5)}</h2>
-            <p><strong>Freela:</strong> {chamada.freelaNome || chamada.freelaUid}</p>
-            <p><strong>Status:</strong> {chamada.status}</p>
-            <p><strong>Valor da diária:</strong> R$ {chamada.valorDiaria?.toFixed(2) || '---'}</p>
-            {chamada.observacao && <p><strong>📄 Observação:</strong> {chamada.observacao}</p>}
+            <p>
+              <strong>Freela:</strong> {chamada.freelaNome || chamada.freelaUid}
+            </p>
+            <p>
+              <strong>Status:</strong> {chamada.status}
+            </p>
+            <p>
+              <strong>Valor da diária:</strong> R$ {chamada.valorDiaria?.toFixed(2) || '---'}
+            </p>
+            {chamada.observacao && (
+              <p>
+                <strong>📄 Observação:</strong> {chamada.observacao}
+              </p>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-2">
               {chamada.status === 'aceita' && (
