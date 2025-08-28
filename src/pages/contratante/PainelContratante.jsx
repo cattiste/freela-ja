@@ -20,6 +20,9 @@ import ChamadasContratante from '@/pages/contratante/ChamadasContratante'
 import Calendar from 'react-calendar'
 import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 import ValidacaoDocumento from '@/components/ValidacaoDocumento'
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getApp } from 'firebase/app';
+import { useEffect, useState } from 'react';
 
 
 import 'react-calendar/dist/Calendar.css'
@@ -123,6 +126,41 @@ export default function PainelContratante() {
     }
   }
 
+  function CartaoContratanteBox({ uid }) {
+  const [cartao, setCartao] = useState(null);
+  const [erro, setErro] = useState(null);
+
+  useEffect(() => {
+    const buscarCartao = async () => {
+      try {
+        const functions = getFunctions(getApp());
+        const listarCartao = httpsCallable(functions, 'listarCartao');
+        const response = await listarCartao({ uid });
+        setCartao(response.data);
+      } catch (err) {
+        console.error('Erro ao buscar cartão:', err);
+        setErro('Erro ao buscar cartão.');
+      }
+    };
+
+    if (uid) buscarCartao();
+  }, [uid]);
+
+  return (
+    <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
+      <h3 className="font-bold text-orange-700 mb-2">💳 Cartão Cadastrado</h3>
+      {erro && <p className="text-red-500 text-sm">{erro}</p>}
+      {cartao ? (
+        <p className="text-gray-700 text-sm">
+          Cartão final <span className="font-semibold">{cartao.final}</span>
+        </p>
+      ) : (
+        <p className="text-sm text-gray-500">Nenhum cartão cadastrado.</p>
+      )}
+    </div>
+  );
+}
+
   function renderPerfil() {
     return (
       <div className="space-y-6">
@@ -209,6 +247,7 @@ export default function PainelContratante() {
           <>
             {renderPerfil()}
             {usuario?.statusDocumentos !== 'aprovado' && <ValidacaoDocumento />}
+            <CartaoContratanteBox uid={contratante?.uid} />
           </>
         )
       case 'buscar':
