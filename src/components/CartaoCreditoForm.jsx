@@ -1,8 +1,8 @@
-// src/components/CartaoCreditoForm.jsx
 import React, { useState } from 'react'
-import axios from 'axios'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
+import { getFunctions, httpsCallable } from 'firebase/functions'
+import { getApp } from 'firebase/app'
 
 export default function CartaoCreditoForm({ onClose }) {
   const { usuario } = useAuth()
@@ -19,26 +19,27 @@ export default function CartaoCreditoForm({ onClose }) {
     setCarregando(true)
 
     try {
-      const resposta = await axios.post(
-        'https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api/cadastrarCartao',
-        {
-          uid: usuario.uid,
-          number: numero.replace(/\s/g, ''),
-          name: nome,
-          expiration_month: mes.trim(),
-          expiration_year: '20' + ano.trim(),
-          cvv: cvv.trim()
-        }
-      )
+      const functions = getFunctions(getApp())
+      const salvarCartao = httpsCallable(functions, 'salvarCartao')
 
-      if (resposta.data.sucesso) {
+      const resultado = await salvarCartao({
+        uid: usuario.uid,
+        numeroCartao: numero.replace(/\s/g, ''),
+        nomeTitular: nome.trim(),
+        validade: `${mes.trim()}/${ano.trim()}`,
+        cvv: cvv.trim(),
+        cpf: usuario?.cpf || '00000000000', // ajuste conforme seus dados
+        senhaPagamento: '1234' // pode vir de outro input ou processo separado
+      })
+
+      if (resultado.data?.sucesso) {
         toast.success('Cartão salvo com sucesso!')
         onClose()
       } else {
         toast.error('Erro ao salvar cartão.')
       }
     } catch (error) {
-      console.error('Erro ao cadastrar cartão:', error)
+      console.error('Erro ao salvar cartão:', error)
       toast.error('Erro ao salvar cartão.')
     } finally {
       setCarregando(false)
