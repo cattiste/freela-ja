@@ -246,8 +246,7 @@ export default function PainelContratante() {
         return (
           <>
             {renderPerfil()}
-            {usuario?.statusDocumentos !== 'aprovado' && <ValidacaoDocumento />}
-            <CartaoContratanteBox uid={contratante?.uid} />
+            {usuario?.statusDocumentos !== 'aprovado' && <ValidacaoDocumento />}            
           </>
         )
       case 'buscar':
