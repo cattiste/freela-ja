@@ -1,8 +1,10 @@
+// src/firebase.js
 import { initializeApp } from "firebase/app"
 import { getAuth } from "firebase/auth"
 import { getFirestore } from "firebase/firestore"
 import { getStorage } from "firebase/storage"
-import { getDatabase } from "firebase/database" // ✅ Realtime Database
+import { getDatabase } from "firebase/database"
+import { getFunctions } from "firebase/functions" // ✅ Importa getFunctions
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -14,35 +16,32 @@ const firebaseConfig = {
   databaseURL: 'https://freelaja-web-50254-default-rtdb.firebaseio.com/'
 }
 
-// Verificação básica das configurações
+// ✅ Verificação de configuração
 if (!firebaseConfig.apiKey || !firebaseConfig.databaseURL) {
   console.log("🌐 databaseURL:", firebaseConfig.databaseURL)
   console.error("Firebase API key or databaseURL is missing!")
   throw new Error("Firebase configuration is incomplete")
 }
 
-let app
-try {
-  app = initializeApp(firebaseConfig)
-} catch (error) {
-  console.error("Error initializing Firebase:", error)
-  throw error
-}
+// ✅ Inicialização do app
+const app = initializeApp(firebaseConfig)
 
+// ✅ Instâncias dos serviços
 const auth = getAuth(app)
 const db = getFirestore(app)
 const storage = getStorage(app)
-const rtdb = getDatabase(app) // ✅ RTDB ativado
+const rtdb = getDatabase(app)
+const functions = getFunctions(app, 'southamerica-east1') // ✅ Corrigido: com app e região
 
+// ✅ Log de debug
 if (import.meta.env.MODE === 'development') {
   console.log("✅ Firebase initialized successfully")
   console.log("🔎 Project ID:", firebaseConfig.projectId)
 }
 
-export { app, auth, db, storage, rtdb } // ✅ exporte o RTDB também
+// ✅ Exporta tudo
+export { app, auth, db, storage, rtdb, functions }
 
-import { getFunctions } from 'firebase/functions'
-export const functions = getFunctions()
 
 
 // Projeto original FreelaJá - Código registrado e rastreável

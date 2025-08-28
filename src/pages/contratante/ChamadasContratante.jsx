@@ -12,7 +12,8 @@ import {
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
-import { getFunctions, httpsCallable } from 'firebase/functions'
+import { httpsCallable } from 'firebase/functions'
+import { functions } from '@/firebase'
 import { app } from '@/firebase' // certifique-se que 'app' está exportado no firebase.js
 
 export default function ChamadasContratante() {
