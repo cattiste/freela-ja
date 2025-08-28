@@ -11,25 +11,9 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
-
 import toast from 'react-hot-toast'
-import SelecionarCartaoModal from '@/components/SelecionarCartaoModal'
-import SalvarSenhaCartao from '@/components/SalvarSenhaCartao'
 
 const API_URL = 'https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api'
-
-import { getFunctions, httpsCallable } from 'firebase/functions';
-
-const salvarCartao = httpsCallable(getFunctions(), 'salvarCartao');
-const resultado = await salvarCartao({
-  uid: usuario.uid,
-  ultimos4: '1234',
-  bandeira: 'visa'
-});
-toast.success(resultado.data.mensagem);
-
-
-<SalvarSenhaCartao />
 
 export default function ChamadasContratante() {
   const { usuario } = useAuth()
@@ -38,7 +22,6 @@ export default function ChamadasContratante() {
   const [loadingPagamento, setLoadingPagamento] = useState(null)
   const [cartaoSalvo, setCartaoSalvo] = useState(null)
   const [mostrarFormCartao, setMostrarFormCartao] = useState(false)
-  const [abrirModalCartao, setAbrirModalCartao] = useState(false)
 
   const [cartao, setCartao] = useState({
     numero: '',
@@ -67,7 +50,7 @@ export default function ChamadasContratante() {
     return () => unsubscribe()
   }, [usuario?.uid])
 
-  // 🔐 Buscar cartão
+  // Buscar cartão salvo
   useEffect(() => {
     const buscarCartao = async () => {
       try {
@@ -86,13 +69,12 @@ export default function ChamadasContratante() {
     if (usuario?.uid) buscarCartao()
   }, [usuario?.uid])
 
-  // 💳 Cadastrar cartão
   const cadastrarCartao = async () => {
     try {
       const r = await fetch(`${API_URL}/cadastrarCartao`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: usuario.uid, ...cartao, senha: cartao.senha })
+        body: JSON.stringify({ uid: usuario.uid, ...cartao })
       })
       const res = await r.json()
       if (res.sucesso) {
@@ -114,7 +96,7 @@ export default function ChamadasContratante() {
     }
     setLoadingPagamento(chamada.id)
     try {
-      const r1 = await fetch(`${API_URL}/confirmarPagamento`, {
+      const r1 = await fetch(`${API_URL}/confirmarPagamentoComSenha`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: usuario.uid, senha }),
@@ -223,30 +205,30 @@ export default function ChamadasContratante() {
             {chamada.observacao && <p><strong>📄 Observação:</strong> {chamada.observacao}</p>}
 
             <div className="flex flex-col sm:flex-row gap-2">
-  {chamada.status === 'aceita' && (
-    <>
-      <input
-        type="password"
-        placeholder="Senha de pagamento"
-        className="input w-full sm:w-auto"
-        value={senha}
-        onChange={(e) => setSenha(e.target.value)}
-      />
-      <button
-        onClick={() => pagarComCartao(chamada)}
-        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-        disabled={loadingPagamento === chamada.id}
-      >
-        {loadingPagamento === chamada.id ? 'Pagando...' : 'Pagar com Cartão'}
-      </button>
-      <button
-        onClick={() => pagarComPix(chamada)}
-        className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
-      >
-        Pagar com Pix
-      </button>
-    </>
-  )}
+              {chamada.status === 'aceita' && (
+                <>
+                  <input
+                    type="password"
+                    placeholder="Senha de pagamento"
+                    className="input w-full sm:w-auto"
+                    value={senha}
+                    onChange={(e) => setSenha(e.target.value)}
+                  />
+                  <button
+                    onClick={() => pagarComCartao(chamada)}
+                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                    disabled={loadingPagamento === chamada.id}
+                  >
+                    {loadingPagamento === chamada.id ? 'Pagando...' : 'Pagar com Cartão'}
+                  </button>
+                  <button
+                    onClick={() => pagarComPix(chamada)}
+                    className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
+                  >
+                    Pagar com Pix
+                  </button>
+                </>
+              )}
               {chamada.status === 'checkin_freela' && (
                 <button
                   onClick={() => confirmarCheckIn(chamada.id)}
