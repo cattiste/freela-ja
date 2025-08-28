@@ -55,7 +55,8 @@ export default function ChamadasContratante() {
   useEffect(() => {
   const buscarCartao = async () => {
     try {
-      const functions = getFunctions();
+      const functions = getFunctions(app, 'southamerica-east1'); // ✅ força a região correta
+
       const listarCartao = httpsCallable(functions, 'listarCartao');
       const resultado = await listarCartao({ uid: usuario.uid });
       if (resultado?.data) {

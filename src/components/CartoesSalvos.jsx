@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { collection, getDocs } from 'firebase/firestore'
-import { db } from '@/firebase'
+import { getFunctions, httpsCallable } from 'firebase/functions'
 import { useAuth } from '@/context/AuthContext'
+import { app } from '@/firebase' // 🔁 certifique-se que 'app' vem do initializeApp
 
 export default function CartoesSalvos() {
   const { usuario } = useAuth()
@@ -14,15 +14,14 @@ export default function CartoesSalvos() {
     const fetchCartoes = async () => {
       setCarregando(true)
       try {
-        const ref = collection(db, 'usuarios', usuario.uid, 'cartoes')
-        const snapshot = await getDocs(ref)
-        const lista = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data()
-        }))
+        const functions = getFunctions(app, 'southamerica-east1') // ✅ Região correta
+        const listarCartao = httpsCallable(functions, 'listarCartao')
+        const resultado = await listarCartao()
+        const lista = resultado.data || []
+
         setCartoes(lista)
       } catch (error) {
-        console.error('Erro ao buscar cartões:', error)
+        console.error('Erro ao buscar cartões via onCall:', error)
       } finally {
         setCarregando(false)
       }
