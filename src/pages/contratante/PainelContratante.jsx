@@ -22,7 +22,7 @@ import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 import ValidacaoDocumento from '@/components/ValidacaoDocumento'
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getApp } from 'firebase/app';
-import { useEffect, useState } from 'react';
+
 
 
 import 'react-calendar/dist/Calendar.css'
