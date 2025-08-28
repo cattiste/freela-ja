@@ -12,6 +12,7 @@ import {
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const API_URL = 'https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api'
 
@@ -70,24 +71,28 @@ export default function ChamadasContratante() {
 
 
   const cadastrarCartao = async () => {
-    try {
-      const r = await fetch(`${API_URL}/cadastrarCartao`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: usuario.uid, ...cartao })
-      })
-      const res = await r.json()
-      if (res.sucesso) {
-        toast.success('Cartão salvo com sucesso!')
-        setCartaoSalvo(cartao)
-        setMostrarFormCartao(false)
-      } else {
-        throw new Error(res.erro)
-      }
-    } catch (err) {
-      toast.error('Erro ao salvar cartão: ' + err.message)
-    }
+  try {
+    const functions = getFunctions();
+    const salvarCartao = httpsCallable(functions, 'salvarCartao');
+
+    const resultado = await salvarCartao({
+      uid: usuario.uid,
+      numeroCartao: cartao.numero,
+      validade: cartao.vencimento,
+      cvv: cartao.cvv,
+      nomeTitular: cartao.nome,
+      cpf: cartao.cpf,
+      senhaPagamento: cartao.senha
+    });
+
+    toast.success('Cartão salvo com sucesso!');
+    setCartaoSalvo(cartao);
+    setMostrarFormCartao(false);
+  } catch (err) {
+    toast.error('Erro ao salvar cartão: ' + err.message);
+    console.error(err);
   }
+};
 
   const pagarComCartao = async (chamada) => {
     if (!senha) {

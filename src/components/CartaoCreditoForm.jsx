@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast'
 import { getFunctions, httpsCallable } from 'firebase/functions'
 import { getApp } from 'firebase/app'
 
+
 export default function CartaoCreditoForm({ onClose }) {
   const { usuario } = useAuth()
 
