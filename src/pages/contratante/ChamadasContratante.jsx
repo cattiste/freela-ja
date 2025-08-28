@@ -14,6 +14,7 @@ import { useAuth } from '@/context/AuthContext'
 
 import toast from 'react-hot-toast'
 import SelecionarCartaoModal from '@/components/SelecionarCartaoModal'
+import SalvarSenhaCartao from '@/components/SalvarSenhaCartao'
 
 const API_URL = 'https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api'
 
@@ -27,6 +28,8 @@ const resultado = await salvarCartao({
 });
 toast.success(resultado.data.mensagem);
 
+
+<SalvarSenhaCartao />
 
 export default function ChamadasContratante() {
   const { usuario } = useAuth()
