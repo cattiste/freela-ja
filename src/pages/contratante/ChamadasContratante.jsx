@@ -32,6 +32,10 @@ export default function ChamadasContratante() {
   })
 
   const functions = getFunctions(app, 'southamerica-east1')
+  const listarCartao = httpsCallable(functions, 'listarCartao')
+  const salvarCartao = httpsCallable(functions, 'salvarCartao')
+  const confirmarPagamentoComSenha = httpsCallable(functions, 'confirmarPagamentoComSenha')
+  const pagarFreela = httpsCallable(functions, 'pagarFreela')
 
   useEffect(() => {
     if (!usuario?.uid) return
