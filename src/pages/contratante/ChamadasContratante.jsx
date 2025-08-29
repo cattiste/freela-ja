@@ -121,7 +121,8 @@ export default function ChamadasContratante() {
 
       if (res.data?.sucesso && res.data?.qrCodeUrl) {
         toast.success('Pix gerado com sucesso!')
-        window.open(res.data.qrCodeUrl, '_blank')
+        window.open(`https://southamerica-east1-${freelaja-web-50254}.cloudfunctions.net/api/api/gerarPix`, '_blank');
+
       } else {
         throw new Error(res.data?.erro || 'Erro ao gerar Pix')
       }
