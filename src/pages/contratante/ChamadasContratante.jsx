@@ -1,3 +1,5 @@
+// src/pages/contratante/ChamadasContratante.jsx
+
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -43,7 +45,7 @@ export default function ChamadasContratante() {
     const q = query(
       collection(db, 'chamadas'),
       where('contratanteUid', '==', usuario.uid),
-      where('status', 'in', ['aceita', 'checkin_freela', 'em_andamento', 'checkout_freela'])
+      where('status', 'in', ['aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'pago'])
     )
 
     const unsubscribe = onSnapshot(q, (snap) => {
@@ -58,11 +60,8 @@ export default function ChamadasContratante() {
   useEffect(() => {
     const buscarCartao = async () => {
       try {
-        const func = httpsCallable(functions, 'listarCartao')
-        const res = await func({ uid: usuario.uid })
-        if (res?.data) {
-          setCartaoSalvo(res.data)
-        }
+        const res = await listarCartao({ uid: usuario.uid })
+        if (res?.data) setCartaoSalvo(res.data)
       } catch (err) {
         console.error('Erro ao buscar cartão salvo:', err)
       }
@@ -73,15 +72,14 @@ export default function ChamadasContratante() {
 
   const cadastrarCartao = async () => {
     try {
-      const func = httpsCallable(functions, 'salvarCartao')
-      const res = await func({
+      const res = await salvarCartao({
         uid: usuario.uid,
         numeroCartao: cartao.numero,
-        bandeira: 'visa', // 💡 pode ajustar isso depois
+        bandeira: 'visa',
         senhaPagamento: cartao.senha
       })
       toast.success(res.data?.mensagem || 'Cartão salvo com sucesso!')
-      setCartaoSalvo(cartao)
+      setCartaoSalvo({ numeroFinal: cartao.numero.slice(-4) })
       setMostrarFormCartao(false)
     } catch (err) {
       toast.error('Erro ao salvar cartão: ' + err.message)
@@ -96,14 +94,10 @@ export default function ChamadasContratante() {
 
     setLoadingPagamento(chamada.id)
     try {
-      const validarSenha = httpsCallable(functions, 'confirmarPagamentoComSenha')
-      const r1 = await validarSenha({ uid: usuario.uid, senha })
-
+      const r1 = await confirmarPagamentoComSenha({ uid: usuario.uid, senha })
       if (!r1.data?.sucesso) throw new Error(r1.data?.erro)
 
-      const pagarFreela = httpsCallable(functions, 'pagarFreela')
       const r2 = await pagarFreela({ chamadaId: chamada.id })
-
       if (!r2.data?.sucesso) throw new Error(r2.data?.erro)
 
       toast.success('Pagamento com cartão realizado com sucesso!')
@@ -114,33 +108,32 @@ export default function ChamadasContratante() {
     }
   }
 
- const gerarPix = async (chamada) => {
-  try {
-    const resposta = await fetch('https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api/gerarPix', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        valor: chamada.valorDiaria,
-        nome: usuario.nome,
-        cpf: usuario.cpf,
-        idChamada: chamada.id,
+  const gerarPix = async (chamada) => {
+    try {
+      const resposta = await fetch('https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api/gerarPix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          valor: chamada.valorDiaria,
+          nome: usuario.nome,
+          cpf: usuario.cpf,
+          idChamada: chamada.id,
+        })
       })
-    });
 
-    const res = await resposta.json();
+      const res = await resposta.json()
 
-    if (res.qrCode) {
-      toast.success('Pix gerado com sucesso!');
-      window.open(res.imagemQrCode, '_blank');
-    } else {
-      toast.error(res.erro || 'Erro ao gerar Pix.');
+      if (res.qrCode) {
+        toast.success('Pix gerado com sucesso!')
+        window.open(res.imagemQrCode, '_blank')
+      } else {
+        toast.error(res.erro || 'Erro ao gerar Pix.')
+      }
+    } catch (err) {
+      console.error('Erro ao gerar Pix:', err)
+      toast.error('Erro ao gerar Pix.')
     }
-  } catch (err) {
-    console.error('Erro ao gerar Pix:', err);
-    toast.error('Erro ao gerar Pix.');
   }
-}
-
 
   const confirmarCheckIn = async (id) => {
     await updateDoc(doc(db, 'chamadas', id), {
@@ -173,7 +166,7 @@ export default function ChamadasContratante() {
         </div>
 
         {cartaoSalvo ? (
-          <p className="text-sm">Cartão final {cartaoSalvo.numero?.slice(-4)}</p>
+          <p className="text-sm">Cartão final {cartaoSalvo.numeroFinal}</p>
         ) : (
           <p className="text-sm text-gray-500">Nenhum cartão cadastrado ainda.</p>
         )}
@@ -225,7 +218,7 @@ export default function ChamadasContratante() {
                     {loadingPagamento === chamada.id ? 'Pagando...' : 'Pagar com Cartão'}
                   </button>
                   <button
-                    onClick={() => pagarComPix(chamada)}
+                    onClick={() => gerarPix(chamada)}
                     className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
                   >
                     Pagar com Pix
