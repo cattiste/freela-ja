@@ -114,22 +114,33 @@ export default function ChamadasContratante() {
     }
   }
 
-  const pagarComPix = async (chamada) => {
-    try {
-      const gerarPix = httpsCallable(functions, 'gerarPix')
-      const res = await gerarPix({ chamadaId: chamada.id })
+ const gerarPix = async (chamada) => {
+  try {
+    const resposta = await fetch('https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api/gerarPix', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        valor: chamada.valorDiaria,
+        nome: usuario.nome,
+        cpf: usuario.cpf,
+        idChamada: chamada.id,
+      })
+    });
 
-      if (res.data?.sucesso && res.data?.qrCodeUrl) {
-        toast.success('Pix gerado com sucesso!')
-        window.open(`https://southamerica-east1-${freelaja-web-50254}.cloudfunctions.net/api/api/gerarPix`, '_blank');
+    const res = await resposta.json();
 
-      } else {
-        throw new Error(res.data?.erro || 'Erro ao gerar Pix')
-      }
-    } catch (err) {
-      toast.error('Erro ao gerar Pix: ' + err.message)
+    if (res.qrCode) {
+      toast.success('Pix gerado com sucesso!');
+      window.open(res.imagemQrCode, '_blank');
+    } else {
+      toast.error(res.erro || 'Erro ao gerar Pix.');
     }
+  } catch (err) {
+    console.error('Erro ao gerar Pix:', err);
+    toast.error('Erro ao gerar Pix.');
   }
+}
+
 
   const confirmarCheckIn = async (id) => {
     await updateDoc(doc(db, 'chamadas', id), {
