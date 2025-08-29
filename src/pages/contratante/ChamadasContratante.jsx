@@ -1,5 +1,4 @@
 // src/pages/contratante/ChamadasContratante.jsx
-
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -35,28 +34,27 @@ export default function ChamadasContratante() {
 
   const functions = getFunctions(app, 'southamerica-east1')
   const listarCartao = httpsCallable(functions, 'listarCartao')
-  const salvarCartao = httpsCallable(functions, 'salvarCartao')
+  const salvarCartaoFn = httpsCallable(functions, 'salvarCartao')
   const confirmarPagamentoComSenha = httpsCallable(functions, 'confirmarPagamentoComSenha')
-  const pagarFreela = httpsCallable(functions, 'pagarFreela')
+  const pagarFreelaFn = httpsCallable(functions, 'pagarFreela')
 
+  // 🔎 ouvir minhas chamadas (inclui 'pago' para não sumir)
   useEffect(() => {
     if (!usuario?.uid) return
-
     const q = query(
       collection(db, 'chamadas'),
       where('contratanteUid', '==', usuario.uid),
       where('status', 'in', ['aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'pago'])
     )
-
-    const unsubscribe = onSnapshot(q, (snap) => {
+    const unsub = onSnapshot(q, (snap) => {
       const lista = []
-      snap.forEach((doc) => lista.push({ id: doc.id, ...doc.data() }))
+      snap.forEach((d) => lista.push({ id: d.id, ...d.data() }))
       setChamadas(lista)
     })
-
-    return () => unsubscribe()
+    return () => unsub()
   }, [usuario?.uid])
 
+  // 💳 buscar cartão salvo
   useEffect(() => {
     const buscarCartao = async () => {
       try {
@@ -66,41 +64,42 @@ export default function ChamadasContratante() {
         console.error('Erro ao buscar cartão salvo:', err)
       }
     }
-
     if (usuario?.uid) buscarCartao()
   }, [usuario?.uid])
 
+  // 💳 cadastrar cartão
   const cadastrarCartao = async () => {
     try {
-      const res = await salvarCartao({
+      const res = await salvarCartaoFn({
         uid: usuario.uid,
         numeroCartao: cartao.numero,
         bandeira: 'visa',
         senhaPagamento: cartao.senha
       })
       toast.success(res.data?.mensagem || 'Cartão salvo com sucesso!')
-      setCartaoSalvo({ numeroFinal: cartao.numero.slice(-4) })
+      setCartaoSalvo({ numeroFinal: cartao.numero.slice(-4), bandeira: 'visa' })
       setMostrarFormCartao(false)
     } catch (err) {
-      toast.error('Erro ao salvar cartão: ' + err.message)
+      toast.error('Erro ao salvar cartão: ' + (err?.message || ''))
     }
   }
 
+  // 💳 pagar com cartão
   const pagarComCartao = async (chamada) => {
     if (!senha) {
       toast.error('Digite sua senha de pagamento')
       return
     }
-
     setLoadingPagamento(chamada.id)
     try {
       const r1 = await confirmarPagamentoComSenha({ uid: usuario.uid, senha })
-      if (!r1.data?.sucesso) throw new Error(r1.data?.erro)
+      if (!r1.data?.sucesso) throw new Error(r1.data?.erro || 'Senha inválida')
 
-      const r2 = await pagarFreela({ chamadaId: chamada.id })
-      if (!r2.data?.sucesso) throw new Error(r2.data?.erro)
+      const r2 = await pagarFreelaFn({ chamadaId: chamada.id })
+      if (!r2.data?.sucesso) throw new Error(r2.data?.erro || 'Falha no pagamento')
 
-      toast.success('Pagamento com cartão realizado com sucesso!')
+      toast.success('Pagamento realizado com sucesso!')
+      // mantém na lista pois já incluímos o status 'pago' no filtro
     } catch (err) {
       toast.error(`Erro: ${err.message}`)
     } finally {
@@ -108,6 +107,7 @@ export default function ChamadasContratante() {
     }
   }
 
+  // 💸 gerar Pix (rota HTTP em /api/gerarPix)
   const gerarPix = async (chamada) => {
     try {
       const resposta = await fetch('https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api/gerarPix', {
@@ -115,14 +115,12 @@ export default function ChamadasContratante() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           valor: chamada.valorDiaria,
-          nome: usuario.nome,
-          cpf: usuario.cpf,
+          nome: usuario?.nome || usuario?.email || 'Contratante',
+          cpf: usuario?.cpf || '',
           idChamada: chamada.id,
         })
       })
-
       const res = await resposta.json()
-
       if (res.qrCode) {
         toast.success('Pix gerado com sucesso!')
         window.open(res.imagemQrCode, '_blank')
@@ -135,9 +133,10 @@ export default function ChamadasContratante() {
     }
   }
 
+  // ✅ confirmações do contratante
   const confirmarCheckIn = async (id) => {
     await updateDoc(doc(db, 'chamadas', id), {
-      status: 'checkin_confirmado',
+      status: 'em_andamento',
       checkInConfirmadoPeloContratanteHora: serverTimestamp(),
     })
     toast.success('✅ Check-in confirmado')
@@ -225,6 +224,7 @@ export default function ChamadasContratante() {
                   </button>
                 </>
               )}
+
               {chamada.status === 'checkin_freela' && (
                 <button
                   onClick={() => confirmarCheckIn(chamada.id)}
@@ -233,6 +233,7 @@ export default function ChamadasContratante() {
                   Confirmar Check-in
                 </button>
               )}
+
               {chamada.status === 'checkout_freela' && (
                 <button
                   onClick={() => confirmarCheckOut(chamada.id)}

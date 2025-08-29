@@ -1,199 +1,157 @@
-import React, { useEffect, useState } from 'react'
+// src/pages/freela/ChamadasFreela.jsx
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   collection,
   query,
   where,
   onSnapshot,
-  updateDoc,
   doc,
-  serverTimestamp,
+  updateDoc,
+  serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
-import { toast } from 'react-hot-toast'
-import AvaliacaoFreela from '@/components/AvaliacaoFreela'
-import RespostasRapidasFreela from '@/components/RespostasRapidasFreela'
+import toast from 'react-hot-toast'
+
+function haversineMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000
+  const toRad = (v) => (v * Math.PI) / 180
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
 
 export default function ChamadasFreela() {
   const { usuario } = useAuth()
   const [chamadas, setChamadas] = useState([])
-  const [coordenadas, setCoordenadas] = useState(null)
+  const [pos, setPos] = useState(null)
 
+  // pegar geolocalização do freela (para check-in)
+  useEffect(() => {
+    const watch = navigator.geolocation?.watchPosition(
+      (p) => setPos({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      (e) => console.warn('geo error', e),
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+    )
+    return () => {
+      if (watch && navigator.geolocation?.clearWatch) navigator.geolocation.clearWatch(watch)
+    }
+  }, [])
+
+  // minhas chamadas
   useEffect(() => {
     if (!usuario?.uid) return
-
     const q = query(
       collection(db, 'chamadas'),
-      where('freelaUid', '==', usuario.uid)
+      where('freelaUid', '==', usuario.uid),
+      where('status', 'in', ['aceita', 'pago', 'em_andamento', 'checkout_freela'])
     )
-
     const unsub = onSnapshot(q, (snap) => {
-      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-      const filtradas = docs.filter((ch) =>
-       ch.status !== 'rejeitada' &&
-       !(ch.status === 'concluido' && ch.avaliadoPorFreela) &&
-       ch.status !== 'finalizada'
-      )
-      setChamadas(filtradas)
+      const lista = []
+      snap.forEach((d) => lista.push({ id: d.id, ...d.data() }))
+      setChamadas(lista)
     })
-
     return () => unsub()
   }, [usuario?.uid])
 
-  useEffect(() => {
-    if (!navigator.geolocation) return
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setCoordenadas({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-        })
-      },
-      (err) => {
-        console.warn('Erro ao obter localização:', err)
+  const fazerCheckIn = async (ch) => {
+    try {
+      if (!pos) {
+        toast.error('Ative sua localização para fazer check-in')
+        return
       }
-    )
-  }, [])
-
-  async function aceitarChamada(ch) {
-    try {
-      await updateDoc(doc(db, 'chamadas', ch.id), {
-        status: 'aceita',
-        aceitaEm: serverTimestamp(),
-      })
-      toast.success('✅ Chamada aceita!')
-    } catch (e) {
-      console.error('Erro ao aceitar chamada:', e)
-      toast.error('Erro ao aceitar chamada.')
-    }
-  }
-
-  async function rejeitarChamada(id) {
-    try {
-      await updateDoc(doc(db, 'chamadas', id), {
-        status: 'rejeitada'
-      })
-      toast.success('❌ Chamada rejeitada.')
-    } catch (err) {
-      console.error(err)
-      toast.error('Erro ao rejeitar chamada.')
-    }
-  }
-
-  async function fazerCheckIn(ch) {
-    try {
-      let endereco = null
-
-      if (coordenadas) {
-        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coordenadas.latitude}&lon=${coordenadas.longitude}`
-        const resp = await fetch(url, { headers: { 'User-Agent': 'freelaja.com.br' } })
-        const data = await resp.json()
-        endereco = data.display_name || null
-      }
-
       await updateDoc(doc(db, 'chamadas', ch.id), {
         status: 'checkin_freela',
-        checkInFeitoPeloFreela: true,
-        checkInFeitoPeloFreelaHora: serverTimestamp(),
-        coordenadasCheckInFreela: coordenadas || null,
-        enderecoCheckInFreela: endereco || null,
+        freelaCheckinHora: serverTimestamp(),
+        freelaCheckinGeo: pos
       })
-      toast.success('📍 Check-in realizado!')
+      toast.success('Check-in enviado para confirmação do contratante')
     } catch (e) {
-      console.error('Erro ao fazer check-in:', e)
-      toast.error('Erro ao fazer check-in.')
+      console.error(e)
+      toast.error('Erro ao fazer check-in')
     }
   }
 
-  async function fazerCheckOut(ch) {
+  const solicitarCheckout = async (ch) => {
     try {
       await updateDoc(doc(db, 'chamadas', ch.id), {
         status: 'checkout_freela',
-        checkOutFeitoPeloFreela: true,
-        checkOutFeitoPeloFreelaHora: serverTimestamp(),
+        freelaCheckoutHora: serverTimestamp()
       })
-      toast.success('⏳ Check-out realizado!')
+      toast.success('Checkout solicitado ao contratante')
     } catch (e) {
-      console.error('Erro ao fazer check-out:', e)
-      toast.error('Erro ao fazer check-out.')
+      console.error(e)
+      toast.error('Erro ao solicitar checkout')
     }
   }
 
   return (
-    <div className="p-4 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-orange-700 text-center mb-4">
-        📲 Minhas Chamadas
-      </h1>
+    <div className="p-4 max-w-5xl mx-auto">
+      <h1 className="text-2xl font-bold text-emerald-700 text-center mb-4">Minhas Chamadas</h1>
 
-      {chamadas.length === 0 ? (
-        <p className="text-center text-gray-500">Nenhuma chamada no momento.</p>
-      ) : (
-        chamadas.map((ch) => (
-          <div
-            key={ch.id}
-            className="bg-white border border-orange-200 rounded-xl shadow p-4 mb-4 space-y-2"
-          >
-            <h2 className="font-semibold text-orange-600 text-lg">
-              Chamada #{ch.id.slice(-5)}
-            </h2>
-            <p><strong>Contratante:</strong> {ch.contratanteNome || ch.contratanteUid}</p>
+      {chamadas.map((ch) => {
+        // supondo que você armazene a localização do estabelecimento como:
+        // ch.estabelecimentoGeo = { latitude, longitude }
+        const distancia = useMemo(() => {
+          if (!pos || !ch?.estabelecimentoGeo?.latitude) return null
+          return Math.round(
+            haversineMeters(
+              pos.lat,
+              pos.lng,
+              ch.estabelecimentoGeo.latitude,
+              ch.estabelecimentoGeo.longitude
+            )
+          )
+        }, [pos, ch?.estabelecimentoGeo])
+
+        const podeCheckIn =
+          (ch.status === 'pago' || ch.status === 'confirmada') &&
+          (distancia == null || distancia <= 150) // tolerância 150m
+
+        return (
+          <div key={ch.id} className="bg-white shadow rounded-xl p-4 mb-4 border border-emerald-300">
+            <h2 className="text-lg font-semibold text-emerald-700">Chamada #{ch.id.slice(-5)}</h2>
             <p><strong>Status:</strong> {ch.status}</p>
-            {typeof ch.valorDiaria === 'number' && (
-              <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>
-            )}
-            {ch.observacao && (
-              <p><strong>📝 Observação:</strong> {ch.observacao}</p>
+            <p><strong>Valor diária:</strong> R$ {ch.valorDiaria?.toFixed(2) || '---'}</p>
+
+            {/* endereço liberado após pagamento */}
+            {ch.status !== 'aceita' && ch.enderecoEstabelecimento && (
+              <p className="mt-1"><strong>📍 Endereço:</strong> {ch.enderecoEstabelecimento}</p>
             )}
 
-            {ch.status === 'pendente' && (
-              <>
+            {/* distância/mapa simples */}
+            {distancia != null && (
+              <p className="text-sm text-gray-600 mt-1">
+                Distância até o local: {distancia} m {distancia <= 150 ? '(ok para check-in)' : '(muito longe)'}
+              </p>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-2 mt-3">
+              {podeCheckIn && (
                 <button
-                  className="bg-green-600 text-white px-4 py-2 rounded mr-2"
-                  onClick={() => aceitarChamada(ch)}
+                  onClick={() => fazerCheckIn(ch)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
                 >
-                  ✅ Aceitar Chamada
+                  📍 Fazer Check-in
                 </button>
+              )}
+
+              {ch.status === 'em_andamento' && (
                 <button
-                  className="bg-red-600 text-white px-4 py-2 rounded"
-                  onClick={() => rejeitarChamada(ch.id)}
+                  onClick={() => solicitarCheckout(ch)}
+                  className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
                 >
-                  ❌ Rejeitar Chamada
+                  Solicitar Check-out
                 </button>
-              </>
-            )}
-
-            {ch.status === 'confirmada' && (
-              <button
-                onClick={() => fazerCheckIn(ch)}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
-              >
-                📍 Fazer Check-in
-              </button>
-            )}
-
-            {ch.status === 'em_andamento' && (
-              <button
-                onClick={() => fazerCheckOut(ch)}
-                className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition"
-              >
-                ⏳ Fazer Check-out
-              </button>
-            )}
-
-            {ch.status === 'concluido' && !ch.avaliadoPorFreela && (
-              <AvaliacaoFreela chamada={ch} />
-            )}
-
-            <RespostasRapidasFreela chamadaId={ch.id} />
-
-            {(ch.status === 'concluido' || ch.status === 'finalizada') && (
-              <span className="text-green-600 font-bold block text-center">
-                ✅ Finalizada
-              </span>
-            )}
+              )}
+            </div>
           </div>
-        ))
-      )}
+        )
+      })}
     </div>
   )
 }
