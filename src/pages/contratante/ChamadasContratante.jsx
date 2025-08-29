@@ -1,4 +1,3 @@
-// src/pages/contratante/ChamadasContratante.jsx
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -12,9 +11,8 @@ import {
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
-import { httpsCallable } from 'firebase/functions'
-import { functions } from '@/firebase'
-import { app } from '@/firebase' // certifique-se que 'app' está exportado no firebase.js
+import { getFunctions, httpsCallable } from 'firebase/functions'
+import { app } from '@/firebase'
 
 export default function ChamadasContratante() {
   const { usuario } = useAuth()
@@ -32,6 +30,8 @@ export default function ChamadasContratante() {
     cpf: '',
     senha: ''
   })
+
+  const functions = getFunctions(app, 'southamerica-east1')
 
   useEffect(() => {
     if (!usuario?.uid) return
@@ -51,18 +51,16 @@ export default function ChamadasContratante() {
     return () => unsubscribe()
   }, [usuario?.uid])
 
-  // Buscar cartão salvo
   useEffect(() => {
     const buscarCartao = async () => {
       try {
-        const functions = getFunctions(app, 'southamerica-east1')
-        const listarCartao = httpsCallable(functions, 'listarCartao')
-        const resultado = await listarCartao({ uid: usuario.uid })
-        if (resultado?.data) {
-          setCartaoSalvo(resultado.data)
+        const func = httpsCallable(functions, 'listarCartao')
+        const res = await func({ uid: usuario.uid })
+        if (res?.data) {
+          setCartaoSalvo(res.data)
         }
-      } catch (e) {
-        console.error('Erro ao buscar cartão salvo:', e)
+      } catch (err) {
+        console.error('Erro ao buscar cartão salvo:', err)
       }
     }
 
@@ -71,20 +69,18 @@ export default function ChamadasContratante() {
 
   const cadastrarCartao = async () => {
     try {
-      const functions = getFunctions(app, 'southamerica-east1')
-      const salvarCartao = httpsCallable(functions, 'salvarCartao')
-      const resultado = await salvarCartao({
+      const func = httpsCallable(functions, 'salvarCartao')
+      const res = await func({
         uid: usuario.uid,
         numeroCartao: cartao.numero,
-        bandeira: 'visa',
+        bandeira: 'visa', // 💡 pode ajustar isso depois
         senhaPagamento: cartao.senha
       })
-      toast.success(resultado.data.mensagem)
+      toast.success(res.data?.mensagem || 'Cartão salvo com sucesso!')
       setCartaoSalvo(cartao)
       setMostrarFormCartao(false)
     } catch (err) {
       toast.error('Erro ao salvar cartão: ' + err.message)
-      console.error(err)
     }
   }
 
@@ -93,17 +89,18 @@ export default function ChamadasContratante() {
       toast.error('Digite sua senha de pagamento')
       return
     }
+
     setLoadingPagamento(chamada.id)
     try {
-      const functions = getFunctions(app, 'southamerica-east1')
-      const confirmar = httpsCallable(functions, 'confirmarPagamentoComSenha')
-      const pagar = httpsCallable(functions, 'pagarFreela')
+      const validarSenha = httpsCallable(functions, 'confirmarPagamentoComSenha')
+      const r1 = await validarSenha({ uid: usuario.uid, senha })
 
-      const r1 = await confirmar({ uid: usuario.uid, senha })
-      if (!r1.data?.sucesso) throw new Error(r1.data?.erro || 'Erro na confirmação')
+      if (!r1.data?.sucesso) throw new Error(r1.data?.erro)
 
-      const r2 = await pagar({ chamadaId: chamada.id })
-      if (!r2.data?.sucesso) throw new Error(r2.data?.erro || 'Erro no pagamento')
+      const pagarFreela = httpsCallable(functions, 'pagarFreela')
+      const r2 = await pagarFreela({ chamadaId: chamada.id })
+
+      if (!r2.data?.sucesso) throw new Error(r2.data?.erro)
 
       toast.success('Pagamento com cartão realizado com sucesso!')
     } catch (err) {
@@ -115,11 +112,10 @@ export default function ChamadasContratante() {
 
   const pagarComPix = async (chamada) => {
     try {
-      const functions = getFunctions(app, 'southamerica-east1')
       const gerarPix = httpsCallable(functions, 'gerarPix')
       const res = await gerarPix({ chamadaId: chamada.id })
 
-      if (res.data?.sucesso) {
+      if (res.data?.sucesso && res.data?.qrCodeUrl) {
         toast.success('Pix gerado com sucesso!')
         window.open(res.data.qrCodeUrl, '_blank')
       } else {
@@ -133,7 +129,7 @@ export default function ChamadasContratante() {
   const confirmarCheckIn = async (id) => {
     await updateDoc(doc(db, 'chamadas', id), {
       status: 'checkin_confirmado',
-      checkInConfirmadoPeloContratanteHora: serverTimestamp()
+      checkInConfirmadoPeloContratanteHora: serverTimestamp(),
     })
     toast.success('✅ Check-in confirmado')
   }
@@ -141,7 +137,7 @@ export default function ChamadasContratante() {
   const confirmarCheckOut = async (id) => {
     await updateDoc(doc(db, 'chamadas', id), {
       status: 'concluido',
-      checkOutConfirmadoPeloContratanteHora: serverTimestamp()
+      checkOutConfirmadoPeloContratanteHora: serverTimestamp(),
     })
     toast.success('✅ Check-out confirmado')
   }
@@ -154,10 +150,7 @@ export default function ChamadasContratante() {
         <div className="flex items-center justify-between mb-2">
           <span className="font-bold text-blue-600">💳 Cartão Cadastrado</span>
           {!mostrarFormCartao && (
-            <button
-              onClick={() => setMostrarFormCartao(true)}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm"
-            >
+            <button onClick={() => setMostrarFormCartao(true)} className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm">
               + Cadastrar Cartão
             </button>
           )}
@@ -171,57 +164,17 @@ export default function ChamadasContratante() {
 
         {mostrarFormCartao && (
           <div className="bg-gray-100 p-4 mt-2 rounded-lg space-y-2">
-            <input
-              type="text"
-              placeholder="Número do cartão"
-              className="input w-full"
-              value={cartao.numero}
-              onChange={(e) => setCartao({ ...cartao, numero: e.target.value })}
-            />
+            <input type="text" placeholder="Número do cartão" className="input w-full" value={cartao.numero} onChange={e => setCartao({ ...cartao, numero: e.target.value })} />
             <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="MM/AA"
-                className="input w-1/2"
-                value={cartao.vencimento}
-                onChange={(e) => setCartao({ ...cartao, vencimento: e.target.value })}
-              />
-              <input
-                type="text"
-                placeholder="CVV"
-                className="input w-1/2"
-                value={cartao.cvv}
-                onChange={(e) => setCartao({ ...cartao, cvv: e.target.value })}
-              />
+              <input type="text" placeholder="MM/AA" className="input w-1/2" value={cartao.vencimento} onChange={e => setCartao({ ...cartao, vencimento: e.target.value })} />
+              <input type="text" placeholder="CVV" className="input w-1/2" value={cartao.cvv} onChange={e => setCartao({ ...cartao, cvv: e.target.value })} />
             </div>
-            <input
-              type="text"
-              placeholder="Nome do titular"
-              className="input w-full"
-              value={cartao.nome}
-              onChange={(e) => setCartao({ ...cartao, nome: e.target.value })}
-            />
-            <input
-              type="text"
-              placeholder="CPF"
-              className="input w-full"
-              value={cartao.cpf}
-              onChange={(e) => setCartao({ ...cartao, cpf: e.target.value })}
-            />
-            <input
-              type="password"
-              placeholder="Senha para pagamento"
-              className="input w-full"
-              value={cartao.senha}
-              onChange={(e) => setCartao({ ...cartao, senha: e.target.value })}
-            />
+            <input type="text" placeholder="Nome do titular" className="input w-full" value={cartao.nome} onChange={e => setCartao({ ...cartao, nome: e.target.value })} />
+            <input type="text" placeholder="CPF" className="input w-full" value={cartao.cpf} onChange={e => setCartao({ ...cartao, cpf: e.target.value })} />
+            <input type="password" placeholder="Senha para pagamento" className="input w-full" value={cartao.senha} onChange={e => setCartao({ ...cartao, senha: e.target.value })} />
             <div className="flex justify-end gap-2 mt-2">
-              <button onClick={() => setMostrarFormCartao(false)} className="bg-gray-300 px-3 py-1 rounded">
-                Cancelar
-              </button>
-              <button onClick={cadastrarCartao} className="bg-green-600 text-white px-3 py-1 rounded">
-                Salvar Cartão
-              </button>
+              <button onClick={() => setMostrarFormCartao(false)} className="bg-gray-300 px-3 py-1 rounded">Cancelar</button>
+              <button onClick={cadastrarCartao} className="bg-green-600 text-white px-3 py-1 rounded">Salvar Cartão</button>
             </div>
           </div>
         )}
@@ -231,25 +184,12 @@ export default function ChamadasContratante() {
         <p className="text-center text-gray-600">Nenhuma chamada ativa no momento.</p>
       ) : (
         chamadas.map((chamada) => (
-          <div
-            key={chamada.id}
-            className="bg-white shadow-md rounded-xl p-4 mb-4 space-y-2 border border-orange-300"
-          >
+          <div key={chamada.id} className="bg-white shadow-md rounded-xl p-4 mb-4 space-y-2 border border-orange-300">
             <h2 className="text-lg font-semibold text-orange-600">Chamada #{chamada.id.slice(-5)}</h2>
-            <p>
-              <strong>Freela:</strong> {chamada.freelaNome || chamada.freelaUid}
-            </p>
-            <p>
-              <strong>Status:</strong> {chamada.status}
-            </p>
-            <p>
-              <strong>Valor da diária:</strong> R$ {chamada.valorDiaria?.toFixed(2) || '---'}
-            </p>
-            {chamada.observacao && (
-              <p>
-                <strong>📄 Observação:</strong> {chamada.observacao}
-              </p>
-            )}
+            <p><strong>Freela:</strong> {chamada.freelaNome || chamada.freelaUid}</p>
+            <p><strong>Status:</strong> {chamada.status}</p>
+            <p><strong>Valor da diária:</strong> R$ {chamada.valorDiaria?.toFixed(2) || '---'}</p>
+            {chamada.observacao && <p><strong>📄 Observação:</strong> {chamada.observacao}</p>}
 
             <div className="flex flex-col sm:flex-row gap-2">
               {chamada.status === 'aceita' && (
