@@ -12,7 +12,7 @@ import {
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
-import MensagensRapidas from '@/components/MensagensRapidas'
+import RespostasRapidasFreela from '@/components/RespostasRapidasFreela'
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
