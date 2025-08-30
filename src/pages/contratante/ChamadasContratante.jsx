@@ -1,249 +1,192 @@
-// src/pages/contratante/ChamadasContratante.jsx
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
-  collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp
+  collection,
+  query,
+  where,
+  onSnapshot,
+  updateDoc,
+  doc,
+  serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '@/firebase'
-import { useAuth } from '@/context/AuthContext'
-import toast from 'react-hot-toast'
-import { getFunctions, httpsCallable } from 'firebase/functions'
-import { app } from '@/firebase'
+import { toast } from 'react-hot-toast'
+import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import AvaliacaoContratante from '@/components/AvaliacaoContratante'
-import MensagensRecebidasContratante from '@/components/MensagensRecebidasContratante'
+import MensagensRecebidasEstabelecimento from '@/components/MensagensRecebidasEstabelecimento'
+import QRCode from 'react-qr-code'
 
-export default function ChamadasContratante() {
-  const { usuario } = useAuth()
+const STATUS_LISTA = [
+  'pendente', 'aceita', 'confirmada', 'checkin_freela',
+  'em_andamento', 'checkout_freela', 'concluido',
+  'finalizada', 'cancelada_por_falta_de_pagamento', 'rejeitada'
+]
+
+export default function ChamadasContratante({ contratante }) {
   const [chamadas, setChamadas] = useState([])
-  const [senha, setSenha] = useState('')
-  const [loadingPagamento, setLoadingPagamento] = useState(null)
-  const [cartaoSalvo, setCartaoSalvo] = useState(null)
-  const [mostrarFormCartao, setMostrarFormCartao] = useState(false)
-
-  const [cartao, setCartao] = useState({
-    numero: '',
-    vencimento: '',
-    cvv: '',
-    nome: '',
-    cpf: '',
-    senha: ''
-  })
-
-  const functions = getFunctions(app, 'southamerica-east1')
-  const listarCartao = httpsCallable(functions, 'listarCartao')
-  const salvarCartao = httpsCallable(functions, 'salvarCartao')
-  const confirmarPagamentoComSenha = httpsCallable(functions, 'confirmarPagamentoComSenha')
-  const pagarFreela = httpsCallable(functions, 'pagarFreela')
+  const [loading, setLoading] = useState(false)
+  const [chavePix, setChavePix] = useState(null)
 
   useEffect(() => {
-    if (!usuario?.uid) return
-
+    if (!contratante?.uid) return
     const q = query(
       collection(db, 'chamadas'),
-      where('contratanteUid', '==', usuario.uid),
-      where('status', 'in', [
-        'aceita', 'pago', 'checkin_freela',
-        'checkin_confirmado', 'em_andamento', 'checkout_freela'
-      ])
+      where('estabelecimentoId', '==', contratante.uid),
+      where('status', 'in', ['aceita', 'pago', 'checkout_freela', 'concluido'])
     )
-
-    const unsubscribe = onSnapshot(q, (snap) => {
+    const unsub = onSnapshot(q, (snapshot) => {
       const lista = []
-      snap.forEach((doc) => lista.push({ id: doc.id, ...doc.data() }))
+      snapshot.forEach((doc) => {
+        lista.push({ id: doc.id, ...doc.data() })
+      })
       setChamadas(lista)
     })
+    return () => unsub()
+  }, [contratante?.uid])
 
-    return () => unsubscribe()
-  }, [usuario?.uid])
-
-  useEffect(() => {
-    const buscarCartao = async () => {
-      try {
-        const res = await listarCartao({ uid: usuario.uid })
-        if (res?.data) setCartaoSalvo(res.data)
-      } catch (err) {
-        console.error('Erro ao buscar cartão salvo:', err)
-      }
-    }
-
-    if (usuario?.uid) buscarCartao()
-  }, [usuario?.uid])
-
-  const cadastrarCartao = async () => {
+  const confirmarCheckin = async (id) => {
     try {
-      const res = await salvarCartao({
-        uid: usuario.uid,
-        numeroCartao: cartao.numero,
-        bandeira: 'visa',
-        senhaPagamento: cartao.senha
+      await updateDoc(doc(db, 'chamadas', id), {
+        status: 'checkin_freela',
+        checkinEstabelecimento: serverTimestamp(),
       })
-      toast.success(res.data?.mensagem || 'Cartão salvo com sucesso!')
-      setCartaoSalvo(cartao)
-      setMostrarFormCartao(false)
-    } catch (err) {
-      toast.error('Erro ao salvar cartão: ' + err.message)
+      toast.success('✅ Check-in confirmado')
+    } catch (error) {
+      console.error('Erro ao confirmar check-in:', error)
     }
   }
 
-  const pagarComCartao = async (chamada) => {
-    if (!senha) {
-      toast.error('Digite sua senha de pagamento')
-      return
-    }
-
-    setLoadingPagamento(chamada.id)
+  const confirmarCheckout = async (id) => {
     try {
-      const r1 = await confirmarPagamentoComSenha({ uid: usuario.uid, senha })
-      if (!r1.data?.sucesso) throw new Error(r1.data?.erro)
-
-      const r2 = await pagarFreela({ chamadaId: chamada.id })
-      if (!r2.data?.sucesso) throw new Error(r2.data?.erro)
-
-      toast.success('Pagamento com cartão realizado com sucesso!')
-    } catch (err) {
-      toast.error(`Erro: ${err.message}`)
-    } finally {
-      setLoadingPagamento(null)
+      await updateDoc(doc(db, 'chamadas', id), {
+        status: 'concluido',
+        checkoutEstabelecimento: serverTimestamp(),
+      })
+      toast.success('✅ Check-out confirmado')
+    } catch (error) {
+      console.error('Erro ao confirmar check-out:', error)
     }
   }
 
   const pagarComPix = async (chamada) => {
+    setLoading(true)
     try {
-      const resposta = await fetch('https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api/gerarPix', {
+      const resposta = await fetch('https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/gerarCobrancaPix', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          chamadaId: chamada.id,
           valor: chamada.valorDiaria,
-          nome: usuario.nome,
-          cpf: usuario.cpf,
-          idChamada: chamada.id,
+          cpfEstabelecimento: contratante.cnpj || '',
+          nomeEstabelecimento: contratante.nome,
         })
       })
-
-      const res = await resposta.json()
-      if (res.qrCode) {
-        toast.success('Pix gerado com sucesso!')
-        window.open(res.imagemQrCode, '_blank')
-      } else {
-        toast.error(res.erro || 'Erro ao gerar Pix.')
+      const resultado = await resposta.json()
+      if (resultado.qrCode) {
+        setChavePix(resultado.qrCode)
+        await updateDoc(doc(db, 'chamadas', chamada.id), {
+          status: 'pago',
+          formaPagamento: 'pix',
+          qrCode: resultado.qrCode,
+          txid: resultado.txid,
+        })
       }
-    } catch (err) {
-      toast.error('Erro ao gerar Pix.')
+    } catch (error) {
+      console.error('Erro ao pagar com Pix:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const confirmarCheckIn = async (id) => {
-    await updateDoc(doc(db, 'chamadas', id), {
-      status: 'checkin_confirmado',
-      checkInConfirmadoPeloContratanteHora: serverTimestamp(),
-    })
-    toast.success('✅ Check-in confirmado')
-  }
-
-  const confirmarCheckOut = async (id) => {
-    await updateDoc(doc(db, 'chamadas', id), {
-      status: 'concluido',
-      checkOutConfirmadoPeloContratanteHora: serverTimestamp(),
-    })
-    toast.success('✅ Check-out confirmado')
+  const pagarComCartao = async (chamada) => {
+    try {
+      const resposta = await fetch('https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/confirmarPagamentoComSenha', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chamadaId: chamada.id,
+          valor: chamada.valorDiaria,
+          contratanteId: contratante.uid,
+        })
+      })
+      const resultado = await resposta.json()
+      if (resultado.sucesso) {
+        await updateDoc(doc(db, 'chamadas', chamada.id), {
+          status: 'pago',
+          formaPagamento: 'cartao',
+        })
+      }
+    } catch (error) {
+      console.error('Erro ao pagar com Cartão:', error)
+    }
   }
 
   return (
-    <div className="p-4 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold text-orange-700 text-center mb-4">📡 Chamadas Ativas</h1>
+    <div className="p-4">
+      <h2 className="text-xl font-bold text-orange-600 mb-4">📌 Chamadas Ativas</h2>
 
-      <div className="bg-white border border-blue-300 p-3 rounded-lg mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="font-bold text-blue-600">💳 Cartão Cadastrado</span>
-          {!mostrarFormCartao && (
-            <button onClick={() => setMostrarFormCartao(true)} className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm">
-              + Cadastrar Cartão
+      {chavePix && (
+        <div className="bg-white p-4 border mb-4 rounded">
+          <h3 className="font-semibold">🔁 Copie e cole no app do banco:</h3>
+          <p className="text-sm font-mono break-all">{chavePix}</p>
+          <QRCode value={chavePix} size={200} className="mt-4" />
+        </div>
+      )}
+
+      {chamadas.map((chamada) => (
+        <div key={chamada.id} className="bg-white p-4 border mb-4 rounded shadow">
+          <h3 className="font-bold text-orange-600 mb-2">Chamada #{chamada.id.slice(-5)}</h3>
+          <p><strong>Freela:</strong> {chamada.freela?.nome || '---'}</p>
+          <p><strong>Status:</strong> {chamada.status}</p>
+          <p><strong>Valor da diária:</strong> R$ {parseFloat(chamada.valorDiaria).toFixed(2)}</p>
+
+          {chamada.localEstabelecimento && chamada.localEstabelecimento.latitude && (
+            <div className="h-48 my-2 rounded overflow-hidden">
+              <MapContainer center={[chamada.localEstabelecimento.latitude, chamada.localEstabelecimento.longitude]} zoom={17} style={{ height: '100%', width: '100%' }}>
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <Marker position={[chamada.localEstabelecimento.latitude, chamada.localEstabelecimento.longitude]} />
+              </MapContainer>
+            </div>
+          )}
+
+          {chamada.observacao && (
+            <p className="mt-2 text-sm italic">📋 Observação: {chamada.observacao}</p>
+          )}
+
+          {chamada.status === 'aceita' && (
+            <div className="mt-4 flex flex-col sm:flex-row gap-2">
+              <button onClick={() => pagarComCartao(chamada)} className="bg-green-600 text-white py-2 px-4 rounded">
+                Pagar com Cartão
+              </button>
+              <button onClick={() => pagarComPix(chamada)} className="bg-yellow-500 text-white py-2 px-4 rounded">
+                Pagar com Pix
+              </button>
+            </div>
+          )}
+
+          {chamada.status === 'pago' && (
+            <button onClick={() => confirmarCheckin(chamada.id)} className="mt-4 w-full bg-blue-600 text-white py-2 rounded">
+              Confirmar Check-in
             </button>
           )}
+
+          {chamada.status === 'checkout_freela' && (
+            <button onClick={() => confirmarCheckout(chamada.id)} className="mt-4 w-full bg-red-600 text-white py-2 rounded">
+              Confirmar Check-out
+            </button>
+          )}
+
+          <div className="mt-4">
+            <MensagensRecebidasEstabelecimento chamadaId={chamada.id} />
+          </div>
+
+          {(chamada.status === 'concluido' || chamada.status === 'finalizada') && (
+            <div className="mt-4">
+              <AvaliacaoContratante chamadaId={chamada.id} freelaId={chamada.freelaId} />
+            </div>
+          )}
         </div>
-
-        {cartaoSalvo ? (
-          <p className="text-sm">Cartão final {cartaoSalvo.numero?.slice(-4)}</p>
-        ) : (
-          <p className="text-sm text-gray-500">Nenhum cartão cadastrado ainda.</p>
-        )}
-
-        {mostrarFormCartao && (
-          <div className="bg-gray-100 p-4 mt-2 rounded-lg space-y-2">
-            <input type="text" placeholder="Número do cartão" className="input w-full" value={cartao.numero} onChange={e => setCartao({ ...cartao, numero: e.target.value })} />
-            <div className="flex gap-2">
-              <input type="text" placeholder="MM/AA" className="input w-1/2" value={cartao.vencimento} onChange={e => setCartao({ ...cartao, vencimento: e.target.value })} />
-              <input type="text" placeholder="CVV" className="input w-1/2" value={cartao.cvv} onChange={e => setCartao({ ...cartao, cvv: e.target.value })} />
-            </div>
-            <input type="text" placeholder="Nome do titular" className="input w-full" value={cartao.nome} onChange={e => setCartao({ ...cartao, nome: e.target.value })} />
-            <input type="text" placeholder="CPF" className="input w-full" value={cartao.cpf} onChange={e => setCartao({ ...cartao, cpf: e.target.value })} />
-            <input type="password" placeholder="Senha para pagamento" className="input w-full" value={cartao.senha} onChange={e => setCartao({ ...cartao, senha: e.target.value })} />
-            <div className="flex justify-end gap-2 mt-2">
-              <button onClick={() => setMostrarFormCartao(false)} className="bg-gray-300 px-3 py-1 rounded">Cancelar</button>
-              <button onClick={cadastrarCartao} className="bg-green-600 text-white px-3 py-1 rounded">Salvar Cartão</button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {chamadas.length === 0 ? (
-        <p className="text-center text-gray-600">Nenhuma chamada ativa no momento.</p>
-      ) : (
-        chamadas.map((chamada) => (
-          <div key={chamada.id} className="bg-white shadow-md rounded-xl p-4 mb-4 space-y-2 border border-orange-300">
-            <h2 className="text-lg font-semibold text-orange-600">Chamada #{chamada.id.slice(-5)}</h2>
-            <p><strong>Freela:</strong> {chamada.freelaNome || chamada.freelaUid}</p>
-            <p><strong>Status:</strong> {chamada.status}</p>
-            <p><strong>Valor da diária:</strong> R$ {chamada.valorDiaria?.toFixed(2) || '---'}</p>
-            {chamada.observacao && <p><strong>📄 Observação:</strong> {chamada.observacao}</p>}
-
-            <div className="flex flex-col sm:flex-row gap-2 mt-2">
-              {chamada.status === 'aceita' && (
-                <>
-                  <input
-                    type="password"
-                    placeholder="Senha de pagamento"
-                    className="input w-full sm:w-auto"
-                    value={senha}
-                    onChange={(e) => setSenha(e.target.value)}
-                  />
-                  <button
-                    onClick={() => pagarComCartao(chamada)}
-                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                    disabled={loadingPagamento === chamada.id}
-                  >
-                    {loadingPagamento === chamada.id ? 'Pagando...' : 'Pagar com Cartão'}
-                  </button>
-                  <button
-                    onClick={() => pagarComPix(chamada)}
-                    className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
-                  >
-                    Pagar com Pix
-                  </button>
-                </>
-              )}
-
-              {chamada.status === 'checkin_freela' && (
-                <button
-                  onClick={() => confirmarCheckIn(chamada.id)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                  Confirmar Check-in
-                </button>
-              )}
-
-              {chamada.status === 'checkout_freela' && (
-                <button
-                  onClick={() => confirmarCheckOut(chamada.id)}
-                  className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
-                >
-                  Confirmar Check-out
-                </button>
-              )}
-            </div>
-          </div>
-        ))
-      )}
+      ))}
     </div>
   )
 }
