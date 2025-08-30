@@ -1,27 +1,34 @@
-// ✅ ChamadasFreela.jsx - fluxo completo restaurado com localização, pagamento, check-in, mensagens e mapa
+// src/pages/freela/ChamadasFreela.jsx
 import React, { useEffect, useState } from 'react'
+import { useAuth } from '@/context/AuthContext'
 import {
   collection,
   query,
   where,
   onSnapshot,
-  updateDoc,
   doc,
+  updateDoc,
   serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/firebase'
-import { useAuth } from '@/context/AuthContext'
-import toast from 'react-hot-toast'
-import RespostasRapidasFreela from '@/components/RespostasRapidasFreela'
-import { MapContainer, TileLayer, Marker } from 'react-leaflet'
-import 'leaflet/dist/leaflet.css'
-import L from 'leaflet'
+
+function fmtData(ts) {
+  try {
+    if (!ts) return '—'
+    if (typeof ts.toDate === 'function') return ts.toDate().toLocaleString('pt-BR')
+    return new Date(ts).toLocaleString('pt-BR')
+  } catch {
+    return '—'
+  }
+}
 
 export default function ChamadasFreela() {
   const { usuario } = useAuth()
   const [chamadas, setChamadas] = useState([])
-  const [coordenadas, setCoordenadas] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [mensagemConfirmacao, setMensagemConfirmacao] = useState(null)
 
+  // 1) Assinatura das chamadas ativas do freela
   useEffect(() => {
     if (!usuario?.uid) return
 
@@ -29,142 +36,220 @@ export default function ChamadasFreela() {
       collection(db, 'chamadas'),
       where('freelaUid', '==', usuario.uid),
       where('status', 'in', [
-        'aceita', 'pago', 'checkin_confirmado',
-        'em_andamento', 'checkout_freela', 'concluido'
+        'pendente',
+        'aceita',
+        'checkin_freela',
+        'em_andamento',
+        'checkout_freela',
+        'concluido',
+        'rejeitada',
+        'cancelada_por_falta_de_pagamento'
       ])
     )
 
-    const unsubscribe = onSnapshot(q, (snap) => {
-      const lista = []
-      snap.forEach((doc) => lista.push({ id: doc.id, ...doc.data() }))
-      setChamadas(lista)
-    })
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const chamadasAtivas = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        setChamadas(lista)
+        setLoading(false)
+      },
+      (err) => {
+        console.error('Erro ao carregar chamadas:', err)
+        setChamadas([])
+        setLoading(false)
+      }
+    )
 
-    return () => unsubscribe()
+    return () => unsub()
   }, [usuario?.uid])
 
-  useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords
-        setCoordenadas({ latitude, longitude })
-      },
-      (err) => console.error(err),
-      { enableHighAccuracy: true }
-    )
-  }, [])
-
-  const fazerCheckIn = async (chamada) => {
-    if (!coordenadas) return toast.error('Localização não disponível')
-
-    const lat1 = coordenadas.latitude
-    const lon1 = coordenadas.longitude
-    const lat2 = chamada.local?.latitude
-    const lon2 = chamada.local?.longitude
-
-    const distancia = calcularDistancia(lat1, lon1, lat2, lon2)
-
-    if (distancia > 0.015) {
-      return toast.error('Você precisa estar no local para fazer check-in')
+  // 2) Atualização de status (helper)
+  const atualizarChamada = async (id, dados) => {
+    try {
+      await updateDoc(doc(db, 'chamadas', id), dados)
+      // feedbacks amigáveis
+      if (dados.status === 'checkin_freela') {
+        setMensagemConfirmacao('✅ Check-in feito! Vá ao caixa/gerência para confirmar presença.')
+      } else if (dados.status === 'checkout_freela') {
+        setMensagemConfirmacao('✅ Check-out registrado! Aguarde a confirmação do estabelecimento.')
+      } else {
+        setMensagemConfirmacao(null)
+      }
+    } catch (err) {
+      console.error('Erro ao atualizar chamada:', err)
+      alert('Erro ao atualizar a chamada.')
     }
+  }
 
-    await updateDoc(doc(db, 'chamadas', chamada.id), {
+  // 3) Regras: cancelar aceitas sem pagamento após 10 min (fora do render)
+  useEffect(() => {
+    const agora = Date.now()
+    const LIMITE_MS = 10 * 60 * 1000
+
+    const expiradas = chamadas.filter((c) => {
+      if (c.status !== 'aceita') return false
+      const aceitouEm = c.aceitaEm?.toMillis?.()
+      if (!aceitouEm) return false
+      return agora - aceitouEm > LIMITE_MS
+    })
+
+    if (expiradas.length) {
+      expiradas.forEach((c) =>
+        atualizarChamada(c.id, { status: 'cancelada_por_falta_de_pagamento' })
+      )
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chamadas])
+
+  // 4) Ações do freela
+  const aceitar = (c) =>
+    atualizarChamada(c.id, { status: 'aceita', aceitaEm: serverTimestamp() })
+
+  const rejeitar = (c) =>
+    atualizarChamada(c.id, { status: 'rejeitada', rejeitadaEm: serverTimestamp() })
+
+  const checkin = (c) =>
+    atualizarChamada(c.id, {
       status: 'checkin_freela',
-      ultimaLocalizacao: new window.firebase.firestore.GeoPoint(lat1, lon1),
-      checkinHora: serverTimestamp(),
+      checkInFreelaHora: serverTimestamp()
     })
-    toast.success('Check-in realizado! Vá ao caixa confirmar.')
-  }
 
-  const fazerCheckOut = async (id) => {
-    await updateDoc(doc(db, 'chamadas', id), {
+  const checkout = (c) =>
+    atualizarChamada(c.id, {
       status: 'checkout_freela',
-      checkoutHora: serverTimestamp(),
+      checkOutFreelaHora: serverTimestamp()
     })
-    toast.success('Check-out realizado!')
+
+  // 5) Render
+  if (!usuario?.uid) {
+    return (
+      <div className="text-center text-red-600 mt-10">
+        ⚠️ Acesso não autorizado. Faça login novamente.
+      </div>
+    )
   }
 
-  const calcularDistancia = (lat1, lon1, lat2, lon2) => {
-    const R = 6371e3 // metros
-    const toRad = x => (x * Math.PI) / 180
-    const dLat = toRad(lat2 - lat1)
-    const dLon = toRad(lon2 - lon1)
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-    return R * c // retorna em metros
+  if (loading) {
+    return (
+      <div className="text-center text-orange-600 mt-10">
+        🔄 Carregando chamadas...
+      </div>
+    )
   }
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl font-bold text-center text-orange-600 mb-4">📲 Chamadas Recebidas</h1>
+    <div className="p-4 max-w-3xl mx-auto space-y-4">
+      <h1 className="text-2xl font-bold text-orange-700 mb-2">📞 Minhas Chamadas</h1>
+
+      {mensagemConfirmacao && (
+        <div className="p-3 rounded bg-green-50 text-green-700 border border-green-200">
+          {mensagemConfirmacao}
+        </div>
+      )}
+
       {chamadas.length === 0 ? (
-        <p className="text-center text-gray-500">Nenhuma chamada ativa.</p>
+        <p className="text-center text-gray-600">Nenhuma chamada encontrada.</p>
       ) : (
-        chamadas.map((chamada) => (
-          <div key={chamada.id} className="bg-white border border-orange-300 p-4 rounded-xl shadow mb-4">
-            <h2 className="text-lg font-semibold text-orange-700">Chamada #{chamada.id.slice(-5)}</h2>
-            <p><strong>Status:</strong> {chamada.status}</p>
-            <p><strong>Valor da diária:</strong> R$ {chamada.valorDiaria?.toFixed(2) || '--'}</p>
-            {chamada.observacao && <p><strong>📄 Observação:</strong> {chamada.observacao}</p>}
-
-            {chamada.status === 'pago' && chamada.local && coordenadas && (
-              <div className="h-40 my-2">
-                <MapContainer
-                  center={[chamada.local.latitude, chamada.local.longitude]}
-                  zoom={17}
-                  scrollWheelZoom={false}
-                  className="w-full h-full rounded-lg border"
-                >
-                  <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution="&copy; OpenStreetMap contributors"
-                  />
-                  <Marker
-                    position={[chamada.local.latitude, chamada.local.longitude]}
-                    icon={L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [32, 32] })}
-                  />
-                </MapContainer>
-              </div>
-            )}
-
-            {chamada.status === 'pago' && coordenadas && (
-              <button
-                onClick={() => fazerCheckIn(chamada)}
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mt-2 w-full"
+        chamadas.map((c) => (
+          <div
+            key={c.id}
+            className="bg-white shadow p-4 rounded-xl border border-orange-200 space-y-2"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-orange-700">
+                {c.vagaTitulo || c.freelaFuncao || 'Chamada'}
+              </h3>
+              <span
+                className={`px-2 py-1 rounded text-xs font-semibold ${
+                  c.status === 'pendente'
+                    ? 'bg-yellow-100 text-yellow-700'
+                    : c.status === 'aceita'
+                    ? 'bg-blue-100 text-blue-700'
+                    : c.status === 'checkin_freela'
+                    ? 'bg-indigo-100 text-indigo-700'
+                    : c.status === 'checkout_freela'
+                    ? 'bg-purple-100 text-purple-700'
+                    : c.status === 'concluido'
+                    ? 'bg-green-100 text-green-700'
+                    : c.status === 'rejeitada'
+                    ? 'bg-red-100 text-red-700'
+                    : c.status === 'cancelada_por_falta_de_pagamento'
+                    ? 'bg-red-100 text-red-700'
+                    : 'bg-gray-200 text-gray-700'
+                }`}
               >
-                Fazer Check-in
-              </button>
-            )}
+                {String(c.status || '').replaceAll('_', ' ')}
+              </span>
+            </div>
 
-            {chamada.status === 'checkin_confirmado' && (
-              <>
-                <p className="text-sm text-blue-700 mt-2">🔔 Confirme seu check-in no caixa ou com o responsável.</p>
+            <div className="text-sm text-gray-700 space-y-1">
+              <p>
+                <strong>Estabelecimento:</strong>{' '}
+                {c.estabelecimentoNome || '—'}
+              </p>
+              <p>
+                <strong>Aberta em:</strong> {fmtData(c.criadoEm)}
+              </p>
+              {c.aceitaEm && (
+                <p>
+                  <strong>Aceita em:</strong> {fmtData(c.aceitaEm)}
+                </p>
+              )}
+              {c.checkInFreelaHora && (
+                <p>
+                  <strong>Check-in:</strong> {fmtData(c.checkInFreelaHora)}
+                </p>
+              )}
+              {c.checkOutFreelaHora && (
+                <p>
+                  <strong>Check-out:</strong> {fmtData(c.checkOutFreelaHora)}
+                </p>
+              )}
+              {c.valorDiaria != null && (
+                <p>
+                  <strong>Valor da diária:</strong> R$ {Number(c.valorDiaria).toFixed(2).replace('.', ',')}
+                </p>
+              )}
+            </div>
+
+            {/* Ações por status */}
+            <div className="pt-2 flex flex-wrap gap-2">
+              {c.status === 'pendente' && (
+                <>
+                  <button
+                    onClick={() => aceitar(c)}
+                    className="px-3 py-1 rounded bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    Aceitar
+                  </button>
+                  <button
+                    onClick={() => rejeitar(c)}
+                    className="px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    Rejeitar
+                  </button>
+                </>
+              )}
+
+              {c.status === 'aceita' && (
                 <button
-                  onClick={() => fazerCheckOut(chamada.id)}
-                  className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 mt-2 w-full"
+                  onClick={() => checkin(c)}
+                  className="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  Fazer Check-out
+                  Fazer check-in
                 </button>
-              </>
-            )}
+              )}
 
-            {/* 📩 Respostas Rapidas */}
-            <RespostasRapidasFreela chamadaId={chamada.id} />
-
-            {/* 📍 Endereço e botões externos */}
-            {chamada.status === 'pago' && chamada.endereco && (
-              <div className="mt-2 text-sm">
-                <p><strong>Endereço:</strong> {chamada.endereco}</p>
-                <div className="flex gap-2 mt-2">
-                  <a href={`https://waze.com/ul?ll=${chamada.local.latitude},${chamada.local.longitude}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Abrir no Waze</a>
-                  <a href={`https://m.uber.com/ul/?action=setPickup&dropoff[latitude]=${chamada.local.latitude}&dropoff[longitude]=${chamada.local.longitude}`} target="_blank" rel="noopener noreferrer" className="text-green-600 underline">Chamar Uber</a>
-                  <a href={`https://99app.com/maps?dest=${chamada.local.latitude},${chamada.local.longitude}`} target="_blank" rel="noopener noreferrer" className="text-yellow-600 underline">Chamar 99</a>
-                </div>
-              </div>
-            )}
+              {c.status === 'checkin_freela' && (
+                <button
+                  onClick={() => checkout(c)}
+                  className="px-3 py-1 rounded bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  Fazer check-out
+                </button>
+              )}
+            </div>
           </div>
         ))
       )}
