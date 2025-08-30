@@ -1,157 +1,173 @@
-// src/pages/freela/ChamadasFreela.jsx
-import React, { useEffect, useMemo, useState } from 'react'
+// ✅ ChamadasFreela.jsx - fluxo completo restaurado com localização, pagamento, check-in, mensagens e mapa
+import React, { useEffect, useState } from 'react'
 import {
   collection,
   query,
   where,
   onSnapshot,
-  doc,
   updateDoc,
+  doc,
   serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
-
-function haversineMeters(lat1, lon1, lat2, lon2) {
-  const R = 6371000
-  const toRad = (v) => (v * Math.PI) / 180
-  const dLat = toRad(lat2 - lat1)
-  const dLon = toRad(lon2 - lon1)
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return R * c
-}
+import MensagensRapidas from '@/components/MensagensRapidas'
+import { MapContainer, TileLayer, Marker } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
+import L from 'leaflet'
 
 export default function ChamadasFreela() {
   const { usuario } = useAuth()
   const [chamadas, setChamadas] = useState([])
-  const [pos, setPos] = useState(null)
+  const [coordenadas, setCoordenadas] = useState(null)
 
-  // pegar geolocalização do freela (para check-in)
-  useEffect(() => {
-    const watch = navigator.geolocation?.watchPosition(
-      (p) => setPos({ lat: p.coords.latitude, lng: p.coords.longitude }),
-      (e) => console.warn('geo error', e),
-      { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
-    )
-    return () => {
-      if (watch && navigator.geolocation?.clearWatch) navigator.geolocation.clearWatch(watch)
-    }
-  }, [])
-
-  // minhas chamadas
   useEffect(() => {
     if (!usuario?.uid) return
+
     const q = query(
       collection(db, 'chamadas'),
       where('freelaUid', '==', usuario.uid),
-      where('status', 'in', ['aceita', 'pago', 'em_andamento', 'checkout_freela'])
+      where('status', 'in', [
+        'aceita', 'pago', 'checkin_confirmado',
+        'em_andamento', 'checkout_freela', 'concluido'
+      ])
     )
-    const unsub = onSnapshot(q, (snap) => {
+
+    const unsubscribe = onSnapshot(q, (snap) => {
       const lista = []
-      snap.forEach((d) => lista.push({ id: d.id, ...d.data() }))
+      snap.forEach((doc) => lista.push({ id: doc.id, ...doc.data() }))
       setChamadas(lista)
     })
-    return () => unsub()
+
+    return () => unsubscribe()
   }, [usuario?.uid])
 
-  const fazerCheckIn = async (ch) => {
-    try {
-      if (!pos) {
-        toast.error('Ative sua localização para fazer check-in')
-        return
-      }
-      await updateDoc(doc(db, 'chamadas', ch.id), {
-        status: 'checkin_freela',
-        freelaCheckinHora: serverTimestamp(),
-        freelaCheckinGeo: pos
-      })
-      toast.success('Check-in enviado para confirmação do contratante')
-    } catch (e) {
-      console.error(e)
-      toast.error('Erro ao fazer check-in')
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords
+        setCoordenadas({ latitude, longitude })
+      },
+      (err) => console.error(err),
+      { enableHighAccuracy: true }
+    )
+  }, [])
+
+  const fazerCheckIn = async (chamada) => {
+    if (!coordenadas) return toast.error('Localização não disponível')
+
+    const lat1 = coordenadas.latitude
+    const lon1 = coordenadas.longitude
+    const lat2 = chamada.local?.latitude
+    const lon2 = chamada.local?.longitude
+
+    const distancia = calcularDistancia(lat1, lon1, lat2, lon2)
+
+    if (distancia > 0.015) {
+      return toast.error('Você precisa estar no local para fazer check-in')
     }
+
+    await updateDoc(doc(db, 'chamadas', chamada.id), {
+      status: 'checkin_freela',
+      ultimaLocalizacao: new window.firebase.firestore.GeoPoint(lat1, lon1),
+      checkinHora: serverTimestamp(),
+    })
+    toast.success('Check-in realizado! Vá ao caixa confirmar.')
   }
 
-  const solicitarCheckout = async (ch) => {
-    try {
-      await updateDoc(doc(db, 'chamadas', ch.id), {
-        status: 'checkout_freela',
-        freelaCheckoutHora: serverTimestamp()
-      })
-      toast.success('Checkout solicitado ao contratante')
-    } catch (e) {
-      console.error(e)
-      toast.error('Erro ao solicitar checkout')
-    }
+  const fazerCheckOut = async (id) => {
+    await updateDoc(doc(db, 'chamadas', id), {
+      status: 'checkout_freela',
+      checkoutHora: serverTimestamp(),
+    })
+    toast.success('Check-out realizado!')
+  }
+
+  const calcularDistancia = (lat1, lon1, lat2, lon2) => {
+    const R = 6371e3 // metros
+    const toRad = x => (x * Math.PI) / 180
+    const dLat = toRad(lat2 - lat1)
+    const dLon = toRad(lon2 - lon1)
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c // retorna em metros
   }
 
   return (
-    <div className="p-4 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold text-emerald-700 text-center mb-4">Minhas Chamadas</h1>
+    <div className="p-4">
+      <h1 className="text-xl font-bold text-center text-orange-600 mb-4">📲 Chamadas Recebidas</h1>
+      {chamadas.length === 0 ? (
+        <p className="text-center text-gray-500">Nenhuma chamada ativa.</p>
+      ) : (
+        chamadas.map((chamada) => (
+          <div key={chamada.id} className="bg-white border border-orange-300 p-4 rounded-xl shadow mb-4">
+            <h2 className="text-lg font-semibold text-orange-700">Chamada #{chamada.id.slice(-5)}</h2>
+            <p><strong>Status:</strong> {chamada.status}</p>
+            <p><strong>Valor da diária:</strong> R$ {chamada.valorDiaria?.toFixed(2) || '--'}</p>
+            {chamada.observacao && <p><strong>📄 Observação:</strong> {chamada.observacao}</p>}
 
-      {chamadas.map((ch) => {
-        // supondo que você armazene a localização do estabelecimento como:
-        // ch.estabelecimentoGeo = { latitude, longitude }
-        const distancia = useMemo(() => {
-          if (!pos || !ch?.estabelecimentoGeo?.latitude) return null
-          return Math.round(
-            haversineMeters(
-              pos.lat,
-              pos.lng,
-              ch.estabelecimentoGeo.latitude,
-              ch.estabelecimentoGeo.longitude
-            )
-          )
-        }, [pos, ch?.estabelecimentoGeo])
-
-        const podeCheckIn =
-          (ch.status === 'pago' || ch.status === 'confirmada') &&
-          (distancia == null || distancia <= 150) // tolerância 150m
-
-        return (
-          <div key={ch.id} className="bg-white shadow rounded-xl p-4 mb-4 border border-emerald-300">
-            <h2 className="text-lg font-semibold text-emerald-700">Chamada #{ch.id.slice(-5)}</h2>
-            <p><strong>Status:</strong> {ch.status}</p>
-            <p><strong>Valor diária:</strong> R$ {ch.valorDiaria?.toFixed(2) || '---'}</p>
-
-            {/* endereço liberado após pagamento */}
-            {ch.status !== 'aceita' && ch.enderecoEstabelecimento && (
-              <p className="mt-1"><strong>📍 Endereço:</strong> {ch.enderecoEstabelecimento}</p>
+            {chamada.status === 'pago' && chamada.local && coordenadas && (
+              <div className="h-40 my-2">
+                <MapContainer
+                  center={[chamada.local.latitude, chamada.local.longitude]}
+                  zoom={17}
+                  scrollWheelZoom={false}
+                  className="w-full h-full rounded-lg border"
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution="&copy; OpenStreetMap contributors"
+                  />
+                  <Marker
+                    position={[chamada.local.latitude, chamada.local.longitude]}
+                    icon={L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [32, 32] })}
+                  />
+                </MapContainer>
+              </div>
             )}
 
-            {/* distância/mapa simples */}
-            {distancia != null && (
-              <p className="text-sm text-gray-600 mt-1">
-                Distância até o local: {distancia} m {distancia <= 150 ? '(ok para check-in)' : '(muito longe)'}
-              </p>
+            {chamada.status === 'pago' && coordenadas && (
+              <button
+                onClick={() => fazerCheckIn(chamada)}
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mt-2 w-full"
+              >
+                Fazer Check-in
+              </button>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-2 mt-3">
-              {podeCheckIn && (
+            {chamada.status === 'checkin_confirmado' && (
+              <>
+                <p className="text-sm text-blue-700 mt-2">🔔 Confirme seu check-in no caixa ou com o responsável.</p>
                 <button
-                  onClick={() => fazerCheckIn(ch)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                  onClick={() => fazerCheckOut(chamada.id)}
+                  className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 mt-2 w-full"
                 >
-                  📍 Fazer Check-in
+                  Fazer Check-out
                 </button>
-              )}
+              </>
+            )}
 
-              {ch.status === 'em_andamento' && (
-                <button
-                  onClick={() => solicitarCheckout(ch)}
-                  className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
-                >
-                  Solicitar Check-out
-                </button>
-              )}
-            </div>
+            {/* 📩 Mensagens rápidas */}
+            <MensagensRapidas chamadaId={chamada.id} />
+
+            {/* 📍 Endereço e botões externos */}
+            {chamada.status === 'pago' && chamada.endereco && (
+              <div className="mt-2 text-sm">
+                <p><strong>Endereço:</strong> {chamada.endereco}</p>
+                <div className="flex gap-2 mt-2">
+                  <a href={`https://waze.com/ul?ll=${chamada.local.latitude},${chamada.local.longitude}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Abrir no Waze</a>
+                  <a href={`https://m.uber.com/ul/?action=setPickup&dropoff[latitude]=${chamada.local.latitude}&dropoff[longitude]=${chamada.local.longitude}`} target="_blank" rel="noopener noreferrer" className="text-green-600 underline">Chamar Uber</a>
+                  <a href={`https://99app.com/maps?dest=${chamada.local.latitude},${chamada.local.longitude}`} target="_blank" rel="noopener noreferrer" className="text-yellow-600 underline">Chamar 99</a>
+                </div>
+              </div>
+            )}
           </div>
-        )
-      })}
+        ))
+      )}
     </div>
   )
 }

@@ -1,13 +1,7 @@
 // src/pages/contratante/ChamadasContratante.jsx
 import React, { useEffect, useState } from 'react'
 import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  doc,
-  updateDoc,
-  serverTimestamp
+  collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
@@ -34,27 +28,31 @@ export default function ChamadasContratante() {
 
   const functions = getFunctions(app, 'southamerica-east1')
   const listarCartao = httpsCallable(functions, 'listarCartao')
-  const salvarCartaoFn = httpsCallable(functions, 'salvarCartao')
+  const salvarCartao = httpsCallable(functions, 'salvarCartao')
   const confirmarPagamentoComSenha = httpsCallable(functions, 'confirmarPagamentoComSenha')
-  const pagarFreelaFn = httpsCallable(functions, 'pagarFreela')
+  const pagarFreela = httpsCallable(functions, 'pagarFreela')
 
-  // 🔎 ouvir minhas chamadas (inclui 'pago' para não sumir)
   useEffect(() => {
     if (!usuario?.uid) return
+
     const q = query(
       collection(db, 'chamadas'),
       where('contratanteUid', '==', usuario.uid),
-      where('status', 'in', ['aceita', 'checkin_freela', 'em_andamento', 'checkout_freela', 'pago'])
+      where('status', 'in', [
+        'aceita', 'pago', 'checkin_freela',
+        'checkin_confirmado', 'em_andamento', 'checkout_freela'
+      ])
     )
-    const unsub = onSnapshot(q, (snap) => {
+
+    const unsubscribe = onSnapshot(q, (snap) => {
       const lista = []
-      snap.forEach((d) => lista.push({ id: d.id, ...d.data() }))
+      snap.forEach((doc) => lista.push({ id: doc.id, ...doc.data() }))
       setChamadas(lista)
     })
-    return () => unsub()
+
+    return () => unsubscribe()
   }, [usuario?.uid])
 
-  // 💳 buscar cartão salvo
   useEffect(() => {
     const buscarCartao = async () => {
       try {
@@ -64,42 +62,41 @@ export default function ChamadasContratante() {
         console.error('Erro ao buscar cartão salvo:', err)
       }
     }
+
     if (usuario?.uid) buscarCartao()
   }, [usuario?.uid])
 
-  // 💳 cadastrar cartão
   const cadastrarCartao = async () => {
     try {
-      const res = await salvarCartaoFn({
+      const res = await salvarCartao({
         uid: usuario.uid,
         numeroCartao: cartao.numero,
         bandeira: 'visa',
         senhaPagamento: cartao.senha
       })
       toast.success(res.data?.mensagem || 'Cartão salvo com sucesso!')
-      setCartaoSalvo({ numeroFinal: cartao.numero.slice(-4), bandeira: 'visa' })
+      setCartaoSalvo(cartao)
       setMostrarFormCartao(false)
     } catch (err) {
-      toast.error('Erro ao salvar cartão: ' + (err?.message || ''))
+      toast.error('Erro ao salvar cartão: ' + err.message)
     }
   }
 
-  // 💳 pagar com cartão
   const pagarComCartao = async (chamada) => {
     if (!senha) {
       toast.error('Digite sua senha de pagamento')
       return
     }
+
     setLoadingPagamento(chamada.id)
     try {
       const r1 = await confirmarPagamentoComSenha({ uid: usuario.uid, senha })
-      if (!r1.data?.sucesso) throw new Error(r1.data?.erro || 'Senha inválida')
+      if (!r1.data?.sucesso) throw new Error(r1.data?.erro)
 
-      const r2 = await pagarFreelaFn({ chamadaId: chamada.id })
-      if (!r2.data?.sucesso) throw new Error(r2.data?.erro || 'Falha no pagamento')
+      const r2 = await pagarFreela({ chamadaId: chamada.id })
+      if (!r2.data?.sucesso) throw new Error(r2.data?.erro)
 
-      toast.success('Pagamento realizado com sucesso!')
-      // mantém na lista pois já incluímos o status 'pago' no filtro
+      toast.success('Pagamento com cartão realizado com sucesso!')
     } catch (err) {
       toast.error(`Erro: ${err.message}`)
     } finally {
@@ -107,19 +104,19 @@ export default function ChamadasContratante() {
     }
   }
 
-  // 💸 gerar Pix (rota HTTP em /api/gerarPix)
-  const gerarPix = async (chamada) => {
+  const pagarComPix = async (chamada) => {
     try {
       const resposta = await fetch('https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api/gerarPix', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           valor: chamada.valorDiaria,
-          nome: usuario?.nome || usuario?.email || 'Contratante',
-          cpf: usuario?.cpf || '',
+          nome: usuario.nome,
+          cpf: usuario.cpf,
           idChamada: chamada.id,
         })
       })
+
       const res = await resposta.json()
       if (res.qrCode) {
         toast.success('Pix gerado com sucesso!')
@@ -128,15 +125,13 @@ export default function ChamadasContratante() {
         toast.error(res.erro || 'Erro ao gerar Pix.')
       }
     } catch (err) {
-      console.error('Erro ao gerar Pix:', err)
       toast.error('Erro ao gerar Pix.')
     }
   }
 
-  // ✅ confirmações do contratante
   const confirmarCheckIn = async (id) => {
     await updateDoc(doc(db, 'chamadas', id), {
-      status: 'em_andamento',
+      status: 'checkin_confirmado',
       checkInConfirmadoPeloContratanteHora: serverTimestamp(),
     })
     toast.success('✅ Check-in confirmado')
@@ -165,7 +160,7 @@ export default function ChamadasContratante() {
         </div>
 
         {cartaoSalvo ? (
-          <p className="text-sm">Cartão final {cartaoSalvo.numeroFinal}</p>
+          <p className="text-sm">Cartão final {cartaoSalvo.numero?.slice(-4)}</p>
         ) : (
           <p className="text-sm text-gray-500">Nenhum cartão cadastrado ainda.</p>
         )}
@@ -199,7 +194,7 @@ export default function ChamadasContratante() {
             <p><strong>Valor da diária:</strong> R$ {chamada.valorDiaria?.toFixed(2) || '---'}</p>
             {chamada.observacao && <p><strong>📄 Observação:</strong> {chamada.observacao}</p>}
 
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 mt-2">
               {chamada.status === 'aceita' && (
                 <>
                   <input
@@ -217,7 +212,7 @@ export default function ChamadasContratante() {
                     {loadingPagamento === chamada.id ? 'Pagando...' : 'Pagar com Cartão'}
                   </button>
                   <button
-                    onClick={() => gerarPix(chamada)}
+                    onClick={() => pagarComPix(chamada)}
                     className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
                   >
                     Pagar com Pix
