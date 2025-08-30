@@ -151,8 +151,8 @@ export default function ChamadasFreela() {
               </>
             )}
 
-            {/* 📩 Mensagens rápidas */}
-            <MensagensRapidas chamadaId={chamada.id} />
+            {/* 📩 Respostas Rapidas */}
+            <RespostasRapidasFreela chamadaId={chamada.id} />
 
             {/* 📍 Endereço e botões externos */}
             {chamada.status === 'pago' && chamada.endereco && (
