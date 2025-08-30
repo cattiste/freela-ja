@@ -8,7 +8,7 @@ import {
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
-import AvaliacaoInline from '@/components/AvaliacaoInline'
+import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import RespostasRapidasFreela from '@/components/RespostasRapidasFreela'
 
 const STATUS_LISTA = [
