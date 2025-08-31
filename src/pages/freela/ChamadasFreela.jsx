@@ -1,4 +1,4 @@
-// ✅ ChamadasFreela.jsx - atualizado com fluxo restaurado
+// ✅ ChamadasFreela.jsx com Avaliação e Respostas Rápidas
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -11,12 +11,14 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
+import { toast } from 'react-hot-toast'
 import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import RespostasRapidasFreela from '@/components/RespostasRapidasFreela'
 
 export default function ChamadasFreela() {
   const { usuario } = useAuth()
   const [chamadas, setChamadas] = useState([])
+  const [coordenadas, setCoordenadas] = useState(null)
 
   useEffect(() => {
     if (!usuario?.uid) return
@@ -28,105 +30,153 @@ export default function ChamadasFreela() {
         'pendente',
         'aceita',
         'confirmada',
-        'pago',
-        'checkin_confirmado',
+        'checkin_freela',
         'em_andamento',
-        'checkout_feito',
+        'checkout_freela',
         'concluido',
+        'finalizada',
       ])
     )
 
-    const unsubscribe = onSnapshot(q, (snap) => {
-      const lista = []
-      snap.forEach((doc) => lista.push({ id: doc.id, ...doc.data() }))
-      setChamadas(lista)
+    const unsub = onSnapshot(q, (snap) => {
+      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      setChamadas(docs)
     })
 
-    return () => unsubscribe()
+    return () => unsub()
   }, [usuario?.uid])
 
-  const aceitarChamada = async (id) => {
-    await updateDoc(doc(db, 'chamadas', id), {
-      status: 'aceita',
-      aceitaHora: serverTimestamp(),
-    })
+  useEffect(() => {
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoordenadas({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        })
+      },
+      (err) => {
+        console.warn('Erro ao obter localização:', err)
+      }
+    )
+  }, [])
+
+  async function aceitarChamada(ch) {
+    try {
+      await updateDoc(doc(db, 'chamadas', ch.id), {
+        status: 'aceita',
+        aceitaEm: serverTimestamp(),
+      })
+      toast.success('✅ Chamada aceita!')
+    } catch (e) {
+      console.error('Erro ao aceitar chamada:', e)
+      toast.error('Erro ao aceitar chamada.')
+    }
   }
 
-  const rejeitarChamada = async (id) => {
-    await updateDoc(doc(db, 'chamadas', id), {
-      status: 'rejeitada',
-      rejeitadaHora: serverTimestamp(),
-    })
+  async function fazerCheckIn(ch) {
+    try {
+      let endereco = null
+
+      if (coordenadas) {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coordenadas.latitude}&lon=${coordenadas.longitude}`
+        const resp = await fetch(url, { headers: { 'User-Agent': 'freelaja.com.br' } })
+        const data = await resp.json()
+        endereco = data.display_name || null
+      }
+
+      await updateDoc(doc(db, 'chamadas', ch.id), {
+        status: 'checkin_freela',
+        checkInFeitoPeloFreela: true,
+        checkInFeitoPeloFreelaHora: serverTimestamp(),
+        coordenadasCheckInFreela: coordenadas || null,
+        enderecoCheckInFreela: endereco || null,
+      })
+      toast.success('📍 Check-in realizado!')
+    } catch (e) {
+      console.error('Erro ao fazer check-in:', e)
+      toast.error('Erro ao fazer check-in.')
+    }
   }
 
-  const fazerCheckIn = async (id) => {
-    await updateDoc(doc(db, 'chamadas', id), {
-      status: 'checkin_feito',
-      checkinHora: serverTimestamp(),
-    })
-  }
-
-  const fazerCheckOut = async (id) => {
-    await updateDoc(doc(db, 'chamadas', id), {
-      status: 'checkout_feito',
-      checkoutHora: serverTimestamp(),
-    })
+  async function fazerCheckOut(ch) {
+    try {
+      await updateDoc(doc(db, 'chamadas', ch.id), {
+        status: 'checkout_freela',
+        checkOutFeitoPeloFreela: true,
+        checkOutFeitoPeloFreelaHora: serverTimestamp(),
+      })
+      toast.success('⏳ Check-out realizado!')
+    } catch (e) {
+      console.error('Erro ao fazer check-out:', e)
+      toast.error('Erro ao fazer check-out.')
+    }
   }
 
   return (
-    <div className="p-4 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold text-orange-700 mb-4 text-center">📱 Chamadas Recebidas</h1>
+    <div className="p-4 max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold text-orange-700 text-center mb-4">
+        📲 Minhas Chamadas
+      </h1>
 
       {chamadas.length === 0 ? (
-        <p className="text-center text-gray-500">Nenhuma chamada recebida ainda.</p>
+        <p className="text-center text-gray-500">Nenhuma chamada no momento.</p>
       ) : (
-        chamadas.map((chamada) => (
-          <div key={chamada.id} className="bg-white rounded-xl shadow p-4 mb-4 space-y-2 border border-orange-300">
-            <h2 className="text-lg font-bold text-orange-600">Chamada #{chamada.id.slice(-5)}</h2>
-            <p><strong>Contratante:</strong> {chamada.contratanteNome || chamada.contratanteUid}</p>
-            <p><strong>Status:</strong> {chamada.status}</p>
-            <p><strong>Valor da diária:</strong> R$ {chamada.valorDiaria?.toFixed(2) || '---'}</p>
-            {chamada.observacao && <p><strong>📄 Observação:</strong> {chamada.observacao}</p>}
+        chamadas.map((ch) => (
+          <div
+            key={ch.id}
+            className="bg-white border border-orange-200 rounded-xl shadow p-4 mb-4 space-y-2"
+          >
+            <h2 className="font-semibold text-orange-600 text-lg">
+              Chamada #{ch.id.slice(-5)}
+            </h2>
+            <p><strong>Contratante:</strong> {ch.contratanteNome || ch.contratanteUid}</p>
+            <p><strong>Status:</strong> {ch.status}</p>
+            {typeof ch.valorDiaria === 'number' && (
+              <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>
+            )}
+            {ch.observacao && (
+              <p><strong>📝 Observação:</strong> {ch.observacao}</p>
+            )}
 
-            <div className="flex flex-col sm:flex-row gap-2">
-              {chamada.status === 'pendente' && (
-                <>
-                  <button
-                    onClick={() => aceitarChamada(chamada.id)}
-                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                  >
-                    Aceitar
-                  </button>
-                  <button
-                    onClick={() => rejeitarChamada(chamada.id)}
-                    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                  >
-                    Rejeitar
-                  </button>
-                </>
-              )}
+            {ch.status === 'pendente' && (
+              <button
+                onClick={() => aceitarChamada(ch)}
+                className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition"
+              >
+                ✅ Aceitar Chamada
+              </button>
+            )}
 
-              {chamada.status === 'confirmada' && (
-                <button
-                  onClick={() => fazerCheckIn(chamada.id)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                  Fazer Check-in
-                </button>
-              )}
+            {ch.status === 'confirmada' && (
+              <button
+                onClick={() => fazerCheckIn(ch)}
+                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+              >
+                📍 Fazer Check-in
+              </button>
+            )}
 
-              {chamada.status === 'em_andamento' && (
-                <button
-                  onClick={() => fazerCheckOut(chamada.id)}
-                  className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
-                >
-                  Fazer Check-out
-                </button>
-              )}
-            </div>
+            {ch.status === 'em_andamento' && (
+              <button
+                onClick={() => fazerCheckOut(ch)}
+                className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition"
+              >
+                ⏳ Fazer Check-out
+              </button>
+            )}
 
-            <RespostasRapidasFreela chamadaId={chamada.id} />
-            <AvaliacaoInline tipo="freela" chamada={chamada} />
+            {ch.status === 'concluido' && (
+              <AvaliacaoContratanteInline chamada={ch} />
+            )}
+
+            <RespostasRapidasFreela chamadaId={ch.id} />
+
+            {(ch.status === 'concluido' || ch.status === 'finalizada') && (
+              <span className="text-green-600 font-bold block text-center">
+                ✅ Finalizada
+              </span>
+            )}
           </div>
         ))
       )}
