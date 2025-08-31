@@ -1,4 +1,3 @@
-// ✅ ChamadasFreela.jsx com Avaliação e Respostas Rápidas
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -25,22 +24,17 @@ export default function ChamadasFreela() {
 
     const q = query(
       collection(db, 'chamadas'),
-      where('freelaUid', '==', usuario.uid),
-      where('status', 'in', [
-        'pendente',
-        'aceita',
-        'confirmada',
-        'checkin_freela',
-        'em_andamento',
-        'checkout_freela',
-        'concluido',
-        'finalizada',
-      ])
+      where('freelaUid', '==', usuario.uid)
     )
 
     const unsub = onSnapshot(q, (snap) => {
       const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-      setChamadas(docs)
+      const filtradas = docs.filter((ch) =>
+       ch.status !== 'rejeitada' &&
+       !(ch.status === 'concluido' && ch.avaliadoPorFreela) &&
+       ch.status !== 'finalizada'
+      )
+      setChamadas(filtradas)
     })
 
     return () => unsub()
@@ -71,6 +65,18 @@ export default function ChamadasFreela() {
     } catch (e) {
       console.error('Erro ao aceitar chamada:', e)
       toast.error('Erro ao aceitar chamada.')
+    }
+  }
+
+  async function rejeitarChamada(id) {
+    try {
+      await updateDoc(doc(db, 'chamadas', id), {
+        status: 'rejeitada'
+      })
+      toast.success('❌ Chamada rejeitada.')
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao rejeitar chamada.')
     }
   }
 
@@ -140,12 +146,20 @@ export default function ChamadasFreela() {
             )}
 
             {ch.status === 'pendente' && (
-              <button
-                onClick={() => aceitarChamada(ch)}
-                className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition"
-              >
-                ✅ Aceitar Chamada
-              </button>
+              <>
+                <button
+                  className="bg-green-600 text-white px-4 py-2 rounded mr-2"
+                  onClick={() => aceitarChamada(ch)}
+                >
+                  ✅ Aceitar Chamada
+                </button>
+                <button
+                  className="bg-red-600 text-white px-4 py-2 rounded"
+                  onClick={() => rejeitarChamada(ch.id)}
+                >
+                  ❌ Rejeitar Chamada
+                </button>
+              </>
             )}
 
             {ch.status === 'confirmada' && (
@@ -166,8 +180,8 @@ export default function ChamadasFreela() {
               </button>
             )}
 
-            {ch.status === 'concluido' && (
-              <AvaliacaoFreela chamada={ch} tipo="freela" />
+            {ch.status === 'concluido' && !ch.avaliadoPorFreela && (
+              <AvaliacaoFreela chamada={ch} />
             )}
 
             <RespostasRapidasFreela chamadaId={ch.id} />
