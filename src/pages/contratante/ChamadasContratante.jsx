@@ -320,41 +320,62 @@ export default function ChamadasContratante({ contratante }) {
         </div>
       </div>
 
-      {chamadasOrdenadas.length === 0 ? (
-        <p className="text-center text-gray-600">Nenhuma chamada ativa.</p>
-      ) :  chamadasOrdenadas.map((ch) => {
-          const pos = ch.coordenadasCheckInFreela
-          const dataHora = ch.checkInFeitoPeloFreelaHora?.seconds
-            ? new Date(ch.checkInFeitoPeloFreelaHora.seconds * 1000).toLocaleString()
-            : null
+{chamadasOrdenadas.length === 0 ? (
+  <p className="text-center text-gray-600">Nenhuma chamada ativa.</p>
+) : (
+  chamadasOrdenadas.map((ch) => {
+    const pos = ch.coordenadasCheckInFreela
+    const dataHora = ch.checkInFeitoPeloFreelaHora?.seconds
+      ? new Date(ch.checkInFeitoPeloFreelaHora.seconds * 1000).toLocaleString()
+      : null
 
-          return (
-            <div key={ch.id} className="bg-white shadow p-4 rounded-xl mb-4 border border-orange-200 space-y-2">
-              <h2 className="font-semibold text-orange-600 text-lg">Chamada #{ch?.id?.slice(-5)}</h2>
-              <p><strong>Freela:</strong> {ch.freelaNome || ch.freelaUid}</p>
-              <p><strong>Status:</strong> {ch.status}</p>
-              {typeof ch.valorDiaria === 'number' && <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>}
-              {ch.observacao && <p className="text-sm text-gray-800"><strong>📝 Observação:</strong> {ch.observacao}</p>}
-              {dataHora && (<p className="text-sm text-gray-700">🕓 Check-in: {dataHora}</p>)}
-              {ch.enderecoCheckInFreela && (<p className="text-sm text-gray-700">🏠 Endereço: {ch.enderecoCheckInFreela}</p>)}
-              {pos && (
-                <>
-                  <p className="text-sm text-gray-700">
-                    📍 Coordenadas: {pos.latitude.toFixed(6)}, {pos.longitude.toFixed(6)}{' '}
-                    <a
-                      href={`https://www.google.com/maps?q=${pos.latitude},${pos.longitude}`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="text-blue-600 underline ml-2"
-                    >Ver no Google Maps</a>
-                  </p>
-                  <MapContainer center={[pos.latitude, pos.longitude]} zoom={18} scrollWheelZoom={false} style={{ height: 200, borderRadius: 8 }} className="mt-2">
-                    <TileLayer attribution='&copy; OpenStreetMap' url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' />
-                    <Marker position={[pos.latitude, pos.longitude]} />
-                  </MapContainer>
-                </>
-              )}
+    return (
+      <div key={ch.id} className="bg-white shadow p-4 rounded-xl mb-4 border border-orange-200 space-y-2">
+        <h2 className="font-semibold text-orange-600 text-lg">Chamada #{ch?.id?.slice(-5)}</h2>
+        <p><strong>Freela:</strong> {ch.freelaNome || ch.freelaUid}</p>
+        <p><strong>Status:</strong> {ch.status}</p>
+        {typeof ch.valorDiaria === 'number' && (
+          <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>
+        )}
+        {ch.observacao && (
+          <p className="text-sm text-gray-800"><strong>📝 Observação:</strong> {ch.observacao}</p>
+        )}
+        {dataHora && (
+          <p className="text-sm text-gray-700">🕓 Check-in: {dataHora}</p>
+        )}
+        {ch.enderecoCheckInFreela && (
+          <p className="text-sm text-gray-700">🏠 Endereço: {ch.enderecoCheckInFreela}</p>
+        )}
 
-          <MensagensRecebidasContratante chamadaId={ch.id} />
+        {pos && (
+          <>
+            <p className="text-sm text-gray-700">
+              📍 Coordenadas: {pos.latitude.toFixed(6)}, {pos.longitude.toFixed(6)}{' '}
+              <a
+                href={`https://www.google.com/maps?q=${pos.latitude},${pos.longitude}`}
+                target="_blank" rel="noopener noreferrer"
+                className="text-blue-600 underline ml-2"
+              >
+                Ver no Google Maps
+              </a>
+            </p>
+            <MapContainer
+              center={[pos.latitude, pos.longitude]}
+              zoom={18}
+              scrollWheelZoom={false}
+              style={{ height: 200, borderRadius: 8 }}
+              className="mt-2"
+            >
+              <TileLayer
+                attribution="&copy; OpenStreetMap"
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <Marker position={[pos.latitude, pos.longitude]} />
+            </MapContainer>
+          </>
+        )}
+
+        <MensagensRecebidasContratante chamadaId={ch.id} />
 
           {ch.status === 'concluido' && !ch.avaliadoPeloContratante && (
             <AvaliacaoContratante chamada={ch} />
