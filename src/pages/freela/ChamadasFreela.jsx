@@ -35,13 +35,16 @@ export default function ChamadasFreela() {
         ch.status !== 'finalizada'
       )
       setChamadas(filtradas)
+    }, (err) => {
+      console.error('[ChamadasFreela] onSnapshot erro:', err)
+      toast.error('Falha ao carregar chamadas.')
     })
 
     return () => unsub()
   }, [usuario?.uid])
 
   useEffect(() => {
-    if (!navigator.geolocation) return
+    if (!navigator?.geolocation) return
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setCoordenadas({
@@ -51,7 +54,8 @@ export default function ChamadasFreela() {
       },
       (err) => {
         console.warn('Erro ao obter localização:', err)
-      }
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
     )
   }, [])
 
@@ -85,10 +89,11 @@ export default function ChamadasFreela() {
       let endereco = null
 
       if (coordenadas) {
+        // reverse geocode simples (deixa igual ao original)
         const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coordenadas.latitude}&lon=${coordenadas.longitude}`
         const resp = await fetch(url, { headers: { 'User-Agent': 'freelaja.com.br' } })
         const data = await resp.json()
-        endereco = data.display_name || null
+        endereco = data?.display_name || null
       }
 
       await updateDoc(doc(db, 'chamadas', ch.id), {
@@ -134,12 +139,12 @@ export default function ChamadasFreela() {
             className="bg-white border border-orange-200 rounded-xl shadow p-4 mb-4 space-y-2"
           >
             <h2 className="font-semibold text-orange-600 text-lg">
-              Chamada #{ch.id.slice(-5)}
+              Chamada #{(ch.id || '').slice(-5)}
             </h2>
 
             <p><strong>Contratante:</strong> {ch.contratanteNome || ch.contratanteUid}</p>
 
-            {/* 🔒 Endereço do contratante só aparece após pagamento */}
+            {/* 🔒 Endereço do contratante — só quando pago (ou flag liberada pelo cartão) */}
             {ch.status === 'pago' || ch.liberarEnderecoAoFreela ? (
               <p className="text-sm text-gray-800">
                 <strong>📍 Endereço do contratante:</strong> {ch.enderecoContratante || '—'}
@@ -165,20 +170,20 @@ export default function ChamadasFreela() {
             )}
 
             {ch.status === 'pendente' && (
-              <>
+              <div className="flex gap-2">
                 <button
-                  className="bg-green-600 text-white px-4 py-2 rounded mr-2"
+                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
                   onClick={() => aceitarChamada(ch)}
                 >
                   ✅ Aceitar Chamada
                 </button>
                 <button
-                  className="bg-red-600 text-white px-4 py-2 rounded"
+                  className="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
                   onClick={() => rejeitarChamada(ch.id)}
                 >
                   ❌ Rejeitar Chamada
                 </button>
-              </>
+              </div>
             )}
 
             {ch.status === 'confirmada' && (
