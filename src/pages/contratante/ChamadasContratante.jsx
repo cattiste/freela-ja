@@ -1,15 +1,12 @@
-// ✅ ChamadasContratante.jsx com Avaliação e Mensagens Recebidas
+
+import React, { useEffect, useMemo, useState } from 'react'
+import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
-
-// Leaflet
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-
-// Componentes
 import AvaliacaoContratante from '@/components/AvaliacaoContratante'
-import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 import MensagensRecebidasContratante from '@/components/MensagensRecebidasContratante'
 
 const STATUS_LISTA = [
@@ -34,7 +31,12 @@ export default function ChamadasContratante({ contratante }) {
     )
     const unsub = onSnapshot(q, (snap) => {
       const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-      setChamadas(docs)
+      const filtradas = docs.filter((ch) =>
+       ch.status !== 'rejeitada' &&
+       !(ch.status === 'concluido' && ch.avaliadoPeloContratante) &&
+       ch.status !== 'finalizada'
+    )
+      setChamadas(filtradas)
       setLoading(false)
     }, (err) => {
       console.error('[ChamadasContratante] onSnapshot erro:', err)
@@ -128,7 +130,7 @@ export default function ChamadasContratante({ contratante }) {
               {pos && (
                 <>
                   <p className="text-sm text-gray-700">
-                    📍 Coordenadas: {pos.latitude.toFixed(6)}, {pos.longitude.toFixed(6)} {' '}
+                    📍 Coordenadas: {pos.latitude.toFixed(6)}, {pos.longitude.toFixed(6)}{' '}
                     <a
                       href={`https://www.google.com/maps?q=${pos.latitude},${pos.longitude}`}
                       target="_blank" rel="noopener noreferrer"
@@ -144,8 +146,8 @@ export default function ChamadasContratante({ contratante }) {
 
               <MensagensRecebidasContratante chamadaId={ch.id} />
 
-              {ch.status === 'concluido' && (
-                <AvaliacaoFreela chamada={ch} tipo="freela" />
+              {ch.status === 'concluido' && !ch.avaliadoPeloContratante && (
+                <AvaliacaoContratante chamada={ch} />
               )}
 
               {ch.status === 'aceita' && (
