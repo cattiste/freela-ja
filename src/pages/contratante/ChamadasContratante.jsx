@@ -1,5 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  updateDoc,
+  doc,
+  serverTimestamp
+} from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
@@ -7,10 +15,8 @@ import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import AvaliacaoContratante from '@/components/AvaliacaoContratante'
 import MensagensRecebidasContratante from '@/components/MensagensRecebidasContratante'
-
-// 🔐 Gestão de cartões (fora dos cards p/ não mexer no layout dos cards)
-import SalvarSenhaCartao from '@/components/SalvarSenhaCartao'
 import ListaCartoes from '@/components/ListaCartoes'
+import SalvarSenhaCartao from '@/components/SalvarSenhaCartao'
 
 import { getFunctions, httpsCallable } from 'firebase/functions'
 
@@ -26,6 +32,13 @@ export default function ChamadasContratante({ contratante }) {
   const [chamadas, setChamadas] = useState([])
   const [loading, setLoading] = useState(true)
 
+  // modal cartão
+  const [abrirCadastroCartao, setAbrirCadastroCartao] = useState(false)
+  const [numeroCartao, setNumeroCartao] = useState('')
+  const [bandeira, setBandeira] = useState('')
+  const [senhaPagamento, setSenhaPagamento] = useState('')
+  const [savingCartao, setSavingCartao] = useState(false)
+
   useEffect(() => {
     if (!estab?.uid) return
     setLoading(true)
@@ -36,14 +49,11 @@ export default function ChamadasContratante({ contratante }) {
     )
     const unsub = onSnapshot(q, (snap) => {
       const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-
-      // mantém teu filtro original
       const filtradas = docs.filter((ch) =>
         ch.status !== 'rejeitada' &&
         !(ch.status === 'concluido' && ch.avaliadoPeloContratante) &&
         ch.status !== 'finalizada'
       )
-
       setChamadas(filtradas)
       setLoading(false)
     }, (err) => {
@@ -59,8 +69,7 @@ export default function ChamadasContratante({ contratante }) {
     return [...chamadas].sort((a, b) => ts(b.criadoEm) - ts(a.criadoEm))
   }, [chamadas])
 
-  // ------------------------
-  // Fluxos originais mantidos
+  // ---- ações ----
   async function confirmarChamada(ch) {
     try {
       await updateDoc(doc(db, 'chamadas', ch.id), {
@@ -69,8 +78,7 @@ export default function ChamadasContratante({ contratante }) {
       })
       toast.success('✅ Chamada confirmada!')
     } catch (e) {
-      console.error('[ChamadasContratante] confirmarChamada erro:', e)
-      toast.error('Erro ao confirmar chamada.')
+      console.error(e); toast.error('Erro ao confirmar chamada.')
     }
   }
 
@@ -82,8 +90,7 @@ export default function ChamadasContratante({ contratante }) {
       })
       toast.success('❌ Chamada cancelada.')
     } catch (e) {
-      console.error('[ChamadasContratante] cancelarChamada erro:', e)
-      toast.error('Erro ao cancelar chamada.')
+      console.error(e); toast.error('Erro ao cancelar chamada.')
     }
   }
 
@@ -96,253 +103,234 @@ export default function ChamadasContratante({ contratante }) {
       })
       toast.success('📍 Check-in do freela confirmado!')
     } catch (e) {
-      console.error('[ChamadasContratante] confirmarCheckInFreela erro:', e)
-      toast.error('Erro ao confirmar check-in.')
+      console.error(e); toast.error('Erro ao confirmar check-in.')
     }
   }
 
   async function confirmarCheckOutFreela(ch) {
     try {
-      // 1) marca concluído
       await updateDoc(doc(db, 'chamadas', ch.id), {
         status: 'concluido',
         checkOutConfirmadoPeloEstab: true,
         checkOutConfirmadoPeloEstabHora: serverTimestamp()
       })
-      toast.success('⏳ Check-out do freela confirmado!')
+      toast.success('⏳ Check-out confirmado!')
 
-      // 2) repasse 90% ao freela
       if (typeof ch.valorDiaria === 'number' && ch.valorDiaria > 0) {
-        const functions = getFunctions()
-        const pagarAoCheckout = httpsCallable(functions, 'pagarFreelaAoCheckout') // callable
-        await pagarAoCheckout({
+        const fn = httpsCallable(getFunctions(), 'pagarFreelaAoCheckout')
+        await fn({
           chamadaId: ch.id,
           valorReceber: Number((ch.valorDiaria * 0.90).toFixed(2))
-        }) // repasse via function
+        })
       }
     } catch (e) {
-      console.error('[ChamadasContratante] confirmarCheckOutFreela erro:', e)
-      toast.error('Erro ao confirmar check-out.')
+      console.error(e); toast.error('Erro ao confirmar check-out.')
     }
   }
-  // ------------------------
 
-  // ------------------------
-  // 💳 Pagar com CARTÃO (senha → confirmarPagamentoComSenha → pagarFreela → registrarPagamentoEspelho)
+  // 💳 pagamento com cartão
   async function pagarComCartao(ch) {
     try {
-      if (typeof ch.valorDiaria !== 'number' || ch.valorDiaria <= 0) {
-        toast.error('Valor da diária inválido.')
-        return
-      }
-
+      if (!ch.valorDiaria) { toast.error('Valor inválido.'); return }
       const senha = window.prompt('Digite sua senha de pagamento:')
-      if (!senha) { toast('Pagamento cancelado.'); return }
+      if (!senha) return
 
-      const functions = getFunctions()
+      const fn = getFunctions()
 
-      // 1) valida senha do pagador
-      const confirmarSenha = httpsCallable(functions, 'confirmarPagamentoComSenha')
-      await confirmarSenha({ uid: estab.uid, senha }) // valida hash no back (confirmarPagamentoComSenha)  ⟶ :contentReference[oaicite:10]{index=10}
+      await httpsCallable(fn, 'confirmarPagamentoComSenha')({ uid: estab.uid, senha })
+      const pagar = await httpsCallable(fn, 'pagarFreela')({ chamadaId: ch.id })
+      if (!pagar?.data?.sucesso) { toast.error('Falha no pagamento'); return }
 
-      // 2) marcar a chamada como "pago" (retenção na plataforma)
-      const pagar = httpsCallable(functions, 'pagarFreela')
-      const r = await pagar({ chamadaId: ch.id }) // status 'pago' + pagamentoHora  ⟶ :contentReference[oaicite:11]{index=11}
-      if (!r?.data?.sucesso) {
-        toast.error('Falha ao processar pagamento.')
-        return
-      }
-
-      // 3) registrar no espelho com o valor cobrado do contratante (diária + 10%)
-      const registrar = httpsCallable(functions, 'registrarPagamentoEspelho')
-      await registrar({
+      await httpsCallable(fn, 'registrarPagamentoEspelho')({
         chamadaId: ch.id,
         valor: Number((ch.valorDiaria * 1.10).toFixed(2)),
         metodo: 'cartao'
-      }) // ⟶ :contentReference[oaicite:12]{index=12}
+      })
 
-      // 4) reforça no doc e libera endereço ao freela (flag para UI do freela)
       await updateDoc(doc(db, 'chamadas', ch.id), {
         metodoPagamento: 'cartao',
-        liberarEnderecoAoFreela: true // libera endereço pro freela
+        liberarEnderecoAoFreela: true
       })
 
-      toast.success('💳 Pagamento com cartão confirmado!')
+      toast.success('💳 Pagamento confirmado!')
     } catch (e) {
-      console.error('[ChamadasContratante] pagarComCartao erro:', e)
-      toast.error(e?.message || 'Erro ao processar pagamento.')
+      console.error(e); toast.error(e.message)
     }
   }
 
-  // 💸 Pix (HTTP: gerarPix) — exibe QR e copia/cola; endereço só libera quando status virar "pago"
+  // 💸 Pix callable
   async function gerarPix(ch) {
     try {
-      if (typeof ch.valorDiaria !== 'number' || ch.valorDiaria <= 0) {
-        toast.error('Valor da diária inválido.')
-        return
-      }
+      if (!ch.valorDiaria) { toast.error('Valor inválido.'); return }
+      const valorCobrar = Number((ch.valorDiaria * 1.10).toFixed(2))
+      const cpf = estab?.cpf || estab?.documento
+      if (!cpf) { toast.error('CPF do pagador não encontrado.'); return }
 
-      const base = import.meta.env.VITE_API_BASE_URL || ''
-      const body = {
-        valor: Number((ch.valorDiaria * 1.10).toFixed(2)), // diária + 10% do contratante
+      const fn = httpsCallable(getFunctions(), 'gerarPixCallable')
+      const res = await fn({
+        valor: valorCobrar,
         nome: estab?.nome || estab?.nomeResponsavel || 'Contratante',
-        cpf: estab?.cpf || estab?.documento || '',
+        cpf,
         idChamada: ch.id
-      }
-      if (!body.cpf) {
-        toast.error('CPF do pagador não encontrado no cadastro.')
-        return
-      }
-
-      // tua rota HTTP (Express/Cloud Run)
-      const resp = await fetch(`${base}/api/gerarPix`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
       })
-      const data = await resp.json()
-      if (!resp.ok) {
-        toast.error(data?.erro || 'Erro ao gerar Pix.')
-        return
-      }
+      if (!res?.data?.sucesso) { toast.error('Erro ao gerar Pix'); return }
 
-      // guarda QR e copia/cola; mantém "aguardando" até webhook/validação confirmar
+      const { imagemQrCode, qrCode } = res.data
       await updateDoc(doc(db, 'chamadas', ch.id), {
-        qrCodePix: data.imagemQrCode || null,
-        copiaColaPix: data.qrCode || null,
+        qrCodePix: imagemQrCode || null,
+        copiaColaPix: qrCode || null,
         pagamentoStatus: 'aguardando_pix',
         metodoPagamento: 'pix'
-      }) // gerarPix (HTTP) ⟶ :contentReference[oaicite:13]{index=13}
+      })
 
-      // espelho com valor bruto
-      const functions = getFunctions()
-      const registrar = httpsCallable(functions, 'registrarPagamentoEspelho')
-      await registrar({
+      await httpsCallable(getFunctions(), 'registrarPagamentoEspelho')({
         chamadaId: ch.id,
-        valor: Number((ch.valorDiaria * 1.10).toFixed(2)),
+        valor: valorCobrar,
         metodo: 'pix'
-      }) // ⟶ :contentReference[oaicite:14]{index=14}
+      })
 
-      toast.success('💸 Pix gerado! Aguarde a confirmação do pagamento.')
+      toast.success('💸 Pix gerado!')
     } catch (e) {
-      console.error('[ChamadasContratante] gerarPix erro:', e)
-      toast.error(e?.message || 'Erro ao gerar Pix.')
+      console.error(e); toast.error(e.message)
     }
   }
-  // ------------------------
 
-  if (loading) return <div className="text-center text-orange-600 mt-8">🔄 Carregando chamadas…</div>
-  if (!estab?.uid) return <div className="text-center text-red-600 mt-8">⚠️ Contratante não autenticado.</div>
+  // cadastrar novo cartão
+  async function salvarNovoCartao() {
+    try {
+      if (!numeroCartao || !bandeira || !senhaPagamento) {
+        toast.error('Preencha todos os campos.'); return
+      }
+      setSavingCartao(true)
+      const salvarFn = httpsCallable(getFunctions(), 'salvarCartao')
+      await salvarFn({ numeroCartao, bandeira, senhaPagamento })
+      toast.success('Cartão cadastrado!')
+      setAbrirCadastroCartao(false)
+      setNumeroCartao(''); setBandeira(''); setSenhaPagamento('')
+    } catch (e) {
+      console.error(e); toast.error(e.message)
+    } finally { setSavingCartao(false) }
+  }
+
+  if (loading) return <div className="text-center mt-8">🔄 Carregando…</div>
 
   return (
     <div className="p-4 max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold text-orange-700 text-center mb-4">📡 Chamadas Ativas</h1>
 
-      {/* 💳 Gestão de cartões (topo da página, sem interferir nos cards) */}
-      <div className="bg-white shadow border border-orange-200 rounded-xl p-4 mb-4">
-        <h2 className="text-lg font-semibold text-orange-700 mb-2">💳 Pagamentos do Contratante</h2>
-        <p className="text-sm text-gray-700 mb-2">
-          Cadastre/gerencie seus cartões e a senha de pagamento aqui. (listarCartao/salvarCartao/salvarSenha) 
-        </p>
+      {/* pagamentos */}
+      <div className="bg-white shadow border rounded-xl p-4 mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold text-orange-700">💳 Pagamentos</h2>
+          <button onClick={() => setAbrirCadastroCartao(true)}
+            className="bg-orange-600 text-white px-3 py-2 rounded-lg hover:bg-orange-700">
+            ➕ Cadastrar Cartão
+          </button>
+        </div>
         <div className="grid md:grid-cols-2 gap-4">
-          <ListaCartoes /> {/* ListaCartoes.jsx → subcoleção /usuarios/{uid}/cartoes  */}
-          <SalvarSenhaCartao uid={estab?.uid} /> {/* salvarSenha (callable) */}
+          <ListaCartoes />
+          <SalvarSenhaCartao uid={estab?.uid} />
         </div>
       </div>
 
       {chamadasOrdenadas.length === 0 ? (
-        <p className="text-center text-gray-600">Nenhuma chamada ativa no momento.</p>
-      ) : (
-        chamadasOrdenadas.map((ch) => {
-          const pos = ch.coordenadasCheckInFreela
-          const dataHora = ch.checkInFeitoPeloFreelaHora?.seconds
-            ? new Date(ch.checkInFeitoPeloFreelaHora.seconds * 1000).toLocaleString()
-            : null
+        <p className="text-center text-gray-600">Nenhuma chamada ativa.</p>
+      ) : chamadasOrdenadas.map((ch) => (
+        <div key={ch.id} className="bg-white shadow p-4 rounded-xl mb-4 border space-y-2">
+          <h2 className="font-semibold text-orange-600">Chamada #{ch.id.slice(-5)}</h2>
+          <p><strong>Freela:</strong> {ch.freelaNome || ch.freelaUid}</p>
+          <p><strong>Status:</strong> {ch.status}</p>
+          {typeof ch.valorDiaria === 'number' &&
+            <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>}
+          {ch.observacao && <p>📝 {ch.observacao}</p>}
 
-          return (
-            <div key={ch.id} className="bg-white shadow p-4 rounded-xl mb-4 border border-orange-200 space-y-2">
-              <h2 className="font-semibold text-orange-600 text-lg">Chamada #{ch?.id?.slice(-5)}</h2>
-              <p><strong>Freela:</strong> {ch.freelaNome || ch.freelaUid}</p>
-              <p><strong>Status:</strong> {ch.status}</p>
-              {typeof ch.valorDiaria === 'number' && <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>}
-              {ch.observacao && <p className="text-sm text-gray-800"><strong>📝 Observação:</strong> {ch.observacao}</p>}
-              {dataHora && (<p className="text-sm text-gray-700">🕓 Check-in: {dataHora}</p>)}
-              {ch.enderecoCheckInFreela && (<p className="text-sm text-gray-700">🏠 Endereço (do freela): {ch.enderecoCheckInFreela}</p>)}
+          <MensagensRecebidasContratante chamadaId={ch.id} />
+          {ch.status === 'concluido' && !ch.avaliadoPeloContratante &&
+            <AvaliacaoContratante chamada={ch} />}
 
-              {pos && (
-                <>
-                  <p className="text-sm text-gray-700">
-                    📍 Coordenadas: {pos.latitude?.toFixed?.(6)}, {pos.longitude?.toFixed?.(6)}{' '}
-                    <a
-                      href={`https://www.google.com/maps?q=${pos.latitude},${pos.longitude}`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="text-blue-600 underline ml-2"
-                    >Ver no Google Maps</a>
-                  </p>
-                  <MapContainer center={[pos.latitude, pos.longitude]} zoom={18} scrollWheelZoom={false} style={{ height: 200, borderRadius: 8 }} className="mt-2">
-                    <TileLayer attribution='&copy; OpenStreetMap' url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' />
-                    <Marker position={[pos.latitude, pos.longitude]} />
-                  </MapContainer>
-                </>
-              )}
-
-              <MensagensRecebidasContratante chamadaId={ch.id} />
-
-              {ch.status === 'concluido' && !ch.avaliadoPeloContratante && (
-                <AvaliacaoContratante chamada={ch} />
-              )}
-
-              {/* 💸/💳 Pagamento — aparece quando 'aceita' (antes de confirmar chamada) */}
-              {ch.status === 'aceita' && (
-                <div className="bg-gray-50 border rounded-lg p-3 space-y-2">
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <button
-                      onClick={() => pagarComCartao(ch)}
-                      className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
-                    >
-                      💳 Pagar com Cartão
-                    </button>
-                    <button
-                      onClick={() => gerarPix(ch)}
-                      className="flex-1 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition"
-                    >
-                      💸 Gerar Pix
-                    </button>
-                  </div>
-
-                  {/* Botões originais preservados */}
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <button onClick={() => confirmarChamada(ch)} className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
-                      ✅ Confirmar Chamada
-                    </button>
-                    <button onClick={() => cancelarChamada(ch)} className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition">
-                      ❌ Cancelar Chamada
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* QR e Copia/Cola (se Pix foi gerado) — endereço só libera quando status virar 'pago' */}
-              {(ch.qrCodePix || ch.copiaColaPix) && (
-                <div className="bg-gray-50 border rounded-lg p-2 text-center space-y-2">
-                  <p className="font-semibold text-green-600">✅ Pix gerado</p>
-                  {ch.qrCodePix && <img src={ch.qrCodePix} alt="QR Code Pix" className="mx-auto w-40" />}
-                  {ch.copiaColaPix && (<p className="text-xs break-all">{ch.copiaColaPix}</p>)}
-                </div>
-              )}
-
-              {ch.status === 'checkin_freela' && (
-                <button onClick={() => confirmarCheckInFreela(ch)} className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">📍 Confirmar check-in do freela</button>
-              )}
-              {ch.status === 'checkout_freela' && (
-                <button onClick={() => confirmarCheckOutFreela(ch)} className="w-full bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition">⏳ Confirmar check-out do freela</button>
-              )}
-              {(ch.status === 'concluido' || ch.status === 'finalizada') && (
-                <span className="text-green-600 font-bold block text-center mt-2">✅ Finalizada</span>
-              )}
+          {ch.status === 'aceita' && (
+            <div className="space-y-2">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button onClick={() => pagarComCartao(ch)}
+                  className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg">
+                  💳 Pagar Cartão
+                </button>
+                <button onClick={() => gerarPix(ch)}
+                  className="flex-1 bg-emerald-600 text-white px-4 py-2 rounded-lg">
+                  💸 Gerar Pix
+                </button>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button onClick={() => confirmarChamada(ch)}
+                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg">
+                  ✅ Confirmar
+                </button>
+                <button onClick={() => cancelarChamada(ch)}
+                  className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg">
+                  ❌ Cancelar
+                </button>
+              </div>
             </div>
-          )
-        })
+          )}
+
+          {(ch.qrCodePix || ch.copiaColaPix) && (
+            <div className="bg-gray-50 border rounded-lg p-2 text-center">
+              <p className="font-semibold text-green-600">✅ Pix gerado</p>
+              {ch.qrCodePix && <img src={ch.qrCodePix} alt="QR Code Pix" className="mx-auto w-40" />}
+              {ch.copiaColaPix && <p className="text-xs break-all">{ch.copiaColaPix}</p>}
+            </div>
+          )}
+
+          {ch.status === 'checkin_freela' && (
+            <button onClick={() => confirmarCheckInFreela(ch)}
+              className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg">
+              📍 Confirmar Check-in
+            </button>
+          )}
+          {ch.status === 'checkout_freela' && (
+            <button onClick={() => confirmarCheckOutFreela(ch)}
+              className="w-full bg-yellow-500 text-white px-4 py-2 rounded-lg">
+              ⏳ Confirmar Check-out
+            </button>
+          )}
+          {(ch.status === 'concluido' || ch.status === 'finalizada') &&
+            <span className="text-green-600 font-bold block text-center">✅ Finalizada</span>}
+        </div>
+      ))}
+
+      {/* modal cadastrar cartão */}
+      {abrirCadastroCartao && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-4 space-y-3">
+            <div className="flex justify-between">
+              <h3 className="font-semibold text-orange-700">Cadastrar Cartão</h3>
+              <button onClick={() => setAbrirCadastroCartao(false)}>✕</button>
+            </div>
+            <input className="border w-full p-2 rounded"
+              placeholder="Número do cartão" value={numeroCartao}
+              onChange={e => setNumeroCartao(e.target.value)} />
+            <select className="border w-full p-2 rounded"
+              value={bandeira} onChange={e => setBandeira(e.target.value)}>
+              <option value="">Bandeira</option>
+              <option value="visa">Visa</option>
+              <option value="mastercard">Mastercard</option>
+              <option value="elo">Elo</option>
+              <option value="amex">Amex</option>
+              <option value="hipercard">Hipercard</option>
+            </select>
+            <input type="password" className="border w-full p-2 rounded"
+              placeholder="Senha de pagamento" value={senhaPagamento}
+              onChange={e => setSenhaPagamento(e.target.value)} />
+            <div className="flex gap-2">
+              <button onClick={() => setAbrirCadastroCartao(false)}
+                className="flex-1 border rounded px-3 py-2">Cancelar</button>
+              <button onClick={salvarNovoCartao} disabled={savingCartao}
+                className="flex-1 bg-orange-600 text-white rounded px-3 py-2">
+                {savingCartao ? 'Salvando…' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
