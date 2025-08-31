@@ -275,20 +275,20 @@ export default function ChamadasContratante({ contratante }) {
       setSavingCartao(true)
       const salvarCartaoFn = httpsCallable(functionsClient, 'salvarCartao')
       await salvarCartaoFn({
-      numeroCartao: numeroDigits,   // ideal: tokenizar no back
+      numeroCartao: numeroDigits,
       bandeira,
       titularNome,
       titularCpf: cpfDigits,
       validadeMes: mm,
       validadeAno: 2000 + yy,
-      cvv: cvvDigits,               // só para tokenização; NÃO persistir
-      senhaPagamento                // hash no back
+      cvv: cvvDigits,        // só para tokenização; NÃO persistir
+      senhaPagamento
     })
 
     toast.success('Cartão cadastrado com sucesso!')
     setNumeroCartao(''); setBandeira(''); setTitularNome(''); setTitularCpf('')
     setValidade(''); setCvv(''); setSenhaPagamento('')
-    setAbrirCadastroCartao(false))
+    setAbrirCadastroCartao(false)
     
     } catch (e) {
       console.error('[salvarNovoCartao]', e)
