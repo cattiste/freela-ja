@@ -18,6 +18,7 @@ import MensagensRecebidasContratante from '@/components/MensagensRecebidasContra
 import ListaCartoes from '@/components/ListaCartoes'
 import SalvarSenhaCartao from '@/components/SalvarSenhaCartao'
 import { getFunctions, httpsCallable } from 'firebase/functions'
+const functionsClient = getFunctions(undefined, 'southamerica-east1')
 
 const STATUS_LISTA = [
   'pendente', 'aceita', 'confirmada', 'checkin_freela',
@@ -162,7 +163,7 @@ export default function ChamadasContratante({ contratante }) {
       toast.success('⏳ Check-out confirmado!')
 
       if (typeof ch.valorDiaria === 'number' && ch.valorDiaria > 0) {
-        const fn = httpsCallable(getFunctions(), 'pagarFreelaAoCheckout')
+        const fn = httpsCallable(functionsClient, 'pagarFreelaAoCheckout')
         await fn({
           chamadaId: ch.id,
           valorReceber: Number((ch.valorDiaria * 0.90).toFixed(2))
@@ -182,11 +183,11 @@ export default function ChamadasContratante({ contratante }) {
 
       const fn = getFunctions()
 
-      await httpsCallable(fn, 'confirmarPagamentoComSenha')({ uid: estab.uid, senha })
-      const pagar = await httpsCallable(fn, 'pagarFreela')({ chamadaId: ch.id })
+      await httpsCallable(functionsClient, 'confirmarPagamentoComSenha')({ uid: estab.uid, senha })
+      const pagar = await httpsCallable(functionsClient, 'pagarFreela')({ chamadaId: ch.id })
       if (!pagar?.data?.sucesso) { toast.error('Falha no pagamento'); return }
 
-      await httpsCallable(fn, 'registrarPagamentoEspelho')({
+      await httpsCallable(functionsClient, 'registrarPagamentoEspelho')({
         chamadaId: ch.id,
         valor: Number((ch.valorDiaria * 1.10).toFixed(2)), // diária + 10% (lado contratante)
         metodo: 'cartao'
@@ -221,7 +222,7 @@ export default function ChamadasContratante({ contratante }) {
 
       const nomePagador = estab?.nome || estab?.nomeResponsavel || 'Contratante'
 
-      const fn = httpsCallable(getFunctions(), 'gerarPixCallable')
+      const fn = httpsCallable(functionsClient, 'gerarPixCallable')
       const res = await fn({
         valor: valorCobrar,
         nome: nomePagador,
@@ -238,7 +239,7 @@ export default function ChamadasContratante({ contratante }) {
         metodoPagamento: 'pix'
       })
 
-      await httpsCallable(getFunctions(), 'registrarPagamentoEspelho')({
+      await httpsCallable(functionsClient, 'registrarPagamentoEspelho')({
         chamadaId: ch.id,
         valor: valorCobrar,
         metodo: 'pix'
@@ -272,7 +273,7 @@ export default function ChamadasContratante({ contratante }) {
       if (cpfDigits.length !== 11) { toast.error('CPF do titular inválido.'); return }
 
       setSavingCartao(true)
-      const salvarCartaoFn = httpsCallable(getFunctions(), 'salvarCartao')
+      const salvarCartaoFn = httpsCallable(functionsClient, 'salvarCartao')
       await salvarCartaoFn({
         numeroCartao: numeroDigits,    // ideal: tokenizar no back
         bandeira,
