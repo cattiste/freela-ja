@@ -88,6 +88,62 @@ function luhnCheck(num='') {
     sum += d; dbl = !dbl
   }
   return s.length >= 12 && s.length <= 19 && (sum % 10 === 0)
+
+}
+
+// helpers simples
+const onlyDigits = (s='') => (s || '').replace(/\D/g, '')
+const isCpf = (d) => d && d.length === 11
+const isCnpj = (d) => d && d.length === 14
+
+async function gerarPix(ch) {
+  try {
+    if (!ch?.valorDiaria) { toast.error('Valor inválido.'); return }
+    const valorCobrar = Number((ch.valorDiaria * 1.10).toFixed(2))
+
+    // tenta pegar do cadastro
+    let docPagador = onlyDigits(estab?.cpf || estab?.cnpj || estab?.documento)
+    if (!isCpf(docPagador) && !isCnpj(docPagador)) {
+      // pede ao usuário se não achar
+      const entrada = window.prompt('Informe o CPF (11 dígitos) ou CNPJ (14 dígitos) do pagador:')
+      docPagador = onlyDigits(entrada || '')
+    }
+    if (!isCpf(docPagador) && !isCnpj(docPagador)) {
+      toast.error('CPF/CNPJ do pagador inválido.'); return
+    }
+
+    const nomePagador = estab?.nome || estab?.nomeResponsavel || 'Contratante'
+
+    const fn = httpsCallable(getFunctions(), 'gerarPixCallable')
+    const res = await fn({
+      valor: valorCobrar,
+      nome: nomePagador,
+      cpfCnpj: docPagador,     // <<<<<< agora enviamos cpfCnpj
+      idChamada: ch.id
+    })
+
+    if (!res?.data?.sucesso) { toast.error('Erro ao gerar Pix.'); return }
+
+    const { imagemQrCode, qrCode } = res.data
+    await updateDoc(doc(db, 'chamadas', ch.id), {
+      qrCodePix: imagemQrCode || null,
+      copiaColaPix: qrCode || null,
+      pagamentoStatus: 'aguardando_pix',
+      metodoPagamento: 'pix'
+    })
+
+    // espelho (valor cobrado do contratante)
+    await httpsCallable(getFunctions(), 'registrarPagamentoEspelho')({
+      chamadaId: ch.id,
+      valor: valorCobrar,
+      metodo: 'pix'
+    })
+
+    toast.success('💸 Pix gerado! Aguarde a confirmação do pagamento.')
+  } catch (e) {
+    console.error('[gerarPix] erro:', e)
+    toast.error(e?.message || 'Erro ao gerar Pix.')
+  }
 }
 
   useEffect(() => {
