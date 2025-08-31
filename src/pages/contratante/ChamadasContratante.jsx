@@ -431,7 +431,11 @@ export default function ChamadasContratante({ contratante }) {
             <span className="text-green-600 font-bold block text-center">✅ Finalizada</span>
           )}
         </div>
-      ))}
+      )
+    })}
+  </>
+)}
+
 
       {/* Modal de cadastro de cartão */}
       {abrirCadastroCartao && (
