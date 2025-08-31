@@ -499,5 +499,5 @@ function luhnCheck(num='') {
       </div>
     </div>
   </div>
- )}
- }
+  )
+}
