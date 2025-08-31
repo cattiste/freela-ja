@@ -30,9 +30,9 @@ export default function ChamadasFreela() {
     const unsub = onSnapshot(q, (snap) => {
       const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
       const filtradas = docs.filter((ch) =>
-       ch.status !== 'rejeitada' &&
-       !(ch.status === 'concluido' && ch.avaliadoPorFreela) &&
-       ch.status !== 'finalizada'
+        ch.status !== 'rejeitada' &&
+        !(ch.status === 'concluido' && ch.avaliadoPorFreela) &&
+        ch.status !== 'finalizada'
       )
       setChamadas(filtradas)
     })
@@ -136,11 +136,30 @@ export default function ChamadasFreela() {
             <h2 className="font-semibold text-orange-600 text-lg">
               Chamada #{ch.id.slice(-5)}
             </h2>
+
             <p><strong>Contratante:</strong> {ch.contratanteNome || ch.contratanteUid}</p>
+
+            {/* 🔒 Endereço do contratante só aparece após pagamento */}
+            {ch.status === 'pago' || ch.liberarEnderecoAoFreela ? (
+              <p className="text-sm text-gray-800">
+                <strong>📍 Endereço do contratante:</strong> {ch.enderecoContratante || '—'}
+              </p>
+            ) : (
+              <p className="text-sm text-gray-500">
+                🔒 Endereço liberado após confirmação do pagamento.
+              </p>
+            )}
+
             <p><strong>Status:</strong> {ch.status}</p>
+
             {typeof ch.valorDiaria === 'number' && (
               <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>
             )}
+
+            {ch.status === 'pago' && (
+              <p className="text-green-600 font-bold">💰 Pagamento confirmado</p>
+            )}
+
             {ch.observacao && (
               <p><strong>📝 Observação:</strong> {ch.observacao}</p>
             )}
