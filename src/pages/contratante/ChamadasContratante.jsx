@@ -31,13 +31,64 @@ export default function ChamadasContratante({ contratante }) {
   const estab = contratante || usuario
   const [chamadas, setChamadas] = useState([])
   const [loading, setLoading] = useState(true)
+  
 
   // modal cartão
   const [abrirCadastroCartao, setAbrirCadastroCartao] = useState(false)
   const [numeroCartao, setNumeroCartao] = useState('')
+  const [titularNome, setTitularNome] = useState('')
+  const [titularCpf, setTitularCpf] = useState('')
+  const [validade, setValidade] = useState('')   // "MM/YY"
+  const [cvv, setCvv] = useState('')
   const [bandeira, setBandeira] = useState('')
   const [senhaPagamento, setSenhaPagamento] = useState('')
   const [savingCartao, setSavingCartao] = useState(false)
+
+  // --- helpers de máscara/validação ---
+const onlyDigits = (s='') => s.replace(/\D/g, '')
+
+function formatCardNumber(v='') {
+  const d = onlyDigits(v).slice(0,19)
+  return d.replace(/(\d{4})(?=\d)/g, '$1 ').trim()
+}
+
+function formatMMYY(v='') {
+  const d = onlyDigits(v).slice(0,4)
+  if (d.length <= 2) return d
+  return d.slice(0,2) + '/' + d.slice(2)
+}
+
+function formatCPF(v='') {
+  const d = onlyDigits(v).slice(0,11)
+  if (d.length <= 3) return d
+  if (d.length <= 6) return d.replace(/(\d{3})(\d+)/, '$1.$2')
+  if (d.length <= 9) return d.replace(/(\d{3})(\d{3})(\d+)/, '$1.$2.$3')
+  return d.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4')
+}
+
+function isValidExpiry(mmyy='') {
+  const m = mmyy.slice(0,2), y = mmyy.slice(3,5)
+  const mm = parseInt(m,10), yy = parseInt(y,10)
+  if (!mm || !yy || mm < 1 || mm > 12) return false
+  const year = 2000 + yy
+  const now = new Date()
+  const exp = new Date(year, mm - 1, 1)
+  // considerar válido se até o fim do mês
+  exp.setMonth(exp.getMonth() + 1) // primeiro dia do mês seguinte
+  return exp > now
+}
+
+function luhnCheck(num='') {
+  // validação simples do cartão
+  const s = onlyDigits(num)
+  let sum = 0, dbl = false
+  for (let i = s.length - 1; i >= 0; i--) {
+    let d = parseInt(s[i],10)
+    if (dbl) { d *= 2; if (d > 9) d -= 9 }
+    sum += d; dbl = !dbl
+  }
+  return s.length >= 12 && s.length <= 19 && (sum % 10 === 0)
+}
 
   useEffect(() => {
     if (!estab?.uid) return
@@ -197,20 +248,49 @@ export default function ChamadasContratante({ contratante }) {
 
   // cadastrar novo cartão
   async function salvarNovoCartao() {
-    try {
-      if (!numeroCartao || !bandeira || !senhaPagamento) {
-        toast.error('Preencha todos os campos.'); return
-      }
-      setSavingCartao(true)
-      const salvarFn = httpsCallable(getFunctions(), 'salvarCartao')
-      await salvarFn({ numeroCartao, bandeira, senhaPagamento })
-      toast.success('Cartão cadastrado!')
-      setAbrirCadastroCartao(false)
-      setNumeroCartao(''); setBandeira(''); setSenhaPagamento('')
-    } catch (e) {
-      console.error(e); toast.error(e.message)
-    } finally { setSavingCartao(false) }
+  try {
+    const numeroDigits = onlyDigits(numeroCartao)
+    const cpfDigits = onlyDigits(titularCpf)
+    const [mmStr, yyStr] = (validade || '').split('/')
+    const mm = parseInt(mmStr, 10)
+    const yy = parseInt(yyStr, 10)
+    const cvvDigits = onlyDigits(cvv)
+    const cvvLen = (bandeira === 'amex') ? 4 : 3
+
+    // validações rápidas
+    if (!numeroDigits || !bandeira || !titularNome || !cpfDigits || !validade || !cvvDigits || !senhaPagamento) {
+      toast.error('Preencha todos os campos.'); return
+    }
+    if (!luhnCheck(numeroDigits)) { toast.error('Número do cartão inválido.'); return }
+    if (!isValidExpiry(validade)) { toast.error('Validade inválida (MM/YY).'); return }
+    if (cvvDigits.length !== cvvLen) { toast.error(`CVV deve ter ${cvvLen} dígitos.`); return }
+    if (cpfDigits.length !== 11) { toast.error('CPF do titular inválido.'); return }
+
+    setSavingCartao(true)
+    const salvarCartaoFn = httpsCallable(getFunctions(), 'salvarCartao')
+    await salvarCartaoFn({
+      numeroCartao: numeroDigits,    // PAN (ideal: tokenizar no back)
+      bandeira,
+      titularNome,
+      titularCpf: cpfDigits,
+      validadeMes: mm,
+      validadeAno: 2000 + yy,
+      cvv: cvvDigits,                // ⚠️ usar apenas para tokenizar; NÃO persistir
+      senhaPagamento                 // sua senha de pagamento (hash no back)
+    })
+
+    toast.success('Cartão cadastrado com sucesso!')
+    // limpar campos sensíveis
+    setNumeroCartao(''); setBandeira(''); setTitularNome(''); setTitularCpf('')
+    setValidade(''); setCvv(''); setSenhaPagamento('')
+    setAbrirCadastroCartao(false)
+  } catch (e) {
+    console.error('[salvarNovoCartao]', e)
+    toast.error(e?.message || 'Erro ao salvar cartão.')
+  } finally {
+    setSavingCartao(false)
   }
+}
 
   if (loading) return <div className="text-center mt-8">🔄 Carregando…</div>
 
@@ -298,40 +378,125 @@ export default function ChamadasContratante({ contratante }) {
         </div>
       ))}
 
-      {/* modal cadastrar cartão */}
-      {abrirCadastroCartao && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-4 space-y-3">
-            <div className="flex justify-between">
-              <h3 className="font-semibold text-orange-700">Cadastrar Cartão</h3>
-              <button onClick={() => setAbrirCadastroCartao(false)}>✕</button>
-            </div>
-            <input className="border w-full p-2 rounded"
-              placeholder="Número do cartão" value={numeroCartao}
-              onChange={e => setNumeroCartao(e.target.value)} />
-            <select className="border w-full p-2 rounded"
-              value={bandeira} onChange={e => setBandeira(e.target.value)}>
-              <option value="">Bandeira</option>
-              <option value="visa">Visa</option>
-              <option value="mastercard">Mastercard</option>
-              <option value="elo">Elo</option>
-              <option value="amex">Amex</option>
-              <option value="hipercard">Hipercard</option>
-            </select>
-            <input type="password" className="border w-full p-2 rounded"
-              placeholder="Senha de pagamento" value={senhaPagamento}
-              onChange={e => setSenhaPagamento(e.target.value)} />
-            <div className="flex gap-2">
-              <button onClick={() => setAbrirCadastroCartao(false)}
-                className="flex-1 border rounded px-3 py-2">Cancelar</button>
-              <button onClick={salvarNovoCartao} disabled={savingCartao}
-                className="flex-1 bg-orange-600 text-white rounded px-3 py-2">
-                {savingCartao ? 'Salvando…' : 'Salvar'}
-              </button>
-            </div>
-          </div>
+      {/* Modal de cadastro de cartão */}
+{abrirCadastroCartao && (
+  <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+    <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-orange-700">Cadastrar Cartão</h3>
+        <button
+          onClick={() => setAbrirCadastroCartao(false)}
+          className="text-gray-500 hover:text-gray-700"
+          aria-label="Fechar"
+        >✕</button>
+      </div>
+
+      {/* Nome do titular */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium">Nome do titular</label>
+        <input
+          type="text"
+          placeholder="Como aparece no cartão"
+          value={titularNome}
+          onChange={(e) => setTitularNome(e.target.value)}
+          className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-400"
+        />
+      </div>
+
+      {/* CPF do titular */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium">CPF do titular</label>
+        <input
+          inputMode="numeric"
+          placeholder="000.000.000-00"
+          value={titularCpf}
+          onChange={(e) => setTitularCpf(formatCPF(e.target.value))}
+          className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-400"
+        />
+      </div>
+
+      {/* Número do cartão */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium">Número do cartão</label>
+        <input
+          inputMode="numeric"
+          placeholder="0000 0000 0000 0000"
+          value={numeroCartao}
+          onChange={(e) => setNumeroCartao(formatCardNumber(e.target.value))}
+          className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-400"
+        />
+      </div>
+
+      {/* Bandeira */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium">Bandeira</label>
+        <select
+          className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-400"
+          value={bandeira}
+          onChange={(e) => setBandeira(e.target.value)}
+        >
+          <option value="">Selecione…</option>
+          <option value="visa">Visa</option>
+          <option value="mastercard">Mastercard</option>
+          <option value="elo">Elo</option>
+          <option value="amex">Amex</option>
+          <option value="hipercard">Hipercard</option>
+        </select>
+      </div>
+
+      {/* Validade + CVV */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <label className="block text-sm font-medium">Validade (MM/YY)</label>
+          <input
+            inputMode="numeric"
+            placeholder="MM/YY"
+            value={validade}
+            onChange={(e) => setValidade(formatMMYY(e.target.value))}
+            className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-400"
+            maxLength={5}
+          />
         </div>
-      )}
+        <div className="space-y-1">
+          <label className="block text-sm font-medium">CVV</label>
+          <input
+            inputMode="numeric"
+            placeholder={bandeira === 'amex' ? '0000' : '000'}
+            value={cvv}
+            onChange={(e) => setCvv(onlyDigits(e.target.value).slice(0, bandeira === 'amex' ? 4 : 3))}
+            className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-400"
+            maxLength={bandeira === 'amex' ? 4 : 3}
+          />
+        </div>
+      </div>
+
+      {/* Senha de pagamento */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium">Senha de pagamento</label>
+        <input
+          type="password"
+          placeholder="Defina uma senha"
+          value={senhaPagamento}
+          onChange={(e) => setSenhaPagamento(e.target.value)}
+          className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-400"
+        />
+      </div>
+
+      <div className="flex gap-2 pt-2">
+        <button
+          onClick={() => setAbrirCadastroCartao(false)}
+          className="flex-1 border px-3 py-2 rounded-lg hover:bg-gray-50"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={salvarNovoCartao}
+          disabled={savingCartao}
+          className="flex-1 bg-orange-600 text-white px-3 py-2 rounded-lg hover:bg-orange-700 disabled:opacity-60"
+        >
+          {savingCartao ? 'Salvando…' : 'Salvar Cartão'}
+        </button>
+      </div>
     </div>
-  )
-}
+  </div>
+)}
