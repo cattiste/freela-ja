@@ -382,7 +382,7 @@ export default function ChamadasContratante({ contratante }) {
             <AvaliacaoContratante chamada={ch} />
           )}
 
-          {ch.status === 'aceita' && (
+          {ch.status === 'confirmada' && (
             <div className="space-y-2">
               <div className="flex flex-col sm:flex-row gap-2">
                 <button onClick={() => pagarComCartao(ch)}
