@@ -13,7 +13,7 @@ import AvaliacaoContratante from '@/components/AvaliacaoContratante'
 import MensagensRecebidasContratante from '@/components/MensagensRecebidasContratante'
 
 const STATUS_LISTA = [
-  'pendente', 'aceita', 'confirmada', 'checkin_freela',
+  'pendente', 'aceita', 'confirmada', 'checkin_freela'
   'em_andamento', 'checkout_freela', 'concluido',
   'finalizada', 'cancelada_por_falta_de_pagamento', 'rejeitada'
 ]
@@ -145,7 +145,7 @@ export default function ChamadasContratante({ contratante }) {
               <MensagensRecebidasContratante chamadaId={ch.id} />
 
               {ch.status === 'concluido' && (
-                <AvaliacaoInline chamada={ch} tipo="freela" />
+                <AvaliacaoFreela chamada={ch} tipo="freela" />
               )}
 
               {ch.status === 'aceita' && (
