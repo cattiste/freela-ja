@@ -332,37 +332,37 @@ export default function ChamadasContratante({ contratante }) {
           )}
           {ch.observacao && <p>📝 {ch.observacao}</p>}
 
-           {ch.enderecoCheckInFreela && (
-            <p className="text-sm text-gray-700">🏠 Endereço: {ch.enderecoCheckInFreela}</p>
-          )}
+{ch.enderecoCheckInFreela && (
+  <p className="text-sm text-gray-700">🏠 Endereço: {ch.enderecoCheckInFreela}</p>
+)}
 
-          {pos && (
-            <>
-              <p className="text-sm text-gray-700">
-                📍 Coordenadas: {pos.latitude.toFixed(6)}, {pos.longitude.toFixed(6)}{' '}
-                <a
-                  href={`https://www.google.com/maps?q=${pos.latitude},${pos.longitude}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="text-blue-600 underline ml-2"
-                >
-                  Ver no Google Maps
-                </a>
-              </p>
-              <MapContainer
-                center={[pos.latitude, pos.longitude]}
-                zoom={18}
-                scrollWheelZoom={false}
-                style={{ height: 200, borderRadius: 8 }}
-                className="mt-2"
-              >
-                <TileLayer
-                  attribution="&copy; OpenStreetMap"
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <Marker position={[pos.latitude, pos.longitude]} />
-              </MapContainer>
-            </>
-          )}
+{ch.coordenadasCheckInFreela && (
+  <>
+    <p className="text-sm text-gray-700">
+      📍 Coordenadas: {ch.coordenadasCheckInFreela.latitude.toFixed(6)}, {ch.coordenadasCheckInFreela.longitude.toFixed(6)}{' '}
+      <a
+        href={`https://www.google.com/maps?q=${ch.coordenadasCheckInFreela.latitude},${ch.coordenadasCheckInFreela.longitude}`}
+        target="_blank" rel="noopener noreferrer"
+        className="text-blue-600 underline ml-2"
+      >
+        Ver no Google Maps
+      </a>
+    </p>
+    <MapContainer
+      center={[ch.coordenadasCheckInFreela.latitude, ch.coordenadasCheckInFreela.longitude]}
+      zoom={18}
+      scrollWheelZoom={false}
+      style={{ height: 200, borderRadius: 8 }}
+      className="mt-2"
+    >
+      <TileLayer
+        attribution="&copy; OpenStreetMap"
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      <Marker position={[ch.coordenadasCheckInFreela.latitude, ch.coordenadasCheckInFreela.longitude]} />
+    </MapContainer>
+  </>
+)}
 
           <MensagensRecebidasContratante chamadaId={ch.id} />
 
