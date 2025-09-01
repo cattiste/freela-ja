@@ -19,7 +19,7 @@ import ListaCartoes from '@/components/ListaCartoes'
 import SalvarSenhaCartao from '@/components/SalvarSenhaCartao'
 import { getFunctions, httpsCallable } from 'firebase/functions'
 const functions = getFunctions(undefined, "southamerica-east1");
-const listarCartao = httpsCallable(functions, "listarCartao");
+//const listarCartao = httpsCallable(functions, "listarCartao");
 
 const res = await listarCartao({});
 console.log(res.data);
