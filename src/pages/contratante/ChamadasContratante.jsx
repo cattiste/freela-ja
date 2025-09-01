@@ -13,7 +13,8 @@ import AvaliacaoContratante from '@/components/AvaliacaoContratante'
 import MensagensRecebidasContratante from '@/components/MensagensRecebidasContratante'
 import ListaCartoes from '@/components/ListaCartoes'
 import SalvarSenhaCartao from '@/components/SalvarSenhaCartao'
-import { functionsClient, httpsCallable } from 'firebase/functions'
+import { httpsCallable } from 'firebase/functions'
+import { functionsClient } from '@/utils/firebaseFunctions' // ✅ CORRETO
 import { getApp } from "firebase/app"
 
 
