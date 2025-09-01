@@ -1,11 +1,8 @@
+// ✅ ListaCartoes.jsx — corrigido com import de functionsClient padronizado
 import React, { useEffect, useState } from 'react'
-import { getFunctions, httpsCallable } from 'firebase/functions'
+import { httpsCallable } from 'firebase/functions'
+import { functionsClient } from '@/utils/firebaseFunctions' // helper centralizado
 import { useAuth } from '@/context/AuthContext'
-import { getFunctions, httpsCallable } from 'firebase/functions'
-import { getApp } from 'firebase/app'
-
-const functionsClient = getFunctions(getApp(), 'southamerica-east1')
-
 
 export default function ListaCartoes({ refreshKey = 0 }) {
   const { usuario } = useAuth()
@@ -22,7 +19,6 @@ export default function ListaCartoes({ refreshKey = 0 }) {
       try {
         const fn = httpsCallable(functionsClient, 'listarCartao')
         const res = await fn()
-        // espere algo como { numeroFinal, bandeira, criadoEm }
         const data = res?.data
         if (isMounted) setCartao(data || null)
       } catch (e) {
