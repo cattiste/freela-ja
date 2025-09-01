@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { getFunctions, httpsCallable } from 'firebase/functions'
 import { useAuth } from '@/context/AuthContext'
+import { getFunctions, httpsCallable } from 'firebase/functions'
 import { getApp } from 'firebase/app'
+
 const functionsClient = getFunctions(getApp(), 'southamerica-east1')
 
 
