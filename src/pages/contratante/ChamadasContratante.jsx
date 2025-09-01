@@ -18,7 +18,11 @@ import MensagensRecebidasContratante from '@/components/MensagensRecebidasContra
 import ListaCartoes from '@/components/ListaCartoes'
 import SalvarSenhaCartao from '@/components/SalvarSenhaCartao'
 import { getFunctions, httpsCallable } from 'firebase/functions'
-const functionsClient = getFunctions(undefined, 'southamerica-east1')
+const functions = getFunctions(undefined, "southamerica-east1");
+const listarCartao = httpsCallable(functions, "listarCartao");
+
+const res = await listarCartao({});
+console.log(res.data);
 
 const STATUS_LISTA = [
   'pendente', 'aceita', 'confirmada', 'checkin_freela',
