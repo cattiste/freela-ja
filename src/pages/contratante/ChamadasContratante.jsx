@@ -21,8 +21,8 @@ import { getFunctions, httpsCallable } from 'firebase/functions'
 const functions = getFunctions(undefined, "southamerica-east1");
 //const listarCartao = httpsCallable(functions, "listarCartao");
 
-const res = await listarCartao({});
-console.log(res.data);
+//onst res = await listarCartao({});
+//console.log(res.data);
 
 const STATUS_LISTA = [
   'pendente', 'aceita', 'confirmada', 'checkin_freela',
