@@ -316,8 +316,7 @@ export default function ChamadasContratante({ contratante }) {
           </button>
         </div>
         <div className="grid md:grid-cols-2 gap-4">
-          <ListaCartoes />
-          <SalvarSenhaCartao uid={estab?.uid} />
+          <ListaCartoes />          
         </div>
       </div>
 
