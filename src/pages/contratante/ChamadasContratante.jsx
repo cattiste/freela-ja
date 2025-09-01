@@ -1,12 +1,8 @@
+// ✅ ChamadasContratante.jsx (com functionsClient definido corretamente)
 import React, { useEffect, useMemo, useState } from 'react'
 import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  updateDoc,
-  doc,
-  serverTimestamp
+collection, query, where, onSnapshot,
+updateDoc, doc, serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
@@ -17,9 +13,13 @@ import AvaliacaoContratante from '@/components/AvaliacaoContratante'
 import MensagensRecebidasContratante from '@/components/MensagensRecebidasContratante'
 import ListaCartoes from '@/components/ListaCartoes'
 import SalvarSenhaCartao from '@/components/SalvarSenhaCartao'
-import { getFunctions, httpsCallable } from 'firebase/functions'
-import { getApp } from "firebase/app";
-const functions = getFunctions(getApp(), "southamerica-east1");
+import { functionsClient
+, httpsCallable } from 'firebase/functions'
+import { getApp } from "firebase/app"
+
+
+// ✅ DEFINIDO AQUI — usado por TODAS as chamadas onCall
+const functionsClient = getFunctions(getApp(), "southamerica-east1")
 
 const STATUS_LISTA = [
   'pendente', 'aceita', 'confirmada', 'checkin_freela',
@@ -188,7 +188,8 @@ export default function ChamadasContratante({ contratante }) {
       const senha = window.prompt('Digite sua senha de pagamento:')
       if (!senha) return
 
-      const fn = getFunctions()
+      const fn = functionsClient
+()
 
       await httpsCallable(functionsClient, 'confirmarPagamentoComSenha')({ uid: estab.uid, senha })
       const pagar = await httpsCallable(functionsClient, 'pagarFreela')({ chamadaId: ch.id })
