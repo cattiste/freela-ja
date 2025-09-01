@@ -90,29 +90,31 @@ export default function ChamadasContratante({ contratante }) {
 }
 
   useEffect(() => {
-    if (!estab?.uid) return
-    setLoading(true)
-    const q = query(
-      collection(db, 'chamadas'),
-      where('contratanteUid', '==', estab.uid),
-      where('status', 'in', STATUS_LISTA)
-    )
-    const unsub = onSnapshot(q, (snap) => {
-      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-      const filtradas = docs.filter((ch) =>
+  if (!estab?.uid) return
+  setLoading(true)
+  const q = query(
+    collection(db, 'chamadas'),
+    where('contratanteUid', '==', estab.uid),
+    where('status', 'in', STATUS_LISTA)
+  )
+  const unsub = onSnapshot(q, (snap) => {
+    const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    const filtradas = docs.filter((ch) => {
+      return (
         ch.status !== 'rejeitada' &&
-        !(ch.status === 'concluido' && ch.avaliadoPeloContratante) &&
-        ch.status !== 'finalizada'
+        ch.status !== 'finalizada' &&
+        !(ch.status === 'concluido' && ch.avaliadoPeloContratante === true)
       )
-      setChamadas(filtradas)
-      setLoading(false)
-    }, (err) => {
-      console.error('[ChamadasContratante] onSnapshot erro:', err)
-      toast.error('Falha ao carregar chamadas.')
-      setLoading(false)
     })
-    return () => unsub()
-  }, [estab?.uid])
+    setChamadas(filtradas)
+    setLoading(false)
+  }, (err) => {
+    console.error('[ChamadasContratante] onSnapshot erro:', err)
+    toast.error('Falha ao carregar chamadas.')
+    setLoading(false)
+  })
+  return () => unsub()
+}, [estab?.uid])
 
   const chamadasOrdenadas = useMemo(() => {
     const ts = (x) => x?.toMillis?.() ?? (x?.seconds ? x.seconds * 1000 : 0)
