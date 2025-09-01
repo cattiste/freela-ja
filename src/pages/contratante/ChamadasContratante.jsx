@@ -332,6 +332,38 @@ export default function ChamadasContratante({ contratante }) {
           )}
           {ch.observacao && <p>📝 {ch.observacao}</p>}
 
+           {ch.enderecoCheckInFreela && (
+            <p className="text-sm text-gray-700">🏠 Endereço: {ch.enderecoCheckInFreela}</p>
+          )}
+
+          {pos && (
+            <>
+              <p className="text-sm text-gray-700">
+                📍 Coordenadas: {pos.latitude.toFixed(6)}, {pos.longitude.toFixed(6)}{' '}
+                <a
+                  href={`https://www.google.com/maps?q=${pos.latitude},${pos.longitude}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="text-blue-600 underline ml-2"
+                >
+                  Ver no Google Maps
+                </a>
+              </p>
+              <MapContainer
+                center={[pos.latitude, pos.longitude]}
+                zoom={18}
+                scrollWheelZoom={false}
+                style={{ height: 200, borderRadius: 8 }}
+                className="mt-2"
+              >
+                <TileLayer
+                  attribution="&copy; OpenStreetMap"
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <Marker position={[pos.latitude, pos.longitude]} />
+              </MapContainer>
+            </>
+          )}
+
           <MensagensRecebidasContratante chamadaId={ch.id} />
 
           {ch.status === 'concluido' && !ch.avaliadoPeloContratante && (
