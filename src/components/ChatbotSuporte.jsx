@@ -47,7 +47,7 @@ const perguntasRespostas = [
         resposta:
           'Após o check-out confirmado, processamos o repasse conforme o método definido. A taxa de serviço do freela é de 10%.',
       },
-
+]
 export default function ChatbotSuporte() {
   const [respostaSelecionada, setRespostaSelecionada] = useState(null)
 
