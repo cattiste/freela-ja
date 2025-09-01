@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { getFunctions, httpsCallable } from 'firebase/functions'
 import { useAuth } from '@/context/AuthContext'
+import { getApp } from 'firebase/app'
+const functionsClient = getFunctions(getApp(), 'southamerica-east1')
 
-const functionsClient = getFunctions(undefined, 'southamerica-east1')
 
 export default function ListaCartoes({ refreshKey = 0 }) {
   const { usuario } = useAuth()

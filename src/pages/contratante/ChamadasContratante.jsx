@@ -13,13 +13,9 @@ import AvaliacaoContratante from '@/components/AvaliacaoContratante'
 import MensagensRecebidasContratante from '@/components/MensagensRecebidasContratante'
 import ListaCartoes from '@/components/ListaCartoes'
 import SalvarSenhaCartao from '@/components/SalvarSenhaCartao'
-import { functionsClient
-, httpsCallable } from 'firebase/functions'
+import { functionsClient, httpsCallable } from 'firebase/functions'
 import { getApp } from "firebase/app"
 
-
-// ✅ DEFINIDO AQUI — usado por TODAS as chamadas onCall
-const functionsClient = getFunctions(getApp(), "southamerica-east1")
 
 const STATUS_LISTA = [
   'pendente', 'aceita', 'confirmada', 'checkin_freela',
