@@ -18,11 +18,8 @@ import MensagensRecebidasContratante from '@/components/MensagensRecebidasContra
 import ListaCartoes from '@/components/ListaCartoes'
 import SalvarSenhaCartao from '@/components/SalvarSenhaCartao'
 import { getFunctions, httpsCallable } from 'firebase/functions'
-const functions = getFunctions(undefined, "southamerica-east1");
-//const listarCartao = httpsCallable(functions, "listarCartao");
-
-//onst res = await listarCartao({});
-//console.log(res.data);
+import { getApp } from "firebase/app";
+const functions = getFunctions(getApp(), "southamerica-east1");
 
 const STATUS_LISTA = [
   'pendente', 'aceita', 'confirmada', 'checkin_freela',
@@ -88,6 +85,12 @@ export default function ChamadasContratante({ contratante }) {
     }
     return s.length >= 12 && s.length <= 19 && (sum % 10 === 0)
   }
+
+  async function listarCartao() {
+  const fn = httpsCallable(functions, "listarCartao");
+  const res = await fn({});      // sem payload mesmo
+  return res.data;               // { numeroFinal, bandeira } | null
+}
 
   useEffect(() => {
     if (!estab?.uid) return
