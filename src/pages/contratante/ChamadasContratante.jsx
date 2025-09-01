@@ -183,7 +183,7 @@ export default function ChamadasContratante({ contratante }) {
       const senha = window.prompt('Digite sua senha de pagamento:')
       if (!senha) return
 
-      await httpsCallable(functionsClient, 'confirmarPagamentoComSenha')({ uid: estab.uid, senha })
+      await httpsCallable(functionsClient, 'confirmarPagamentoComSenha')({ senha })
       const pagar = await httpsCallable(functionsClient, 'pagarFreela')({ chamadaId: ch.id })
       if (!pagar?.data?.sucesso) { toast.error('Falha no pagamento'); return }
 
