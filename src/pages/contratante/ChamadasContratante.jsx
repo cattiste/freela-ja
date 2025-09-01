@@ -1,3 +1,4 @@
+// ✅ ChamadasContratante.jsx (limpo e com fluxo ajustado)
 import React, { useEffect, useMemo, useState } from 'react'
 import {
   collection,
@@ -16,8 +17,9 @@ import 'leaflet/dist/leaflet.css'
 import AvaliacaoContratante from '@/components/AvaliacaoContratante'
 import MensagensRecebidasContratante from '@/components/MensagensRecebidasContratante'
 import ListaCartoes from '@/components/ListaCartoes'
-import SalvarSenhaCartao from '@/components/SalvarSenhaCartao'
 import { getFunctions, httpsCallable } from 'firebase/functions'
+
+// region correto das suas functions
 const functionsClient = getFunctions(undefined, 'southamerica-east1')
 
 const STATUS_LISTA = [
@@ -181,8 +183,6 @@ export default function ChamadasContratante({ contratante }) {
       const senha = window.prompt('Digite sua senha de pagamento:')
       if (!senha) return
 
-      const fn = getFunctions()
-
       await httpsCallable(functionsClient, 'confirmarPagamentoComSenha')({ uid: estab.uid, senha })
       const pagar = await httpsCallable(functionsClient, 'pagarFreela')({ chamadaId: ch.id })
       if (!pagar?.data?.sucesso) { toast.error('Falha no pagamento'); return }
@@ -275,21 +275,21 @@ export default function ChamadasContratante({ contratante }) {
       setSavingCartao(true)
       const salvarCartaoFn = httpsCallable(functionsClient, 'salvarCartao')
       await salvarCartaoFn({
-      numeroCartao: numeroDigits,
-      bandeira,
-      titularNome,
-      titularCpf: cpfDigits,
-      validadeMes: mm,
-      validadeAno: 2000 + yy,
-      cvv: cvvDigits,        // só para tokenização; NÃO persistir
-      senhaPagamento
-    })
+        numeroCartao: numeroDigits,
+        bandeira,
+        titularNome,
+        titularCpf: cpfDigits,
+        validadeMes: mm,
+        validadeAno: 2000 + yy,
+        cvv: cvvDigits,        // só para tokenização; NÃO persistir
+        senhaPagamento
+      })
 
-    toast.success('Cartão cadastrado com sucesso!')
-    setNumeroCartao(''); setBandeira(''); setTitularNome(''); setTitularCpf('')
-    setValidade(''); setCvv(''); setSenhaPagamento('')
-    setAbrirCadastroCartao(false)
-    
+      toast.success('Cartão cadastrado com sucesso!')
+      setNumeroCartao(''); setBandeira(''); setTitularNome(''); setTitularCpf('')
+      setValidade(''); setCvv(''); setSenhaPagamento('')
+      setAbrirCadastroCartao(false)
+
     } catch (e) {
       console.error('[salvarNovoCartao]', e)
       toast.error(e?.message || 'Erro ao salvar cartão.')
@@ -316,63 +316,85 @@ export default function ChamadasContratante({ contratante }) {
           </button>
         </div>
         <div className="grid md:grid-cols-2 gap-4">
-          <ListaCartoes />          
+          <ListaCartoes />
         </div>
       </div>
 
       {chamadasOrdenadas.length === 0 ? (
         <p className="text-center text-gray-600">Nenhuma chamada ativa.</p>
-      ) : chamadasOrdenadas.map((ch) => (
-        <div key={ch.id} className="bg-white shadow p-4 rounded-xl mb-4 border space-y-2">
-          <h2 className="font-semibold text-orange-600">Chamada #{String(ch.id).slice(-5)}</h2>
-          <p><strong>Freela:</strong> {ch.freelaNome || ch.freelaUid}</p>
-          <p><strong>Status:</strong> {ch.status}</p>
-          {typeof ch.valorDiaria === 'number' && (
-            <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>
-          )}
-          {ch.observacao && <p>📝 {ch.observacao}</p>}
+      ) : chamadasOrdenadas.map((ch) => {
+        const pos = ch.coordenadasCheckInFreela
+        const dataHora = ch.checkInFeitoPeloFreelaHora?.seconds
+          ? new Date(ch.checkInFeitoPeloFreelaHora.seconds * 1000).toLocaleString()
+          : null
 
-{ch.enderecoCheckInFreela && (
-  <p className="text-sm text-gray-700">🏠 Endereço: {ch.enderecoCheckInFreela}</p>
-)}
+        return (
+          <div key={ch.id} className="bg-white shadow p-4 rounded-xl mb-4 border space-y-2">
+            <h2 className="font-semibold text-orange-600">Chamada #{String(ch.id).slice(-5)}</h2>
+            <p><strong>Freela:</strong> {ch.freelaNome || ch.freelaUid}</p>
+            <p><strong>Status:</strong> {ch.status}</p>
+            {typeof ch.valorDiaria === 'number' && (
+              <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>
+            )}
+            {ch.observacao && <p className="text-sm text-gray-800">📝 {ch.observacao}</p>}
+            {dataHora && <p className="text-sm text-gray-700">🕓 Check-in: {dataHora}</p>}
+            {ch.enderecoCheckInFreela && (
+              <p className="text-sm text-gray-700">🏠 Endereço: {ch.enderecoCheckInFreela}</p>
+            )}
 
-{ch.coordenadasCheckInFreela && (
-  <>
-    <p className="text-sm text-gray-700">
-      📍 Coordenadas: {ch.coordenadasCheckInFreela.latitude.toFixed(6)}, {ch.coordenadasCheckInFreela.longitude.toFixed(6)}{' '}
-      <a
-        href={`https://www.google.com/maps?q=${ch.coordenadasCheckInFreela.latitude},${ch.coordenadasCheckInFreela.longitude}`}
-        target="_blank" rel="noopener noreferrer"
-        className="text-blue-600 underline ml-2"
-      >
-        Ver no Google Maps
-      </a>
-    </p>
-    <MapContainer
-      center={[ch.coordenadasCheckInFreela.latitude, ch.coordenadasCheckInFreela.longitude]}
-      zoom={18}
-      scrollWheelZoom={false}
-      style={{ height: 200, borderRadius: 8 }}
-      className="mt-2"
-    >
-      <TileLayer
-        attribution="&copy; OpenStreetMap"
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <Marker position={[ch.coordenadasCheckInFreela.latitude, ch.coordenadasCheckInFreela.longitude]} />
-    </MapContainer>
-  </>
-)}
+            {/* 📍 Coordenadas + Mapa */}
+            {pos && (
+              <>
+                <p className="text-sm text-gray-700">
+                  📍 Coordenadas: {pos.latitude?.toFixed?.(6)}, {pos.longitude?.toFixed?.(6)}{' '}
+                  <a
+                    href={`https://www.google.com/maps?q=${pos.latitude},${pos.longitude}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="text-blue-600 underline ml-2"
+                  >
+                    Ver no Google Maps
+                  </a>
+                </p>
+                <MapContainer
+                  center={[pos.latitude, pos.longitude]}
+                  zoom={18}
+                  scrollWheelZoom={false}
+                  style={{ height: 200, borderRadius: 8 }}
+                  className="mt-2"
+                >
+                  <TileLayer
+                    attribution="&copy; OpenStreetMap"
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <Marker position={[pos.latitude, pos.longitude]} />
+                </MapContainer>
+              </>
+            )}
 
-          <MensagensRecebidasContratante chamadaId={ch.id} />
+            {/* 💬 Mensagens rápidas recebidas */}
+            <MensagensRecebidasContratante chamadaId={ch.id} />
 
-          {ch.status === 'concluido' && !ch.avaliadoPeloContratante && (
-            <AvaliacaoContratante chamada={ch} />
-          )}
+            {/* ⭐ Avaliação (após concluído e ainda não avaliado) */}
+            {ch.status === 'concluido' && !ch.avaliadoPeloContratante && (
+              <AvaliacaoContratante chamada={ch} />
+            )}
 
-          {ch.status === 'aceita' && (
-            <div className="space-y-2">
+            {/* 👉 Fluxo de botões por status */}
+            {ch.status === 'aceita' && (
               <div className="flex flex-col sm:flex-row gap-2">
+                <button onClick={() => confirmarChamada(ch)}
+                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                  ✅ Confirmar Chamada
+                </button>
+                <button onClick={() => cancelarChamada(ch)}
+                  className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">
+                  ❌ Cancelar
+                </button>
+              </div>
+            )}
+
+            {ch.status === 'confirmada' && (
+              <div className="flex flex-col sm:flex-row gap-2 mt-2">
                 <button onClick={() => pagarComCartao(ch)}
                   className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
                   💳 Pagar Cartão
@@ -382,44 +404,36 @@ export default function ChamadasContratante({ contratante }) {
                   💸 Gerar Pix
                 </button>
               </div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button onClick={() => confirmarChamada(ch)}
-                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-                  ✅ Confirmar
-                </button>
-                <button onClick={() => cancelarChamada(ch)}
-                  className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">
-                  ❌ Cancelar
-                </button>
+            )}
+
+            {(ch.qrCodePix || ch.copiaColaPix) && (
+              <div className="bg-gray-50 border rounded-lg p-2 text-center">
+                <p className="font-semibold text-green-600">✅ Pix gerado</p>
+                {ch.qrCodePix && <img src={ch.qrCodePix} alt="QR Code Pix" className="mx-auto w-40" />}
+                {ch.copiaColaPix && <p className="text-xs break-all">{ch.copiaColaPix}</p>}
               </div>
-            </div>
-          )}
+            )}
 
-          {(ch.qrCodePix || ch.copiaColaPix) && (
-            <div className="bg-gray-50 border rounded-lg p-2 text-center">
-              <p className="font-semibold text-green-600">✅ Pix gerado</p>
-              {ch.qrCodePix && <img src={ch.qrCodePix} alt="QR Code Pix" className="mx-auto w-40" />}
-              {ch.copiaColaPix && <p className="text-xs break-all">{ch.copiaColaPix}</p>}
-            </div>
-          )}
+            {ch.status === 'checkin_freela' && (
+              <button onClick={() => confirmarCheckInFreela(ch)}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                📍 Confirmar Check-in
+              </button>
+            )}
 
-          {ch.status === 'checkin_freela' && (
-            <button onClick={() => confirmarCheckInFreela(ch)}
-              className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-              📍 Confirmar Check-in
-            </button>
-          )}
-          {ch.status === 'checkout_freela' && (
-            <button onClick={() => confirmarCheckOutFreela(ch)}
-              className="w-full bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600">
-              ⏳ Confirmar Check-out
-            </button>
-          )}
-          {(ch.status === 'concluido' || ch.status === 'finalizada') && (
-            <span className="text-green-600 font-bold block text-center">✅ Finalizada</span>
-          )}
-        </div>
-      ))}
+            {ch.status === 'checkout_freela' && (
+              <button onClick={() => confirmarCheckOutFreela(ch)}
+                className="w-full bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600">
+                ⏳ Confirmar Check-out
+              </button>
+            )}
+
+            {(ch.status === 'concluido' || ch.status === 'finalizada') && (
+              <span className="text-green-600 font-bold block text-center">✅ Finalizada</span>
+            )}
+          </div>
+        )
+      })}
 
       {/* Modal de cadastro de cartão */}
       {abrirCadastroCartao && (
