@@ -10,7 +10,11 @@ const perguntasRespostas = [
       {        
         pergunta: 'Quais são as taxas?',
         resposta:
-          'Existe uma taxa de serviço de 10% para o contratante e 10% para o freela. Isso mantém a plataforma, segurança e suporte.',
+          'Transparência e Simplicidade
+Na nossa plataforma, cobramos apenas 10% de taxa de serviço sobre cada chamada realizada.
+Nenhuma outra taxa será aplicada — publicar vagas e se candidatar é sempre 100% gratuito.
+
+Essa contribuição é o que mantém a plataforma funcionando com qualidade, garantindo segurança, suporte e melhorias contínuas para todos os usuários.',
       },
       {        
         pergunta: 'O que é check-in e check-out?',
