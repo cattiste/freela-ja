@@ -121,7 +121,7 @@ export default function ChamadasContratante({ contratante }) {
 async function confirmarChamada(ch) {
   try {
     await updateDoc(doc(db, 'chamadas', ch.id), {
-      status: 'aguardando_pagamento',
+      status: 'Aguardando...',
       confirmadaEm: serverTimestamp()
     })
     toast.success('✅ Chamada confirmada! Aguarde o pagamento.')

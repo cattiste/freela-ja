@@ -150,7 +150,7 @@ export default function ChamadasFreela() {
     </p>
   ) : (
     <p className="text-sm text-gray-500">
-      🔒 Endereço liberado após confirmação do pagamento.
+      🔒 Endereço liberado após confirmação.
     </p>
   )}
 
