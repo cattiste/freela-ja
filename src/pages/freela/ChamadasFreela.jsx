@@ -1,4 +1,3 @@
-// ChamadasFreela.jsx atualizado com liberação de endereço após pagamento
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -73,7 +72,7 @@ export default function ChamadasFreela() {
     }
   }
 
-  async function cancelarChamada(id) {
+  async function CancelarChamada(id) {
     try {
       await updateDoc(doc(db, 'chamadas', id), {
         status: 'cancelada'
@@ -81,7 +80,7 @@ export default function ChamadasFreela() {
       toast.success('❌ Chamada cancelada.')
     } catch (err) {
       console.error(err)
-      toast.error('Erro ao Cancelar Chamada.')
+      toast.error('Erro ao Cancelar chamada.')
     }
   }
 
@@ -90,6 +89,7 @@ export default function ChamadasFreela() {
       let endereco = null
 
       if (coordenadas) {
+        // reverse geocode simples (deixa igual ao original)
         const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coordenadas.latitude}&lon=${coordenadas.longitude}`
         const resp = await fetch(url, { headers: { 'User-Agent': 'freelaja.com.br' } })
         const data = await resp.json()
@@ -134,89 +134,93 @@ export default function ChamadasFreela() {
         <p className="text-center text-gray-500">Nenhuma chamada no momento.</p>
       ) : (
         chamadas.map((ch) => (
-          <div
-            key={ch.id}
-            className="bg-white border border-orange-200 rounded-xl shadow p-4 mb-4 space-y-2"
-          >
-            <h2 className="font-semibold text-orange-600 text-lg">
-              Chamada #{(ch.id || '').slice(-5)}
-            </h2>
+ <div
+  key={ch.id}
+  className="bg-white border border-orange-200 rounded-xl shadow p-4 mb-4 space-y-2"
+>
+  <h2 className="font-semibold text-orange-600 text-lg">
+    Chamada #{(ch.id || '').slice(-5)}
+  </h2>
 
-            <p><strong>Contratante:</strong> {ch.contratanteNome || ch.contratanteUid}</p>
+  <p><strong>Contratante:</strong> {ch.contratanteNome || ch.contratanteUid}</p>
 
-            {(ch.status === 'confirmada' || ch.liberarEnderecoAoFreela) ? (
-              <p className="text-sm text-gray-800">
-                <strong>📍 Endereço do contratante:</strong> {ch.enderecoContratante || '—'}
-              </p>
-            ) : (
-              <p className="text-sm text-gray-500">
-                🔒 Endereço liberado após confirmação do pagamento.
-              </p>
-            )}
+  {/* 🔒 Endereço do contratante — só quando pagamento confirmado */}
+  {ch.liberarEnderecoAoFreela ? (
+    <p className="text-sm text-pink-700">
+      📍 Endereço do contratante: {ch.enderecoContratante || '—'}
+    </p>
+  ) : (
+    <p className="text-sm text-gray-500">
+      🔒 Endereço liberado após confirmação do pagamento.
+    </p>
+  )}
 
-            <p><strong>Status:</strong> {ch.status}</p>
+  <p><strong>Status:</strong> {ch.status}</p>
 
-            {typeof ch.valorDiaria === 'number' && (
-              <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>
-            )}
+  {typeof ch.valorDiaria === 'number' && (
+    <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>
+  )}
 
-            {ch.status === 'confirmada' && (
-              <p className="text-green-600 font-bold">💰 Pagamento confirmado</p>
-            )}
+  {/* Indicador de pagamento confirmado */}
+  {ch.liberarEnderecoAoFreela && (
+    <p className="text-green-600 font-bold">💰 Pagamento confirmado</p>
+  )}
 
-            {ch.observacao && (
-              <p><strong>📝 Observação:</strong> {ch.observacao}</p>
-            )}
+  {ch.observacao && (
+    <p><strong>📝 Observação:</strong> {ch.observacao}</p>
+  )}
 
-            {ch.status === 'pendente' && (
-              <div className="flex gap-2">
-                <button
-                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                  onClick={() => aceitarChamada(ch)}
-                >
-                  ✅ Aceitar Chamada
-                </button>
-                <button
-                  className="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                  onClick={() => cancelarChamada(ch.id)}
-                >
-                  ❌ Cancelar Chamada
-                </button>
-              </div>
-            )}
-
-            {ch.status === 'confirmada' && (
-              <button
-                onClick={() => fazerCheckIn(ch)}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
-              >
-                📍 Fazer Check-in
-              </button>
-            )}
-
-            {ch.status === 'em_andamento' && (
-              <button
-                onClick={() => fazerCheckOut(ch)}
-                className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition"
-              >
-                ⏳ Fazer Check-out
-              </button>
-            )}
-
-            {ch.status === 'concluido' && !ch.avaliadoPorFreela && (
-              <AvaliacaoFreela chamada={ch} />
-            )}
-
-            <RespostasRapidasFreela chamadaId={ch.id} />
-
-            {(ch.status === 'concluido' || ch.status === 'finalizada') && (
-              <span className="text-green-600 font-bold block text-center">
-                ✅ Finalizada
-              </span>
-            )}
-          </div>
-        ))
-      )}
+  {/* Botões de aceitar/Cancelar */}
+  {ch.status === 'pendente' && (
+    <div className="flex gap-2">
+      <button
+        className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        onClick={() => aceitarChamada(ch)}
+      >
+        ✅ Aceitar Chamada
+      </button>
+      <button
+        className="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+        onClick={() => CancelarChamada(ch.id)}
+      >
+        ❌ Cancelar Chamada
+      </button>
     </div>
+  )}
+
+  {/* Botão de Check-in (liberado somente após pagamento confirmado) */}
+  {ch.status === 'confirmada' && ch.liberarEnderecoAoFreela && (
+    <button
+      onClick={() => fazerCheckIn(ch)}
+      className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+    >
+      📍 Fazer Check-in
+    </button>
+  )}
+
+  {/* Botão de Check-out (após check-in) */}
+  {ch.status === 'pago' && ch.checkInFeitoPeloFreela && !ch.checkOutFeitoPeloFreela && (
+    <button
+      onClick={() => fazerCheckOut(ch)}
+      className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition"
+    >
+      ⏳ Fazer Check-out
+    </button>
+  )}
+
+  {/* Avaliação (após conclusão) */}
+  {ch.status === 'concluido' && !ch.avaliadoPorFreela && (
+    <AvaliacaoFreela chamada={ch} />
+  )}
+
+  {/* Respostas rápidas */}
+  <RespostasRapidasFreela chamadaId={ch.id} />
+
+  {(ch.status === 'concluido' || ch.status === 'finalizada') && (
+    <span className="text-green-600 font-bold block text-center">
+      ✅ Finalizada
+    </span>
+  )}
+</div>
   )
 }
