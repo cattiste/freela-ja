@@ -177,32 +177,47 @@ export default function ChamadasContratante({ contratante }) {
   }
 
   // 💳 pagamento com cartão (senha → confirmarPagamentoComSenha → pagarFreela → registrarPagamentoEspelho)
-  async function pagarComCartao(ch) {
-    try {
-      if (!ch.valorDiaria) { toast.error('Valor inválido.'); return }
-      const senha = window.prompt('Digite sua senha de pagamento:')
-      if (!senha) return
-
-      await httpsCallable(functionsClient, 'confirmarPagamentoComSenha')({ senha })
-      const pagar = await httpsCallable(functionsClient, 'pagarFreela')({ chamadaId: ch.id })
-      if (!pagar?.data?.sucesso) { toast.error('Falha no pagamento'); return }
-
-      await httpsCallable(functionsClient, 'registrarPagamentoEspelho')({
-        chamadaId: ch.id,
-        valor: Number((ch.valorDiaria * 1.10).toFixed(2)), // diária + 10% (lado contratante)
-        metodo: 'cartao'
-      })
-
-      await updateDoc(doc(db, 'chamadas', ch.id), {
-        metodoPagamento: 'cartao',
-        liberarEnderecoAoFreela: true // libera endereço imediatamente no cartão
-      })
-
-      toast.success('💳 Pagamento confirmado!')
-    } catch (e) {
-      console.error(e); toast.error(e.message || 'Erro ao processar pagamento.')
+async function pagarComCartao(ch) {
+  try {
+    if (!ch.valorDiaria) {
+      toast.error('Valor inválido.');
+      return;
     }
+
+    const senha = window.prompt('Digite sua senha de pagamento:')
+    if (!senha) return;
+
+    // Chamada segura via SDK Firebase Functions
+    await httpsCallable(functionsClient, 'confirmarPagamentoComSenha')({ senha });
+
+    const pagar = await httpsCallable(functionsClient, 'pagarFreela')({
+      chamadaId: ch.id
+    });
+
+    if (!pagar?.data?.sucesso) {
+      toast.error('Falha no pagamento');
+      return;
+    }
+
+    await httpsCallable(functionsClient, 'registrarPagamentoEspelho')({
+      chamadaId: ch.id,
+      valor: Number((ch.valorDiaria * 1.10).toFixed(2)), // diária + 10% (lado contratante)
+      metodo: 'cartao'
+    });
+
+    await updateDoc(doc(db, 'chamadas', ch.id), {
+      metodoPagamento: 'cartao',
+      liberarEnderecoAoFreela: true // libera endereço imediatamente no cartão
+    });
+
+    toast.success('💳 Pagamento confirmado!');
+
+  } catch (e) {
+    console.error('[pagarComCartao] erro:', e);
+    toast.error(e?.message || 'Erro ao processar pagamento.');
   }
+}
+
 
   // 💸 Pix (callable) — aceita CPF **ou** CNPJ do pagador
   async function gerarPix(ch) {
