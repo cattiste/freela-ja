@@ -177,6 +177,7 @@ export default function ChamadasContratante({ contratante }) {
   }
 
   // 💳 pagamento com cartão (senha → confirmarPagamentoComSenha → pagarFreela → registrarPagamentoEspelho)
+// ✅ Função de pagamento com cartão
 async function pagarComCartao(ch) {
   try {
     if (!ch.valorDiaria) {
@@ -184,10 +185,10 @@ async function pagarComCartao(ch) {
       return;
     }
 
-    const senha = window.prompt('Digite sua senha de pagamento:')
+    const senha = window.prompt('Digite sua senha de pagamento:');
     if (!senha) return;
 
-    // Chamada segura via SDK Firebase Functions
+    // Chamada segura via Firebase SDK
     await httpsCallable(functionsClient, 'confirmarPagamentoComSenha')({ senha });
 
     const pagar = await httpsCallable(functionsClient, 'pagarFreela')({
@@ -201,13 +202,13 @@ async function pagarComCartao(ch) {
 
     await httpsCallable(functionsClient, 'registrarPagamentoEspelho')({
       chamadaId: ch.id,
-      valor: Number((ch.valorDiaria * 1.10).toFixed(2)), // diária + 10% (lado contratante)
+      valor: Number((ch.valorDiaria * 1.10).toFixed(2)), // diária + 10%
       metodo: 'cartao'
     });
 
     await updateDoc(doc(db, 'chamadas', ch.id), {
       metodoPagamento: 'cartao',
-      liberarEnderecoAoFreela: true // libera endereço imediatamente no cartão
+      liberarEnderecoAoFreela: true // libera endereço imediatamente
     });
 
     toast.success('💳 Pagamento confirmado!');
