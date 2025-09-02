@@ -117,67 +117,68 @@ export default function ChamadasContratante({ contratante }) {
     return [...chamadas].sort((a, b) => ts(b.criadoEm) - ts(a.criadoEm))
   }, [chamadas])
 
-  // ---- ações ----
-  async function confirmarChamada(ch) {
-    try {
-      await updateDoc(doc(db, 'chamadas', ch.id), {
-        metodoPagamento: 'cartao',
-        liberarEnderecoAoFreela: true,
-        pagamentoConfirmado: true, // novo campo!
-        status: 'confirmada'
+// ---- ações ----
+async function confirmarChamada(ch) {
+  try {
+    await updateDoc(doc(db, 'chamadas', ch.id), {
+      status: 'aguardando_pagamento',
+      confirmadaEm: serverTimestamp()
     })
-      toast.success('✅ Chamada confirmada!')
-    } catch (e) {
-      console.error(e); toast.error('Erro ao confirmar chamada.')
-    }
+    toast.success('✅ Chamada confirmada! Aguarde o pagamento.')
+  } catch (e) {
+    console.error(e)
+    toast.error('Erro ao confirmar chamada.')
   }
+}
 
-  async function cancelarChamada(ch) {
-    try {
-      await updateDoc(doc(db, 'chamadas', ch.id), {
-        status: 'cancelada_por_falta_de_pagamento',
-        canceladaEm: serverTimestamp()
+async function cancelarChamada(ch) {
+  try {
+    await updateDoc(doc(db, 'chamadas', ch.id), {
+      status: 'cancelada_por_falta_de_pagamento',
+      canceladaEm: serverTimestamp()
+    })
+    toast.success('❌ Chamada cancelada.')
+  } catch (e) {
+    console.error(e)
+    toast.error('Erro ao cancelar chamada.')
+  }
+}
+
+async function confirmarCheckInFreela(ch) {
+  try {
+    await updateDoc(doc(db, 'chamadas', ch.id), {
+      status: 'em_andamento',
+      checkInConfirmadoPeloEstab: true,
+      checkInConfirmadoPeloEstabHora: serverTimestamp()
+    })
+    toast.success('📍 Check-in do freela confirmado!')
+  } catch (e) {
+    console.error(e)
+    toast.error('Erro ao confirmar check-in.')
+  }
+}
+
+async function confirmarCheckOutFreela(ch) {
+  try {
+    await updateDoc(doc(db, 'chamadas', ch.id), {
+      status: 'concluido',
+      checkOutConfirmadoPeloEstab: true,
+      checkOutConfirmadoPeloEstabHora: serverTimestamp()
+    })
+    toast.success('⏳ Check-out confirmado!')
+
+    if (typeof ch.valorDiaria === 'number' && ch.valorDiaria > 0) {
+      const fn = httpsCallable(functionsClient, 'pagarFreelaAoCheckout')
+      await fn({
+        chamadaId: ch.id,
+        valorReceber: Number((ch.valorDiaria * 0.90).toFixed(2))
       })
-      toast.success('❌ Chamada cancelada.')
-    } catch (e) {
-      console.error(e); toast.error('Erro ao cancelar chamada.')
     }
+  } catch (e) {
+    console.error(e)
+    toast.error('Erro ao confirmar check-out.')
   }
-
-  async function confirmarCheckInFreela(ch) {
-    try {
-      await updateDoc(doc(db, 'chamadas', ch.id), {
-        status: 'em_andamento',
-        checkInConfirmadoPeloEstab: true,
-        checkInConfirmadoPeloEstabHora: serverTimestamp()
-      })
-      toast.success('📍 Check-in do freela confirmado!')
-    } catch (e) {
-      console.error(e); toast.error('Erro ao confirmar check-in.')
-    }
-  }
-
-  async function confirmarCheckOutFreela(ch) {
-    try {
-      await updateDoc(doc(db, 'chamadas', ch.id), {
-        status: 'concluido',
-        checkOutConfirmadoPeloEstab: true,
-        checkOutConfirmadoPeloEstabHora: serverTimestamp()
-      })
-      toast.success('⏳ Check-out confirmado!')
-
-      if (typeof ch.valorDiaria === 'number' && ch.valorDiaria > 0) {
-        const fn = httpsCallable(functionsClient, 'pagarFreelaAoCheckout')
-        await fn({
-          chamadaId: ch.id,
-          valorReceber: Number((ch.valorDiaria * 0.90).toFixed(2))
-        })
-      }
-    } catch (e) {
-      console.error(e); toast.error('Erro ao confirmar check-out.')
-    }
-  }
-
+}
   // 💳 pagamento com cartão (senha → confirmarPagamentoComSenha → pagarFreela → registrarPagamentoEspelho)
 // ✅ Função de pagamento com cartão
 async function pagarComCartao(ch) {
