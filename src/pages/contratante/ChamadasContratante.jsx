@@ -185,18 +185,16 @@ async function pagarComCartao(ch) {
       return;
     }
 
-    const senha = window.prompt('Digite sua senha de pagamento:');
-    if (!senha) return;
+    const senhaDigitada = window.prompt('Digite sua senha de pagamento:');
+    if (!senhaDigitada) return;
 
-    // Chamada segura via Firebase SDK
-    await httpsCallable(functionsClient, 'confirmarPagamentoComSenha')({ senha });
+    // Verifica a senha primeiro
+    await httpsCallable(functionsClient, 'confirmarPagamentoComSenha')({ senha: senhaDigitada });
 
-    const senha = window.prompt('Digite sua senha de pagamento:');
-    if (!senha) return;
-
+    // Realiza o pagamento
     const pagar = await httpsCallable(functionsClient, 'pagarFreela')({
       chamadaId: ch.id,
-      senha: senha
+      senha: senhaDigitada
     });
 
     if (!pagar?.data?.sucesso) {
@@ -204,12 +202,14 @@ async function pagarComCartao(ch) {
       return;
     }
 
+    // Registra espelho do pagamento
     await httpsCallable(functionsClient, 'registrarPagamentoEspelho')({
       chamadaId: ch.id,
       valor: Number((ch.valorDiaria * 1.10).toFixed(2)), // diária + 10%
       metodo: 'cartao'
     });
 
+    // Atualiza dados no Firestore
     await updateDoc(doc(db, 'chamadas', ch.id), {
       metodoPagamento: 'cartao',
       liberarEnderecoAoFreela: true // libera endereço imediatamente
@@ -222,6 +222,7 @@ async function pagarComCartao(ch) {
     toast.error(e?.message || 'Erro ao processar pagamento.');
   }
 }
+
 
 const pagar = async () => {
   try {
