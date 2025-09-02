@@ -129,7 +129,6 @@ export default function ChamadasFreela() {
       <h1 className="text-2xl font-bold text-orange-700 text-center mb-4">
         📲 Minhas Chamadas
       </h1>
-
       {chamadas.length === 0 ? (
         <p className="text-center text-gray-500">Nenhuma chamada no momento.</p>
       ) : (
@@ -216,11 +215,14 @@ export default function ChamadasFreela() {
   {/* Respostas rápidas */}
   <RespostasRapidasFreela chamadaId={ch.id} />
 
-  {(ch.status === 'concluido' || ch.status === 'finalizada') && (
-    <span className="text-green-600 font-bold block text-center">
-      ✅ Finalizada
-    </span>
-  )}
+{(ch.status === 'concluido' || ch.status === 'finalizada') && (
+  <span className="text-green-600 font-bold block text-center">
+    ✅ Finalizada
+  </span>
+)}
+</div> 
+))
+)} 
 </div>
-  )
+) 
 }
