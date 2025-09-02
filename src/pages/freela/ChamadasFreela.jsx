@@ -1,3 +1,4 @@
+// ChamadasFreela.jsx atualizado com liberação de endereço após pagamento
 import React, { useEffect, useState } from 'react'
 import {
   collection,
@@ -30,7 +31,7 @@ export default function ChamadasFreela() {
     const unsub = onSnapshot(q, (snap) => {
       const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
       const filtradas = docs.filter((ch) =>
-        ch.status !== 'rejeitada' &&
+        ch.status !== 'cancelada' &&
         !(ch.status === 'concluido' && ch.avaliadoPorFreela) &&
         ch.status !== 'finalizada'
       )
@@ -72,15 +73,15 @@ export default function ChamadasFreela() {
     }
   }
 
-  async function rejeitarChamada(id) {
+  async function cancelarChamada(id) {
     try {
       await updateDoc(doc(db, 'chamadas', id), {
-        status: 'rejeitada'
+        status: 'cancelada'
       })
-      toast.success('❌ Chamada rejeitada.')
+      toast.success('❌ Chamada cancelada.')
     } catch (err) {
       console.error(err)
-      toast.error('Erro ao rejeitar chamada.')
+      toast.error('Erro ao Cancelar Chamada.')
     }
   }
 
@@ -89,7 +90,6 @@ export default function ChamadasFreela() {
       let endereco = null
 
       if (coordenadas) {
-        // reverse geocode simples (deixa igual ao original)
         const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coordenadas.latitude}&lon=${coordenadas.longitude}`
         const resp = await fetch(url, { headers: { 'User-Agent': 'freelaja.com.br' } })
         const data = await resp.json()
@@ -144,8 +144,7 @@ export default function ChamadasFreela() {
 
             <p><strong>Contratante:</strong> {ch.contratanteNome || ch.contratanteUid}</p>
 
-            {/* 🔒 Endereço do contratante — só quando pago (ou flag liberada pelo cartão) */}
-            {ch.status === 'pago' || ch.liberarEnderecoAoFreela ? (
+            {(ch.status === 'confirmada' || ch.liberarEnderecoAoFreela) ? (
               <p className="text-sm text-gray-800">
                 <strong>📍 Endereço do contratante:</strong> {ch.enderecoContratante || '—'}
               </p>
@@ -161,7 +160,7 @@ export default function ChamadasFreela() {
               <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>
             )}
 
-            {ch.status === 'pago' && (
+            {ch.status === 'confirmada' && (
               <p className="text-green-600 font-bold">💰 Pagamento confirmado</p>
             )}
 
@@ -179,9 +178,9 @@ export default function ChamadasFreela() {
                 </button>
                 <button
                   className="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                  onClick={() => rejeitarChamada(ch.id)}
+                  onClick={() => cancelarChamada(ch.id)}
                 >
-                  ❌ Rejeitar Chamada
+                  ❌ Cancelar Chamada
                 </button>
               </div>
             )}

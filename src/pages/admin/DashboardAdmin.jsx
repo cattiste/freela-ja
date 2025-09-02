@@ -109,7 +109,7 @@ export default function DashboardAdmin() {
               'em_andamento',
               'checkout_freela',
               'concluido',
-              'rejeitada',
+              'cancelada',
               'cancelada_por_falta_de_pagamento',
             ].map((status) => (
               <div key={status} className="border p-4 rounded-xl">
