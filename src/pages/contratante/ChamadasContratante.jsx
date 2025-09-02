@@ -185,16 +185,16 @@ async function pagarComCartao(ch) {
       return;
     }
 
-    const senhaDigitada = window.prompt('Digite sua senha de pagamento:');
-    if (!senhaDigitada) return;
+    const senha = window.prompt('Digite sua senha de pagamento:');
+    if (!senha) return;
 
-    // Verifica a senha primeiro
-    await httpsCallable(functionsClient, 'confirmarPagamentoComSenha')({ senha: senhaDigitada });
+    // 1. Verifica a senha
+    await httpsCallable(functionsClient, 'confirmarPagamentoComSenha')({ senha });
 
-    // Realiza o pagamento
+    // 2. Executa o pagamento
     const pagar = await httpsCallable(functionsClient, 'pagarFreela')({
       chamadaId: ch.id,
-      senha: senhaDigitada
+      senha
     });
 
     if (!pagar?.data?.sucesso) {
@@ -202,26 +202,27 @@ async function pagarComCartao(ch) {
       return;
     }
 
-    // Registra espelho do pagamento
+    // 3. Registra no espelho
     await httpsCallable(functionsClient, 'registrarPagamentoEspelho')({
       chamadaId: ch.id,
       valor: Number((ch.valorDiaria * 1.10).toFixed(2)), // diária + 10%
       metodo: 'cartao'
     });
 
-    // Atualiza dados no Firestore
+    // 4. Atualiza a chamada liberando endereço e status
     await updateDoc(doc(db, 'chamadas', ch.id), {
       metodoPagamento: 'cartao',
-      liberarEnderecoAoFreela: true // libera endereço imediatamente
+      liberarEnderecoAoFreela: true,
+      status: 'confirmada' // ✅ libera check-in do freela
     });
 
     toast.success('💳 Pagamento confirmado!');
-
   } catch (e) {
     console.error('[pagarComCartao] erro:', e);
     toast.error(e?.message || 'Erro ao processar pagamento.');
   }
 }
+
 
 
 const pagar = async () => {
