@@ -121,9 +121,11 @@ export default function ChamadasContratante({ contratante }) {
   async function confirmarChamada(ch) {
     try {
       await updateDoc(doc(db, 'chamadas', ch.id), {
-        status: 'confirmada',
-        confirmadaEm: serverTimestamp()
-      })
+        metodoPagamento: 'cartao',
+        liberarEnderecoAoFreela: true,
+        pagamentoConfirmado: true, // novo campo!
+        status: 'confirmada'
+    })
       toast.success('✅ Chamada confirmada!')
     } catch (e) {
       console.error(e); toast.error('Erro ao confirmar chamada.')
@@ -431,7 +433,7 @@ const pagar = async () => {
               </div>
             )}
 
-            {ch.status === 'confirmada' && (
+            {ch.status === 'confirmada' && !ch.pagamentoConfirmado && (
               <div className="flex flex-col sm:flex-row gap-2 mt-2">
                 <button onClick={() => pagarComCartao(ch)}
                   className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
