@@ -219,6 +219,22 @@ async function pagarComCartao(ch) {
   }
 }
 
+const pagar = async () => {
+  try {
+    const functions = getFunctions();
+    const pagarFreela = httpsCallable(functions, 'pagarFreela');
+
+    const resultado = await pagarFreela({
+      chamadaId: chamada.id,
+      senha: senhaDigitada,
+    });
+
+    console.log('Pagamento OK:', resultado.data);
+  } catch (error) {
+    console.error('[pagarFreela] erro:', error);
+    alert(error.message || 'Erro ao pagar');
+  }
+};
 
   // 💸 Pix (callable) — aceita CPF **ou** CNPJ do pagador
   async function gerarPix(ch) {
