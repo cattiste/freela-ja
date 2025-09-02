@@ -191,8 +191,12 @@ async function pagarComCartao(ch) {
     // Chamada segura via Firebase SDK
     await httpsCallable(functionsClient, 'confirmarPagamentoComSenha')({ senha });
 
+    const senha = window.prompt('Digite sua senha de pagamento:');
+    if (!senha) return;
+
     const pagar = await httpsCallable(functionsClient, 'pagarFreela')({
-      chamadaId: ch.id
+      chamadaId: ch.id,
+      senha: senha
     });
 
     if (!pagar?.data?.sucesso) {
