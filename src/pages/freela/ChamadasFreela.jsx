@@ -1,228 +1,108 @@
-import React, { useEffect, useState } from 'react'
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  updateDoc,
-  doc,
-  serverTimestamp,
-} from 'firebase/firestore'
-import { db } from '@/firebase'
+// ChamadasFreelaV2.jsx
+import React from 'react'
 import { useAuth } from '@/context/AuthContext'
-import { toast } from 'react-hot-toast'
-import AvaliacaoFreela from '@/components/AvaliacaoFreela'
+import { useChamadasDoFreela } from '@/hooks/useChamadasStream'
+import { CHAMADA_STATUS } from '@/constants/chamadaStatus'
+import { marcarAceita } from '@/services/chamadasService'
 import RespostasRapidasFreela from '@/components/RespostasRapidasFreela'
+import { MapContainer, TileLayer, Marker } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
 
-export default function ChamadasFreela() {
+export default function ChamadasFreelaV2() {
   const { usuario } = useAuth()
-  const [chamadas, setChamadas] = useState([])
-  const [coordenadas, setCoordenadas] = useState(null)
+  const { chamadas, loading } = useChamadasDoFreela(usuario?.uid, [
+    CHAMADA_STATUS.PENDENTE,
+    CHAMADA_STATUS.ACEITA,
+    CHAMADA_STATUS.CONFIRMADA,
+    CHAMADA_STATUS.CHECKIN_FREELA,
+    CHAMADA_STATUS.EM_ANDAMENTO,
+    CHAMADA_STATUS.CHECKOUT_FREELA,
+    CHAMADA_STATUS.CONCLUIDO
+  ])
 
-  useEffect(() => {
-    if (!usuario?.uid) return
-
-    const q = query(
-      collection(db, 'chamadas'),
-      where('freelaUid', '==', usuario.uid)
-    )
-
-    const unsub = onSnapshot(q, (snap) => {
-      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-      const filtradas = docs.filter((ch) =>
-        ch.status !== 'cancelada' &&
-        !(ch.status === 'concluido' && ch.avaliadoPorFreela) &&
-        ch.status !== 'finalizada'
-      )
-      setChamadas(filtradas)
-    }, (err) => {
-      console.error('[ChamadasFreela] onSnapshot erro:', err)
-      toast.error('Falha ao carregar chamadas.')
-    })
-
-    return () => unsub()
-  }, [usuario?.uid])
-
-  useEffect(() => {
-    if (!navigator?.geolocation) return
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setCoordenadas({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-        })
-      },
-      (err) => {
-        console.warn('Erro ao obter localização:', err)
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    )
-  }, [])
-
-  async function aceitarChamada(ch) {
-    try {
-      await updateDoc(doc(db, 'chamadas', ch.id), {
-        status: 'aceita',
-        aceitaEm: serverTimestamp(),
-      })
-      toast.success('✅ Chamada aceita!')
-    } catch (e) {
-      console.error('Erro ao aceitar chamada:', e)
-      toast.error('Erro ao aceitar chamada.')
-    }
-  }
-
-  async function CancelarChamada(id) {
-    try {
-      await updateDoc(doc(db, 'chamadas', id), {
-        status: 'cancelada'
-      })
-      toast.success('❌ Chamada cancelada.')
-    } catch (err) {
-      console.error(err)
-      toast.error('Erro ao Cancelar chamada.')
-    }
-  }
-
-  async function fazerCheckIn(ch) {
-    try {
-      let endereco = null
-
-      if (coordenadas) {
-        // reverse geocode simples (deixa igual ao original)
-        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coordenadas.latitude}&lon=${coordenadas.longitude}`
-        const resp = await fetch(url, { headers: { 'User-Agent': 'freelaja.com.br' } })
-        const data = await resp.json()
-        endereco = data?.display_name || null
-      }
-
-      await updateDoc(doc(db, 'chamadas', ch.id), {
-        status: 'checkin_freela',
-        checkInFeitoPeloFreela: true,
-        checkInFeitoPeloFreelaHora: serverTimestamp(),
-        coordenadasCheckInFreela: coordenadas || null,
-        enderecoCheckInFreela: endereco || null,
-      })
-      toast.success('📍 Check-in realizado!')
-    } catch (e) {
-      console.error('Erro ao fazer check-in:', e)
-      toast.error('Erro ao fazer check-in.')
-    }
-  }
-
-  async function fazerCheckOut(ch) {
-    try {
-      await updateDoc(doc(db, 'chamadas', ch.id), {
-        status: 'checkout_freela',
-        checkOutFeitoPeloFreela: true,
-        checkOutFeitoPeloFreelaHora: serverTimestamp(),
-      })
-      toast.success('⏳ Check-out realizado!')
-    } catch (e) {
-      console.error('Erro ao fazer check-out:', e)
-      toast.error('Erro ao fazer check-out.')
-    }
-  }
+  if (loading) return <div className="text-center mt-8">🔄 Carregando…</div>
 
   return (
-    <div className="p-4 max-w-4xl mx-auto">
+    <div className="p-4 max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold text-orange-700 text-center mb-4">
-        📲 Minhas Chamadas
+        📲 Minhas Chamadas (Freela)
       </h1>
+
       {chamadas.length === 0 ? (
-        <p className="text-center text-gray-500">Nenhuma chamada no momento.</p>
+        <p className="text-center text-gray-600">Nenhuma chamada no momento.</p>
       ) : (
         chamadas.map((ch) => (
- <div
-  key={ch.id}
-  className="bg-white border border-orange-200 rounded-xl shadow p-4 mb-4 space-y-2"
->
-  <h2 className="font-semibold text-orange-600 text-lg">
-    Chamada #{(ch.id || '').slice(-5)}
-  </h2>
+          <div key={ch.id} className="bg-white border rounded-xl p-4 mb-4 space-y-2 shadow">
+            <h2 className="font-semibold text-orange-600">Chamada #{String(ch.id).slice(-5)}</h2>
+            <p><strong>Status:</strong> {ch.status}</p>
+            {typeof ch.valorDiaria === 'number' && (
+              <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>
+            )}
 
-  <p><strong>Contratante:</strong> {ch.contratanteNome || ch.contratanteUid}</p>
+            {ch.observacao && (
+              <p className="text-sm text-gray-700">📝 {ch.observacao}</p>
+            )}
 
-  {/* 🔒 Endereço do contratante — só quando pagamento confirmado */}
-  {ch.liberarEnderecoAoFreela ? (
-    <p className="text-sm text-pink-700">
-      📍 Endereço do contratante: {ch.enderecoContratante || '—'}
-    </p>
-  ) : (
-    <p className="text-sm text-gray-500">
-      🔒 Endereço liberado após confirmação.
-    </p>
-  )}
+            {ch.liberarEnderecoAoFreela && ch.coordenadasContratante && (
+              <MapContainer
+                center={[ch.coordenadasContratante.latitude, ch.coordenadasContratante.longitude]}
+                zoom={17}
+                scrollWheelZoom={false}
+                style={{ height: 200, borderRadius: 8 }}
+              >
+                <TileLayer
+                  attribution="&copy; OpenStreetMap"
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <Marker position={[ch.coordenadasContratante.latitude, ch.coordenadasContratante.longitude]} />
+              </MapContainer>
+            )}
 
-  <p><strong>Status:</strong> {ch.status}</p>
+            {ch.status === CHAMADA_STATUS.PENDENTE && (
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => marcarAceita(ch)}
+                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                >
+                  ✅ Aceitar chamada
+                </button>
+                <button
+                  onClick={() => alert('Cancelar chamada')}
+                  className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+                >
+                  ❌ Rejeitar chamada
+                </button>
+              </div>
+            )}
 
-  {typeof ch.valorDiaria === 'number' && (
-    <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>
-  )}
+            {ch.status === CHAMADA_STATUS.CONFIRMADA && (
+              <button
+                onClick={() => alert('Check-in')}
+                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+              >
+                📍 Fazer Check-in
+              </button>
+            )}
 
-  {/* Indicador de pagamento confirmado */}
-  {ch.liberarEnderecoAoFreela && (
-    <p className="text-green-600 font-bold">💰 Pagamento confirmado</p>
-  )}
+            {ch.status === CHAMADA_STATUS.EM_ANDAMENTO && (
+              <button
+                onClick={() => alert('Check-out')}
+                className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600"
+              >
+                ⏳ Fazer Check-out
+              </button>
+            )}
 
-  {ch.observacao && (
-    <p><strong>📝 Observação:</strong> {ch.observacao}</p>
-  )}
+            <RespostasRapidasFreela chamadaId={ch.id} />
 
-  {/* Botões de aceitar/Cancelar */}
-  {ch.status === 'pendente' && (
-    <div className="flex gap-2">
-      <button
-        className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-        onClick={() => aceitarChamada(ch)}
-      >
-        ✅ Aceitar Chamada
-      </button>
-      <button
-        className="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-        onClick={() => CancelarChamada(ch.id)}
-      >
-        ❌ Cancelar Chamada
-      </button>
+            {(ch.status === 'concluido' || ch.status === 'finalizada') && (
+              <span className="text-green-600 font-bold block text-center">
+                ✅ Finalizada
+              </span>
+            )}
+          </div>
+        ))
+      )}
     </div>
-  )}
-
-  {/* Botão de Check-in (liberado somente após pagamento confirmado) */}
-  {ch.status === 'confirmada' && ch.liberarEnderecoAoFreela && (
-    <button
-      onClick={() => fazerCheckIn(ch)}
-      className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
-    >
-      📍 Fazer Check-in
-    </button>
-  )}
-
-  {/* Botão de Check-out (após check-in) */}
-  {ch.status === 'pago' && ch.checkInFeitoPeloFreela && !ch.checkOutFeitoPeloFreela && (
-    <button
-      onClick={() => fazerCheckOut(ch)}
-      className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition"
-    >
-      ⏳ Fazer Check-out
-    </button>
-  )}
-
-  {/* Avaliação (após conclusão) */}
-  {ch.status === 'concluido' && !ch.avaliadoPorFreela && (
-    <AvaliacaoFreela chamada={ch} />
-  )}
-
-  {/* Respostas rápidas */}
-  <RespostasRapidasFreela chamadaId={ch.id} />
-
-{(ch.status === 'concluido' || ch.status === 'finalizada') && (
-  <span className="text-green-600 font-bold block text-center">
-    ✅ Finalizada
-  </span>
-)}
-</div> 
-))
-)} 
-</div>
-) 
+  )
 }

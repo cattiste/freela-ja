@@ -1,4 +1,4 @@
-// src/pages/contratante/PainelContratante.jsx
+// PainelContratante.jsx original mantido, com Cartões adicionados de forma integrada
 import React, { useEffect, useMemo, useState } from 'react'
 import { Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
@@ -7,7 +7,6 @@ import {
   collection, getDocs, query, where
 } from 'firebase/firestore'
 import { db } from '@/firebase'
-import { addDoc } from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
 
 import MenuInferiorContratante from '@/components/MenuInferiorContratante'
@@ -20,18 +19,11 @@ import ChamadasContratante from '@/pages/contratante/ChamadasContratante'
 import Calendar from 'react-calendar'
 import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 import ValidacaoDocumento from '@/components/ValidacaoDocumento'
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { getApp } from 'firebase/app';
-
-
+import CartoesContratante from '@/components/CartoesContratante'
 
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
-import CartoesSalvos from '@/components/CartoesSalvos'
 
-<CartoesSalvos />
-
-// ErrorBoundary simples
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props)
@@ -60,38 +52,22 @@ export default function PainelContratante() {
   const { usuario, carregando } = useAuth()
   const nav = useNavigate()
   const location = useLocation()
-
-  // 🔥 Aqui está a correção: presença + coleta dos online
   const { usuariosOnline } = useRealtimePresence(usuario)
-
-  const getTabFromURL = () => new URLSearchParams(location.search).get('tab') || 'perfil'
-  const [abaSelecionada, setAbaSelecionada] = useState(getTabFromURL())
-  useEffect(() => {
-    setAbaSelecionada(getTabFromURL())
-  }, [location.search])
-
-  const contratante = useMemo(() => usuario, [usuario])
-
+  const [abaSelecionada, setAbaSelecionada] = useState(new URLSearchParams(location.search).get('tab') || 'perfil')
   const [avaliacoesPendentes, setAvaliacoesPendentes] = useState([])
   const [agendaPerfil, setAgendaPerfil] = useState({})
 
+  const contratante = useMemo(() => usuario, [usuario])
+
   useEffect(() => {
-  if (usuario?.statusDocumentos === 'aprovada') {
-    toast.success('✅ Documentos verificados com sucesso!')
-  }
-}, [usuario?.statusDocumentos])
+    setAbaSelecionada(new URLSearchParams(location.search).get('tab') || 'perfil')
+  }, [location.search])
 
   useEffect(() => {
     if (!contratante?.uid) return
-    ;(async () => {
-      try {
-        await updateDoc(doc(db, 'usuarios', contratante.uid), {
-          ultimaAtividade: serverTimestamp()
-        })
-      } catch (err) {
-        console.warn('[PainelContratante] ultimaAtividade falhou:', err)
-      }
-    })()
+    updateDoc(doc(db, 'usuarios', contratante.uid), {
+      ultimaAtividade: serverTimestamp()
+    }).catch(err => console.warn('[PainelContratante] ultimaAtividade falhou:', err))
   }, [contratante?.uid])
 
   useEffect(() => {
@@ -99,6 +75,12 @@ export default function PainelContratante() {
     carregarAgenda(contratante.uid)
     carregarAvaliacoesPendentes(contratante.uid)
   }, [contratante?.uid])
+
+  useEffect(() => {
+    if (usuario?.statusDocumentos === 'aprovada') {
+      toast.success('✅ Documentos verificados com sucesso!')
+    }
+  }, [usuario?.statusDocumentos])
 
   async function carregarAgenda(uid) {
     try {
@@ -125,41 +107,6 @@ export default function PainelContratante() {
       console.error('[PainelContratante] erro aval pendentes:', err)
     }
   }
-
-  function CartaoContratanteBox({ uid }) {
-  const [cartao, setCartao] = useState(null);
-  const [erro, setErro] = useState(null);
-
-  useEffect(() => {
-    const buscarCartao = async () => {
-      try {
-        const functions = getFunctions(getApp());
-        const listarCartao = httpsCallable(functions, 'listarCartao');
-        const response = await listarCartao({ uid });
-        setCartao(response.data);
-      } catch (err) {
-        console.error('Erro ao buscar cartão:', err);
-        setErro('Erro ao buscar cartão.');
-      }
-    };
-
-    if (uid) buscarCartao();
-  }, [uid]);
-
-  return (
-    <div className="bg-white p-4 rounded-xl shadow border border-orange-300">
-      <h3 className="font-bold text-orange-700 mb-2">💳 Cartão Cadastrado</h3>
-      {erro && <p className="text-red-500 text-sm">{erro}</p>}
-      {cartao ? (
-        <p className="text-gray-700 text-sm">
-          Cartão final <span className="font-semibold">{cartao.final}</span>
-        </p>
-      ) : (
-        <p className="text-sm text-gray-500">Nenhum cartão cadastrado.</p>
-      )}
-    </div>
-  );
-}
 
   function renderPerfil() {
     return (
@@ -235,6 +182,10 @@ export default function PainelContratante() {
               )}
             </div>
           </ErrorBoundary>
+
+          <ErrorBoundary>
+            <CartoesContratante />
+          </ErrorBoundary>
         </div>
       </div>
     )
@@ -246,7 +197,7 @@ export default function PainelContratante() {
         return (
           <>
             {renderPerfil()}
-            {usuario?.statusDocumentos !== 'aprovado' && <ValidacaoDocumento />}            
+            {usuario?.statusDocumentos !== 'aprovado' && <ValidacaoDocumento />}
           </>
         )
       case 'buscar':
