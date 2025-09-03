@@ -1,4 +1,4 @@
-
+// src/components/CartoesContratante.jsx
 import React, { useEffect, useState } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getApp } from 'firebase/app';
@@ -11,9 +11,11 @@ export default function CartoesContratante() {
   const [abrirCadastro, setAbrirCadastro] = useState(false);
   const [form, setForm] = useState({
     titular: '',
+    cpf: '',
     numero: '',
     validade: '',
-    cvv: ''
+    cvv: '',
+    senha: '',
   });
 
   useEffect(() => {
@@ -34,6 +36,12 @@ export default function CartoesContratante() {
   };
 
   const salvarCartao = async () => {
+    const { titular, cpf, numero, validade, cvv, senha } = form;
+    if (!titular || !cpf || !numero || !validade || !cvv || !senha) {
+      toast.error('Preencha todos os campos.');
+      return;
+    }
+
     try {
       const functions = getFunctions(getApp());
       const cadastrar = httpsCallable(functions, 'cadastrarCartao');
@@ -58,6 +66,7 @@ export default function CartoesContratante() {
           + Adicionar Cartão
         </button>
       </div>
+
       {cartoes.length === 0 ? (
         <p className="text-sm text-gray-500">Nenhum cartão cadastrado.</p>
       ) : (
@@ -71,20 +80,31 @@ export default function CartoesContratante() {
       {abrirCadastro && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-4 space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold text-orange-700">Cadastrar Cartão</h3>
-              <button onClick={() => setAbrirCadastro(false)}>✕</button>
+              <button
+                onClick={() => setAbrirCadastro(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >✕</button>
             </div>
+
             <input
               type="text"
-              placeholder="Titular"
+              placeholder="Titular do Cartão"
               className="border p-2 rounded w-full"
               value={form.titular}
               onChange={(e) => setForm({ ...form, titular: e.target.value })}
             />
             <input
               type="text"
-              placeholder="Número"
+              placeholder="CPF do Titular"
+              className="border p-2 rounded w-full"
+              value={form.cpf}
+              onChange={(e) => setForm({ ...form, cpf: e.target.value })}
+            />
+            <input
+              type="text"
+              placeholder="Número do Cartão"
               className="border p-2 rounded w-full"
               value={form.numero}
               onChange={(e) => setForm({ ...form, numero: e.target.value })}
@@ -92,7 +112,7 @@ export default function CartoesContratante() {
             <div className="flex space-x-2">
               <input
                 type="text"
-                placeholder="Validade"
+                placeholder="Validade (MM/AA)"
                 className="border p-2 rounded w-full"
                 value={form.validade}
                 onChange={(e) => setForm({ ...form, validade: e.target.value })}
@@ -105,11 +125,19 @@ export default function CartoesContratante() {
                 onChange={(e) => setForm({ ...form, cvv: e.target.value })}
               />
             </div>
+            <input
+              type="password"
+              placeholder="Senha de Pagamento"
+              className="border p-2 rounded w-full"
+              value={form.senha}
+              onChange={(e) => setForm({ ...form, senha: e.target.value })}
+            />
+
             <button
               className="w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700"
               onClick={salvarCartao}
             >
-              Salvar Cartão
+              💾 Salvar Cartão
             </button>
           </div>
         </div>
