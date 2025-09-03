@@ -56,6 +56,37 @@ function Estrelas({ media }) {
 function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao, setObservacao }) {
   const uid = freela.uid || freela.id
 
+  const pagarComPix = async () => {
+    try {
+      if (!freela.valorDiaria || !freela.chavePix) {
+        alert('Freela sem chave Pix ou valor de diária não definido.')
+        return
+      }
+
+      const resposta = await fetch('https://freelaja-web-50254.web.app/api/gerarPix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          valor: parseFloat(freela.valorDiaria),
+          cpfOuCnpj: freela.chavePix,
+          nome: freela.nome,
+          cidade: 'São Paulo', // Altere se necessário
+          infoAdicional: 'Pagamento de diária'
+        })
+      })
+
+      const json = await resposta.json()
+      if (!resposta.ok) throw new Error(json.message || 'Erro desconhecido.')
+
+      // Exibir QR Code em modal ou redirecionar
+      alert(`Pix Copia e Cola:\n${json.payload}`)
+      // Você pode substituir por um modal com QR code futuramente
+    } catch (err) {
+      console.error('Erro ao gerar Pix:', err)
+      alert('Erro ao gerar pagamento via Pix.')
+    }
+  }
+
   return (
     <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100 flex flex-col items-center">
       <img
@@ -94,10 +125,20 @@ function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao,
         value={observacao[uid] || ''}
         onChange={(e) => setObservacao((prev) => ({ ...prev, [uid]: e.target.value }))}
       />
+
+      {/* ✅ Botão de pagamento Pix */}
+      <button
+        onClick={pagarComPix}
+        className="mt-2 w-full py-2 rounded-lg font-bold bg-orange-600 hover:bg-orange-700 text-white"
+      >
+        💳 Pagar Freela
+      </button>
+
+      {/* 📞 Botão de chamada */}
       <button
         onClick={() => onChamar(freela)}
         disabled={!online || chamando === uid}
-        className={`mt-3 w-full py-2 rounded-lg font-bold transition ${
+        className={`mt-2 w-full py-2 rounded-lg font-bold transition ${
           online
             ? 'bg-green-600 hover:bg-green-700 text-white'
             : 'bg-gray-400 text-white cursor-not-allowed'
