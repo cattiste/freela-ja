@@ -46,7 +46,7 @@ export default function ChamadasContratanteV2() {
             )}
 
             {ch.observacao && (
-              <p className="text-sm text-gray-700">📝 {ch.observacao}</p>
+              <p className="text-sm text-gray-700">📜 {ch.observacao}</p>
             )}
 
             {/* 📍 Mapa com local do contratante e do check-in do freela */}
@@ -71,35 +71,14 @@ export default function ChamadasContratanteV2() {
             {/* 💬 mensagens rápidas */}
             <MensagensRecebidasContratante chamadaId={ch.id} />
 
-            {/* 💳 pagamento pós-aceite */}
-            {ch.status === 'aceita' && (
-              <div className="flex flex-col sm:flex-row gap-2 mt-2">
-                <button
-                  onClick={() => pagarCartaoAposAceite(ch)}
-                  className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
-                >
-                  💳 Liberar pagamento (Cartão)
-                </button>
-                <button
-                  onClick={() => gerarPixAposAceite(ch)}
-                  className="flex-1 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700"
-                >
-                  💸 Liberar pagamento (Pix)
-                </button>
-              </div>
+            {/* ⭐ Avaliação */}
+            {ch.status === 'concluido' && !ch.avaliadoPeloContratante && (
+              <AvaliacaoContratante chamada={ch} />
             )}
 
-            {/* QR Pix aguardando pagamento */}
-            {ch.pagamento?.metodo === 'pix' && ch.pagamento?.status === 'aguardando_pix' && (
-              <div className="bg-gray-50 border rounded p-2 text-center">
-                <p className="text-green-700 font-semibold">📲 Pague o Pix para liberar o endereço</p>
-                {ch.pagamento.qrCodePix && (
-                  <img src={ch.pagamento.qrCodePix} alt="QR Pix" className="mx-auto w-40 my-2" />
-                )}
-                {ch.pagamento.copiaColaPix && (
-                  <p className="text-xs break-all">{ch.pagamento.copiaColaPix}</p>
-                )}
-              </div>
+            {/* ✅ Finalizada */}
+            {(ch.status === 'concluido') && (
+              <p className="text-green-600 font-bold text-center">✅ Finalizada</p>
             )}
 
             {/* 📍 Check-in */}
@@ -120,16 +99,6 @@ export default function ChamadasContratanteV2() {
               >
                 ⏳ Confirmar Check-out
               </button>
-            )}
-
-            {/* ⭐ Avaliação */}
-            {ch.status === 'concluido' && !ch.avaliadoPeloContratante && (
-              <AvaliacaoContratante chamada={ch} />
-            )}
-
-            {/* ✅ Finalizada */}
-            {(ch.status === 'concluido') && (
-              <p className="text-green-600 font-bold text-center">✅ Finalizada</p>
             )}
           </div>
         ))
