@@ -1,7 +1,6 @@
 // src/components/CartoesContratante.jsx
 import React, { useState } from 'react'
 import ListaCartoes from './ListaCartoes'
-import SalvarSenhaCartao from './SalvarSenhaCartao'
 import { toast } from 'react-hot-toast'
 import { getFunctions, httpsCallable } from 'firebase/functions'
 const functionsClient = getFunctions(undefined, 'southamerica-east1')
@@ -88,17 +87,15 @@ export default function CartoesContratante({ uid }) {
   }
 
   return (
-    <div className="p-4 space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-orange-700">💳 Meus Cartões</h2>
-        <button onClick={() => setAbrirCadastroCartao(true)} className="text-sm bg-orange-600 text-white px-3 py-2 rounded-lg hover:bg-orange-700">
-          ➕ Cadastrar Cartão
-        </button>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-4">
+    <div className="p-4">
+      <div className="bg-white rounded-xl shadow-md p-4 space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-bold text-orange-700">💳 Meus Cartões</h2>
+          <button onClick={() => setAbrirCadastroCartao(true)} className="text-sm bg-orange-600 text-white px-3 py-2 rounded-lg hover:bg-orange-700">
+            ➕ Cadastrar Cartão
+          </button>
+        </div>
         <ListaCartoes />
-        <SalvarSenhaCartao uid={uid} />
       </div>
 
       {abrirCadastroCartao && (
