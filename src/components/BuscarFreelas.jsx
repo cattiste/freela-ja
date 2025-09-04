@@ -54,7 +54,7 @@ function Estrelas({ media }) {
   )
 }
 
-function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao, setObservacao }) {
+function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao, setObservacao, onAbrirPagamento }) {
   const uid = freela.uid || freela.id
 
   return (
@@ -259,6 +259,7 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
               chamando={chamando}
               observacao={observacao}
               setObservacao={setObservacao}
+              onAbrirPagamento={(freela) => setFreelaSelecionado(freela)}
             />
           ))}
         </div>
