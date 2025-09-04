@@ -1,4 +1,3 @@
-// src/components/ChamadasContratante.jsx
 import React, { useEffect, useMemo, useState } from 'react'
 import {
   collection,
@@ -131,7 +130,14 @@ export default function ChamadasContratante({ contratante }) {
             <AvaliacaoContratante chamada={ch} />
           )}
 
-          {/* Mantidos apenas confirmar/cancelar e check-ins */}
+          {(ch.qrCodePix || ch.copiaColaPix) && (
+            <div className="bg-gray-50 border rounded-lg p-2 text-center">
+              <p className="font-semibold text-green-600">✅ Pix gerado</p>
+              {ch.qrCodePix && <img src={ch.qrCodePix} alt="QR Code Pix" className="mx-auto w-40" />}
+              {ch.copiaColaPix && <p className="text-xs break-all">{ch.copiaColaPix}</p>}
+            </div>
+          )}
+
           {ch.status === 'aceita' && (
             <div className="flex flex-col sm:flex-row gap-2">
               <button
@@ -146,14 +152,6 @@ export default function ChamadasContratante({ contratante }) {
               >
                 ❌ Cancelar
               </button>
-            </div>
-          )}
-
-          {(ch.qrCodePix || ch.copiaColaPix) && (
-            <div className="bg-gray-50 border rounded-lg p-2 text-center">
-              <p className="font-semibold text-green-600">✅ Pix gerado</p>
-              {ch.qrCodePix && <img src={ch.qrCodePix} alt="QR Code Pix" className="mx-auto w-40" />}
-              {ch.copiaColaPix && <p className="text-xs break-all">{ch.copiaColaPix}</p>}
             </div>
           )}
 
