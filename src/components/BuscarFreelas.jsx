@@ -139,13 +139,21 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
 
       // Cálculo de média de avaliações
       for (const f of lista) {
-        const avalSnap = await getDocs(query(collection(db, 'avaliacoes'), where('freelaId', '==', f.uid || f.id)))
-        const avals = avalSnap.docs.map((d) => d.data())
-        if (avals.length > 0) {
-          const media = avals.reduce((sum, a) => sum + (a.nota || 0), 0) / avals.length
-          f.mediaAvaliacoes = media
-        }
-      }
+try {
+  const uidAlvo = f.uid || f.id;
+  if (uidAlvo) {
+    const avalSnap = await getDocs(
+      query(collection(db, 'avaliacoesFreelas'), where('freelaId', '==', uidAlvo))
+    );
+    const avals = avalSnap.docs.map((d) => d.data());
+    if (avals.length > 0) {
+      const media = avals.reduce((sum, a) => sum + (a.nota || 0), 0) / avals.length;
+      f.mediaAvaliacoes = media;
+    }
+  }
+} catch (e) {
+  console.warn('[BuscarFreelas] Sem permissão para ler avaliacoesFreelas:', e);
+}
 
       const unicos = new Map()
       lista.forEach((f) => {
