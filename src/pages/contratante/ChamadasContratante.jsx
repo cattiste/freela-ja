@@ -56,18 +56,6 @@ export default function ChamadasContratante({ contratante }) {
     return [...chamadas].sort((a, b) => ts(b.criadoEm) - ts(a.criadoEm))
   }, [chamadas])
 
-  async function confirmarChamada(ch) {
-    try {
-      await updateDoc(doc(db, 'chamadas', ch.id), {
-        status: 'confirmada',
-        confirmadaEm: serverTimestamp()
-      })
-      toast.success('✅ Chamada confirmada!')
-    } catch (e) {
-      console.error(e); toast.error('Erro ao confirmar chamada.')
-    }
-  }
-
   async function cancelarChamada(ch) {
     try {
       await updateDoc(doc(db, 'chamadas', ch.id), {
@@ -140,12 +128,6 @@ export default function ChamadasContratante({ contratante }) {
 
           {ch.status === 'aceita' && (
             <div className="flex flex-col sm:flex-row gap-2">
-              <button
-                onClick={() => confirmarChamada(ch)}
-                className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-              >
-                ✅ Confirmar
-              </button>
               <button
                 onClick={() => cancelarChamada(ch)}
                 className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300"
