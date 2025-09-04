@@ -69,16 +69,31 @@ export default function ChamadasContratante({ contratante }) {
   }, [chamadas])
 
   async function cancelarChamada(ch) {
+  try {
+    // 1) Atualiza a chamada
+    await updateDoc(doc(db, 'chamadas', ch.id), {
+      status: 'cancelada',
+      canceladaPor: 'contratante',
+      canceladaEm: serverTimestamp()
+    });
+
+    // 2) (best effort) Atualiza pagamento espelho, se existir com id = chamadaId
     try {
-      await updateDoc(doc(db, 'chamadas', ch.id), {
-        status: 'cancelada_por_falta_de_pagamento',
-        canceladaEm: serverTimestamp()
-      })
-      toast.success('❌ Chamada cancelada.')
-    } catch (e) {
-      console.error(e); toast.error('Erro ao cancelar chamada.')
+      await updateDoc(doc(db, 'pagamentos_usuarios', ch.id), {
+        status: 'cancelada',
+        atualizadoEm: serverTimestamp()
+      });
+    } catch (e2) {
+      // Não bloquear a UX se o doc não existir / permissão negar
+      console.warn('[ChamadasContratante] pagamento não atualizado (ok):', e2);
     }
+
+    toast.success('❌ Chamada cancelada.');
+  } catch (e) {
+    console.error(e);
+    toast.error('Erro ao cancelar chamada.');
   }
+}
 
   async function confirmarCheckInFreela(ch) {
     try {
