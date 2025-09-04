@@ -20,6 +20,18 @@ const STATUS_LISTA = [
   'finalizada', 'cancelada_por_falta_de_pagamento', 'rejeitada', 'pago'
 ]
 
+const STATUS_CANCELAVEIS = new Set([
+  'pendente',
+  'aceita',
+  'confirmada',
+  'checkin_freela',
+  'em_andamento',
+  'checkout_freela',
+  'concluido',
+  'pago'
+  // (não inclui 'finalizada' nem 'rejeitada')
+]);
+
 export default function ChamadasContratante({ contratante }) {
   const { usuario } = useAuth()
   const estab = contratante || usuario
@@ -126,7 +138,7 @@ export default function ChamadasContratante({ contratante }) {
             </div>
           )}
 
-          {ch.status === 'aceita' && (
+          {STATUS_CANCELAVEIS.has(ch.status) && (
             <div className="flex flex-col sm:flex-row gap-2">
               <button
                 onClick={() => cancelarChamada(ch)}
