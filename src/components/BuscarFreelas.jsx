@@ -54,7 +54,10 @@ function Estrelas({ media }) {
   )
 }
 
-function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao, setObservacao, onAbrirPagamento }) {
+function FreelaCard({
+  freela, online, distancia, onChamar, chamando,
+  observacao, setObservacao, onAbrirPagamento
+}) {
   const uid = freela.uid || freela.id
 
   return (
@@ -66,28 +69,38 @@ function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao,
       />
       <h3 className="mt-2 text-lg font-bold text-orange-700">{freela.nome}</h3>
       <p className="text-sm text-gray-600">{freela.funcao}</p>
+
       {freela.especialidades && (
         <p className="text-xs text-gray-500 text-center">
-          {Array.isArray(freela.especialidades) ? freela.especialidades.join(', ') : freela.especialidades}
+          {Array.isArray(freela.especialidades)
+            ? freela.especialidades.join(', ')
+            : freela.especialidades}
         </p>
       )}
+
       {freela.mediaAvaliacoes ? (
         <Estrelas media={freela.mediaAvaliacoes} />
       ) : (
         <p className="text-xs text-gray-400">(sem avaliações)</p>
       )}
+
       {freela.valorDiaria && (
-        <p className="text-sm font-semibold text-orange-700 mt-1">💰 R$ {freela.valorDiaria}</p>
+        <p className="text-sm font-semibold text-orange-700 mt-1">
+          💰 R$ {freela.valorDiaria}
+        </p>
       )}
+
       {distancia != null && (
         <p className="text-sm text-gray-600 mt-1">📍 {distancia.toFixed(1)} km</p>
       )}
+
       {online && (
         <div className="flex items-center gap-1 mt-1">
           <span className="w-2 h-2 rounded-full bg-green-500" />
           <span className="text-xs text-green-700">Online agora</span>
         </div>
       )}
+
       <textarea
         rows={2}
         className="w-full mt-3 px-2 py-1 border rounded text-sm"
@@ -96,12 +109,12 @@ function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao,
         onChange={(e) => setObservacao((prev) => ({ ...prev, [uid]: e.target.value }))}
       />
 
-      {/* 💳 Botão de pagamento */}
+      {/* ✅ Botão único: abre modal com escolhas (Cartão c/ senha já cadastrada ou PIX) */}
       <button
         onClick={() => onAbrirPagamento(freela)}
         className="mt-2 w-full py-2 rounded-lg font-bold bg-orange-600 hover:bg-orange-700 text-white"
       >
-        💳 Pagar Freela
+        💳 Pagar Chamada
       </button>
 
       {/* 📞 Botão de chamada */}
@@ -136,9 +149,12 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
       s1.forEach((d) => lista.push({ id: d.id, ...d.data() }))
       s2.forEach((d) => lista.push({ id: d.id, ...d.data() }))
 
-      // Cálculo de média de avaliações
+      // Média de avaliações (Uber style)
       for (const f of lista) {
-        const avalSnap = await getDocs(query(collection(db, 'avaliacoes'), where('freelaId', '==', f.uid || f.id)))
+        const avalSnap = await getDocs(query(
+          collection(db, 'avaliacoes'),
+          where('freelaId', '==', f.uid || f.id)
+        ))
         const avals = avalSnap.docs.map((d) => d.data())
         if (avals.length > 0) {
           const media = avals.reduce((sum, a) => sum + (a.nota || 0), 0) / avals.length
@@ -228,8 +244,10 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
   }
 
   return (
-    <div className="min-h-screen bg-cover bg-center p-4 pb-20"
-      style={{ backgroundImage: `url('/img/fundo-login.jpg')`, backgroundAttachment: 'fixed' }}>
+    <div
+      className="min-h-screen bg-cover bg-center p-4 pb-20"
+      style={{ backgroundImage: `url('/img/fundo-login.jpg')`, backgroundAttachment: 'fixed' }}
+    >
       <div className="max-w-4xl mx-auto mb-4">
         <input
           type="text"
