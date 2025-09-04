@@ -36,6 +36,8 @@ export default function ModalPagamentoFreela({
         freelaUid: freela?.uid || freela?.id || null,
         freelaNome: freela?.nome || '',
         valorDiaria: Number(freela?.valorDiaria || 0),
+        valorContratante: Number(freela?.valorDiaria || 0) * 1.10, // 10% a mais
+        valorFreela: Number(freela?.valorDiaria || 0) * 0.90,       // 10% a menos
         contratadoEm: serverTimestamp(),
       });
 
