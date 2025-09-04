@@ -3,6 +3,7 @@ import React from 'react';
 import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '@/context/AuthContext';
 
 // (Opcional) se já tiver Cloud Functions para gerar PIX, descomente abaixo e use no handler do PIX
 // import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -17,6 +18,9 @@ export default function ModalPagamentoFreela({
   // Resolve o ID do documento em pagamentos_usuarios
   const resolveDocId = () =>
     pagamentoDocId || freela?.chamadaId || freela?.chamada_id || freela?.id;
+
+  const { usuario } = useAuth();
+  const contratanteUid = usuario?.uid || null;
 
   // ⚙️ upsert simples em pagamentos_usuarios/{docId}
   async function upsertPagamento(docId, data) {
@@ -33,6 +37,7 @@ export default function ModalPagamentoFreela({
       await upsertPagamento(docId, {
         metodo: 'cartao',
         status: 'aguardando_confirmacao', // aguardará confirmação com a senha salva
+        contratanteUid, 
         freelaUid: freela?.uid || freela?.id || null,
         freelaNome: freela?.nome || '',
         valorDiaria: Number(freela?.valorDiaria || 0),
@@ -58,6 +63,7 @@ export default function ModalPagamentoFreela({
       await upsertPagamento(docId, {
         metodo: 'pix',
         status: 'pix_pendente',
+        contratanteUid, 
         freelaUid: freela?.uid || freela?.id || null,
         freelaNome: freela?.nome || '',
         valorDiaria: Number(freela?.valorDiaria || 0),
