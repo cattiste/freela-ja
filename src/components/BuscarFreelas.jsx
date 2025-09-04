@@ -2,9 +2,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import {
   collection, query, where, addDoc, serverTimestamp,
-  getDocs, limit, setDoc, doc
+  getDocs, limit, setDoc, doc, onSnapshot as onSnapshotFs
 } from 'firebase/firestore'
 import { db } from '@/firebase'
+import { getDatabase, onValue, ref as rtdbRef } from 'firebase/database'
 import { FaStar, FaRegStar } from 'react-icons/fa'
 import ModalPagamentoFreela from './ModalPagamentoFreela'
 
@@ -38,12 +39,12 @@ function estaOnline(rec) {
   const flag = rec.online === true || rec.state === 'online'
   const ts =
     toMillis(rec.lastSeen) ?? toMillis(rec.ts) ?? toMillis(rec.last_changed)
-  return flag && now - ts <= TTL_MS
+  return flag && ts != null && (now - ts) <= TTL_MS
 }
 
 function Estrelas({ media }) {
-  const cheias = Math.floor(media)
-  const meia = media % 1 >= 0.5
+  const cheias = Math.floor(media || 0)
+  const meia = (media || 0) % 1 >= 0.5
   const vazias = 5 - cheias - (meia ? 1 : 0)
   return (
     <div className="flex justify-center mt-1 text-yellow-400">
@@ -63,7 +64,7 @@ function FreelaCard({
   return (
     <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100 flex flex-col items-center">
       <img
-        src={freela.foto || 'https://via.placeholder.com/80'}
+        src={freela.foto || '/img/avatar-freela.png'}
         alt={freela.nome}
         className="w-20 h-20 rounded-full object-cover border-2 border-orange-400"
       />
@@ -78,15 +79,15 @@ function FreelaCard({
         </p>
       )}
 
-      {freela.mediaAvaliacoes ? (
+      {typeof freela.mediaAvaliacoes === 'number' ? (
         <Estrelas media={freela.mediaAvaliacoes} />
       ) : (
         <p className="text-xs text-gray-400">(sem avaliações)</p>
       )}
 
-      {freela.valorDiaria && (
+      {freela.valorDiaria != null && freela.valorDiaria !== '' && (
         <p className="text-sm font-semibold text-orange-700 mt-1">
-          💰 R$ {freela.valorDiaria}
+          💰 R$ {Number(freela.valorDiaria).toFixed(2)}
         </p>
       )}
 
@@ -94,10 +95,15 @@ function FreelaCard({
         <p className="text-sm text-gray-600 mt-1">📍 {distancia.toFixed(1)} km</p>
       )}
 
-      {online && (
+      {online ? (
         <div className="flex items-center gap-1 mt-1">
           <span className="w-2 h-2 rounded-full bg-green-500" />
           <span className="text-xs text-green-700">Online agora</span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-1 mt-1 opacity-70">
+          <span className="w-2 h-2 rounded-full bg-gray-400" />
+          <span className="text-xs text-gray-500">Offline</span>
         </div>
       )}
 
@@ -133,13 +139,43 @@ function FreelaCard({
   )
 }
 
-export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
+export default function BuscarFreelas({ usuario }) {
   const [freelas, setFreelas] = useState([])
   const [filtro, setFiltro] = useState('')
   const [chamando, setChamando] = useState(null)
   const [observacao, setObservacao] = useState({})
   const [freelaSelecionado, setFreelaSelecionado] = useState(null)
+  const [usuariosOnline, setUsuariosOnline] = useState({}) // <-- Presença em tempo real
 
+  // 1) Presença em tempo real (RTDB /status) com fallback para Firestore 'status'
+  useEffect(() => {
+    let unsubscribeFs = null
+    const dbRt = getDatabase()
+    const statusRef = rtdbRef(dbRt, 'status')
+
+    const off = onValue(statusRef, (snap) => {
+      const val = snap.val() || {}
+      setUsuariosOnline(val)
+    }, (err) => {
+      console.warn('[BuscarFreelas] RTDB indisponível, usando Firestore status. Motivo:', err?.message)
+      // Fallback Firestore
+      const qFs = query(collection(db, 'status'))
+      unsubscribeFs = onSnapshotFs(qFs, (qs) => {
+        const map = {}
+        qs.forEach((d) => {
+          map[d.id] = d.data()
+        })
+        setUsuariosOnline(map)
+      })
+    })
+
+    return () => {
+      off() // RTDB
+      if (typeof unsubscribeFs === 'function') unsubscribeFs()
+    }
+  }, [])
+
+  // 2) Carregar freelas (duas possíveis chaves de tipo — compatibilidade)
   useEffect(() => {
     async function carregarFreelas() {
       const lista = []
@@ -149,11 +185,13 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
       s1.forEach((d) => lista.push({ id: d.id, ...d.data() }))
       s2.forEach((d) => lista.push({ id: d.id, ...d.data() }))
 
-      // Média de avaliações (Uber style)
+      // Média de avaliações
       for (const f of lista) {
+        const uid = f.uid || f.id
+        if (!uid) continue
         const avalSnap = await getDocs(query(
           collection(db, 'avaliacoes'),
-          where('freelaId', '==', f.uid || f.id)
+          where('freelaId', '==', uid)
         ))
         const avals = avalSnap.docs.map((d) => d.data())
         if (avals.length > 0) {
@@ -162,18 +200,19 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         }
       }
 
+      // Unificar por uid/id
       const unicos = new Map()
       lista.forEach((f) => {
         const id = f.uid || f.id
-        if (!unicos.has(id)) unicos.set(id, f)
+        if (id && !unicos.has(id)) unicos.set(id, f)
       })
-
       setFreelas([...unicos.values()])
     }
 
     carregarFreelas()
   }, [])
 
+  // 3) Montar lista com distância/online e ordenar
   const filtrados = useMemo(() => {
     return freelas
       .map((f) => {
@@ -185,7 +224,8 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
               f.coordenadas.longitude
             )
           : null
-        const online = estaOnline(usuariosOnline[f.uid || f.id])
+        const uid = f.uid || f.id
+        const online = estaOnline(usuariosOnline?.[uid])
         return { ...f, distancia, online }
       })
       .filter((f) => !filtro || f.funcao?.toLowerCase().includes(filtro.toLowerCase()))
@@ -199,6 +239,7 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
       })
   }, [freelas, filtro, usuario, usuariosOnline])
 
+  // 4) Criar chamada
   const chamar = async (freela) => {
     const uid = freela.uid || freela.id
     setChamando(uid)
