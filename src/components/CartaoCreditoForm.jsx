@@ -30,7 +30,7 @@ export default function CartaoCreditoForm({ onClose }) {
         validade: `${mes.trim()}/${ano.trim()}`,
         cvv: cvv.trim(),
         cpf: usuario?.cpf || '00000000000', // ajuste conforme seus dados
-        senhaPagamento: '1234' // pode vir de outro input ou processo separado
+        senhaPagamento: '123456' // pode vir de outro input ou processo separado
       })
 
       if (resultado.data?.sucesso) {

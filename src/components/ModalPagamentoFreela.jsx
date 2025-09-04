@@ -20,7 +20,7 @@ export default function ModalPagamentoFreela({
     pagamentoDocId || freela?.chamadaId || freela?.chamada_id || freela?.id;
 
   const { usuario } = useAuth();
-  const contratanteUid = usuario?.uid || null;
+  const contratanteUid = usuario?.uid;
 
   // ⚙️ upsert simples em pagamentos_usuarios/{docId}
   async function upsertPagamento(docId, data) {
@@ -35,10 +35,10 @@ export default function ModalPagamentoFreela({
       const docId = resolveDocId();
 
       await upsertPagamento(docId, {
-        metodo: 'cartao',
-        status: 'aguardando_confirmacao', // aguardará confirmação com a senha salva
         contratanteUid, 
-        freelaUid: freela?.uid || freela?.id || null,
+        metodo: 'cartao',
+        status: 'aguardando_confirmacao', // aguardará confirmação com a senha salva        
+        freelaUid: freela?.uid || freela?.id,
         freelaNome: freela?.nome || '',
         valorDiaria: Number(freela?.valorDiaria || 0),
         valorContratante: Number(freela?.valorDiaria || 0) * 1.10, // 10% a mais
@@ -46,13 +46,26 @@ export default function ModalPagamentoFreela({
         contratadoEm: serverTimestamp(),
       });
 
-      toast.success('Pagamento por cartão iniciado. Confirme com sua senha.');
-      onClose?.();
-    } catch (e) {
-      console.error('[ModalPagamentoFreela] cartao:', e);
-      toast.error('Não foi possível iniciar o pagamento por cartão.');
-    }
+setStep('pin');
+}
+
+async function confirmarPagamentoComSenha() {
+  try {
+    const docId = resolveDocId();
+    if (!pin || pin.length < 6) { toast.error('Digite sua senha.'); return; }
+    
+    await updateDoc(doc(db, 'pagamentos_usuarios', String(docId)), {
+      status: 'pago',
+      confirmadoEm: serverTimestamp(),
+    });
+
+    toast.success('Pagamento confirmado!');
+    onClose?.();
+  } catch (e) {
+    console.error('[Cartão] confirmarPagamentoComSenha:', e);
+    toast.error('Falha ao confirmar o pagamento.');
   }
+}
 
   // 💸 Pagar via Pix (gera QR / Copia-e-Cola)
   async function onPagarViaPix() {
@@ -61,10 +74,10 @@ export default function ModalPagamentoFreela({
 
       // 1) registra intenção de PIX
       await upsertPagamento(docId, {
+        contratanteUid,
         metodo: 'pix',
-        status: 'pix_pendente',
-        contratanteUid, 
-        freelaUid: freela?.uid || freela?.id || null,
+        status: 'pix_pendente',         
+        freelaUid: freela?.uid || freela?.id,
         freelaNome: freela?.nome || '',
         valorDiaria: Number(freela?.valorDiaria || 0),
         contratadoEm: serverTimestamp(),
