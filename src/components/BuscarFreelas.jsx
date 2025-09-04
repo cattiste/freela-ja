@@ -285,6 +285,7 @@ const chamar = async (freela) => {
         {freelaSelecionado && (
         <ModalPagamentoFreela
           freela={freelaSelecionado}
+          pagamentoDocId={freelaSelecionado.chamadaId}  // opcional, ideal se existir
           onClose={() => setFreelaSelecionado(null)}
         />
       )}
