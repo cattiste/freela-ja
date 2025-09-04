@@ -6,6 +6,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { FaStar, FaRegStar } from 'react-icons/fa'
+import ModalPagamentoFreela from './ModalPagamentoFreela'
 
 function calcularDistancia(lat1, lon1, lat2, lon2) {
   const toRad = (x) => (x * Math.PI) / 180
@@ -53,7 +54,7 @@ function Estrelas({ media }) {
   )
 }
 
-function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao, setObservacao }) {
+function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao, setObservacao, onAbrirPagamento }) {
   const uid = freela.uid || freela.id
 
   return (
@@ -94,10 +95,20 @@ function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao,
         value={observacao[uid] || ''}
         onChange={(e) => setObservacao((prev) => ({ ...prev, [uid]: e.target.value }))}
       />
+
+      {/* 💳 Botão de pagamento */}
+      <button
+        onClick={() => onAbrirPagamento(freela)}
+        className="mt-2 w-full py-2 rounded-lg font-bold bg-orange-600 hover:bg-orange-700 text-white"
+      >
+        💳 Pagar Freela
+      </button>
+
+      {/* 📞 Botão de chamada */}
       <button
         onClick={() => onChamar(freela)}
         disabled={!online || chamando === uid}
-        className={`mt-3 w-full py-2 rounded-lg font-bold transition ${
+        className={`mt-2 w-full py-2 rounded-lg font-bold transition ${
           online
             ? 'bg-green-600 hover:bg-green-700 text-white'
             : 'bg-gray-400 text-white cursor-not-allowed'
@@ -114,17 +125,26 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
   const [filtro, setFiltro] = useState('')
   const [chamando, setChamando] = useState(null)
   const [observacao, setObservacao] = useState({})
+  const [freelaSelecionado, setFreelaSelecionado] = useState(null)
 
   useEffect(() => {
     async function carregarFreelas() {
       const lista = []
-
       const q1 = query(collection(db, 'usuarios'), where('tipoUsuario', '==', 'freela'), limit(60))
       const q2 = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'), limit(60))
-
       const [s1, s2] = await Promise.all([getDocs(q1), getDocs(q2)])
       s1.forEach((d) => lista.push({ id: d.id, ...d.data() }))
       s2.forEach((d) => lista.push({ id: d.id, ...d.data() }))
+
+      // Cálculo de média de avaliações
+      for (const f of lista) {
+        const avalSnap = await getDocs(query(collection(db, 'avaliacoes'), where('freelaId', '==', f.uid || f.id)))
+        const avals = avalSnap.docs.map((d) => d.data())
+        if (avals.length > 0) {
+          const media = avals.reduce((sum, a) => sum + (a.nota || 0), 0) / avals.length
+          f.mediaAvaliacoes = media
+        }
+      }
 
       const unicos = new Map()
       lista.forEach((f) => {
@@ -166,7 +186,6 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
   const chamar = async (freela) => {
     const uid = freela.uid || freela.id
     setChamando(uid)
-
     try {
       const snap = await getDocs(query(
         collection(db, 'chamadas'),
@@ -174,12 +193,10 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         where('contratanteUid', '==', usuario.uid),
         where('status', 'in', ['pendente', 'aceita', 'confirmada', 'em_andamento'])
       ))
-
       if (!snap.empty) {
         alert('⚠️ Você já chamou esse freela e a chamada está ativa.')
         return
       }
-
       const chamadaRef = await addDoc(collection(db, 'chamadas'), {
         freelaUid: uid,
         freelaNome: freela.nome,
@@ -191,8 +208,6 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         status: 'pendente',
         criadoEm: serverTimestamp()
       })
-
-      // 🔁 Criar espelho do freela na coleção pagamentos_usuarios
       const pagamentoRef = doc(db, 'pagamentos_usuarios', chamadaRef.id)
       await setDoc(pagamentoRef, {
         chamadaId: chamadaRef.id,
@@ -203,7 +218,6 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         status: 'pendente',
         criadoEm: serverTimestamp()
       })
-
       alert(`✅ ${freela.nome} foi chamado com sucesso!`)
     } catch (err) {
       console.error('Erro ao chamar freela:', err)
@@ -240,9 +254,17 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
               chamando={chamando}
               observacao={observacao}
               setObservacao={setObservacao}
+              onAbrirPagamento={(f) => setFreelaSelecionado(f)}
             />
           ))}
         </div>
+      )}
+
+      {freelaSelecionado && (
+        <ModalPagamentoFreela
+          freela={freelaSelecionado}
+          onClose={() => setFreelaSelecionado(null)}
+        />
       )}
     </div>
   )
