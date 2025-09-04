@@ -70,7 +70,7 @@ export default function ChamadasFreelaV2() {
                   onClick={() => alert('Cancelar chamada')}
                   className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
                 >
-                  ❌ Rejeitar chamada
+                  ❌ Cancelar chamada
                 </button>
               </div>
             )}

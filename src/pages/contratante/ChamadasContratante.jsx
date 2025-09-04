@@ -17,7 +17,7 @@ import MensagensRecebidasContratante from '@/components/MensagensRecebidasContra
 const STATUS_LISTA = [
   'pendente', 'aceita', 'confirmada', 'checkin_freela',
   'em_andamento', 'checkout_freela', 'concluido',
-  'finalizada', 'cancelada', 'rejeitada', 'pago'
+  'finalizada', 'cancelada', 'cancelada pelo freela', 'pago'
 ]
 
 const STATUS_CANCELAVEIS = new Set([
