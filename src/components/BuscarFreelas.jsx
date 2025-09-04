@@ -184,55 +184,71 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
       })
   }, [freelas, filtro, usuario, usuariosOnline])
 
-  const chamar = async (freela) => {
-    const uid = freela.uid || freela.id
-    setChamando(uid)
+const chamar = async (freela) => {
+  const uid = freela.uid || freela.id
+  setChamando(uid)
+  let chamadaId = null
 
-    try {
-      const snap = await getDocs(query(
-        collection(db, 'chamadas'),
-        where('freelaUid', '==', uid),
-        where('contratanteUid', '==', usuario.uid),
-        where('status', 'in', ['pendente', 'aceita', 'confirmada', 'em_andamento'])
-      ))
-
-      if (!snap.empty) {
-        alert('⚠️ Você já chamou esse freela e a chamada está ativa.')
-        return
-      }
-
-      const chamadaRef = await addDoc(collection(db, 'chamadas'), {
-        freelaUid: uid,
-        freelaNome: freela.nome,
-        valorDiaria: freela.valorDiaria || null,
-        contratanteUid: usuario.uid,
-        contratanteNome: usuario.nome || '',
-        tipoContratante: usuario.tipo || usuario.tipoUsuario || '',
-        observacao: observacao[uid] || '',
-        status: 'pendente',
-        criadoEm: serverTimestamp()
-      })
-
-      // 🔁 Criar espelho do freela na coleção pagamentos_usuarios
-      const pagamentoRef = doc(db, 'pagamentos_usuarios', chamadaRef.id)
-      await setDoc(pagamentoRef, {
-        chamadaId: chamadaRef.id,
-        freelaUid: uid,
-        freelaNome: freela.nome,
-        pixFreela: freela.chavePix || '',
-        valorDiaria: freela.valorDiaria || 0,
-        status: 'pendente',
-        criadoEm: serverTimestamp()
-      })
-
-      alert(`✅ ${freela.nome} foi chamado com sucesso!`)
-    } catch (err) {
-      console.error('Erro ao chamar freela:', err)
-      alert('Erro ao chamar freelancer.')
-    } finally {
-      setChamando(null)
+  try {
+    // impede chamada duplicada ativa (mantém seu código)
+    const snap = await getDocs(query(
+      collection(db, 'chamadas'),
+      where('freelaUid', '==', uid),
+      where('contratanteUid', '==', usuario.uid),
+      where('status', 'in', ['pendente', 'aceita', 'confirmada', 'em_andamento'])
+    ))
+    if (!snap.empty) {
+      alert('⚠️ Você já chamou esse freela e a chamada está ativa.')
+      return
     }
+
+    // 1) CRIA a chamada (ponto crítico que precisa funcionar)
+    const chamadaRef = await addDoc(collection(db, 'chamadas'), {
+      freelaUid: uid,
+      freelaNome: freela.nome,
+      valorDiaria: freela.valorDiaria || null,
+      contratanteUid: usuario.uid,
+      contratanteNome: usuario.nome || '',
+      tipoContratante: usuario.tipo || usuario.tipoUsuario || '',
+      observacao: observacao[uid] || '',
+      status: 'pendente',
+      criadoEm: serverTimestamp()
+    })
+    chamadaId = chamadaRef.id
+
+    // 2) BEST-EFFORT: cria/atualiza o doc de pagamentos (não interrompe a UX)
+    try {
+      const diaria = Number(freela.valorDiaria || 0)
+      await setDoc(doc(db, 'pagamentos_usuarios', chamadaId), {
+        chamadaId,
+        contratanteUid: usuario.uid,              // <- necessário p/ regras
+        freelaUid: uid,
+        freelaNome: freela.nome || '',
+        valorDiaria: diaria,
+        valorContratante: +(diaria * 1.10).toFixed(2), // +10% p/ contratante
+        valorFreela: +(diaria * 0.90).toFixed(2),      // -10% p/ freela
+        status: 'pendente',
+        criadoEm: serverTimestamp()
+      }, { merge: true })
+    } catch (e) {
+      // não derruba a chamada; apenas registra e segue
+      console.warn('[pagamentos_usuarios] best-effort falhou:', e)
+    }
+
+    alert(`✅ ${freela.nome} foi chamado com sucesso!`)
+  } catch (err) {
+    console.error('Erro ao chamar freela:', err)
+    // Se a chamada foi criada mas o "espelho" falhou, evite mensagem enganosa:
+    if (chamadaId) {
+      alert('✅ Chamada criada. ⚠️ Não foi possível preparar o pagamento agora (permissão).')
+    } else {
+      alert('Erro ao chamar freelancer.')
+    }
+  } finally {
+    setChamando(null)
   }
+}
+
 
   return (
     <div className="min-h-screen bg-cover bg-center p-4 pb-20"
