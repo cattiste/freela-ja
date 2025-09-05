@@ -1,3 +1,4 @@
+// src/pages/ChamadasFreela.jsx
 import React from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useChamadasDoFreela } from '@/hooks/useChamadasStream'
@@ -6,7 +7,12 @@ import RespostasRapidasFreela from '@/components/RespostasRapidasFreela'
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useChamadaFlags } from '@/hooks/useChamadaFlags'
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import {
+  doc,
+  updateDoc,
+  serverTimestamp,
+  runTransaction
+} from 'firebase/firestore'
 import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
 
@@ -41,6 +47,8 @@ export default function ChamadasFreela() {
 }
 
 function ChamadaItem({ ch }) {
+  const { usuario } = useAuth()
+
   const {
     podeVerEndereco,
     podeCheckinFreela,
@@ -48,12 +56,45 @@ function ChamadaItem({ ch }) {
     aguardandoPix,
   } = useChamadaFlags(ch.id)
 
+  const podeAceitar = String(ch.status || '').toLowerCase() === 'pendente'
+
+  async function aceitarChamada() {
+    const ref = doc(db, 'chamadas', ch.id)
+    try {
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref)
+        if (!snap.exists()) throw new Error('Chamada não existe mais.')
+        const atual = snap.data()
+        const statusAtual = String(atual.status || '').toLowerCase()
+
+        // garante que ninguém aceitou antes
+        if (statusAtual !== 'pendente') {
+          throw new Error('Essa chamada já foi aceita ou não está mais disponível.')
+        }
+
+        tx.update(ref, {
+          status: 'aceita',
+          freelaUid: usuario?.uid || atual.freelaUid || null,
+          freelaNome: usuario?.nome || atual.freelaNome || null,
+          aceitaEm: serverTimestamp(),
+          atualizadoEm: serverTimestamp(),
+        })
+      })
+
+      toast.success('✅ Chamada aceita! Aguarde o pagamento do contratante.')
+    } catch (e) {
+      console.error('[aceitarChamada]', e)
+      toast.error(e?.message || 'Não foi possível aceitar a chamada.')
+    }
+  }
+
   async function fazerCheckin() {
     try {
       await updateDoc(doc(db, 'chamadas', ch.id), {
         checkinFreela: true,
         checkinFreelaEm: serverTimestamp(),
         status: ch.status === 'pago' ? 'em_andamento' : (ch.status || 'em_andamento'),
+        atualizadoEm: serverTimestamp(),
       })
       toast.success('Check-in realizado!')
     } catch (e) {
@@ -68,6 +109,7 @@ function ChamadaItem({ ch }) {
         checkoutFreela: true,
         checkoutFreelaEm: serverTimestamp(),
         status: 'checkout_freela',
+        atualizadoEm: serverTimestamp(),
       })
       toast.success('Check-out realizado!')
     } catch (e) {
@@ -82,6 +124,7 @@ function ChamadaItem({ ch }) {
         status: 'cancelada pelo freela',
         canceladaPor: 'freela',
         canceladaEm: serverTimestamp(),
+        atualizadoEm: serverTimestamp(),
       })
       toast.success('❌ Chamada cancelada.')
     } catch (e) {
@@ -99,6 +142,7 @@ function ChamadaItem({ ch }) {
       )}
       {ch.observacao && <p className="text-sm text-gray-700">📝 {ch.observacao}</p>}
 
+      {/* Mapa / endereço condicionado ao pagamento */}
       {podeVerEndereco && ch.coordenadasContratante ? (
         <MapContainer
           center={[ch.coordenadasContratante.latitude, ch.coordenadasContratante.longitude]}
@@ -122,7 +166,17 @@ function ChamadaItem({ ch }) {
         </div>
       )}
 
+      {/* Ações do Freela */}
       <div className="flex flex-col sm:flex-row gap-2 mt-2">
+        {podeAceitar && (
+          <button
+            onClick={aceitarChamada}
+            className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+          >
+            ✅ Aceitar chamada
+          </button>
+        )}
+
         <button
           onClick={fazerCheckin}
           className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
@@ -130,6 +184,7 @@ function ChamadaItem({ ch }) {
         >
           📍 Fazer Check-in
         </button>
+
         <button
           onClick={fazerCheckout}
           className="flex-1 bg-yellow-600 text-white py-2 rounded-lg hover:bg-yellow-700 disabled:opacity-50"
@@ -137,6 +192,7 @@ function ChamadaItem({ ch }) {
         >
           ⏳ Fazer Check-out
         </button>
+
         {/* Cancelar: sempre disponível */}
         <button
           onClick={cancelarChamada}
