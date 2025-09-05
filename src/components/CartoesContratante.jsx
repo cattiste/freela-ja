@@ -3,12 +3,14 @@ import React, { useState } from 'react'
 import ListaCartoes from './ListaCartoes'
 import { toast } from 'react-hot-toast'
 import { getFunctions, httpsCallable } from 'firebase/functions'
+import { getPaymentTokenEfipay } from '@/utils/efipay'
 
 const functionsClient = getFunctions(undefined, 'southamerica-east1')
 
 export default function CartoesContratante({ uid }) {
   const [abrirCadastroCartao, setAbrirCadastroCartao] = useState(false)
 
+  // form
   const [titularNome, setTitularNome] = useState('')
   const [titularCpf, setTitularCpf] = useState('')
   const [numeroCartao, setNumeroCartao] = useState('')
@@ -17,6 +19,7 @@ export default function CartoesContratante({ uid }) {
   const [bandeira, setBandeira] = useState('') // opcional
 
   const [savingCartao, setSavingCartao] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   // helpers
   const onlyDigits = (s = '') => String(s || '').replace(/\D/g, '')
@@ -38,7 +41,7 @@ export default function CartoesContratante({ uid }) {
     return s.length >= 12 && s.length <= 19 && (sum % 10 === 0)
   }
   const isValidExpiry = (mmyy = '') => {
-    const [m, y] = mmyy.split('/')
+    const [m, y] = (mmyy || '').split('/')
     const mm = parseInt(m, 10), yy = parseInt(y, 10)
     if (!mm || !yy || mm < 1 || mm > 12) return false
     const fullYear = y.length === 2 ? 2000 + yy : yy
@@ -46,19 +49,16 @@ export default function CartoesContratante({ uid }) {
     return exp > new Date()
   }
 
+  // salvar novo cartão (gera token no front)
   async function salvarNovoCartao() {
     try {
-      if (!window.$gn || typeof window.$gn.getPaymentToken !== 'function') {
-        toast.error('SDK da Efí não carregou. Confira o <script> no index.html com seu Identificador de Conta.')
-        return
-      }
       const numeroDigits = onlyDigits(numeroCartao)
       const cpfDigits = onlyDigits(titularCpf)
       const [mmStr = '', yyStr = ''] = (validade || '').split('/')
       const expYear = yyStr.length === 2 ? '20' + yyStr : yyStr
       const cvvDigits = onlyDigits(cvv)
 
-      // validações mínimas
+      // validações
       if (!titularNome || cpfDigits.length !== 11) return toast.error('Informe nome e CPF válidos.')
       if (!luhnCheck(numeroDigits)) return toast.error('Número do cartão inválido.')
       if (!isValidExpiry(validade)) return toast.error('Validade inválida.')
@@ -67,29 +67,17 @@ export default function CartoesContratante({ uid }) {
 
       setSavingCartao(true)
 
-      // monta payload para tokenização (front)
-      const cardData = {
+      // tokeniza com o SDK da Efí
+      const token = await getPaymentTokenEfipay({
         number: numeroDigits,
         cvv: cvvDigits,
         expiration_month: mmStr.padStart(2, '0'),
         expiration_year: expYear,
         holder: titularNome,
-        brand: bandeira || null, // opcional
-      }
-
-      const tokenResp = await new Promise((resolve, reject) => {
-        window.$gn.ready(function () {
-          window.$gn.getPaymentToken(cardData, function (resp) {
-            if (resp?.error) reject(new Error(resp?.message || 'Falha ao tokenizar o cartão'))
-            else resolve(resp)
-          })
-        })
+        brand: bandeira || null,
       })
 
-      const token = tokenResp?.data?.payment_token || tokenResp?.payment_token
-      if (!token) throw new Error('Token não retornado pela Efí')
-
-      // chama a callable para salvar APENAS o token + dados do titular
+      // salva APENAS o token + dados do titular na function
       const salvarCartaoFn = httpsCallable(functionsClient, 'salvarCartao')
       await salvarCartaoFn({
         token,
@@ -113,16 +101,46 @@ export default function CartoesContratante({ uid }) {
     }
   }
 
+  // excluir cartão (apaga cartoes/{uid})
+  async function excluirCartao() {
+    try {
+      setDeleting(true)
+      const fn = httpsCallable(functionsClient, 'excluirCartao')
+      await fn()
+      toast.success('Cartão excluído.')
+      // ListaCartoes deve refletir pelo onSnapshot; se não usar snapshot, recarregue a lista aqui.
+    } catch (e) {
+      console.error('[excluirCartao]', e)
+      toast.error(e?.message || 'Não foi possível excluir o cartão.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <div className="p-4">
       <div className="bg-white rounded-xl shadow-md p-4 space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center gap-2">
           <h2 className="text-xl font-bold text-orange-700">💳 Meus Cartões</h2>
-          <button onClick={() => setAbrirCadastroCartao(true)} className="text-sm bg-orange-600 text-white px-3 py-2 rounded-lg hover:bg-orange-700">
-            ➕ Cadastrar Cartão
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setAbrirCadastroCartao(true)}
+              className="text-sm bg-orange-600 text-white px-3 py-2 rounded-lg hover:bg-orange-700"
+            >
+              ➕ Cadastrar Cartão
+            </button>
+            <button
+              onClick={excluirCartao}
+              disabled={deleting}
+              className="text-sm border px-3 py-2 rounded-lg hover:bg-gray-100"
+              title="Excluir cartão salvo"
+            >
+              {deleting ? 'Excluindo…' : '🗑️ Excluir cartão'}
+            </button>
+          </div>
         </div>
 
+        {/* Lista atual (exibe tokenizados) */}
         <ListaCartoes />
       </div>
 
@@ -131,10 +149,13 @@ export default function CartoesContratante({ uid }) {
           <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-5 space-y-3">
             <h3 className="text-lg font-semibold text-orange-700">Cadastrar Cartão</h3>
 
-            <input className="input" placeholder="Nome do titular" value={titularNome} onChange={(e) => setTitularNome(e.target.value)} />
-            <input className="input" placeholder="CPF do titular" inputMode="numeric" value={titularCpf} onChange={(e) => setTitularCpf(formatCPF(e.target.value))} />
+            <input className="input" placeholder="Nome do titular"
+              value={titularNome} onChange={(e) => setTitularNome(e.target.value)} />
+            <input className="input" placeholder="CPF do titular" inputMode="numeric"
+              value={titularCpf} onChange={(e) => setTitularCpf(formatCPF(e.target.value))} />
 
-            <input className="input" placeholder="Número do cartão" inputMode="numeric" value={numeroCartao} onChange={(e) => setNumeroCartao(formatCardNumber(e.target.value))} />
+            <input className="input" placeholder="Número do cartão" inputMode="numeric"
+              value={numeroCartao} onChange={(e) => setNumeroCartao(formatCardNumber(e.target.value))} />
 
             <select className="input" value={bandeira} onChange={(e) => setBandeira(e.target.value)}>
               <option value="">Bandeira… (opcional)</option>
@@ -146,13 +167,21 @@ export default function CartoesContratante({ uid }) {
             </select>
 
             <div className="grid grid-cols-2 gap-3">
-              <input className="input" placeholder="Validade (MM/AA ou MM/AAAA)" value={validade} onChange={(e) => setValidade(formatMMYY(e.target.value))} maxLength={5} />
-              <input className="input" placeholder={bandeira === 'amex' ? 'CVV (4)' : 'CVV (3)'} inputMode="numeric" value={cvv} onChange={(e) => setCvv(onlyDigits(e.target.value).slice(0, bandeira === 'amex' ? 4 : 3))} />
+              <input className="input" placeholder="Validade (MM/AA ou MM/AAAA)"
+                value={validade} onChange={(e) => setValidade(formatMMYY(e.target.value))} maxLength={5} />
+              <input className="input" placeholder={bandeira === 'amex' ? 'CVV (4)' : 'CVV (3)'} inputMode="numeric"
+                value={cvv} onChange={(e) => setCvv(onlyDigits(e.target.value).slice(0, bandeira === 'amex' ? 4 : 3))} />
             </div>
 
             <div className="flex justify-between gap-2 pt-3">
-              <button onClick={() => setAbrirCadastroCartao(false)} className="flex-1 border px-4 py-2 rounded-lg">Fechar</button>
-              <button onClick={salvarNovoCartao} disabled={savingCartao} className="flex-1 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700">
+              <button onClick={() => setAbrirCadastroCartao(false)} className="flex-1 border px-4 py-2 rounded-lg">
+                Fechar
+              </button>
+              <button
+                onClick={salvarNovoCartao}
+                disabled={savingCartao}
+                className="flex-1 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700"
+              >
                 {savingCartao ? 'Salvando…' : 'Salvar Cartão'}
               </button>
             </div>
