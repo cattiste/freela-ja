@@ -1,4 +1,3 @@
-// src/components/CartoesContratante.jsx
 import React, { useState } from 'react'
 import ListaCartoes from './ListaCartoes'
 import { toast } from 'react-hot-toast'
@@ -6,11 +5,8 @@ import { getFunctions, httpsCallable } from 'firebase/functions'
 import { getPaymentTokenEfipay } from '@/utils/efipay'
 
 const functionsClient = getFunctions(undefined, 'southamerica-east1')
-const functions = getFunctions(undefined, 'southamerica-east1')
-const excluir = httpsCallable(functions, 'excluirCartao')
-await excluir() // sem payload
 
-export default function CartoesContratante({ uid }) {
+export default function CartoesContratante() {
   const [abrirCadastroCartao, setAbrirCadastroCartao] = useState(false)
 
   // form
@@ -20,15 +16,17 @@ export default function CartoesContratante({ uid }) {
   const [validade, setValidade] = useState('') // MM/AA ou MM/AAAA
   const [cvv, setCvv] = useState('')
   const [bandeira, setBandeira] = useState('') // opcional
-  const [senhaPagamento, setSenhaPagamento] = useState('') // NOVO
+  const [senhaPagamento, setSenhaPagamento] = useState('') // 4–6 dígitos
 
   const [savingCartao, setSavingCartao] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
   // helpers
   const onlyDigits = (s = '') => String(s || '').replace(/\D/g, '')
-  const formatCardNumber = (v = '') => onlyDigits(v).slice(0, 19).replace(/(\d{4})(?=\d)/g, '$1 ').trim()
-  const formatCPF = (v = '') => onlyDigits(v).replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4')
+  const formatCardNumber = (v = '') =>
+    onlyDigits(v).slice(0, 19).replace(/(\d{4})(?=\d)/g, '$1 ').trim()
+  const formatCPF = (v = '') =>
+    onlyDigits(v).replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4')
   const formatMMYY = (v = '') => {
     const d = onlyDigits(v).slice(0, 4)
     if (d.length <= 2) return d
@@ -53,7 +51,6 @@ export default function CartoesContratante({ uid }) {
     return exp > new Date()
   }
 
-  // salvar novo cartão (gera token no front)
   async function salvarNovoCartao() {
     try {
       const numeroDigits = onlyDigits(numeroCartao)
@@ -62,17 +59,20 @@ export default function CartoesContratante({ uid }) {
       const expYear = yyStr.length === 2 ? '20' + yyStr : yyStr
       const cvvDigits = onlyDigits(cvv)
 
-      // validações
       if (!titularNome || cpfDigits.length !== 11) return toast.error('Informe nome e CPF válidos.')
       if (!luhnCheck(numeroDigits)) return toast.error('Número do cartão inválido.')
       if (!isValidExpiry(validade)) return toast.error('Validade inválida.')
       const cvvLen = bandeira === 'amex' ? 4 : 3
       if (cvvDigits.length !== cvvLen) return toast.error(`CVV deve ter ${cvvLen} dígitos.`)
 
+      const senhaDigits = onlyDigits(senhaPagamento)
+      if (senhaDigits.length < 4 || senhaDigits.length > 6) {
+        return toast.error('Senha de pagamento deve ter 4 a 6 dígitos.')
+      }
+
       setSavingCartao(true)
 
-
-      // tokeniza com o SDK da Efí
+      // tokeniza via Efí (com helper que resolve o $gn.ready)
       const token = await getPaymentTokenEfipay({
         number: numeroDigits,
         cvv: cvvDigits,
@@ -82,7 +82,7 @@ export default function CartoesContratante({ uid }) {
         brand: bandeira || null,
       })
 
-      // salva APENAS token + dados + senha (será hasheada no backend)
+      // salva APENAS token + dados do titular; senha é hasheada no backend
       const salvarCartaoFn = httpsCallable(functionsClient, 'salvarCartao')
       await salvarCartaoFn({
         token,
@@ -92,7 +92,7 @@ export default function CartoesContratante({ uid }) {
         brand: bandeira || null,
         expMonth: mmStr.padStart(2, '0'),
         expYear: expYear,
-        senhaPagamento: senhaDigits, // NOVO
+        senhaPagamento: senhaDigits,
       })
 
       toast.success('Cartão cadastrado com sucesso!')
@@ -107,14 +107,12 @@ export default function CartoesContratante({ uid }) {
     }
   }
 
-  // excluir cartão (apaga cartoes/{uid})
   async function excluirCartao() {
     try {
       setDeleting(true)
       const fn = httpsCallable(functionsClient, 'excluirCartao')
       await fn()
       toast.success('Cartão excluído.')
-      // ListaCartoes deve refletir pelo onSnapshot; se não usar snapshot, recarregue a lista aqui.
     } catch (e) {
       console.error('[excluirCartao]', e)
       toast.error(e?.message || 'Não foi possível excluir o cartão.')
@@ -146,60 +144,96 @@ export default function CartoesContratante({ uid }) {
           </div>
         </div>
 
-        {/* Lista atual (exibe tokenizados) */}
+        {/* Lista atual (cartão tokenizado) */}
         <ListaCartoes />
       </div>
 
-      
-    {abrirCadastroCartao && (
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-5 space-y-3">
-          <h3 className="text-lg font-semibold text-orange-700">Cadastrar Cartão</h3>
+      {abrirCadastroCartao && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-5 space-y-3">
+            <h3 className="text-lg font-semibold text-orange-700">Cadastrar Cartão</h3>
 
-             <input className="input" placeholder="Nome do titular"
-            value={titularNome} onChange={(e) => setTitularNome(e.target.value)} />
-          <input className="input" placeholder="CPF do titular" inputMode="numeric"
-            value={titularCpf} onChange={(e) => setTitularCpf(formatCPF(e.target.value))} />
-          <input className="input" placeholder="Número do cartão" inputMode="numeric"
-            value={numeroCartao} onChange={(e) => setNumeroCartao(formatCardNumber(e.target.value))} />
-          <select className="input" value={bandeira} onChange={(e) => setBandeira(e.target.value)}>
-            <option value="">Bandeira… (opcional)</option>
-            <option value="visa">Visa</option>
-            <option value="mastercard">Mastercard</option>
-            <option value="elo">Elo</option>
-            <option value="amex">Amex</option>
-            <option value="hipercard">Hipercard</option>
-          </select>
+            <input
+              className="input"
+              placeholder="Nome do titular"
+              value={titularNome}
+              onChange={(e) => setTitularNome(e.target.value)}
+            />
 
-          <div className="grid grid-cols-2 gap-3">
-            <input className="input" placeholder="Validade (MM/AA ou MM/AAAA)"
-              value={validade} onChange={(e) => setValidade(formatMMYY(e.target.value))} maxLength={5} />
-            <input className="input" placeholder={bandeira === 'amex' ? 'CVV (4)' : 'CVV (3)'} inputMode="numeric"
-              value={cvv} onChange={(e) => setCvv(onlyDigits(e.target.value).slice(0, bandeira === 'amex' ? 4 : 3))} />
-          </div>
+            <input
+              className="input"
+              placeholder="CPF do titular"
+              inputMode="numeric"
+              value={titularCpf}
+              onChange={(e) => setTitularCpf(formatCPF(e.target.value))}
+            />
 
-          {/* NOVO: senha de pagamento */}
-          <input
-            className="input"
-            type="password"
-            inputMode="numeric"
-            placeholder="Senha de pagamento (4–6 dígitos)"
-            value={senhaPagamento}
-            onChange={(e) => setSenhaPagamento(onlyDigits(e.target.value).slice(0, 6))}
-          />
+            <input
+              className="input"
+              placeholder="Número do cartão"
+              inputMode="numeric"
+              value={numeroCartao}
+              onChange={(e) => setNumeroCartao(formatCardNumber(e.target.value))}
+            />
 
-          <div className="flex justify-between gap-2 pt-3">
-            <button onClick={() => setAbrirCadastroCartao(false)} className="flex-1 border px-4 py-2 rounded-lg">
-              Fechar
-            </button>
-            <button
-              onClick={salvarNovoCartao}
-              disabled={savingCartao}
-              className="flex-1 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700"
+            <select
+              className="input"
+              value={bandeira}
+              onChange={(e) => setBandeira(e.target.value)}
             >
-              {savingCartao ? 'Salvando…' : 'Salvar Cartão'}
-            </button>
+              <option value="">Bandeira… (opcional)</option>
+              <option value="visa">Visa</option>
+              <option value="mastercard">Mastercard</option>
+              <option value="elo">Elo</option>
+              <option value="amex">Amex</option>
+              <option value="hipercard">Hipercard</option>
+            </select>
+
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                className="input"
+                placeholder="Validade (MM/AA ou MM/AAAA)"
+                value={validade}
+                onChange={(e) => setValidade(formatMMYY(e.target.value))}
+                maxLength={5}
+              />
+              <input
+                className="input"
+                placeholder={bandeira === 'amex' ? 'CVV (4)' : 'CVV (3)'}
+                inputMode="numeric"
+                value={cvv}
+                onChange={(e) => setCvv(onlyDigits(e.target.value).slice(0, bandeira === 'amex' ? 4 : 3))}
+              />
+            </div>
+
+            {/* Senha de pagamento */}
+            <input
+              className="input"
+              type="password"
+              inputMode="numeric"
+              placeholder="Senha de pagamento (4–6 dígitos)"
+              value={senhaPagamento}
+              onChange={(e) => setSenhaPagamento(onlyDigits(e.target.value).slice(0, 6))}
+            />
+
+            <div className="flex justify-between gap-2 pt-3">
+              <button
+                onClick={() => setAbrirCadastroCartao(false)}
+                className="flex-1 border px-4 py-2 rounded-lg"
+              >
+                Fechar
+              </button>
+              <button
+                onClick={salvarNovoCartao}
+                disabled={savingCartao}
+                className="flex-1 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700"
+              >
+                {savingCartao ? 'Salvando…' : 'Salvar Cartão'}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
+    </div>
+  )
+}
