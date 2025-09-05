@@ -38,7 +38,7 @@ export function usePagamentoPosAceite() {
   async function gerarPixAposAceite(ch) {
     try {
       const valor = Number((ch.valorDiaria * 1.10).toFixed(2))
-      const gerar = httpsCallable(functionsClient, 'gerarPixAposAceite')
+      const gerar = httpsCallable(functionsClient, 'gerarPixCallable')
       const res = await gerar({ chamadaId: ch.id, valor })
 
       if (!res?.data?.sucesso) throw new Error(res?.data?.erro || 'Erro ao gerar Pix')
