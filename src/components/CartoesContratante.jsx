@@ -9,18 +9,24 @@ const functionsClient = getFunctions(undefined, 'southamerica-east1')
 export default function CartoesContratante({ uid }) {
   const [abrirCadastroCartao, setAbrirCadastroCartao] = useState(false)
 
-  // Campos visíveis
   const [titularNome, setTitularNome] = useState('')
   const [titularCpf, setTitularCpf] = useState('')
   const [numeroCartao, setNumeroCartao] = useState('')
-  const [validade, setValidade] = useState('')
+  const [validade, setValidade] = useState('') // MM/AA ou MM/AAAA
   const [cvv, setCvv] = useState('')
-  const [bandeira, setBandeira] = useState('')
+  const [bandeira, setBandeira] = useState('') // opcional
 
   const [savingCartao, setSavingCartao] = useState(false)
 
-  // Utils de formatação/validação (mantive as suas)
+  // helpers
   const onlyDigits = (s = '') => String(s || '').replace(/\D/g, '')
+  const formatCardNumber = (v = '') => onlyDigits(v).slice(0, 19).replace(/(\d{4})(?=\d)/g, '$1 ').trim()
+  const formatCPF = (v = '') => onlyDigits(v).replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4')
+  const formatMMYY = (v = '') => {
+    const d = onlyDigits(v).slice(0, 4)
+    if (d.length <= 2) return d
+    return d.slice(0, 2) + '/' + d.slice(2)
+  }
   const luhnCheck = (num = '') => {
     const s = onlyDigits(num)
     let sum = 0, dbl = false
@@ -32,87 +38,67 @@ export default function CartoesContratante({ uid }) {
     return s.length >= 12 && s.length <= 19 && (sum % 10 === 0)
   }
   const isValidExpiry = (mmyy = '') => {
-    const m = mmyy.slice(0, 2), y = mmyy.slice(3, 5)
+    const [m, y] = mmyy.split('/')
     const mm = parseInt(m, 10), yy = parseInt(y, 10)
     if (!mm || !yy || mm < 1 || mm > 12) return false
-    const exp = new Date(2000 + yy, mm - 1, 1)
-    exp.setMonth(exp.getMonth() + 1)
+    const fullYear = y.length === 2 ? 2000 + yy : yy
+    const exp = new Date(fullYear, mm - 1, 1); exp.setMonth(exp.getMonth() + 1)
     return exp > new Date()
-  }
-  const formatCardNumber = (v = '') => onlyDigits(v).slice(0, 19).replace(/(\d{4})(?=\d)/g, '$1 ').trim()
-  const formatCPF = (v = '') => onlyDigits(v).replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4')
-  const formatMMYY = (v = '') => {
-    const d = onlyDigits(v).slice(0, 4)
-    if (d.length <= 2) return d
-    return d.slice(0, 2) + '/' + d.slice(2)
   }
 
   async function salvarNovoCartao() {
     try {
-      const identLoaded = !!(window.$gn && typeof window.$gn.getPaymentToken === 'function')
-      if (!identLoaded) {
-        toast.error('SDK da Efí não carregou. Verifique o <script> no index.html com seu Identificador de Conta.')
+      if (!window.$gn || typeof window.$gn.getPaymentToken !== 'function') {
+        toast.error('SDK da Efí não carregou. Confira o <script> no index.html com seu Identificador de Conta.')
         return
       }
-
       const numeroDigits = onlyDigits(numeroCartao)
       const cpfDigits = onlyDigits(titularCpf)
-      const [mmStr, yyStr] = (validade || '').split('/')
-      const mm = parseInt(mmStr, 10)
-      const yy = parseInt(yyStr, 10)
-      const expYear = (yyStr?.length === 2) ? (2000 + yy) : yy
+      const [mmStr = '', yyStr = ''] = (validade || '').split('/')
+      const expYear = yyStr.length === 2 ? '20' + yyStr : yyStr
       const cvvDigits = onlyDigits(cvv)
-      const cvvLen = (bandeira === 'amex') ? 4 : 3
 
-      // Validações mínimas
-      if (!titularNome || !cpfDigits || !numeroDigits || !validade || !cvvDigits) {
-        toast.error('Preencha todos os campos.'); return
-      }
-      if (cpfDigits.length !== 11) { toast.error('CPF inválido.'); return }
-      if (!luhnCheck(numeroDigits)) { toast.error('Número do cartão inválido.'); return }
-      if (!isValidExpiry(validade)) { toast.error('Validade inválida.'); return }
-      if (cvvDigits.length !== cvvLen) { toast.error(`CVV deve ter ${cvvLen} dígitos.`); return }
+      // validações mínimas
+      if (!titularNome || cpfDigits.length !== 11) return toast.error('Informe nome e CPF válidos.')
+      if (!luhnCheck(numeroDigits)) return toast.error('Número do cartão inválido.')
+      if (!isValidExpiry(validade)) return toast.error('Validade inválida.')
+      const cvvLen = bandeira === 'amex' ? 4 : 3
+      if (cvvDigits.length !== cvvLen) return toast.error(`CVV deve ter ${cvvLen} dígitos.`)
 
       setSavingCartao(true)
 
-      // Monta o payload para a Efí
+      // monta payload para tokenização (front)
       const cardData = {
         number: numeroDigits,
         cvv: cvvDigits,
-        expiration_month: String(mm).padStart(2, '0'),
-        expiration_year: String(expYear),
+        expiration_month: mmStr.padStart(2, '0'),
+        expiration_year: expYear,
         holder: titularNome,
-        // brand é opcional; a Efí detecta, mas se quiser usar o select:
-        brand: bandeira || null,
+        brand: bandeira || null, // opcional
       }
 
-      // Tokeniza no front
       const tokenResp = await new Promise((resolve, reject) => {
-        try {
-          window.$gn.ready(function () {
-            window.$gn.getPaymentToken(cardData, function (response) {
-              if (response?.error) reject(new Error(response?.message || 'Falha ao tokenizar o cartão'))
-              else resolve(response)
-            })
+        window.$gn.ready(function () {
+          window.$gn.getPaymentToken(cardData, function (resp) {
+            if (resp?.error) reject(new Error(resp?.message || 'Falha ao tokenizar o cartão'))
+            else resolve(resp)
           })
-        } catch (err) {
-          reject(err)
-        }
+        })
       })
 
       const token = tokenResp?.data?.payment_token || tokenResp?.payment_token
-      if (!token) throw new Error('Token de pagamento não retornado')
+      if (!token) throw new Error('Token não retornado pela Efí')
 
-      // Chama sua callable para salvar o token (em vez de mandar número/cvv)
+      // chama a callable para salvar APENAS o token + dados do titular
       const salvarCartaoFn = httpsCallable(functionsClient, 'salvarCartao')
       await salvarCartaoFn({
         token,
         titularNome,
         titularCpf: cpfDigits,
-        brand: bandeira || null,
         last4: numeroDigits.slice(-4),
-        expMonth: String(mm).padStart(2, '0'),
-        expYear: String(expYear),
+        brand: bandeira || null,
+        expMonth: mmStr.padStart(2, '0'),
+        expYear: expYear,
       })
 
       toast.success('Cartão cadastrado com sucesso!')
