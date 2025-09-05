@@ -203,5 +203,3 @@ export default function CartoesContratante({ uid }) {
         </div>
       </div>
     )}
-  )
-}
