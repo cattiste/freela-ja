@@ -1,4 +1,3 @@
-// src/pages/ChamadasContratante.jsx
 import React, { useEffect, useMemo, useState } from 'react'
 import {
   collection,
@@ -15,24 +14,12 @@ import { toast } from 'react-hot-toast'
 import AvaliacaoContratante from '@/components/AvaliacaoContratante'
 import MensagensRecebidasContratante from '@/components/MensagensRecebidasContratante'
 import { useChamadaFlags } from '@/hooks/useChamadaFlags'
-import { getFunctions, httpsCallable } from 'firebase/functions'
 
 const STATUS_LISTA = [
   'pendente', 'aceita', 'confirmada', 'checkin_freela',
   'em_andamento', 'checkout_freela', 'concluido',
   'finalizada', 'cancelada', 'cancelada pelo freela', 'pago'
 ]
-
-const STATUS_CANCELAVEIS = new Set([
-  'pendente',
-  'aceita',
-  'confirmada',
-  'checkin_freela',
-  'em_andamento',
-  'checkout_freela',
-  'concluido',
-  'pago'
-])
 
 export default function ChamadasContratante({ contratante }) {
   const { usuario } = useAuth()
@@ -89,7 +76,6 @@ export default function ChamadasContratante({ contratante }) {
 
 function ChamadaContratanteItem({ ch, estab }) {
   const {
-    pagamentoOk,
     podeCheckinContratante,
     podeCheckoutContratante,
     aguardandoPix,
@@ -102,12 +88,7 @@ function ChamadaContratanteItem({ ch, estab }) {
         canceladaPor: 'contratante',
         canceladaEm: serverTimestamp()
       })
-      try {
-        await updateDoc(doc(db, 'pagamentos_usuarios', ch.id), {
-          status: 'cancelada',
-          atualizadoEm: serverTimestamp()
-        })
-      } catch {}
+      // opcional: refletir em espelho se você usa
       toast.success('❌ Chamada cancelada.')
     } catch (e) {
       console.error(e)
@@ -141,55 +122,6 @@ function ChamadaContratanteItem({ ch, estab }) {
     }
   }
 
-  async function pagarComCartao() {
-    try {
-      const valorDiaria = Number(ch.valorDiaria || 0)
-      const valorTotal = +(valorDiaria * 1.10)
-
-      const functions = getFunctions()
-      const cobrar = httpsCallable(functions, 'cobrarCartaoAposAceite')
-      const res = await cobrar({
-        uidContratante: estab?.uid,
-        valorTotal,
-        descricao: 'Chamada Freela'
-      })
-      if (!res?.data?.sucesso) throw new Error('Falha ao processar o pagamento do cartão.')
-
-      await updateDoc(doc(db, 'chamadas', ch.id), {
-        metodoPagamento: 'cartao',
-        pagamentoStatus: 'confirmado',
-        status: 'pago',
-        pagoEm: serverTimestamp()
-      })
-      toast.success('✅ Pagamento com cartão confirmado!')
-    } catch (e) {
-      console.error('[pagarComCartao]', e)
-      toast.error(e?.message || 'Erro ao pagar com cartão.')
-    }
-  }
-
-  async function gerarPix() {
-    try {
-      const valorDiaria = Number(ch.valorDiaria || 0)
-      const valorContratante = +(valorDiaria * 1.10)
-      const functions = getFunctions()
-      const gerar = httpsCallable(functions, 'gerarPixCallable')
-      const nome = estab?.nome || 'Pagador'
-      const documento = (estab?.cpf || estab?.cnpj || '00000000191')
-
-      const r = await gerar({
-        chamadaId: ch.id,
-        valor: valorContratante,
-        pagador: { nome, documento }
-      })
-      if (!r?.data?.sucesso) throw new Error(r?.data?.message || 'Falha ao gerar Pix.')
-      toast.success('🔗 Pix gerado! Escaneie o QR ou use Copia-e-Cola.')
-    } catch (e) {
-      console.error('[gerarPix]', e)
-      toast.error(e?.message || 'Erro ao gerar Pix.')
-    }
-  }
-
   return (
     <div className="bg-white shadow p-4 rounded-xl mb-4 border space-y-2">
       <h2 className="font-semibold text-orange-600">Chamada #{String(ch.id).slice(-5)}</h2>
@@ -202,44 +134,15 @@ function ChamadaContratanteItem({ ch, estab }) {
 
       <MensagensRecebidasContratante chamadaId={ch.id} />
 
-      {ch.status === 'concluido' && !ch.avaliadoPeloContratante && (
-        <AvaliacaoContratante chamada={ch} />
-      )}
-
-      {(ch.qrCodePix || ch.copiaColaPix) && (
-        <div className="bg-gray-50 border rounded-lg p-2 text-center">
-          <p className="font-semibold text-green-600">✅ Pix gerado</p>
-          {ch.qrCodePix && <img src={ch.qrCodePix} alt="QR Code Pix" className="mx-auto w-40" />}
-          {ch.copiaColaPix && <p className="text-xs break-all">{ch.copiaColaPix}</p>}
-          {aguardandoPix && <p className="text-xs text-yellow-700 mt-1">Aguardando pagamento…</p>}
+      {/* Se quiser, pode esconder completamente infos de Pix aqui.
+          Aguardando Pix vira só um aviso discreto: */}
+      {aguardandoPix && (
+        <div className="text-xs text-yellow-700 bg-yellow-50 border rounded p-2">
+          Aguardando confirmação do pagamento…
         </div>
       )}
 
-      {!pagamentoOk && (
-        <div className="flex flex-col sm:flex-row gap-2">
-          <button
-            onClick={pagarComCartao}
-            className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
-          >
-            💳 Pagar com Cartão
-          </button>
-          <button
-            onClick={gerarPix}
-            className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-          >
-            💸 Gerar Pix
-          </button>
-          {STATUS_CANCELAVEIS.has(ch.status) && (
-            <button
-              onClick={cancelarChamada}
-              className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300"
-            >
-              ❌ Cancelar
-            </button>
-          )}
-        </div>
-      )}
-
+      {/* Ações: **sem** pagamento; apenas check-ins/outs e cancelar */}
       <div className="flex flex-col sm:flex-row gap-2">
         <button
           onClick={confirmarCheckInFreela}
@@ -256,10 +159,22 @@ function ChamadaContratanteItem({ ch, estab }) {
         >
           ⏳ Confirmar Check-out
         </button>
+
+        {/* Cancelar: sempre disponível */}
+        <button
+          onClick={cancelarChamada}
+          className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300"
+        >
+          ❌ Cancelar
+        </button>
       </div>
 
       {(ch.status === 'concluido' || ch.status === 'finalizada') && (
         <span className="text-green-600 font-bold block text-center">✅ Finalizada</span>
+      )}
+
+      {ch.status === 'concluido' && !ch.avaliadoPeloContratante && (
+        <AvaliacaoContratante chamada={ch} />
       )}
     </div>
   )

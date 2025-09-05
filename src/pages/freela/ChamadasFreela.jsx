@@ -1,4 +1,3 @@
-// src/pages/ChamadasFreela.jsx
 import React from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useChamadasDoFreela } from '@/hooks/useChamadasStream'
@@ -43,7 +42,6 @@ export default function ChamadasFreela() {
 
 function ChamadaItem({ ch }) {
   const {
-    pagamentoOk,
     podeVerEndereco,
     podeCheckinFreela,
     podeCheckoutFreela,
@@ -78,6 +76,20 @@ function ChamadaItem({ ch }) {
     }
   }
 
+  async function cancelarChamada() {
+    try {
+      await updateDoc(doc(db, 'chamadas', ch.id), {
+        status: 'cancelada pelo freela',
+        canceladaPor: 'freela',
+        canceladaEm: serverTimestamp(),
+      })
+      toast.success('❌ Chamada cancelada.')
+    } catch (e) {
+      console.error(e)
+      toast.error('Erro ao cancelar chamada.')
+    }
+  }
+
   return (
     <div className="bg-white border rounded-xl p-4 mb-4 space-y-2 shadow">
       <h2 className="font-semibold text-orange-600">Chamada #{String(ch.id).slice(-5)}</h2>
@@ -102,7 +114,7 @@ function ChamadaItem({ ch }) {
         </MapContainer>
       ) : aguardandoPix ? (
         <div className="text-sm p-2 rounded bg-yellow-50">
-          Aguardando pagamento via Pix… escaneie o QR ou use Copia-e-Cola.
+          Aguardando confirmação do pagamento…
         </div>
       ) : (
         <div className="text-sm p-2 rounded bg-gray-100">
@@ -110,7 +122,7 @@ function ChamadaItem({ ch }) {
         </div>
       )}
 
-      <div className="flex gap-2 mt-2">
+      <div className="flex flex-col sm:flex-row gap-2 mt-2">
         <button
           onClick={fazerCheckin}
           className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
@@ -124,6 +136,13 @@ function ChamadaItem({ ch }) {
           disabled={!podeCheckoutFreela}
         >
           ⏳ Fazer Check-out
+        </button>
+        {/* Cancelar: sempre disponível */}
+        <button
+          onClick={cancelarChamada}
+          className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300"
+        >
+          ❌ Cancelar
         </button>
       </div>
 
