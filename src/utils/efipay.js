@@ -1,4 +1,15 @@
 // src/utils/efipay.js
+import { getPaymentTokenEfipay } from '@/utils/efipay'
+
+const token = await getPaymentTokenEfipay({
+  number: numeroDigits,
+  cvv: cvvDigits,
+  expiration_month: mm,
+  expiration_year: yyyy,
+  holder: titularNome,
+  brand: bandeira || null,
+})
+
 export function efipayReady() {
   return new Promise((resolve, reject) => {
     const MAX_TRIES = 50; // ~5s

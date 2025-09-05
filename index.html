@@ -28,7 +28,9 @@
     var v=parseInt(Math.random()*1000000);
     s.src='https://cobrancas.api.efipay.com.br/v1/cdn/'+ ident +'/'+ v;
     s.async=false;s.id=ident;
+    if (!document.getElementById(ident)) {
     document.getElementsByTagName('head')[0].appendChild(s);
+    }
     window.$gn = { validForm:true, processed:false, done:{}, ready:function(fn){ $gn.done = fn; } };
   })('ddf01373bd8462f080f08de872edc311');
 </script>

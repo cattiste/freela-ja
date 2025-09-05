@@ -6,6 +6,9 @@ import { getFunctions, httpsCallable } from 'firebase/functions'
 import { getPaymentTokenEfipay } from '@/utils/efipay'
 
 const functionsClient = getFunctions(undefined, 'southamerica-east1')
+const functions = getFunctions(undefined, 'southamerica-east1')
+const excluir = httpsCallable(functions, 'excluirCartao')
+await excluir() // sem payload
 
 export default function CartoesContratante({ uid }) {
   const [abrirCadastroCartao, setAbrirCadastroCartao] = useState(false)
