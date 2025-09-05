@@ -1,44 +1,61 @@
 // src/pages/HistoricoChamadasContratante.jsx
 import React, { useEffect, useMemo, useState } from 'react'
-import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore'
+import {
+  collection,
+  onSnapshot,
+  query,
+  where,
+  orderBy,
+} from 'firebase/firestore'
 import { db } from '@/firebase'
+import { useAuth } from '@/context/AuthContext'
 
 export default function HistoricoChamadasContratante({ contratante }) {
-  const [chamadas, setChamadas] = useState([])
+  const { usuario } = useAuth()
+  const estab = contratante || usuario
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!contratante?.uid) return
+    if (!estab?.uid) return
+    setLoading(true)
 
     // Tudo que NÃO é mais “ativo” vai para o histórico
     const q = query(
       collection(db, 'chamadas'),
-      where('contratanteUid', '==', contratante.uid),
+      where('contratanteUid', '==', estab.uid),
       where('status', 'in', ['concluido', 'finalizada', 'cancelada', 'cancelada pelo freela']),
-      orderBy('atualizadoEm', 'desc')
+      orderBy('atualizadoEm', 'desc') // precisa do índice composto
     )
 
     const unsub = onSnapshot(q, (snap) => {
-      const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      setChamadas(rows)
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      setRows(docs)
+      setLoading(false)
+    }, (err) => {
+      console.error('[HistoricoChamadasContratante] onSnapshot:', err)
+      setRows([])
+      setLoading(false)
     })
 
     return () => unsub()
-  }, [contratante?.uid])
+  }, [estab?.uid])
 
   const linhas = useMemo(() => {
-    const tsVal = (t) => t?.toDate?.() || null
-    return [...chamadas].sort((a, b) => {
-      const da = tsVal(a.pagoEm) || tsVal(a.checkoutContratanteEm) || tsVal(a.checkoutFreelaEm) || tsVal(a.atualizadoEm) || new Date(0)
-      const db_ = tsVal(b.pagoEm) || tsVal(b.checkoutContratanteEm) || tsVal(b.checkoutFreelaEm) || tsVal(b.atualizadoEm) || new Date(0)
-      return db_ - da
-    })
-  }, [chamadas])
+    // já vem ordenado, mas garantimos:
+    const ts = (d) => d?.toMillis?.() ?? (d?.seconds ? d.seconds * 1000 : 0)
+    return [...rows].sort((a, b) => ts(b.atualizadoEm) - ts(a.atualizadoEm))
+  }, [rows])
 
   const fmt = (ts) => {
     try {
       const d = ts?.toDate?.()
       return d ? d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—'
     } catch { return '—' }
+  }
+
+  if (loading) {
+    return <div className="text-center mt-6 text-gray-500">🔄 Carregando histórico…</div>
   }
 
   if (!linhas.length) {
@@ -51,7 +68,7 @@ export default function HistoricoChamadasContratante({ contratante }) {
         <thead className="bg-orange-100 text-orange-800 text-left">
           <tr>
             <th className="px-4 py-2">Freela</th>
-            <th className="px-4 py-2">Data/Hora</th>
+            <th className="px-4 py-2">Atualizado em</th>
             <th className="px-4 py-2">Valor</th>
             <th className="px-4 py-2">Pagamento</th>
             <th className="px-4 py-2">Status</th>
@@ -59,14 +76,16 @@ export default function HistoricoChamadasContratante({ contratante }) {
         </thead>
         <tbody>
           {linhas.map((c) => {
-            const dataRef = c.pagoEm || c.checkoutContratanteEm || c.checkoutFreelaEm || c.atualizadoEm
             const valor = typeof c.valorDiaria === 'number' ? (c.valorDiaria * 1.10) : c.valor || null // se contratante paga diária + 10%
-            const pago = (String(c.pagamentoStatus || '').toLowerCase() === 'confirmado') || (String(c.status || '').toLowerCase() === 'pago')
+            const pago = (
+              String(c.pagamentoStatus || '').toLowerCase() === 'confirmado' ||
+              String(c.status || '').toLowerCase() === 'pago'
+            )
 
             return (
               <tr key={c.id} className="border-t border-gray-200 hover:bg-orange-50 transition">
                 <td className="px-4 py-2">{c.freelaNome || '—'}</td>
-                <td className="px-4 py-2">{fmt(dataRef)}</td>
+                <td className="px-4 py-2">{fmt(c.atualizadoEm || c.pagoEm || c.checkoutContratanteEm || c.checkoutFreelaEm)}</td>
                 <td className="px-4 py-2">{valor ? `R$ ${valor.toFixed(2)}` : '—'}</td>
                 <td className="px-4 py-2">
                   {pago ? (
