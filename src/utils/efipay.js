@@ -1,131 +1,120 @@
 // src/utils/efipay.js
 
-function exists(fn) {
-  return typeof fn === 'function';
-}
-
-function hasOldCheckout() {
-  return (
-    typeof window !== 'undefined' &&
-    window.$gn &&
-    window.$gn.checkout &&
-    exists(window.$gn.checkout.getPaymentToken)
-  );
-}
-
 /**
- * Espera o SDK da Efí ficar pronto (cobre todas as variantes).
+ * Espera o SDK da Efipay ficar pronto
  */
 export function efipayReady() {
   return new Promise((resolve, reject) => {
+    // Verifica se já está carregado
+    if (typeof window !== 'undefined' && window.EfiPay && typeof window.EfiPay.getPaymentToken === 'function') {
+      return resolve(window.EfiPay);
+    }
+
     let tries = 0;
-    const MAX_TRIES = 100; // ~10s
+    const MAX_TRIES = 50; // 5 segundos
 
-    const okNew = () =>
-      typeof window !== 'undefined' &&
-      window.EfiPay &&
-      (exists(window.EfiPay.getPaymentToken) || exists(window.EfiPay.getInstallments));
-
-    const okOldImmediate = () =>
-      typeof window !== 'undefined' &&
-      window.$gn &&
-      exists(window.$gn.ready);
-
-    const tick = () => {
-      // API nova
-      if (okNew()) {
-        return resolve({ mode: 'new', EfiPay: window.EfiPay });
-      }
-
-      // API antiga: já tem $gn.ready disponível
-      if (okOldImmediate()) {
-        try {
-          window.$gn.ready(function (checkoutMaybe) {
-            // 1) Variante que passa "checkout"
-            if (checkoutMaybe && exists(checkoutMaybe.getPaymentToken)) {
-              return resolve({ mode: 'old', gn: checkoutMaybe });
-            }
-            // 2) Variante sem parâmetro: usa $gn.checkout
-            if (hasOldCheckout()) {
-              return resolve({ mode: 'old', gn: window.$gn.checkout });
-            }
-            // 3) Ainda não populou: dá mais tentativas curtas
-            let innerTries = 0;
-            const inner = setInterval(() => {
-              if (hasOldCheckout()) {
-                clearInterval(inner);
-                return resolve({ mode: 'old', gn: window.$gn.checkout });
-              }
-              if (++innerTries > 30) { // +3s
-                clearInterval(inner);
-                reject(new Error('checkout.getPaymentToken não disponível após $gn.ready.'));
-              }
-            }, 100);
-          });
-          return;
-        } catch (e) {
-          // segue tentando
-        }
+    const checkReady = () => {
+      if (typeof window !== 'undefined' && window.EfiPay && typeof window.EfiPay.getPaymentToken === 'function') {
+        return resolve(window.EfiPay);
       }
 
       if (++tries > MAX_TRIES) {
-        return reject(new Error('SDK da Efí não ficou pronto (nem EfiPay nem $gn). Verifique o <script> e o Identificador.'));
+        return reject(new Error('SDK da Efipay não carregado. Verifique o script no HTML.'));
       }
-      setTimeout(tick, 100);
+
+      setTimeout(checkReady, 100);
     };
 
-    tick();
+    checkReady();
   });
 }
 
 /**
- * Gera payment_token, compatível com as duas APIs.
- * cardData: { number, cvv, expiration_month, expiration_year, holder, brand? }
+ * Gera payment_token usando a nova API da Efipay
  */
 export async function getPaymentTokenEfipay(cardData) {
-  const ctx = await efipayReady();
-
-  // API nova
-  if (ctx.mode === 'new' && exists(ctx.EfiPay.getPaymentToken)) {
-    const token = await ctx.EfiPay.getPaymentToken(cardData);
-    if (!token) throw new Error('Token vazio retornado pela EfiPay.');
-    return token;
-  }
-
-  // API antiga ($gn): ctx.gn sempre terá getPaymentToken
-  return new Promise((resolve, reject) => {
-    try {
-      ctx.gn.getPaymentToken(cardData, (resp) => {
-        if (resp?.error) {
-          reject(new Error(resp?.message || 'Falha ao tokenizar ($gn.getPaymentToken).'));
+  try {
+    const EfiPay = await efipayReady();
+    
+    return new Promise((resolve, reject) => {
+      EfiPay.getPaymentToken(cardData, (response) => {
+        if (response && response.payment_token) {
+          resolve(response.payment_token);
+        } else if (response && response.error) {
+          reject(new Error(response.error_description || 'Erro ao gerar token'));
         } else {
-          resolve(resp?.data?.payment_token || resp?.payment_token);
+          reject(new Error('Resposta inválida do SDK Efipay'));
         }
       });
-    } catch (e) {
-      reject(new Error(e?.message || 'Erro ao chamar $gn.getPaymentToken.'));
-    }
-  });
+    });
+  } catch (error) {
+    throw new Error(`Falha no getPaymentToken: ${error.message}`);
+  }
 }
 
 /**
- * (Opcional) parcelas – compatível com as duas APIs
+ * Obtém parcelas (opcional)
  */
 export async function getInstallmentsEfipay(params = {}) {
-  const ctx = await efipayReady();
+  try {
+    const EfiPay = await efipayReady();
+    
+    return new Promise((resolve, reject) => {
+      EfiPay.getInstallments(params, (response) => {
+        if (response && !response.error) {
+          resolve(response);
+        } else {
+          reject(new Error(response?.error_description || 'Erro ao obter parcelas'));
+        }
+      });
+    });
+  } catch (error) {
+    throw new Error(`Falha no getInstallments: ${error.message}`);
+  }
+}
 
-  if (ctx.mode === 'new' && exists(ctx.EfiPay.getInstallments)) {
-    return await ctx.EfiPay.getInstallments(params);
+/**
+ * Função auxiliar para validar dados do cartão
+ */
+export function validarCartao(cardData) {
+  const errors = [];
+
+  if (!cardData.number || cardData.number.replace(/\s/g, '').length < 13) {
+    errors.push('Número do cartão inválido');
   }
 
-  return new Promise((resolve, reject) => {
-    try {
-      ctx.gn.getInstallments(params, (resp) => {
-        if (resp?.error) reject(new Error(resp?.message || 'Falha ao obter parcelas ($gn).'));
-        else resolve(resp);
-      });
-    } catch (e) {
-      reject(new Error(e?.message || 'Erro ao chamar $gn.getInstallments.'));
-    }
-  });
+  if (!cardData.cvv || cardData.cvv.length < 3) {
+    errors.push('CVV inválido');
+  }
+
+  if (!cardData.expiration_month || !cardData.expiration_year) {
+    errors.push('Data de validade inválida');
+  }
+
+  if (!cardData.holder || cardData.holder.trim().length < 2) {
+    errors.push('Nome do titular inválido');
+  }
+
+  if (!cardData.brand) {
+    errors.push('Bandeira do cartão não selecionada');
+  }
+
+  return errors;
+}
+
+/**
+ * Função para detectar bandeira do cartão pelo número
+ */
+export function detectarBandeira(numeroCartao) {
+  const num = numeroCartao.replace(/\s/g, '');
+  
+  if (/^4/.test(num)) return 'visa';
+  if (/^5[1-5]/.test(num)) return 'mastercard';
+  if (/^3[47]/.test(num)) return 'amex';
+  if (/^6(?:011|5)/.test(num)) return 'discover';
+  if (/^3(?:0[0-5]|[68])/.test(num)) return 'diners';
+  if (/^(?:636368|636369|438935|504175|451416|636297|5067|4576|4011|506699)/.test(num)) return 'elo';
+  if (/^(606282|3841)/.test(num)) return 'hipercard';
+  
+  return '';
 }

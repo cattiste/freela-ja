@@ -9,6 +9,7 @@ export default function CartoesContratante() {
   const { usuario } = useAuth()
   const [abrirCadastroCartao, setAbrirCadastroCartao] = useState(false)
   const [carregando, setCarregando] = useState(false)
+  const [sdkPronto, setSdkPronto] = useState(false)
   const [form, setForm] = useState({
     nome: '',
     numero: '',
@@ -17,6 +18,20 @@ export default function CartoesContratante() {
     bandeira: ''
   })
   const [cartaoSalvo, setCartaoSalvo] = useState(null)
+
+  // Verifica se o SDK está carregado
+  useEffect(() => {
+    const checkSDK = () => {
+      if (typeof window !== 'undefined' && window.EfiPay) {
+        setSdkPronto(true)
+        console.log('SDK Efipay carregado')
+      } else {
+        setTimeout(checkSDK, 100)
+      }
+    }
+    
+    checkSDK()
+  }, [])
 
   // Funções de formatação
   const formatCardNumber = (value) => {
@@ -51,7 +66,12 @@ export default function CartoesContratante() {
     setForm({ ...form, [e.target.name]: value });
   }
 
-  async function gerarTokenCartao() {
+   async function gerarTokenCartao() {
+    if (!sdkPronto) {
+      toast.error('Sistema de pagamento ainda não está pronto. Aguarde alguns segundos.')
+      return
+    }
+
     console.log('Cliquei no botão')
     
     const [mes, ano] = form.validade.split('/')
@@ -131,6 +151,11 @@ export default function CartoesContratante() {
           </p>
         ) : (
           <p className="text-sm text-gray-600 mb-2">Nenhum cartão cadastrado.</p>
+        )}
+        {!sdkPronto && (
+          <div className="text-yellow-700 bg-yellow-100 p-2 rounded text-sm mb-4">
+            ⚠️ Carregando sistema de pagamento...
+          </div>
         )}
         <button
           onClick={() => setAbrirCadastroCartao(true)}
