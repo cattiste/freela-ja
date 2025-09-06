@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { db } from '@/services/firebaseConfig'
-import { addDoc, collection, doc, getDoc } from 'firebase/firestore'
+import { addDoc, collection } from 'firebase/firestore'
 import { toast } from 'react-toastify'
 import { useAuth } from '@/context/AuthContext'
 import { loadEfipayScript } from '@/utils/loadEfipayScript'
@@ -19,21 +19,23 @@ const CartoesContratante = () => {
   const [efiPronta, setEfiPronta] = useState(false)
 
   useEffect(() => {
-  const initEfipay = async () => {
-    try {
-      await loadEfipayScript();
-      const ctx = await import('@/utils/efipay').then((mod) => mod.efipayReady());
-      console.log('✅ SDK EfiPay pronta!', ctx);
-      setEfiPronta(true);
-    } catch (err) {
-      console.error('Erro ao inicializar SDK EfiPay:', err);
-      toast.error('Erro ao carregar sistema de pagamento.');
-    }
-  };
+    loadEfipayScript().then(() => {
+      const interval = setInterval(() => {
+        if (typeof window.$gn !== 'undefined' && typeof window.$gn.ready === 'function') {
+          window.$gn.ready(function (checkout) {
+            console.log('✅ SDK EfiPay pronta!')
+            setEfiPronta(true)
+            clearInterval(interval)
+          })
+        }
+      }, 100)
 
-  initEfipay();
-}, []);
-
+      setTimeout(() => {
+        clearInterval(interval)
+        if (!efiPronta) toast.error('❌ Falha ao iniciar SDK EfiPay.')
+      }, 7000)
+    })
+  }, [])
 
   const handleSalvarCartao = async () => {
     if (!efiPronta) {
@@ -159,14 +161,11 @@ const CartoesContratante = () => {
               </button>
               <button
                 onClick={handleSalvarCartao}
-                className={`px-4 py-2 rounded text-white ${
-                 efiPronta ? 'bg-orange-600 hover:bg-orange-700' : 'bg-gray-400 cursor-not-allowed'
-                }`}
                 disabled={!efiPronta}
+                className={`px-4 py-2 rounded text-white ${efiPronta ? 'bg-orange-600' : 'bg-gray-400 cursor-not-allowed'}`}
               >
                 Salvar Cartão
               </button>
-
             </div>
           </div>
         </div>
