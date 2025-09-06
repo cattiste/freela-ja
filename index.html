@@ -25,23 +25,20 @@
 <!-- Efí – Auto loader com fallback (PROD -> HOMOLOG) -->
 <script type="text/javascript">
   (function(ident){
-    var s=document.createElement('script');s.type='text/javascript';
+    var s=document.createElement('script'); s.type='text/javascript';
     var v=parseInt(Math.random()*1000000);
     s.src='https://cobrancas.api.efipay.com.br/v1/cdn/'+ ident +'/'+ v;
-    s.async=false;s.id=ident;
-    if (!document.getElementById(ident)) {
-      document.getElementsByTagName('head')[0].appendChild(s);
-    }
-    window.$gn = window.$gn || { 
-      validForm:true, 
-      processed:false, 
-      done:{}, 
-      ready:function(fn){ 
-        try { $gn.done = fn; if (typeof fn === 'function') fn(); } catch(e){} 
-      } 
+    s.async=false; s.id=ident;
+    if (!document.getElementById(ident)) document.head.appendChild(s);
+
+    // NÃO sobrescreva se já existir; só define se faltar
+    window.$gn = window.$gn || {
+      validForm:true, processed:false, done:{},
+      ready:function(fn){ try{ $gn.done = fn; if (typeof fn==='function') fn(); }catch(e){} }
     };
-  })('ddf01373bd8462f080f08de872edc311'); 
+  })('ddf01373bd8462f080f08de872edc311'); /* seu identificador */
 </script>
+
 
   </head>
   <body>

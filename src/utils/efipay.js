@@ -1,67 +1,99 @@
+// src/utils/efipay.js
+
+function exists(fn) {
+  return typeof fn === 'function';
+}
+
+/**
+ * Espera o SDK da Efí estar pronto.
+ * Considera tanto a API nova (window.EfiPay) quanto a antiga ($gn).
+ */
 export function efipayReady() {
   return new Promise((resolve, reject) => {
-    const MAX_TRIES = 50; // ~5s (50 * 100ms)
+    const MAX_TRIES = 70; // ~7s
     let tries = 0;
 
-    const wait = () => {
-      const gn = window && window.$gn;
-      if (gn && typeof gn.ready === 'function') {
-        try {
-          gn.ready(() => resolve(gn));
-        } catch (e) {
-          reject(e);
+    const check = () => {
+      const hasNew = window?.EfiPay && (exists(window.EfiPay.getPaymentToken) || exists(window.EfiPay.getInstallments));
+      const hasOld = window?.$gn && exists(window.$gn.ready);
+
+      if (hasNew || hasOld) {
+        if (hasOld) {
+          // garante que o ready é chamado
+          try {
+            window.$gn.ready(() => resolve({ mode: 'old', gn: window.$gn }));
+            return;
+          } catch (e) {
+            // se der erro no ready, ainda resolvemos no modo new caso exista
+          }
         }
-      } else if (tries++ < MAX_TRIES) {
-        setTimeout(wait, 100);
-      } else {
-        reject(
-          new Error(
-            'SDK da Efí não carregou. Confira o <script> no index.html e o Identificador de Conta.'
-          )
-        );
+        if (hasNew) return resolve({ mode: 'new', EfiPay: window.EfiPay });
       }
+
+      if (tries++ < MAX_TRIES) setTimeout(check, 100);
+      else reject(new Error('SDK da Efí não ficou pronto (nem EfiPay nem $gn). Verifique o <script> e o Identificador.'));
     };
 
-    wait();
+    check();
   });
 }
 
 /**
- * Gera o payment_token com o SDK da Efí.
- * @param {{number:string, cvv:string, expiration_month:string, expiration_year:string, holder:string, brand?:string|null}} cardData
- * @returns {Promise<string>} payment_token
+ * Gera payment_token, compatível com as duas APIs.
+ * cardData: { number, cvv, expiration_month, expiration_year, holder, brand? }
  */
 export async function getPaymentTokenEfipay(cardData) {
-  const gn = await efipayReady();
-  return new Promise((resolve, reject) => {
-    gn.getPaymentToken(cardData, (resp) => {
-      if (resp && resp.error) {
-        reject(new Error(resp.message || 'Falha ao tokenizar o cartão'));
-      } else {
-        resolve(resp?.data?.payment_token || resp?.payment_token);
-      }
-    });
-  });
-}
+  const ctx = await efipayReady();
 
-/**
- * (Opcional) Obtém parcelas pela Efí.
- * @param {{brand?:string, total?:number}} params
- * @returns {Promise<any>}
- */
-export async function getInstallmentsEfipay(params = {}) {
-  const gn = await efipayReady();
+  // API nova
+  if (ctx.mode === 'new' && exists(ctx.EfiPay.getPaymentToken)) {
+    try {
+      const token = await ctx.EfiPay.getPaymentToken(cardData);
+      if (!token) throw new Error('Token vazio retornado pela EfiPay.');
+      return token;
+    } catch (e) {
+      throw new Error(e?.message || 'Falha ao tokenizar (EfiPay.getPaymentToken).');
+    }
+  }
+
+  // API antiga ($gn)
   return new Promise((resolve, reject) => {
     try {
-      gn.getInstallments(params, (resp) => {
-        if (resp && resp.error) {
-          reject(new Error(resp.message || 'Falha ao obter parcelas'));
+      ctx.gn.getPaymentToken(cardData, (resp) => {
+        if (resp?.error) {
+          reject(new Error(resp?.message || 'Falha ao tokenizar ($gn.getPaymentToken).'));
         } else {
-          resolve(resp);
+          resolve(resp?.data?.payment_token || resp?.payment_token);
         }
       });
     } catch (e) {
-      reject(e);
+      reject(new Error(e?.message || 'Erro ao chamar $gn.getPaymentToken.'));
+    }
+  });
+}
+
+/**
+ * (Opcional) parcelas – compatível com as duas APIs
+ */
+export async function getInstallmentsEfipay(params = {}) {
+  const ctx = await efipayReady();
+
+  if (ctx.mode === 'new' && exists(ctx.EfiPay.getInstallments)) {
+    try {
+      return await ctx.EfiPay.getInstallments(params);
+    } catch (e) {
+      throw new Error(e?.message || 'Falha ao obter parcelas (EfiPay).');
+    }
+  }
+
+  return new Promise((resolve, reject) => {
+    try {
+      ctx.gn.getInstallments(params, (resp) => {
+        if (resp?.error) reject(new Error(resp?.message || 'Falha ao obter parcelas ($gn).'));
+        else resolve(resp);
+      });
+    } catch (e) {
+      reject(new Error(e?.message || 'Erro ao chamar $gn.getInstallments.'));
     }
   });
 }
