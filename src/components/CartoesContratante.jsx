@@ -5,12 +5,6 @@ import { getFunctions, httpsCallable } from 'firebase/functions'
 import { getPaymentTokenEfipay } from '@/utils/efipay'
 import { loadEfipayScript } from '@/utils/loadEfipayScript'
 
-useEffect(() => {
-  loadEfipayScript('SEU_ID_DA_CREDENCIAL_EFI')
-    .then(() => console.log('SDK Efipay carregado com sucesso.'))
-    .catch((e) => console.error('Erro ao carregar SDK:', e))
-}, [])
-
 const functionsClient = getFunctions(undefined, 'southamerica-east1')
 
 export default function CartoesContratante() {
@@ -57,6 +51,12 @@ export default function CartoesContratante() {
     const exp = new Date(fullYear, mm - 1, 1); exp.setMonth(exp.getMonth() + 1)
     return exp > new Date()
   }
+
+useEffect(() => {
+  loadEfipayScript('SEU_ID_DA_CREDENCIAL_EFI')
+    .then(() => console.log('SDK Efipay carregado com sucesso.'))
+    .catch((e) => console.error('Erro ao carregar SDK:', e))
+}, [])
 
   async function salvarNovoCartao() {
     try {
