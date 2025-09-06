@@ -19,17 +19,21 @@ const CartoesContratante = () => {
   const [efiPronta, setEfiPronta] = useState(false)
 
   useEffect(() => {
-    loadEfipayScript().then(() => {
-      if (typeof $gn !== 'undefined' && typeof $gn.ready === 'function') {
-        $gn.ready(() => {
-          console.log('✅ SDK EfiPay pronta!')
-          setEfiPronta(true)
-        })
-      } else {
-        toast.error('Erro ao carregar SDK EfiPay.')
-      }
-    })
-  }, [])
+  const initEfipay = async () => {
+    try {
+      await loadEfipayScript();
+      const ctx = await import('@/utils/efipay').then((mod) => mod.efipayReady());
+      console.log('✅ SDK EfiPay pronta!', ctx);
+      setEfiPronta(true);
+    } catch (err) {
+      console.error('Erro ao inicializar SDK EfiPay:', err);
+      toast.error('Erro ao carregar sistema de pagamento.');
+    }
+  };
+
+  initEfipay();
+}, []);
+
 
   const handleSalvarCartao = async () => {
     if (!efiPronta) {
@@ -155,10 +159,14 @@ const CartoesContratante = () => {
               </button>
               <button
                 onClick={handleSalvarCartao}
-                className="px-4 py-2 rounded bg-orange-600 text-white"
+                className={`px-4 py-2 rounded text-white ${
+                 efiPronta ? 'bg-orange-600 hover:bg-orange-700' : 'bg-gray-400 cursor-not-allowed'
+                }`}
+                disabled={!efiPronta}
               >
                 Salvar Cartão
               </button>
+
             </div>
           </div>
         </div>
