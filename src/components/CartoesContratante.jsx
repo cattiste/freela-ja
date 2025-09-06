@@ -53,7 +53,7 @@ export default function CartoesContratante() {
   }
 
 useEffect(() => {
-  loadEfipayScript('SEU_ID_DA_CREDENCIAL_EFI')
+  loadEfipayScript('ddf01373bd8462f080f08de872edc311')
     .then(() => console.log('SDK Efipay carregado com sucesso.'))
     .catch((e) => console.error('Erro ao carregar SDK:', e))
 }, [])
