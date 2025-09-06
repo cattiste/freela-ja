@@ -1,3 +1,4 @@
+
 // src/utils/efipay.js
 
 function exists(fn) {
@@ -19,12 +20,16 @@ export function efipayReady() {
 
       if (hasNew || hasOld) {
         if (hasOld) {
-          // garante que o ready é chamado
+          // garante que o ready é chamado com delay extra
           try {
-            window.$gn.ready(() => resolve({ mode: 'old', gn: window.$gn }));
+            window.$gn.ready(() => {
+              setTimeout(() => {
+                resolve({ mode: 'old', gn: window.$gn });
+              }, 100);
+            });
             return;
           } catch (e) {
-            // se der erro no ready, ainda resolvemos no modo new caso exista
+            // fallback para EfiPay se houver
           }
         }
         if (hasNew) return resolve({ mode: 'new', EfiPay: window.EfiPay });
