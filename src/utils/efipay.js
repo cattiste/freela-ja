@@ -20,16 +20,17 @@ export function efipayReady() {
 
       if (hasNew || hasOld) {
         if (hasOld) {
-          // garante que o ready é chamado com delay extra
           try {
-            window.$gn.ready(() => {
-              setTimeout(() => {
-                resolve({ mode: 'old', gn: window.$gn });
-              }, 100);
+            window.$gn.ready(function (checkout) {
+              if (typeof checkout.getPaymentToken === 'function') {
+                resolve({ mode: 'old', gn: checkout }); // gn agora é checkout
+              } else {
+                reject(new Error('checkout.getPaymentToken não disponível após $gn.ready.'))
+              }
             });
             return;
           } catch (e) {
-            // fallback para EfiPay se houver
+            // fallback para EfiPay
           }
         }
         if (hasNew) return resolve({ mode: 'new', EfiPay: window.EfiPay });
@@ -61,7 +62,7 @@ export async function getPaymentTokenEfipay(cardData) {
     }
   }
 
-  // API antiga ($gn)
+  // API antiga ($gn) - agora usando checkout direto
   return new Promise((resolve, reject) => {
     try {
       ctx.gn.getPaymentToken(cardData, (resp) => {
