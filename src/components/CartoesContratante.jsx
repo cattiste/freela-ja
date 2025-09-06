@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { doc, setDoc } from 'firebase/firestore'
-import { useAuth } from '../../hooks/useAuth' // ✅ corrigido
 import { db } from '../../firebase'
 import { toast } from 'react-toastify'
 import { getPaymentTokenEfipay } from '../../utils/efipay'
+import { useContext } from 'react'
+import { AuthContext } from '../context/AuthContext'
+
+const usuario = useContext(AuthContext)?.usuario
 
 export default function CartoesContratante() {
   const { usuario } = useAuth()
