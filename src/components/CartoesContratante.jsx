@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from 'react'
-import { doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore'
+import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { toast } from 'react-toastify'
 import { useAuth } from '@/context/AuthContext'
@@ -8,8 +9,6 @@ export default function CartoesContratante() {
   const { usuario } = useAuth()
   const [abrirCadastroCartao, setAbrirCadastroCartao] = useState(false)
   const [carregando, setCarregando] = useState(false)
-  const [cartaoSalvo, setCartaoSalvo] = useState(null)
-
   const [form, setForm] = useState({
     nome: '',
     numero: '',
@@ -17,6 +16,7 @@ export default function CartoesContratante() {
     cvv: '',
     bandeira: ''
   })
+  const [cartaoSalvo, setCartaoSalvo] = useState(null)
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -24,12 +24,12 @@ export default function CartoesContratante() {
 
   async function gerarTokenCartao() {
     if (!window.$gn || typeof window.$gn.getPaymentToken !== 'function') {
-      toast.error('SDK Efi não carregada.')
+      toast.error('SDK Efi não carregado.')
       return
     }
 
     const [mes, ano] = form.validade.split('/')
-    if (!mes || !ano || !form.numero || !form.cvv || !form.bandeira || !form.nome) {
+    if (!mes || !ano || !form.numero || !form.cvv || !form.bandeira) {
       toast.error('Preencha todos os campos corretamente.')
       return
     }
@@ -65,13 +65,7 @@ export default function CartoesContratante() {
 
             toast.success('Cartão salvo com sucesso!')
             setAbrirCadastroCartao(false)
-            setForm({
-              nome: '',
-              numero: '',
-              validade: '',
-              cvv: '',
-              bandeira: ''
-            })
+            setForm({})
             carregarCartaoSalvo()
           } catch (e) {
             console.error('[salvarCartao] erro:', e)
@@ -89,7 +83,7 @@ export default function CartoesContratante() {
     })
   }
 
-  async function carregarCartaoSalvo() {
+  const carregarCartaoSalvo = async () => {
     try {
       const docSnap = await getDoc(doc(db, 'cartoes', usuario.uid))
       if (docSnap.exists()) {
@@ -97,17 +91,6 @@ export default function CartoesContratante() {
       }
     } catch (err) {
       console.error('[carregarCartaoSalvo] erro:', err)
-    }
-  }
-
-  async function excluirCartao() {
-    try {
-      await deleteDoc(doc(db, 'cartoes', usuario.uid))
-      setCartaoSalvo(null)
-      toast.success('Cartão excluído com sucesso.')
-    } catch (err) {
-      console.error('[excluirCartao] erro:', err)
-      toast.error('Erro ao excluir cartão.')
     }
   }
 
@@ -123,32 +106,21 @@ export default function CartoesContratante() {
 
       <div className="mt-4">
         <h4 className="text-md font-semibold mb-2">💳 Meus Cartões</h4>
-
         {cartaoSalvo ? (
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <p className="text-sm">
-              Cartão final <strong>{cartaoSalvo.numeroFinal}</strong> ({cartaoSalvo.bandeira})
-            </p>
-            <button
-              onClick={excluirCartao}
-              className="text-red-600 hover:text-red-800 text-sm underline"
-            >
-              Excluir
-            </button>
-          </div>
+          <p className="text-sm mb-2">
+            Cartão final <strong>{cartaoSalvo.numeroFinal}</strong> ({cartaoSalvo.bandeira})
+          </p>
         ) : (
           <p className="text-sm text-gray-600 mb-2">Nenhum cartão cadastrado.</p>
         )}
-
         <button
           onClick={() => setAbrirCadastroCartao(true)}
-          className="mt-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded text-sm"
+          className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded text-sm"
         >
           + Cadastrar Cartão
         </button>
       </div>
 
-      {/* Modal de cadastro de cartão */}
       {abrirCadastroCartao && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-4 space-y-3">
@@ -160,12 +132,11 @@ export default function CartoesContratante() {
                 aria-label="Fechar"
               >✕</button>
             </div>
-
             <input
               type="text"
               placeholder="Nome no cartão"
               name="nome"
-              value={form.nome}
+              value={form.nome ?? ''}
               onChange={handleChange}
               className="w-full border rounded px-3 py-2"
             />
@@ -173,7 +144,7 @@ export default function CartoesContratante() {
               type="text"
               placeholder="Número do cartão"
               name="numero"
-              value={form.numero}
+              value={form.numero ?? ''}
               onChange={handleChange}
               className="w-full border rounded px-3 py-2"
             />
@@ -182,7 +153,7 @@ export default function CartoesContratante() {
                 type="text"
                 placeholder="MM/AA"
                 name="validade"
-                value={form.validade}
+                value={form.validade ?? ''}
                 onChange={handleChange}
                 className="w-1/2 border rounded px-3 py-2"
               />
@@ -190,7 +161,7 @@ export default function CartoesContratante() {
                 type="text"
                 placeholder="CVV"
                 name="cvv"
-                value={form.cvv}
+                value={form.cvv ?? ''}
                 onChange={handleChange}
                 className="w-1/2 border rounded px-3 py-2"
               />
@@ -199,11 +170,10 @@ export default function CartoesContratante() {
               type="text"
               placeholder="Bandeira (visa, mastercard, elo)"
               name="bandeira"
-              value={form.bandeira}
+              value={form.bandeira ?? ''}
               onChange={(e) => setForm({ ...form, bandeira: e.target.value.toLowerCase() })}
               className="w-full border rounded px-3 py-2"
             />
-
             <button
               onClick={gerarTokenCartao}
               className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 rounded disabled:opacity-50"
