@@ -1,5 +1,4 @@
-// src/utils/loadEfipayScript.js
-export function loadEfipayScript(credencialId) {
+export function loadEfipayScript(credencialId = 'ddf01373bd8462f080f08de872edc311') {
   return new Promise((resolve, reject) => {
     if (window.$gn && typeof window.$gn.ready === 'function') {
       return resolve(); // já carregado
