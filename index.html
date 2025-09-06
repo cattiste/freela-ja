@@ -28,18 +28,22 @@
   s.src = 'https://cobrancas.api.efipay.com.br/v1/cdn/ddf01373bd8462f080f08de872edc311/' + v;
   s.async = false;
   s.id = 'ddf01373bd8462f080f08de872edc311';
+
   if (!document.getElementById('ddf01373bd8462f080f08de872edc311')) {
     document.getElementsByTagName('head')[0].appendChild(s);
   }
+
   $gn = {
     validForm: true,
     processed: false,
     done: {},
     ready: function (fn) {
       $gn.done = fn;
+      if ($gn.processed) fn(); // <-- ESSA LINHA FAZ A FUNÇÃO EXECUTAR QUANDO A SDK JÁ ESTIVER PRONTA
     }
   };
 </script>
+
   </head>
   <body>
     <div id="root"></div>

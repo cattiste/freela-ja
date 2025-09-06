@@ -1,173 +1,216 @@
-import { useState } from 'react'
-import { doc, setDoc } from 'firebase/firestore'
+import { useState, useEffect } from 'react'
+import { doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { toast } from 'react-toastify'
 import { useAuth } from '@/context/AuthContext'
-import { getPaymentTokenEfipay } from '@/utils/getPaymentTokenEfipay'
-
 
 export default function CartoesContratante() {
   const { usuario } = useAuth()
   const [abrirCadastroCartao, setAbrirCadastroCartao] = useState(false)
+  const [carregando, setCarregando] = useState(false)
+  const [cartaoSalvo, setCartaoSalvo] = useState(null)
+
   const [form, setForm] = useState({
     nome: '',
     numero: '',
-    expiracao: '',
+    validade: '',
     cvv: '',
     bandeira: ''
   })
-  const [salvando, setSalvando] = useState(false)
 
-  const carregarSDKEfi = () => {
-    return new Promise((resolve, reject) => {
-      if (window.$gn) return resolve()
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
+  }
 
-      const s = document.createElement('script')
-      s.type = 'text/javascript'
-      const v = parseInt(Math.random() * 1000000)
-      s.src = `https://sandbox.gerencianet.com.br/v1/cdn/ddf01373bd8462f080f08de872edc311/${v}`
-      s.async = false
-      s.id = 'sdk-efi'
+  async function gerarTokenCartao() {
+    if (!window.$gn || typeof window.$gn.getPaymentToken !== 'function') {
+      toast.error('SDK Efi não carregada.')
+      return
+    }
 
-      s.onload = () => resolve()
-      s.onerror = () => reject(new Error('Erro ao carregar SDK da Efi'))
-      document.head.appendChild(s)
+    const [mes, ano] = form.validade.split('/')
+    if (!mes || !ano || !form.numero || !form.cvv || !form.bandeira || !form.nome) {
+      toast.error('Preencha todos os campos corretamente.')
+      return
+    }
+
+    setCarregando(true)
+
+    window.$gn.ready(() => {
+      window.$gn.getPaymentToken(
+        {
+          brand: form.bandeira,
+          number: form.numero,
+          cvv: form.cvv,
+          expiration_month: mes,
+          expiration_year: '20' + ano
+        },
+        async (res) => {
+          const token = res?.data?.payment_token
+          if (!token) {
+            toast.error('Token não gerado.')
+            setCarregando(false)
+            return
+          }
+
+          try {
+            await setDoc(doc(db, 'cartoes', usuario.uid), {
+              uid: usuario.uid,
+              nome: form.nome,
+              payment_token: token,
+              bandeira: form.bandeira,
+              numeroFinal: form.numero.slice(-4),
+              criadoEm: new Date()
+            })
+
+            toast.success('Cartão salvo com sucesso!')
+            setAbrirCadastroCartao(false)
+            setForm({
+              nome: '',
+              numero: '',
+              validade: '',
+              cvv: '',
+              bandeira: ''
+            })
+            carregarCartaoSalvo()
+          } catch (e) {
+            console.error('[salvarCartao] erro:', e)
+            toast.error('Erro ao salvar cartão.')
+          } finally {
+            setCarregando(false)
+          }
+        },
+        (erro) => {
+          console.error('Erro ao gerar token:', erro)
+          toast.error('Erro ao gerar token.')
+          setCarregando(false)
+        }
+      )
     })
   }
 
-  const salvarCartao = async () => {
-    if (!usuario?.uid) return
-    const [mes, ano] = form.expiracao.split('/')
-    const cardData = {
-      brand: form.bandeira,
-      holder: form.nome,
-      number: form.numero,
-      expiration_month: mes,
-      expiration_year: ano,
-      cvv: form.cvv
-    }
-
-    setSalvando(true)
+  async function carregarCartaoSalvo() {
     try {
-      await carregarSDKEfi()
-
-      await new Promise((resolve) =>
-        window.$gn.ready(() => resolve())
-      )
-
-      const paymentToken = await new Promise((resolve, reject) => {
-        window.$gn.getPaymentToken(cardData, (error, response) => {
-          if (error) return reject(error)
-          resolve(response?.data?.payment_token)
-        })
-      })
-
-      if (!paymentToken) throw new Error('Token de pagamento não gerado.')
-
-      await setDoc(doc(db, 'cartoes', usuario.uid), {
-        numeroFinal: form.numero.slice(-4),
-        bandeira: form.bandeira,
-        payment_token: paymentToken,
-        uid: usuario.uid
-      })
-
-      toast.success('✅ Cartão salvo com sucesso!')
-      setAbrirCadastroCartao(false)
-    } catch (e) {
-      console.error('[salvarCartao] erro:', e)
-      toast.error(e.message || 'Erro ao salvar cartão.')
-    } finally {
-      setSalvando(false)
+      const docSnap = await getDoc(doc(db, 'cartoes', usuario.uid))
+      if (docSnap.exists()) {
+        setCartaoSalvo(docSnap.data())
+      }
+    } catch (err) {
+      console.error('[carregarCartaoSalvo] erro:', err)
     }
   }
 
-  const atualizarCampo = (campo, valor) =>
-    setForm((f) => ({ ...f, [campo]: valor }))
+  async function excluirCartao() {
+    try {
+      await deleteDoc(doc(db, 'cartoes', usuario.uid))
+      setCartaoSalvo(null)
+      toast.success('Cartão excluído com sucesso.')
+    } catch (err) {
+      console.error('[excluirCartao] erro:', err)
+      toast.error('Erro ao excluir cartão.')
+    }
+  }
+
+  useEffect(() => {
+    if (usuario?.uid) {
+      carregarCartaoSalvo()
+    }
+  }, [usuario])
 
   return (
-    <div className="p-4 max-w-xl mx-auto">
-      <h2 className="text-xl font-bold text-orange-700 mb-4">💳 Meus Cartões</h2>
+    <div className="bg-green-100 text-green-900 p-4 mt-4 rounded-xl shadow-md">
+      <h3 className="text-lg font-semibold mb-2">✅ Documentos verificados com sucesso.</h3>
 
-      <button
-        onClick={() => setAbrirCadastroCartao(true)}
-        className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded shadow"
-      >
-        + Cadastrar Cartão
-      </button>
+      <div className="mt-4">
+        <h4 className="text-md font-semibold mb-2">💳 Meus Cartões</h4>
 
+        {cartaoSalvo ? (
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <p className="text-sm">
+              Cartão final <strong>{cartaoSalvo.numeroFinal}</strong> ({cartaoSalvo.bandeira})
+            </p>
+            <button
+              onClick={excluirCartao}
+              className="text-red-600 hover:text-red-800 text-sm underline"
+            >
+              Excluir
+            </button>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-600 mb-2">Nenhum cartão cadastrado.</p>
+        )}
+
+        <button
+          onClick={() => setAbrirCadastroCartao(true)}
+          className="mt-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded text-sm"
+        >
+          + Cadastrar Cartão
+        </button>
+      </div>
+
+      {/* Modal de cadastro de cartão */}
       {abrirCadastroCartao && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-orange-700">
-                Cadastrar Cartão
-              </h3>
+              <h3 className="text-lg font-semibold text-orange-700">Cadastrar Cartão</h3>
               <button
                 onClick={() => setAbrirCadastroCartao(false)}
                 className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
+                aria-label="Fechar"
+              >✕</button>
             </div>
 
             <input
               type="text"
-              placeholder="Nome impresso"
+              placeholder="Nome no cartão"
+              name="nome"
               value={form.nome}
-              onChange={(e) => atualizarCampo('nome', e.target.value)}
+              onChange={handleChange}
               className="w-full border rounded px-3 py-2"
             />
-
             <input
               type="text"
               placeholder="Número do cartão"
+              name="numero"
               value={form.numero}
-              onChange={(e) => atualizarCampo('numero', e.target.value)}
+              onChange={handleChange}
               className="w-full border rounded px-3 py-2"
             />
-
-            <div className="flex space-x-2">
+            <div className="flex gap-2">
               <input
                 type="text"
                 placeholder="MM/AA"
-                value={form.expiracao}
-                onChange={(e) => atualizarCampo('expiracao', e.target.value)}
+                name="validade"
+                value={form.validade}
+                onChange={handleChange}
                 className="w-1/2 border rounded px-3 py-2"
               />
               <input
                 type="text"
                 placeholder="CVV"
+                name="cvv"
                 value={form.cvv}
-                onChange={(e) => atualizarCampo('cvv', e.target.value)}
+                onChange={handleChange}
                 className="w-1/2 border rounded px-3 py-2"
               />
             </div>
-
             <input
               type="text"
-              placeholder="Bandeira (ex: visa, mastercard)"
+              placeholder="Bandeira (visa, mastercard, elo)"
+              name="bandeira"
               value={form.bandeira}
-              onChange={(e) => atualizarCampo('bandeira', e.target.value)}
+              onChange={(e) => setForm({ ...form, bandeira: e.target.value.toLowerCase() })}
               className="w-full border rounded px-3 py-2"
             />
 
-            <div className="flex justify-between">
-              <button
-                onClick={() => setAbrirCadastroCartao(false)}
-                className="px-4 py-2 border rounded"
-              >
-                Fechar
-              </button>
-              <button
-                onClick={salvarCartao}
-                disabled={salvando}
-                className={`px-4 py-2 rounded text-white ${
-                  salvando ? 'bg-gray-400' : 'bg-orange-600 hover:bg-orange-700'
-                }`}
-              >
-                {salvando ? 'Salvando...' : 'Salvar Cartão'}
-              </button>
-            </div>
+            <button
+              onClick={gerarTokenCartao}
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 rounded disabled:opacity-50"
+              disabled={carregando}
+            >
+              Salvar Cartão
+            </button>
           </div>
         </div>
       )}
