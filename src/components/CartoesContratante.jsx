@@ -1,65 +1,71 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { doc, setDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { toast } from 'react-toastify'
-import { getPaymentTokenEfipay } from '@/utils/efipay'
 import { useAuth } from '@/context/AuthContext'
-import { loadEfipayScript } from '@/utils/loadEfipayScript'
 
 export default function CartoesContratante() {
   const { usuario } = useAuth()
   const [abrirCadastroCartao, setAbrirCadastroCartao] = useState(false)
   const [form, setForm] = useState({
     nome: '',
-    cpf: '',
     numero: '',
     expiracao: '',
     cvv: '',
-    senha: '',
     bandeira: ''
   })
   const [salvando, setSalvando] = useState(false)
 
-  useEffect(() => {
-    if (abrirCadastroCartao) {
-      loadEfipayScript()
-        .then(() => console.log('SDK Efí carregado'))
-        .catch(() => toast.error('Erro ao carregar SDK da Efí'))
-    }
-  }, [abrirCadastroCartao])
+  const carregarSDKEfi = () => {
+    return new Promise((resolve, reject) => {
+      if (window.$gn) return resolve()
 
-  const atualizarCampo = (campo, valor) =>
-    setForm((f) => ({ ...f, [campo]: valor }))
+      const s = document.createElement('script')
+      s.type = 'text/javascript'
+      const v = parseInt(Math.random() * 1000000)
+      s.src = `https://sandbox.gerencianet.com.br/v1/cdn/ddf01373bd8462f080f08de872edc311/${v}`
+      s.async = false
+      s.id = 'sdk-efi'
+
+      s.onload = () => resolve()
+      s.onerror = () => reject(new Error('Erro ao carregar SDK da Efi'))
+      document.head.appendChild(s)
+    })
+  }
 
   const salvarCartao = async () => {
     if (!usuario?.uid) return
-
     const [mes, ano] = form.expiracao.split('/')
-    if (!mes || !ano || form.numero.length < 12 || !form.cvv || !form.senha || !form.nome || !form.cpf) {
-      toast.error('Preencha todos os campos corretamente.')
-      return
-    }
-
     const cardData = {
       brand: form.bandeira,
       holder: form.nome,
-      number: form.numero.replace(/\s/g, ''),
+      number: form.numero,
       expiration_month: mes,
       expiration_year: ano,
-      cvv: form.cvv,
-      cpf: form.cpf,
-      password: form.senha
+      cvv: form.cvv
     }
 
     setSalvando(true)
     try {
-      const payment_token = await getPaymentTokenEfipay(cardData)
-      if (!payment_token) throw new Error('Token de pagamento não gerado.')
+      await carregarSDKEfi()
+
+      await new Promise((resolve) =>
+        window.$gn.ready(() => resolve())
+      )
+
+      const paymentToken = await new Promise((resolve, reject) => {
+        window.$gn.getPaymentToken(cardData, (error, response) => {
+          if (error) return reject(error)
+          resolve(response?.data?.payment_token)
+        })
+      })
+
+      if (!paymentToken) throw new Error('Token de pagamento não gerado.')
 
       await setDoc(doc(db, 'cartoes', usuario.uid), {
         numeroFinal: form.numero.slice(-4),
         bandeira: form.bandeira,
-        payment_token,
+        payment_token: paymentToken,
         uid: usuario.uid
       })
 
@@ -72,6 +78,9 @@ export default function CartoesContratante() {
       setSalvando(false)
     }
   }
+
+  const atualizarCampo = (campo, valor) =>
+    setForm((f) => ({ ...f, [campo]: valor }))
 
   return (
     <div className="p-4 max-w-xl mx-auto">
@@ -109,14 +118,6 @@ export default function CartoesContratante() {
 
             <input
               type="text"
-              placeholder="CPF do titular"
-              value={form.cpf}
-              onChange={(e) => atualizarCampo('cpf', e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            />
-
-            <input
-              type="text"
               placeholder="Número do cartão"
               value={form.numero}
               onChange={(e) => atualizarCampo('numero', e.target.value)}
@@ -141,14 +142,6 @@ export default function CartoesContratante() {
             </div>
 
             <input
-              type="password"
-              placeholder="Senha de pagamento (4 a 6 dígitos)"
-              value={form.senha}
-              onChange={(e) => atualizarCampo('senha', e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            />
-
-            <input
               type="text"
               placeholder="Bandeira (ex: visa, mastercard)"
               value={form.bandeira}
@@ -156,7 +149,7 @@ export default function CartoesContratante() {
               className="w-full border rounded px-3 py-2"
             />
 
-            <div className="flex justify-between pt-2">
+            <div className="flex justify-between">
               <button
                 onClick={() => setAbrirCadastroCartao(false)}
                 className="px-4 py-2 border rounded"
