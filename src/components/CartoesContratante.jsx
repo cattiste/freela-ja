@@ -59,26 +59,33 @@ useEffect(() => {
 }, [])
 
   async function salvarNovoCartao() {
-    try {
-      const numeroDigits = onlyDigits(numeroCartao)
-      const cpfDigits = onlyDigits(titularCpf)
-      const [mmStr = '', yyStr = ''] = (validade || '').split('/')
-      const expYear = yyStr.length === 2 ? '20' + yyStr : yyStr
-      const cvvDigits = onlyDigits(cvv)
+  try {
+    await loadEfipayScript('ddf01373bd8462f080f08de872edc311') // garante carregamento antes do token
 
-      if (!titularNome || cpfDigits.length !== 11) return toast.error('Informe nome e CPF válidos.')
-      if (!luhnCheck(numeroDigits)) return toast.error('Número do cartão inválido.')
-      if (!isValidExpiry(validade)) return toast.error('Validade inválida.')
-      const cvvLen = bandeira === 'amex' ? 4 : 3
-      if (cvvDigits.length !== cvvLen) return toast.error(`CVV deve ter ${cvvLen} dígitos.`)
+    const numeroDigits = onlyDigits(numeroCartao)
+    const cpfDigits = onlyDigits(titularCpf)
+    const [mmStr = '', yyStr = ''] = (validade || '').split('/')
+    const expYear = yyStr.length === 2 ? '20' + yyStr : yyStr
+    const cvvDigits = onlyDigits(cvv)
 
-      const senhaDigits = onlyDigits(senhaPagamento)
-      if (senhaDigits.length < 4 || senhaDigits.length > 6) {
-        return toast.error('Senha de pagamento deve ter 4 a 6 dígitos.')
-      }
+    if (!titularNome || cpfDigits.length !== 11)
+      return toast.error('Informe nome e CPF válidos.')
 
-      setSavingCartao(true)
+    if (!luhnCheck(numeroDigits))
+      return toast.error('Número do cartão inválido.')
 
+    if (!isValidExpiry(validade))
+      return toast.error('Validade inválida.')
+
+    const cvvLen = bandeira === 'amex' ? 4 : 3
+    if (cvvDigits.length !== cvvLen)
+      return toast.error(`CVV deve ter ${cvvLen} dígitos.`)
+
+    const senhaDigits = onlyDigits(senhaPagamento)
+    if (senhaDigits.length < 4 || senhaDigits.length > 6)
+      return toast.error('Senha de pagamento deve ter 4 a 6 dígitos.')
+
+    setSavingCartao(true)
       // tokeniza via Efí (com helper que resolve o $gn.ready)
       const token = await getPaymentTokenEfipay({
         number: numeroDigits,
