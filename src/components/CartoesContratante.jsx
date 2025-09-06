@@ -1,3 +1,7 @@
+import { getPaymentTokenEfipay } from '@/utils/efipay'
+window.getPaymentTokenEfipay = getPaymentTokenEfipay
+
+
 import React, { useState, useEffect } from 'react'
 import ListaCartoes from './ListaCartoes'
 import { toast } from 'react-hot-toast'
