@@ -1,25 +1,25 @@
-// src/utils/efipay.js
+// src/utils/efipay.js - Versão compatível com script antigo ($gn)
 
 /**
- * Espera o SDK da Efipay ficar pronto
+ * Espera o SDK antigo da Gerencianet ($gn) ficar pronto
  */
 export function efipayReady() {
   return new Promise((resolve, reject) => {
-    // Verifica se já está carregado
-    if (typeof window !== 'undefined' && window.EfiPay && typeof window.EfiPay.getPaymentToken === 'function') {
-      return resolve(window.EfiPay);
+    // Verifica se já está carregado (API antiga)
+    if (typeof window !== 'undefined' && window.$gn && typeof window.$gn.ready === 'function') {
+      return resolve(window.$gn);
     }
 
     let tries = 0;
-    const MAX_TRIES = 50; // 5 segundos
+    const MAX_TRIES = 50;
 
     const checkReady = () => {
-      if (typeof window !== 'undefined' && window.EfiPay && typeof window.EfiPay.getPaymentToken === 'function') {
-        return resolve(window.EfiPay);
+      if (typeof window !== 'undefined' && window.$gn && typeof window.$gn.ready === 'function') {
+        return resolve(window.$gn);
       }
 
       if (++tries > MAX_TRIES) {
-        return reject(new Error('SDK da Efipay não carregado. Verifique o script no HTML.'));
+        return reject(new Error('SDK da Efipay ($gn) não carregado. Verifique o script no HTML.'));
       }
 
       setTimeout(checkReady, 100);
@@ -30,46 +30,32 @@ export function efipayReady() {
 }
 
 /**
- * Gera payment_token usando a nova API da Efipay
+ * Gera payment_token usando a API antiga ($gn)
  */
 export async function getPaymentTokenEfipay(cardData) {
   try {
-    const EfiPay = await efipayReady();
+    const $gn = await efipayReady();
     
     return new Promise((resolve, reject) => {
-      EfiPay.getPaymentToken(cardData, (response) => {
-        if (response && response.payment_token) {
-          resolve(response.payment_token);
-        } else if (response && response.error) {
-          reject(new Error(response.error_description || 'Erro ao gerar token'));
-        } else {
-          reject(new Error('Resposta inválida do SDK Efipay'));
+      // A API antiga precisa do $gn.ready
+      $gn.ready(function() {
+        if (typeof window.$gn.getPaymentToken !== 'function') {
+          return reject(new Error('getPaymentToken não disponível no SDK'));
         }
+
+        window.$gn.getPaymentToken(cardData, (response) => {
+          if (response && response.data && response.data.payment_token) {
+            resolve(response.data.payment_token);
+          } else if (response && response.error) {
+            reject(new Error(response.error.message || 'Erro ao gerar token'));
+          } else {
+            reject(new Error('Resposta inválida do SDK'));
+          }
+        });
       });
     });
   } catch (error) {
     throw new Error(`Falha no getPaymentToken: ${error.message}`);
-  }
-}
-
-/**
- * Obtém parcelas (opcional)
- */
-export async function getInstallmentsEfipay(params = {}) {
-  try {
-    const EfiPay = await efipayReady();
-    
-    return new Promise((resolve, reject) => {
-      EfiPay.getInstallments(params, (response) => {
-        if (response && !response.error) {
-          resolve(response);
-        } else {
-          reject(new Error(response?.error_description || 'Erro ao obter parcelas'));
-        }
-      });
-    });
-  } catch (error) {
-    throw new Error(`Falha no getInstallments: ${error.message}`);
   }
 }
 
