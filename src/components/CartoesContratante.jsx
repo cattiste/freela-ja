@@ -1,13 +1,11 @@
-import { getPaymentTokenEfipay } from '@/utils/efipay'
-window.getPaymentTokenEfipay = getPaymentTokenEfipay
-
-
 import React, { useState, useEffect } from 'react'
 import ListaCartoes from './ListaCartoes'
 import { toast } from 'react-hot-toast'
 import { getFunctions, httpsCallable } from 'firebase/functions'
 import { getPaymentTokenEfipay } from '@/utils/efipay'
 import { loadEfipayScript } from '@/utils/loadEfipayScript'
+import { getPaymentTokenEfipay } from '@/utils/efipay'
+window.getPaymentTokenEfipay = getPaymentTokenEfipay
 
 const functionsClient = getFunctions(undefined, 'southamerica-east1')
 
