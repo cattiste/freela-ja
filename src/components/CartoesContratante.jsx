@@ -3,6 +3,8 @@ import { doc, setDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { toast } from 'react-toastify'
 import { useAuth } from '@/context/AuthContext'
+import { getPaymentTokenEfipay } from '@/utils/getPaymentTokenEfipay'
+
 
 export default function CartoesContratante() {
   const { usuario } = useAuth()
