@@ -23,6 +23,7 @@ export default function CartoesContratante() {
   }
 
   async function gerarTokenCartao() {
+    console.log('Cliquei no botão')  // ✅ Teste
     if (!window.$gn || typeof window.$gn.getPaymentToken !== 'function') {
       toast.error('SDK Efi não carregado.')
       return
