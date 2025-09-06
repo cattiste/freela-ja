@@ -1,96 +1,67 @@
-import { useEffect, useState } from 'react'
-import { db } from '@/services/firebaseConfig'
-import { addDoc, collection } from 'firebase/firestore'
+import { useState } from 'react'
+import { doc, setDoc } from 'firebase/firestore'
+import { useAuth } from '../hooks/useAuth'
+import { db } from '../firebase'
 import { toast } from 'react-toastify'
-import { useAuth } from '@/context/AuthContext'
-import { loadEfipayScript } from '@/utils/loadEfipayScript'
-import { getPaymentTokenEfipay } from '@/utils/efipay'
+import { getPaymentTokenEfipay } from '../utils/efipay'
 
-const CartoesContratante = () => {
+export default function CartoesContratante() {
   const { usuario } = useAuth()
   const [abrirCadastroCartao, setAbrirCadastroCartao] = useState(false)
-  const [nome, setNome] = useState('')
-  const [cpf, setCpf] = useState('')
-  const [numero, setNumero] = useState('')
-  const [validade, setValidade] = useState('')
-  const [cvv, setCvv] = useState('')
-  const [senha, setSenha] = useState('')
-  const [bandeira, setBandeira] = useState('')
-  const [efiPronta, setEfiPronta] = useState(false)
+  const [form, setForm] = useState({
+    nome: '',
+    numero: '',
+    expiracao: '',
+    cvv: '',
+    bandeira: ''
+  })
+  const [salvando, setSalvando] = useState(false)
 
-  useEffect(() => {
-    loadEfipayScript().then(() => {
-      const interval = setInterval(() => {
-        if (typeof window.$gn !== 'undefined' && typeof window.$gn.ready === 'function') {
-          window.$gn.ready(function (checkout) {
-            console.log('✅ SDK EfiPay pronta!')
-            setEfiPronta(true)
-            clearInterval(interval)
-          })
-        }
-      }, 100)
+  const salvarCartao = async () => {
+    if (!usuario?.uid) return
 
-      setTimeout(() => {
-        clearInterval(interval)
-        if (!efiPronta) toast.error('❌ Falha ao iniciar SDK EfiPay.')
-      }, 7000)
-    })
-  }, [])
-
-  const handleSalvarCartao = async () => {
-    if (!efiPronta) {
-      toast.warn('Aguarde o carregamento do sistema de pagamento.')
-      return
+    const [mes, ano] = form.expiracao.split('/')
+    const cardData = {
+      brand: form.bandeira,
+      holder: form.nome,
+      number: form.numero,
+      expiration_month: mes,
+      expiration_year: ano,
+      cvv: form.cvv
     }
 
-    if (!nome || !cpf || !numero || !validade || !cvv || !senha) {
-      toast.warn('Preencha todos os campos.')
-      return
-    }
-
-    const [mes, ano] = validade.split('/')
-
+    setSalvando(true)
     try {
-      const token = await getPaymentTokenEfipay({
-        number: numero.replace(/\s/g, ''),
-        cvv,
-        expiration_month: mes,
-        expiration_year: '20' + ano,
-        holder: nome,
-        brand: bandeira || 'mastercard'
+      const payment_token = await getPaymentTokenEfipay(cardData)
+      if (!payment_token) throw new Error('Token de pagamento não gerado.')
+
+      await setDoc(doc(db, 'cartoes', usuario.uid), {
+        numeroFinal: form.numero.slice(-4),
+        bandeira: form.bandeira,
+        payment_token,
+        uid: usuario.uid
       })
 
-      if (!token) {
-        toast.error('Erro ao gerar token do cartão.')
-        return
-      }
-
-      await addDoc(collection(db, 'cartoes'), {
-        uid: usuario.uid,
-        token,
-        numeroFinal: numero.slice(-4),
-        bandeira: bandeira || 'mastercard',
-        nome,
-        cpf,
-        senha,
-        criadoEm: new Date()
-      })
-
-      toast.success('Cartão salvo com sucesso.')
+      toast.success('✅ Cartão salvo com sucesso!')
       setAbrirCadastroCartao(false)
-    } catch (error) {
-      console.error('Erro ao salvar cartão:', error)
-      toast.error('Erro ao salvar cartão.')
+    } catch (e) {
+      console.error('[salvarCartao] erro:', e)
+      toast.error(e.message || 'Erro ao salvar cartão.')
+    } finally {
+      setSalvando(false)
     }
   }
 
+  const atualizarCampo = (campo, valor) =>
+    setForm((f) => ({ ...f, [campo]: valor }))
+
   return (
-    <div className="p-4">
-      <h2 className="text-lg font-semibold mb-4">💳 Meus Cartões</h2>
+    <div className="p-4 max-w-xl mx-auto">
+      <h2 className="text-xl font-bold text-orange-700 mb-4">💳 Meus Cartões</h2>
 
       <button
-        className="bg-orange-600 text-white px-4 py-2 rounded mb-4"
         onClick={() => setAbrirCadastroCartao(true)}
+        className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded shadow"
       >
         + Cadastrar Cartão
       </button>
@@ -98,73 +69,74 @@ const CartoesContratante = () => {
       {abrirCadastroCartao && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-4 space-y-3">
-            <h3 className="text-orange-700 font-semibold text-lg">Cadastrar Cartão</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-orange-700">
+                Cadastrar Cartão
+              </h3>
+              <button
+                onClick={() => setAbrirCadastroCartao(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
 
             <input
               type="text"
-              placeholder="Nome do titular"
-              className="w-full border p-2 rounded"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
+              placeholder="Nome impresso"
+              value={form.nome}
+              onChange={(e) => atualizarCampo('nome', e.target.value)}
+              className="w-full border rounded px-3 py-2"
             />
-            <input
-              type="text"
-              placeholder="CPF do titular"
-              className="w-full border p-2 rounded"
-              value={cpf}
-              onChange={(e) => setCpf(e.target.value)}
-            />
+
             <input
               type="text"
               placeholder="Número do cartão"
-              className="w-full border p-2 rounded"
-              value={numero}
-              onChange={(e) => setNumero(e.target.value)}
+              value={form.numero}
+              onChange={(e) => atualizarCampo('numero', e.target.value)}
+              className="w-full border rounded px-3 py-2"
             />
-            <div className="flex gap-2">
+
+            <div className="flex space-x-2">
               <input
                 type="text"
-                placeholder="Validade (MM/AA)"
-                className="w-1/2 border p-2 rounded"
-                value={validade}
-                onChange={(e) => setValidade(e.target.value)}
+                placeholder="MM/AA"
+                value={form.expiracao}
+                onChange={(e) => atualizarCampo('expiracao', e.target.value)}
+                className="w-1/2 border rounded px-3 py-2"
               />
               <input
                 type="text"
                 placeholder="CVV"
-                className="w-1/2 border p-2 rounded"
-                value={cvv}
-                onChange={(e) => setCvv(e.target.value)}
+                value={form.cvv}
+                onChange={(e) => atualizarCampo('cvv', e.target.value)}
+                className="w-1/2 border rounded px-3 py-2"
               />
             </div>
+
             <input
               type="text"
-              placeholder="Bandeira (ex: mastercard)"
-              className="w-full border p-2 rounded"
-              value={bandeira}
-              onChange={(e) => setBandeira(e.target.value)}
-            />
-            <input
-              type="password"
-              placeholder="Senha de pagamento (4-6 dígitos)"
-              className="w-full border p-2 rounded"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
+              placeholder="Bandeira (ex: visa, mastercard)"
+              value={form.bandeira}
+              onChange={(e) => atualizarCampo('bandeira', e.target.value)}
+              className="w-full border rounded px-3 py-2"
             />
 
             <div className="flex justify-between">
               <button
                 onClick={() => setAbrirCadastroCartao(false)}
-                className="px-4 py-2 rounded border"
+                className="px-4 py-2 border rounded"
               >
                 Fechar
               </button>
               <button
-                onClick={handleSalvarCartao}
-                disabled={!efiPronta}
-                className={`px-4 py-2 rounded text-white ${efiPronta ? 'bg-orange-600' : 'bg-gray-400 cursor-not-allowed'}`}
+                onClick={salvarCartao}
+                disabled={salvando}
+                className={`px-4 py-2 rounded text-white ${
+                  salvando ? 'bg-gray-400' : 'bg-orange-600 hover:bg-orange-700'
+                }`}
               >
-                Salvar Cartão
+                {salvando ? 'Salvando...' : 'Salvar Cartão'}
               </button>
             </div>
           </div>
@@ -173,5 +145,3 @@ const CartoesContratante = () => {
     </div>
   )
 }
-
-export default CartoesContratante

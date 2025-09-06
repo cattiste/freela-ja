@@ -1,34 +1,23 @@
+// src/utils/loadEfipayScript.js
+
 export function loadEfipayScript(credencialId = 'ddf01373bd8462f080f08de872edc311') {
   return new Promise((resolve, reject) => {
-    if (window.$gn && typeof window.$gn.ready === 'function') {
-      window.$gn.ready(() => resolve()) // ✅ espera $gn.ready antes de continuar
-      return
+    if (typeof window.$gn !== 'undefined') {
+      return resolve(window.$gn)
     }
 
     const existing = document.getElementById('efi-sdk')
     if (existing) {
-      existing.addEventListener('load', () => {
-        if (window.$gn && typeof window.$gn.ready === 'function') {
-          window.$gn.ready(() => resolve())
-        } else {
-          reject(new Error('Efi SDK carregada, mas $gn.ready não está disponível.'))
-        }
-      })
+      existing.onload = () => resolve(window.$gn)
       return
     }
 
     const script = document.createElement('script')
     script.id = 'efi-sdk'
-    script.src = `https://cdn.efipay.com.br/v1/cdn/${credencialId}`
-    script.async = true
-    script.onload = () => {
-      if (window.$gn && typeof window.$gn.ready === 'function') {
-        window.$gn.ready(() => resolve())
-      } else {
-        reject(new Error('Efi SDK carregada, mas $gn.ready não está disponível.'))
-      }
-    }
-    script.onerror = () => reject(new Error('Erro ao carregar o SDK da Efi.'))
-    document.body.appendChild(script)
+    script.src = `https://cobrancas.api.efipay.com.br/v1/cdn/${credencialId}/${Math.floor(Math.random() * 100000)}`
+    script.async = false
+    script.onload = () => resolve(window.$gn)
+    script.onerror = () => reject(new Error('Erro ao carregar o SDK da Efipay.'))
+    document.head.appendChild(script)
   })
 }
