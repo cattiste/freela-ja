@@ -8,21 +8,35 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
   const [pagamento, setPagamento] = useState(null)
   const [carregando, setCarregando] = useState(true)
 
-  useEffect(() => {
-    if (!pagamentoDocId) return
+useEffect(() => {
+  if (!pagamentoDocId) return
 
-    const unsub = onSnapshot(doc(db, 'pagamentos_usuarios', pagamentoDocId), (snap) => {
-      if (snap.exists()) {
-        const dados = snap.data()
-        setPagamento(dados)
-        setCarregando(false)
-      } else {
-        setCarregando(false)
-      }
+  // Gera cobrança Pix se ainda não tiver sido gerada
+  fetch('/api/gerar-pix', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chamadaId: pagamentoDocId }),
+  })
+    .then((res) => res.json())
+    .then((res) => {
+      if (res.erro) console.error('[Pix] Erro ao gerar:', res.erro)
+      else console.log('[Pix] Geração OK')
     })
+    .catch((err) => console.error('[Pix] Falha:', err))
 
-    return () => unsub()
-  }, [pagamentoDocId])
+  const unsub = onSnapshot(doc(db, 'pagamentos_usuarios', pagamentoDocId), (snap) => {
+    if (snap.exists()) {
+      const dados = snap.data()
+      setPagamento(dados)
+      setCarregando(false)
+    } else {
+      setCarregando(false)
+    }
+  })
+
+  return () => unsub()
+}, [pagamentoDocId])
+
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center px-4">
