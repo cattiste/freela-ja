@@ -96,14 +96,12 @@ function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao,
         value={observacao[uid] || ''}
         onChange={(e) => setObservacao((prev) => ({ ...prev, [uid]: e.target.value }))}
       />
-      {/* 💳 Botão de pagamento */}
       <button
         onClick={() => onAbrirPagamento(freela)}
         className="mt-2 w-full py-2 rounded-lg font-bold bg-orange-600 hover:bg-orange-700 text-white"
       >
         💳 Pagar Freela
       </button>
-       {/* 📞 Botão de chamada */}
       <button
         onClick={() => onChamar(freela)}
         disabled={!online || chamando === uid}
@@ -137,7 +135,6 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
       s1.forEach((d) => lista.push({ id: d.id, ...d.data() }))
       s2.forEach((d) => lista.push({ id: d.id, ...d.data() }))
 
-      // Cálculo de média de avaliações
       for (const f of lista) {
         const avalSnap = await getDocs(query(collection(db, 'avaliacoes'), where('freelaId', '==', f.uid || f.id)))
         const avals = avalSnap.docs.map((d) => d.data())
@@ -184,71 +181,65 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
       })
   }, [freelas, filtro, usuario, usuariosOnline])
 
-const chamar = async (freela) => {
-  const uid = freela.uid || freela.id
-  setChamando(uid)
-  let chamadaId = null
+  const chamar = async (freela) => {
+    const uid = freela.uid || freela.id
+    setChamando(uid)
+    let chamadaId = null
 
-  try {
-    // impede chamada duplicada ativa (mantém seu código)
-    const snap = await getDocs(query(
-      collection(db, 'chamadas'),
-      where('freelaUid', '==', uid),
-      where('contratanteUid', '==', usuario.uid),
-      where('status', 'in', ['pendente', 'aceita', 'confirmada', 'em_andamento'])
-    ))
-    if (!snap.empty) {
-      alert('⚠️ Você já chamou esse freela e a chamada está ativa.')
-      return
-    }
-
-    // 1) CRIA a chamada (ponto crítico que precisa funcionar)
-    const chamadaRef = await addDoc(collection(db, 'chamadas'), {
-      freelaUid: uid,
-      freelaNome: freela.nome,
-      valorDiaria: freela.valorDiaria || null,
-      contratanteUid: usuario.uid,
-      contratanteNome: usuario.nome || '',
-      tipoContratante: usuario.tipo || usuario.tipoUsuario || '',
-      observacao: observacao[uid] || '',
-      status: 'pendente',
-      criadoEm: serverTimestamp()
-    })
-    chamadaId = chamadaRef.id
-
-    // 2) BEST-EFFORT: cria/atualiza o doc de pagamentos (não interrompe a UX)
     try {
-      const diaria = Number(freela.valorDiaria || 0)
-      await setDoc(doc(db, 'pagamentos_usuarios', chamadaId), {
-        chamadaId,
-        contratanteUid: usuario.uid,              // <- necessário p/ regras
+      const snap = await getDocs(query(
+        collection(db, 'chamadas'),
+        where('freelaUid', '==', uid),
+        where('contratanteUid', '==', usuario.uid),
+        where('status', 'in', ['pendente', 'aceita', 'confirmada', 'em_andamento'])
+      ))
+      if (!snap.empty) {
+        alert('⚠️ Você já chamou esse freela e a chamada está ativa.')
+        return
+      }
+
+      const chamadaRef = await addDoc(collection(db, 'chamadas'), {
         freelaUid: uid,
-        freelaNome: freela.nome || '',
-        valorDiaria: diaria,
-        valorContratante: +(diaria * 1.10).toFixed(2), // +10% p/ contratante
-        valorFreela: +(diaria * 0.90).toFixed(2),      // -10% p/ freela
+        freelaNome: freela.nome,
+        valorDiaria: freela.valorDiaria || null,
+        contratanteUid: usuario.uid,
+        contratanteNome: usuario.nome || '',
+        tipoContratante: usuario.tipo || usuario.tipoUsuario || '',
+        observacao: observacao[uid] || '',
         status: 'pendente',
         criadoEm: serverTimestamp()
-      }, { merge: true })
-    } catch (e) {
-      // não derruba a chamada; apenas registra e segue
-      console.warn('[pagamentos_usuarios] best-effort falhou:', e)
-    }
+      })
+      chamadaId = chamadaRef.id
 
-    alert(`✅ ${freela.nome} foi chamado com sucesso!`)
-  } catch (err) {
-    console.error('Erro ao chamar freela:', err)
-    // Se a chamada foi criada mas o "espelho" falhou, evite mensagem enganosa:
-    if (chamadaId) {
-      alert('✅ Chamada criada. ⚠️ Não foi possível preparar o pagamento agora (permissão).')
-    } else {
-      alert('Erro ao chamar freelancer.')
+      try {
+        const diaria = Number(freela.valorDiaria || 0)
+        await setDoc(doc(db, 'pagamentos_usuarios', chamadaId), {
+          chamadaId,
+          contratanteUid: usuario.uid,
+          freelaUid: uid,
+          freelaNome: freela.nome || '',
+          valorDiaria: diaria,
+          valorContratante: +(diaria * 1.10).toFixed(2),
+          valorFreela: +(diaria * 0.90).toFixed(2),
+          status: 'pendente',
+          criadoEm: serverTimestamp()
+        }, { merge: true })
+      } catch (e) {
+        console.warn('[pagamentos_usuarios] best-effort falhou:', e)
+      }
+
+      alert(`✅ ${freela.nome} foi chamado com sucesso!`)
+    } catch (err) {
+      console.error('Erro ao chamar freela:', err)
+      if (chamadaId) {
+        alert('✅ Chamada criada. ⚠️ Não foi possível preparar o pagamento agora (permissão).')
+      } else {
+        alert('Erro ao chamar freelancer.')
+      }
+    } finally {
+      setChamando(null)
     }
-  } finally {
-    setChamando(null)
   }
-}
-
 
   return (
     <div className="min-h-screen bg-cover bg-center p-4 pb-20"
@@ -282,10 +273,10 @@ const chamar = async (freela) => {
           ))}
         </div>
       )}
-        {freelaSelecionado && (
+      {freelaSelecionado && (
         <ModalPagamentoFreela
           freela={freelaSelecionado}
-          pagamentoDocId={freelaSelecionado.chamadaId}  // opcional, ideal se existir
+          pagamentoDocId={freelaSelecionado.chamadaId}
           onClose={() => setFreelaSelecionado(null)}
         />
       )}
