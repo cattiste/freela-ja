@@ -3,40 +3,42 @@ import React, { useEffect, useState } from 'react'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
 import QRCode from 'react-qr-code'
+import { verificarStatusPix } from '@/utils/verificarStatusPix'
 
 export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }) {
   const [pagamento, setPagamento] = useState(null)
   const [carregando, setCarregando] = useState(true)
 
-useEffect(() => {
-  if (!pagamentoDocId) return
+  // 🔁 Atualiza localmente quando Firestore mudar
+  useEffect(() => {
+    if (!pagamentoDocId) return
 
-  // Gera cobrança Pix se ainda não tiver sido gerada
-  fetch('/api/gerar-pix', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chamadaId: pagamentoDocId }),
-  })
-    .then((res) => res.json())
-    .then((res) => {
-      if (res.erro) console.error('[Pix] Erro ao gerar:', res.erro)
-      else console.log('[Pix] Geração OK')
+    const unsub = onSnapshot(doc(db, 'pagamentos_usuarios', pagamentoDocId), (snap) => {
+      if (snap.exists()) {
+        const dados = snap.data()
+        setPagamento(dados)
+        setCarregando(false)
+      } else {
+        setCarregando(false)
+      }
     })
-    .catch((err) => console.error('[Pix] Falha:', err))
 
-  const unsub = onSnapshot(doc(db, 'pagamentos_usuarios', pagamentoDocId), (snap) => {
-    if (snap.exists()) {
-      const dados = snap.data()
-      setPagamento(dados)
-      setCarregando(false)
-    } else {
-      setCarregando(false)
-    }
-  })
+    return () => unsub()
+  }, [pagamentoDocId])
 
-  return () => unsub()
-}, [pagamentoDocId])
+  // 🔄 Verifica status do Pix a cada 5s (se ainda estiver "aguardando")
+  useEffect(() => {
+    if (!pagamento?.txid || pagamento?.status === 'pago') return
 
+    const interval = setInterval(async () => {
+      const res = await verificarStatusPix(pagamento.txid)
+      if (res?.status === 'CONCLUIDA') {
+        setPagamento((prev) => ({ ...prev, status: 'pago' }))
+      }
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [pagamento])
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center px-4">
@@ -54,19 +56,22 @@ useEffect(() => {
           <p className="text-center text-red-500">Pagamento não encontrado.</p>
         ) : (
           <div className="space-y-4">
-            {pagamento.qrCode ? (
+            {pagamento.qrCode || pagamento.pixCopiaECola ? (
               <div className="flex justify-center">
-                <QRCode value={pagamento.qrCode} size={200} />
+                <QRCode
+                  value={pagamento.qrCode || pagamento.pixCopiaECola}
+                  size={200}
+                />
               </div>
             ) : (
               <p className="text-center text-gray-500">QR Code indisponível.</p>
             )}
 
-            {pagamento.pixCopiaECola && (
+            {pagamento.copiaECola || pagamento.pixCopiaECola ? (
               <div className="bg-gray-100 p-2 rounded-md text-sm text-center break-all">
-                {pagamento.pixCopiaECola}
+                {pagamento.copiaECola || pagamento.pixCopiaECola}
               </div>
-            )}
+            ) : null}
 
             <div className="text-center text-sm text-gray-600">
               Status: <span className="font-bold text-orange-600">{pagamento.status}</span>
