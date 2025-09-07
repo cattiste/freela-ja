@@ -62,9 +62,9 @@ useEffect(() => {
               <p className="text-center text-gray-500">QR Code indisponível.</p>
             )}
 
-            {pagamento.copiaECola && (
+            {pagamento.pixCopiaECola && (
               <div className="bg-gray-100 p-2 rounded-md text-sm text-center break-all">
-                {pagamento.copiaECola}
+                {pagamento.pixCopiaECola}
               </div>
             )}
 
