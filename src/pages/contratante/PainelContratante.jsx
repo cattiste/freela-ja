@@ -19,7 +19,7 @@ import ChamadasContratante from '@/pages/contratante/ChamadasContratante'
 import Calendar from 'react-calendar'
 import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 import ValidacaoDocumento from '@/components/ValidacaoDocumento'
-import CartoesContratante from '@/components/CartoesContratante'
+//import CartoesContratante from '@/components/CartoesContratante'
 
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
@@ -181,11 +181,7 @@ export default function PainelContratante() {
                 </div>
               )}
             </div>
-          </ErrorBoundary>
-
-          <ErrorBoundary>
-            <CartoesContratante />
-          </ErrorBoundary>
+          </ErrorBoundary>         
         </div>
       </div>
     )

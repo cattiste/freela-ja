@@ -27,58 +27,21 @@ export default function ModalPagamentoFreela({ freela, onClose, pagamentoDocId }
   const [pin, setPin]   = useState('');
   const [busy, setBusy] = useState(false);
 
-  async function onPagarComCartao() {
-    const docId = resolveDocId();
-    console.log('[Pagamento][Cartão] contratanteUid:', contratanteUid, 'docId:', docId);
-    if (!contratanteUid) { toast.error('Faça login como contratante.'); return; }
-    if (!docId)          { toast.error('Chamada não identificada para pagamento.'); return; }
-
-    try {
-      setBusy(true);
-      await upsertPagamento(docId, {
-        metodo: 'cartao',
-        status: 'aguardando_confirmacao',
-        contratanteUid,
-        freelaUid: freela?.uid || freela?.id || null,
-        freelaNome: freela?.nome || '',
-        valorDiaria: diaria,
-        valorContratante,
-        valorFreela,
-        contratadoEm: serverTimestamp(),
-      });
-      setStep('pin');
-    } catch (e) {
-      console.error('[Pagamento] iniciar cartão — Firestore error:', e);
-      toast.error('Não foi possível iniciar o pagamento por cartão.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function confirmarPagamentoComSenha() {
-    const docId = resolveDocId();
-    if (!pin || pin.length < 4) { toast.error('Digite sua senha.'); return; }
-    try {
-      setBusy(true);
-      await updateDoc(doc(db, 'pagamentos_usuarios', String(docId)), {
-        status: 'pago',
-        confirmadoEm: serverTimestamp(),
-      });
-      toast.success('Pagamento confirmado!');
-      onClose?.();
-    } catch (e) {
-      console.error('[Pagamento] confirmar cartão — Firestore error:', e);
-      toast.error('Falha ao confirmar o pagamento.');
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function onPagarViaPix() {
     const docId = resolveDocId();
     console.log('[Pagamento][Pix] contratanteUid:', contratanteUid, 'docId:', docId);
     if (!contratanteUid) { toast.error('Faça login como contratante.'); return; }
     if (!docId)          { toast.error('Chamada não identificada para pagamento.'); return; }
+
+  async function gerarPix(chamadaId) {
+  const r = await fetch('/api/pix/cobrar', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ chamadaId })
+  });
+  const data = await r.json();
+  // Atualização vem via onSnapshot(chamadas) -> ch.pix.{qrcode,copiaCola,status}
 
     try {
       setBusy(true);
@@ -115,10 +78,7 @@ export default function ModalPagamentoFreela({ freela, onClose, pagamentoDocId }
         <p className="mt-2 text-sm text-gray-700">Valor da diária: <strong>R$ {diaria.toFixed(2)}</strong></p>
 
         {step === 'escolha' ? (
-          <div className="mt-4 grid gap-2">
-            <button onClick={onPagarComCartao} disabled={busy} className="w-full py-2 rounded-lg font-semibold bg-orange-600 hover:bg-orange-700 text-white disabled:opacity-60">
-              💳 Pagar com Cartão (senha salva)
-            </button>
+          <div className="mt-4 grid gap-2">            
             <button onClick={onPagarViaPix} disabled={busy} className="w-full py-2 rounded-lg font-semibold bg-green-600 hover:bg-green-700 text-white disabled:opacity-60">
               💸 Pagar via Pix (QR / Copia e Cola)
             </button>

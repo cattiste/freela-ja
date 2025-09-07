@@ -1,6 +1,6 @@
 // src/components/ModalPagamentoEscolha.jsx
 import { useState } from 'react'
-import PagamentoCartaoModal from './PagamentoCartaoModal'
+//import PagamentoCartaoModal from './PagamentoCartaoModal'
 import GerarPixModal from './GerarPixModal'
 
 export default function ModalPagamentoEscolha({ open, onClose, chamada }) {
@@ -21,12 +21,7 @@ export default function ModalPagamentoEscolha({ open, onClose, chamada }) {
         </h2>
 
         {!metodo && (
-          <div className="flex flex-col space-y-3">
-            <button
-              onClick={() => setMetodo('cartao')}
-              className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded"
-            >
-              💳 Pagar com Cartão
+          <div className="flex flex-col space-y-3">           
             </button>
             <button
               onClick={() => setMetodo('pix')}
@@ -43,10 +38,7 @@ export default function ModalPagamentoEscolha({ open, onClose, chamada }) {
           </div>
         )}
 
-        {metodo === 'cartao' && (
-          <PagamentoCartaoModal chamada={chamada} onClose={resetar} inline />
-        )}
-
+        
         {metodo === 'pix' && (
           <GerarPixModal chamada={chamada} onClose={resetar} inline />
         )}
