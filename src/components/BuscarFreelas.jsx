@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import {
   collection, query, where, addDoc, serverTimestamp,
-  getDocs, limit, setDoc, doc
+  getDocs, limit, setDoc, doc, onSnapshot
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { FaStar, FaRegStar } from 'react-icons/fa'
