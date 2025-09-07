@@ -1,73 +1,67 @@
 // src/components/ModalPagamentoFreela.jsx
 import React, { useEffect, useState } from 'react'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
 import QRCode from 'react-qr-code'
 
 export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }) {
-  const [loading, setLoading] = useState(true)
-  const [erro, setErro] = useState(null)
   const [pagamento, setPagamento] = useState(null)
+  const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
     if (!pagamentoDocId) return
 
-    const unsubscribe = setInterval(async () => {
-      const docSnap = await getDoc(doc(db, 'pagamentos_usuarios', pagamentoDocId))
-      const dados = docSnap.data()
-
-      if (dados?.status === 'pago') {
+    const unsub = onSnapshot(doc(db, 'pagamentos_usuarios', pagamentoDocId), (snap) => {
+      if (snap.exists()) {
+        const dados = snap.data()
         setPagamento(dados)
-        setLoading(false)
-        clearInterval(unsubscribe)
-      } else if (dados) {
-        setPagamento(dados)
-        setLoading(false)
+        setCarregando(false)
+      } else {
+        setCarregando(false)
       }
-    }, 3000)
+    })
 
-    return () => clearInterval(unsubscribe)
+    return () => unsub()
   }, [pagamentoDocId])
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl p-4 max-w-md w-full space-y-4 relative shadow-xl">
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center px-4">
+      <div className="bg-white p-6 rounded-xl shadow-xl max-w-md w-full relative">
         <button
-          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
           onClick={onClose}
+          className="absolute top-2 right-3 text-gray-500 hover:text-gray-800"
         >✕</button>
 
-        <h2 className="text-lg font-bold text-orange-600 text-center">Pagamento via Pix</h2>
+        <h2 className="text-lg font-bold text-orange-700 mb-2 text-center">Pagamento via Pix</h2>
 
-        {loading && <p className="text-center text-gray-500">Carregando dados do pagamento...</p>}
-
-        {erro && <p className="text-red-600 text-center">Erro: {erro}</p>}
-
-        {pagamento && pagamento.status === 'pago' && (
-          <p className="text-center text-green-600 font-bold">✅ Pagamento confirmado!</p>
-        )}
-
-        {pagamento && pagamento.status !== 'pago' && (
-          <>
-            {pagamento.qrCode && (
+        {carregando ? (
+          <p className="text-center text-gray-500">Carregando dados do pagamento...</p>
+        ) : !pagamento ? (
+          <p className="text-center text-red-500">Pagamento não encontrado.</p>
+        ) : (
+          <div className="space-y-4">
+            {pagamento.qrCode ? (
               <div className="flex justify-center">
-                <QRCode value={pagamento.qrCode} size={180} />
+                <QRCode value={pagamento.qrCode} size={200} />
+              </div>
+            ) : (
+              <p className="text-center text-gray-500">QR Code indisponível.</p>
+            )}
+
+            {pagamento.copiaECola && (
+              <div className="bg-gray-100 p-2 rounded-md text-sm text-center break-all">
+                {pagamento.copiaECola}
               </div>
             )}
-            <div className="bg-gray-100 p-2 text-xs rounded mt-2">
-              <p className="font-bold text-orange-600 mb-1">Pix Copia e Cola:</p>
-              <textarea
-                readOnly
-                value={pagamento.qrCodeCopiar || ''}
-                className="w-full text-xs p-1 rounded border border-gray-300"
-                onFocus={(e) => e.target.select()}
-              />
+
+            <div className="text-center text-sm text-gray-600">
+              Status: <span className="font-bold text-orange-600">{pagamento.status}</span>
             </div>
-            <p className="text-center text-gray-500 text-sm mt-2">
-              Aguarde a confirmação automática após o pagamento.<br/>
-              Isso pode levar até 1 minuto.
-            </p>
-          </>
+
+            {pagamento.status === 'pago' && (
+              <p className="text-green-600 text-center font-semibold">✅ Pagamento confirmado!</p>
+            )}
+          </div>
         )}
       </div>
     </div>
