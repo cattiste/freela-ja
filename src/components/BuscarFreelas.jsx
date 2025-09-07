@@ -8,6 +8,7 @@ import { db } from '@/firebase'
 import { FaStar, FaRegStar } from 'react-icons/fa'
 import ModalPagamentoFreela from './ModalPagamentoFreela'
 
+
 function calcularDistancia(lat1, lon1, lat2, lon2) {
   const toRad = (x) => (x * Math.PI) / 180
   const R = 6371
@@ -55,6 +56,7 @@ function Estrelas({ media }) {
 }
 
 function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao, setObservacao, onAbrirPagamento }) {
+
   const uid = freela.uid || freela.id
 
   return (
@@ -96,6 +98,15 @@ function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao,
         onChange={(e) => setObservacao((prev) => ({ ...prev, [uid]: e.target.value }))}
       />
       <button
+         onClick={() => onAbrirPagamento(freela)}
+         disabled={!podePagar}
+         className={`mt-2 w-full py-2 rounded-lg font-bold ${
+           podePagar ? 'bg-orange-600 hover:bg-orange-700 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+        }`}
+      >
+         💳 Pagar Freela
+      </button>
+      <button
         onClick={() => onChamar(freela)}
         disabled={!online || chamando === uid}
         className={`mt-3 w-full py-2 rounded-lg font-bold transition ${
@@ -111,21 +122,39 @@ function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao,
 }
 
 export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
-  const [freelas, setFreelas] = useState([])
-  const [filtro, setFiltro] = useState('')
-  const [chamando, setChamando] = useState(null)
-  const [observacao, setObservacao] = useState({})
-  const [freelaSelecionado, setFreelaSelecionado] = useState(null)
+const [freelas, setFreelas] = useState([])
+const [filtro, setFiltro] = useState('')
+const [chamando, setChamando] = useState(null)
+const [observacao, setObservacao] = useState({})
+const [freelaSelecionado, setFreelaSelecionado] = useState(null)
+const [statusChamadas, setStatusChamadas] = useState({})
+
+  useEffect(() => {
+const q = query(collection(db, 'chamadas'), where('contratanteUid', '==', usuario.uid))
+const unsub = onSnapshot(q, snap => {
+const dados = {}
+snap.forEach(doc => {
+const d = doc.data()
+dados[d.freelaUid] = d.status
+})
+setStatusChamadas(dados)
+})
+return () => unsub()
+}, [usuario.uid])
 
   useEffect(() => {
     async function carregarFreelas() {
       const lista = []
-      const q = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'), limit(60))
-      const snap = await getDocs(q)
-      snap.forEach((d) => lista.push({ id: d.id, ...d.data() }))
+
+      const q1 = query(collection(db, 'usuarios'), where('tipoUsuario', '==', 'freela'), limit(60))
+      const q2 = query(collection(db, 'usuarios'), where('tipo', '==', 'freela'), limit(60))
+
+      const [s1, s2] = await Promise.all([getDocs(q1), getDocs(q2)])
+      s1.forEach((d) => lista.push({ id: d.id, ...d.data() }))
+      s2.forEach((d) => lista.push({ id: d.id, ...d.data() }))
 
       for (const f of lista) {
-        const avalSnap = await getDocs(query(collection(db, 'avaliacoes'), where('freelaId', '==', f.id)))
+        const avalSnap = await getDocs(query(collection(db, 'avaliacoes'), where('freelaId', '==', f.uid || f.id)))
         const avals = avalSnap.docs.map((d) => d.data())
         if (avals.length > 0) {
           const media = avals.reduce((sum, a) => sum + (a.nota || 0), 0) / avals.length
@@ -133,7 +162,13 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         }
       }
 
-      setFreelas(lista)
+      const unicos = new Map()
+      lista.forEach((f) => {
+        const id = f.uid || f.id
+        if (!unicos.has(id)) unicos.set(id, f)
+      })
+
+      setFreelas([...unicos.values()])
     }
 
     carregarFreelas()
@@ -150,7 +185,7 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
               f.coordenadas.longitude
             )
           : null
-        const online = estaOnline(usuariosOnline[f.id])
+        const online = estaOnline(usuariosOnline[f.uid || f.id])
         return { ...f, distancia, online }
       })
       .filter((f) => !filtro || f.funcao?.toLowerCase().includes(filtro.toLowerCase()))
@@ -165,7 +200,7 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
   }, [freelas, filtro, usuario, usuariosOnline])
 
   const chamar = async (freela) => {
-    const uid = freela.id
+    const uid = freela.uid || freela.id
     setChamando(uid)
     let chamadaId = null
 
@@ -227,7 +262,8 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
   }
 
   return (
-    <div className="min-h-screen bg-cover bg-center p-4 pb-20" style={{ backgroundImage: `url('/img/fundo-login.jpg')`, backgroundAttachment: 'fixed' }}>
+    <div className="min-h-screen bg-cover bg-center p-4 pb-20"
+      style={{ backgroundImage: `url('/img/fundo-login.jpg')`, backgroundAttachment: 'fixed' }}>
       <div className="max-w-4xl mx-auto mb-4">
         <input
           type="text"
@@ -237,13 +273,14 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
           className="w-full px-4 py-2 rounded-lg shadow-sm border border-gray-300 focus:ring-2 focus:ring-orange-400"
         />
       </div>
+
       {filtrados.length === 0 ? (
         <p className="text-center text-white">Nenhum freelancer encontrado.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
           {filtrados.map((f) => (
             <FreelaCard
-              key={f.id}
+              key={f.uid || f.id}
               freela={f}
               online={f.online}
               distancia={f.distancia}
@@ -251,7 +288,7 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
               chamando={chamando}
               observacao={observacao}
               setObservacao={setObservacao}
-              onAbrirPagamento={() => setFreelaSelecionado(f)}
+              onAbrirPagamento={(freela) => setFreelaSelecionado(freela)}
             />
           ))}
         </div>
