@@ -16,7 +16,7 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
     if (pixGerado) return
     
     try {
-      const response = await fetch('/api/gerar-pix', {
+      const response = await fetch('https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api/pix/cobrar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chamadaId: pagamentoDocId }),
