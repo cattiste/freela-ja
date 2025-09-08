@@ -10,7 +10,7 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
   const [pixGerado, setPixGerado] = useState(false)
 
   console.log('📦 Modal aberto para pagamentoDocId:', pagamentoDocId)
-  console.log('🧑‍🍳 Freela:', freela)
+  
 
   const gerarPix = useCallback(async () => {
   if (pixGerado) return;
