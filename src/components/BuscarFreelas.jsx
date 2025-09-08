@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import {
   collection, query, where, addDoc, serverTimestamp,
-  getDocs, limit, setDoc, doc, onSnapshot
+  getDocs, limit, setDoc, doc, onSnapshot, orderBy
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { FaStar, FaRegStar } from 'react-icons/fa'
@@ -100,12 +100,7 @@ function FreelaCard({
       />
       {podePagar && (
         <button
-          onClick={() => {
-            console.log('[PAGAMENTO] Iniciando pagamento para:', freela.nome, 'Chamada ID:', freela.chamadaId)
-            setTimeout(() => {
-              setFreelaSelecionado({ ...freela, chamadaId: freela.chamadaId })
-            }, 0)
-          }}
+          onClick={onAbrirPagamento}
           className="mt-2 w-full py-2 rounded-lg font-bold bg-orange-600 hover:bg-orange-700 text-white"
         >
           💳 Pagar Freela
@@ -125,6 +120,7 @@ function FreelaCard({
     </div>
   )
 }
+
 export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
   const [freelas, setFreelas] = useState([])
   const [filtro, setFiltro] = useState('')
@@ -134,14 +130,22 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
   const [statusChamadas, setStatusChamadas] = useState({})
 
   useEffect(() => {
-    const q = query(collection(db, 'chamadas'), where('contratanteUid', '==', usuario.uid))
+    const q = query(
+      collection(db, 'chamadas'), 
+      where('contratanteUid', '==', usuario.uid)
+    )
     const unsub = onSnapshot(q, snap => {
       const dados = {}
       snap.forEach(doc => {
         const d = doc.data()
-        dados[d.freelaUid] = d.status
-        console.log('Chamada atualizada:', d.freelaUid, d.status)
+        // Armazena o objeto completo da chamada com ID
+        dados[d.freelaUid] = {
+          status: d.status,
+          chamadaId: doc.id,
+          ...d
+        }
       })
+      console.log('Chamadas atualizadas:', dados)
       setStatusChamadas(dados)
     })
     return () => unsub()
@@ -179,35 +183,37 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
     carregarFreelas()
   }, [])
 
-const filtrados = useMemo(() => {
-  return freelas
-    .map((f) => {
-      const uid = f.uid || f.id  // ✅ Defina uid aqui
-      const distancia = f.coordenadas && usuario?.coordenadas
-        ? calcularDistancia(
-            usuario.coordenadas.latitude,
-            usuario.coordenadas.longitude,
-            f.coordenadas.latitude,
-            f.coordenadas.longitude
-          )
-        : null
-      const online = estaOnline(usuariosOnline[uid])
-      const chamada = statusChamadas[uid] || {}
-      const podePagar = chamada.status === 'aceita'
-      const chamadaId = chamada.chamadaId
-      
-      return { ...f, distancia, online, podePagar, chamadaId, uid }
-    })
-    .filter((f) => !filtro || f.funcao?.toLowerCase().includes(filtro.toLowerCase()))
-    .sort((a, b) => {
-      if (a.online && !b.online) return -1
-      if (!a.online && b.online) return 1
-      if (a.distancia != null && b.distancia != null) {
-        return a.distancia - b.distancia
-      }
-      return 0
-    })
-}, [freelas, filtro, usuario, usuariosOnline, statusChamadas]) 
+  const filtrados = useMemo(() => {
+    return freelas
+      .map((f) => {
+        const uid = f.uid || f.id
+        const distancia = f.coordenadas && usuario?.coordenadas
+          ? calcularDistancia(
+              usuario.coordenadas.latitude,
+              usuario.coordenadas.longitude,
+              f.coordenadas.latitude,
+              f.coordenadas.longitude
+            )
+          : null
+        const online = estaOnline(usuariosOnline[uid])
+        const chamada = statusChamadas[uid] || {}
+        const podePagar = chamada.status === 'aceita'
+        const chamadaId = chamada.chamadaId
+        
+        console.log('Freela:', f.nome, 'Status:', chamada.status, 'Pode pagar:', podePagar)
+        
+        return { ...f, distancia, online, podePagar, chamadaId, uid }
+      })
+      .filter((f) => !filtro || f.funcao?.toLowerCase().includes(filtro.toLowerCase()))
+      .sort((a, b) => {
+        if (a.online && !b.online) return -1
+        if (!a.online && b.online) return 1
+        if (a.distancia != null && b.distancia != null) {
+          return a.distancia - b.distancia
+        }
+        return 0
+      })
+  }, [freelas, filtro, usuario, usuariosOnline, statusChamadas])
 
   const chamar = async (freela) => {
     const uid = freela.uid || freela.id
@@ -238,6 +244,7 @@ const filtrados = useMemo(() => {
         criadoEm: serverTimestamp()
       })
       chamadaId = chamadaRef.id
+      console.log('Chamada criada com ID:', chamadaId)
 
       try {
         const diaria = Number(freela.valorDiaria || 0)
@@ -271,6 +278,21 @@ const filtrados = useMemo(() => {
     }
   }
 
+  const handleAbrirPagamento = (f) => {
+    const uid = f.uid || f.id
+    const chamada = statusChamadas[uid]
+    
+    if (chamada && chamada.status === 'aceita') {
+      setFreelaSelecionado({
+        ...f,
+        chamadaId: chamada.chamadaId
+      })
+      console.log('Abrindo pagamento para chamada ID:', chamada.chamadaId)
+    } else {
+      alert('Chamada ainda não está no status "aceita".')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-cover bg-center p-4 pb-20"
       style={{ backgroundImage: `url('/img/fundo-login.jpg')`, backgroundAttachment: 'fixed' }}>
@@ -298,38 +320,9 @@ const filtrados = useMemo(() => {
               chamando={chamando}
               observacao={observacao}
               setObservacao={setObservacao}
-              onAbrirPagamento={() => {
-                const uid = f.uid || f.id
-                const status = statusChamadas[uid]
-  
-                if (status === 'aceita') {    
-                  getDocs(query(
-                  collection(db, 'chamadas'),
-                  where('freelaUid', '==', uid),
-                  where('contratanteUid', '==', usuario.uid),
-                  where('status', '==', 'aceita'),
-                  orderBy('criadoEm', 'desc'),
-                  limit(1)
-                )).then((snap) => {
-                  if (!snap.empty) {
-                     const chamadaDoc = snap.docs[0]
-                     setFreelaSelecionado({
-                       ...f,
-                       chamadaId: chamadaDoc.id
-                     })
-                } else {
-                  alert('Chamada aceita não encontrada.')
-                }
-                }).catch((e) => {
-                  console.error('Erro ao buscar chamada para pagamento:', e)
-                  alert('Erro ao preparar pagamento.')
-                })
-                } else {
-                 alert('Chamada ainda não está no status "aceita".')
-                }
-              }}
-                 podePagar={statusChamadas[f.uid || f.id] === 'aceita'}
-              />
+              onAbrirPagamento={() => handleAbrirPagamento(f)}
+              podePagar={f.podePagar}
+            />
           ))}
         </div>
       )}

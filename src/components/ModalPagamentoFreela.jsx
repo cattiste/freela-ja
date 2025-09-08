@@ -9,6 +9,9 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
   const [carregando, setCarregando] = useState(true)
   const [pixGerado, setPixGerado] = useState(false)
 
+  console.log('Modal aberto para pagamentoDocId:', pagamentoDocId)
+  console.log('Freela:', freela)
+
   const gerarPix = useCallback(async () => {
     if (pixGerado) return
     
@@ -31,9 +34,6 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
     }
   }, [pagamentoDocId, pixGerado])
 
-    console.log('Modal aberto para pagamentoDocId:', pagamentoDocId)
-    console.log('Freela:', freela)
-
   useEffect(() => {
     if (!pagamentoDocId) {
       setCarregando(false)
@@ -41,6 +41,8 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
     }
 
     const unsub = onSnapshot(doc(db, 'pagamentos_usuarios', pagamentoDocId), (snap) => {
+      console.log('Snapshot recebido:', snap.exists() ? snap.data() : 'Documento não existe')
+      
       if (snap.exists()) {
         const dados = snap.data()
         setPagamento(dados)
