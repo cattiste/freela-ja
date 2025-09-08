@@ -105,6 +105,7 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
             )}
           </div>
         )}
-          </div> 
-  </div> // << ESSA <div> TAVA FALTANDO
-)
+      </div>
+    </div>
+  )
+}
