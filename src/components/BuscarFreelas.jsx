@@ -54,8 +54,10 @@ function Estrelas({ media }) {
   )
 }
 
-function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao, setObservacao, onAbrirPagamento }) {
-
+function FreelaCard({
+  freela, online, distancia, onChamar, chamando,
+  observacao, setObservacao, onAbrirPagamento, podePagar
+}) {
   const uid = freela.uid || freela.id
 
   return (
@@ -96,15 +98,14 @@ function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao,
         value={observacao[uid] || ''}
         onChange={(e) => setObservacao((prev) => ({ ...prev, [uid]: e.target.value }))}
       />
-      <button
-         onClick={() => onAbrirPagamento(freela)}
-         disabled={!podePagar}
-         className={`mt-2 w-full py-2 rounded-lg font-bold ${
-           podePagar ? 'bg-orange-600 hover:bg-orange-700 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-        }`}
-      >
-         💳 Pagar Freela
-      </button>
+      {podePagar && (
+        <button
+          onClick={() => onAbrirPagamento(freela)}
+          className="mt-2 w-full py-2 rounded-lg font-bold bg-orange-600 hover:bg-orange-700 text-white"
+        >
+          💳 Pagar Freela
+        </button>
+      )}
       <button
         onClick={() => onChamar(freela)}
         disabled={!online || chamando === uid}
@@ -121,25 +122,25 @@ function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao,
 }
 
 export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
-const [freelas, setFreelas] = useState([])
-const [filtro, setFiltro] = useState('')
-const [chamando, setChamando] = useState(null)
-const [observacao, setObservacao] = useState({})
-const [freelaSelecionado, setFreelaSelecionado] = useState(null)
-const [statusChamadas, setStatusChamadas] = useState({})
+  const [freelas, setFreelas] = useState([])
+  const [filtro, setFiltro] = useState('')
+  const [chamando, setChamando] = useState(null)
+  const [observacao, setObservacao] = useState({})
+  const [freelaSelecionado, setFreelaSelecionado] = useState(null)
+  const [statusChamadas, setStatusChamadas] = useState({})
 
   useEffect(() => {
-const q = query(collection(db, 'chamadas'), where('contratanteUid', '==', usuario.uid))
-const unsub = onSnapshot(q, snap => {
-const dados = {}
-snap.forEach(doc => {
-const d = doc.data()
-dados[d.freelaUid] = d.status
-})
-setStatusChamadas(dados)
-})
-return () => unsub()
-}, [usuario.uid])
+    const q = query(collection(db, 'chamadas'), where('contratanteUid', '==', usuario.uid))
+    const unsub = onSnapshot(q, snap => {
+      const dados = {}
+      snap.forEach(doc => {
+        const d = doc.data()
+        dados[d.freelaUid] = d.status
+      })
+      setStatusChamadas(dados)
+    })
+    return () => unsub()
+  }, [usuario.uid])
 
   useEffect(() => {
     async function carregarFreelas() {
@@ -287,11 +288,13 @@ return () => unsub()
               chamando={chamando}
               observacao={observacao}
               setObservacao={setObservacao}
-              onAbrirPagamento={(freela) => setFreelaSelecionado(freela)}
+              onAbrirPagamento={() => setFreelaSelecionado(f)}
+              podePagar={statusChamadas[f.uid || f.id] === 'aceita'}
             />
           ))}
         </div>
       )}
+
       {freelaSelecionado && (
         <ModalPagamentoFreela
           freela={freelaSelecionado}
