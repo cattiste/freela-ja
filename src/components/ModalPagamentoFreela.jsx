@@ -13,27 +13,29 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
   console.log('🧑‍🍳 Freela:', freela)
 
   const gerarPix = useCallback(async () => {
-    if (pixGerado) return
-
-    try {
-      const response = await fetch('https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api/pix/cobrar', {
+  if (pixGerado) return;
+  try {
+    const response = await fetch(
+      'https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api/pix/cobrar',
+      {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chamadaId: pagamentoDocId })
-      })
-
-      const result = await response.json()
-      console.log('[Pix] Resultado da API:', result)
-
-      if (result.ok) {
-        setPixGerado(true)
-      } else {
-        console.error('[Pix] Erro ao gerar Pix:', result.erro || 'Erro desconhecido')
+        body: JSON.stringify({ chamadaId: pagamentoDocId }),
       }
-    } catch (err) {
-      console.error('[Pix] Erro de rede ao gerar Pix:', err)
+    );
+
+    const result = await response.json();
+
+    if (result.txid) {
+      console.log('✅ PIX gerado:', result);
+      setPixGerado(true);
+    } else {
+      console.error('❌ Erro ao gerar PIX:', result);
     }
-  }, [pagamentoDocId, pixGerado])
+  } catch (err) {
+    console.error('❌ Erro de rede ao gerar PIX:', err);
+  }
+}, [pagamentoDocId, pixGerado]);
 
   useEffect(() => {
     if (!pagamentoDocId) {
