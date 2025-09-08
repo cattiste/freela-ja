@@ -207,7 +207,7 @@ const filtrados = useMemo(() => {
       }
       return 0
     })
-}, [freelas, filtro, usuario, usuariosOnline, statusChamadas])
+}, [freelas, filtro, usuario, usuariosOnline, statusChamadas]) 
 
   const chamar = async (freela) => {
     const uid = freela.uid || freela.id
