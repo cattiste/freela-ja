@@ -179,33 +179,35 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
     carregarFreelas()
   }, [])
 
-  const filtrados = useMemo(() => {
-    return freelas
-      .map((f) => {
-        const distancia = f.coordenadas && usuario?.coordenadas
-          ? calcularDistancia(
-              usuario.coordenadas.latitude,
-              usuario.coordenadas.longitude,
-              f.coordenadas.latitude,
-              f.coordenadas.longitude
-            )
-          : null
-        const online = estaOnline(usuariosOnline[f.uid || f.id])
-        const chamada = statusChamadas[uid] || {}
-        const podePagar = chamada.status === 'aceita'
-        const chamadaId = chamada.chamadaId
-        return { ...f, distancia, online, podePagar, chamadaId }
-      })
-      .filter((f) => !filtro || f.funcao?.toLowerCase().includes(filtro.toLowerCase()))
-      .sort((a, b) => {
-        if (a.online && !b.online) return -1
-        if (!a.online && b.online) return 1
-        if (a.distancia != null && b.distancia != null) {
-          return a.distancia - b.distancia
-        }
-        return 0
-      })
-  }, [freelas, filtro, usuario, usuariosOnline])
+const filtrados = useMemo(() => {
+  return freelas
+    .map((f) => {
+      const uid = f.uid || f.id  // ✅ Defina uid aqui
+      const distancia = f.coordenadas && usuario?.coordenadas
+        ? calcularDistancia(
+            usuario.coordenadas.latitude,
+            usuario.coordenadas.longitude,
+            f.coordenadas.latitude,
+            f.coordenadas.longitude
+          )
+        : null
+      const online = estaOnline(usuariosOnline[uid])
+      const chamada = statusChamadas[uid] || {}
+      const podePagar = chamada.status === 'aceita'
+      const chamadaId = chamada.chamadaId
+      
+      return { ...f, distancia, online, podePagar, chamadaId, uid }
+    })
+    .filter((f) => !filtro || f.funcao?.toLowerCase().includes(filtro.toLowerCase()))
+    .sort((a, b) => {
+      if (a.online && !b.online) return -1
+      if (!a.online && b.online) return 1
+      if (a.distancia != null && b.distancia != null) {
+        return a.distancia - b.distancia
+      }
+      return 0
+    })
+}, [freelas, filtro, usuario, usuariosOnline, statusChamadas])
 
   const chamar = async (freela) => {
     const uid = freela.uid || freela.id
