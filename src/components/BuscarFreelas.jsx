@@ -8,7 +8,6 @@ import { db } from '@/firebase'
 import { FaStar, FaRegStar } from 'react-icons/fa'
 import ModalPagamentoFreela from './ModalPagamentoFreela'
 
-
 function calcularDistancia(lat1, lon1, lat2, lon2) {
   const toRad = (x) => (x * Math.PI) / 180
   const R = 6371
@@ -53,7 +52,7 @@ function Estrelas({ media }) {
       {[...Array(vazias)].map((_, i) => <FaRegStar key={'v' + i} />)}
     </div>
   )
-}
+}}
 
 function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao, setObservacao, onAbrirPagamento }) {
 
