@@ -41,86 +41,6 @@ function estaOnline(rec) {
   return flag && now - ts <= TTL_MS
 }
 
-function Estrelas({ media }) {
-  const cheias = Math.floor(media)
-  const meia = media % 1 >= 0.5
-  const vazias = 5 - cheias - (meia ? 1 : 0)
-  return (
-    <div className="flex justify-center mt-1 text-yellow-400">
-      {[...Array(cheias)].map((_, i) => <FaStar key={'c' + i} />)}
-      {meia && <FaStar className="opacity-50" />}
-      {[...Array(vazias)].map((_, i) => <FaRegStar key={'v' + i} />)}
-    </div>
-  )
-}
-
-function FreelaCard({
-  freela, online, distancia, onChamar, chamando,
-  observacao, setObservacao, onAbrirPagamento, podePagar
-}) {
-  const uid = freela.uid || freela.id
-
-  return (
-    <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100 flex flex-col items-center">
-      <img
-        src={freela.foto || 'https://via.placeholder.com/80'}
-        alt={freela.nome}
-        className="w-20 h-20 rounded-full object-cover border-2 border-orange-400"
-      />
-      <h3 className="mt-2 text-lg font-bold text-orange-700">{freela.nome}</h3>
-      <p className="text-sm text-gray-600">{freela.funcao}</p>
-      {freela.especialidades && (
-        <p className="text-xs text-gray-500 text-center">
-          {Array.isArray(freela.especialidades) ? freela.especialidades.join(', ') : freela.especialidades}
-        </p>
-      )}
-      {freela.mediaAvaliacoes ? (
-        <Estrelas media={freela.mediaAvaliacoes} />
-      ) : (
-        <p className="text-xs text-gray-400">(sem avaliações)</p>
-      )}
-      {freela.valorDiaria && (
-        <p className="text-sm font-semibold text-orange-700 mt-1">💰 R$ {freela.valorDiaria}</p>
-      )}
-      {distancia != null && (
-        <p className="text-sm text-gray-600 mt-1">📍 {distancia.toFixed(1)} km</p>
-      )}
-      {online && (
-        <div className="flex items-center gap-1 mt-1">
-          <span className="w-2 h-2 rounded-full bg-green-500" />
-          <span className="text-xs text-green-700">Online agora</span>
-        </div>
-      )}
-      <textarea
-        rows={2}
-        className="w-full mt-3 px-2 py-1 border rounded text-sm"
-        placeholder="Instruções (ex: roupa preta)"
-        value={observacao[uid] || ''}
-        onChange={(e) => setObservacao((prev) => ({ ...prev, [uid]: e.target.value }))}
-      />
-      {podePagar && (
-        <button
-          onClick={() => onAbrirPagamento(freela)}
-          className="mt-2 w-full py-2 rounded-lg font-bold bg-orange-600 hover:bg-orange-700 text-white"
-        >
-          💳 Pagar Freela
-        </button>
-      )}
-      <button
-        onClick={() => onChamar(freela)}
-        disabled={!online || chamando === uid}
-        className={`mt-3 w-full py-2 rounded-lg font-bold transition ${
-          online
-            ? 'bg-green-600 hover:bg-green-700 text-white'
-            : 'bg-gray-400 text-white cursor-not-allowed'
-        }`}
-      >
-        {chamando === uid ? 'Chamando...' : '📞 Chamar'}
-      </button>
-    </div>
-  )
-}
-
 export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
   const [freelas, setFreelas] = useState([])
   const [filtro, setFiltro] = useState('')
@@ -135,7 +55,10 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
       const dados = {}
       snap.forEach(doc => {
         const d = doc.data()
-        dados[d.freelaUid] = d.status
+        dados[d.freelaUid] = {
+          status: d.status,
+          chamadaId: doc.id
+        }
       })
       setStatusChamadas(dados)
     })
@@ -177,6 +100,7 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
   const filtrados = useMemo(() => {
     return freelas
       .map((f) => {
+        const uid = f.uid || f.id
         const distancia = f.coordenadas && usuario?.coordenadas
           ? calcularDistancia(
               usuario.coordenadas.latitude,
@@ -185,8 +109,11 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
               f.coordenadas.longitude
             )
           : null
-        const online = estaOnline(usuariosOnline[f.uid || f.id])
-        return { ...f, distancia, online }
+        const online = estaOnline(usuariosOnline[uid])
+        const chamada = statusChamadas[uid] || {}
+        const podePagar = chamada.status === 'aceita'
+        const chamadaId = chamada.chamadaId
+        return { ...f, distancia, online, podePagar, chamadaId }
       })
       .filter((f) => !filtro || f.funcao?.toLowerCase().includes(filtro.toLowerCase()))
       .sort((a, b) => {
@@ -197,7 +124,7 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         }
         return 0
       })
-  }, [freelas, filtro, usuario, usuariosOnline])
+  }, [freelas, filtro, usuario, usuariosOnline, statusChamadas])
 
   const chamar = async (freela) => {
     const uid = freela.uid || freela.id
@@ -289,35 +216,10 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
               observacao={observacao}
               setObservacao={setObservacao}
               onAbrirPagamento={() => {
-  const uid = f.uid || f.id
-  const status = statusChamadas[uid]
-  if (status === 'aceita') {
-    // Buscar o ID da chamada do freela
-    getDocs(query(
-      collection(db, 'chamadas'),
-      where('freelaUid', '==', uid),
-      where('contratanteUid', '==', usuario.uid),
-      where('status', '==', 'aceita')
-    )).then((snap) => {
-      if (!snap.empty) {
-        const chamadaDoc = snap.docs[0]
-        setFreelaSelecionado({
-          ...f,
-          chamadaId: chamadaDoc.id
-        })
-      } else {
-        alert('Chamada aceita não encontrada.')
-      }
-    }).catch((e) => {
-      console.error('Erro ao buscar chamada para pagamento:', e)
-      alert('Erro ao preparar pagamento.')
-    })
-  } else {
-    alert('Chamada ainda não está no status "aceita".')
-  }
-}}
-
-              podePagar={statusChamadas[f.uid || f.id] === 'aceita'}
+                console.log('[PAGAMENTO] clicado:', f.nome, f.chamadaId)
+                setFreelaSelecionado({ ...f, chamadaId: f.chamadaId })
+              }}
+              podePagar={f.podePagar}
             />
           ))}
         </div>
