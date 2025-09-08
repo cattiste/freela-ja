@@ -3,8 +3,6 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
 import QRCode from 'react-qr-code'
-import { getFunctions, httpsCallable } from 'firebase/functions'
-import { getAuth } from 'firebase/auth'
 
 export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }) {
   const [pagamento, setPagamento] = useState(null)
@@ -16,36 +14,26 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
 
   const gerarPix = useCallback(async () => {
     if (pixGerado) return
-    const usuario = getAuth().currentUser
 
     try {
-      const functions = getFunctions()
-      const gerarPixCallable = httpsCallable(functions, 'gerarPixCallable')
-
-      const valor = Number(freela.valorDiaria)
-      const pagador = {
-        nome: freela?.contratanteNome || usuario?.displayName || 'Pagador',
-        documento: freela?.cpf || freela?.cnpj || '00000000000'
-      }
-
-      console.log('📤 Enviando dados para gerarPixCallable:', { pagamentoDocId, valor, pagador })
-
-      const result = await gerarPixCallable({
-        chamadaId: pagamentoDocId,
-        valor,
-        pagador
+      const response = await fetch('https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api/pix/cobrar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chamadaId: pagamentoDocId })
       })
 
-      if (result.data?.sucesso) {
-        console.log('✅ Pix gerado:', result.data)
+      const result = await response.json()
+      console.log('[Pix] Resultado da API:', result)
+
+      if (result.ok) {
         setPixGerado(true)
       } else {
-        console.error('❌ Falha ao gerar Pix:', result.data?.message)
+        console.error('[Pix] Erro ao gerar Pix:', result.erro || 'Erro desconhecido')
       }
     } catch (err) {
-      console.error('❌ Erro ao chamar gerarPixCallable:', err)
+      console.error('[Pix] Erro de rede ao gerar Pix:', err)
     }
-  }, [pagamentoDocId, freela, pixGerado])
+  }, [pagamentoDocId, pixGerado])
 
   useEffect(() => {
     if (!pagamentoDocId) {
@@ -117,7 +105,3 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
             )}
           </div>
         )}
-      </div>
-    </div>
-  )
-}
