@@ -288,7 +288,35 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
               chamando={chamando}
               observacao={observacao}
               setObservacao={setObservacao}
-              onAbrirPagamento={() => setFreelaSelecionado(f)}
+              onAbrirPagamento={() => {
+  const uid = f.uid || f.id
+  const status = statusChamadas[uid]
+  if (status === 'aceita') {
+    // Buscar o ID da chamada do freela
+    getDocs(query(
+      collection(db, 'chamadas'),
+      where('freelaUid', '==', uid),
+      where('contratanteUid', '==', usuario.uid),
+      where('status', '==', 'aceita')
+    )).then((snap) => {
+      if (!snap.empty) {
+        const chamadaDoc = snap.docs[0]
+        setFreelaSelecionado({
+          ...f,
+          chamadaId: chamadaDoc.id
+        })
+      } else {
+        alert('Chamada aceita não encontrada.')
+      }
+    }).catch((e) => {
+      console.error('Erro ao buscar chamada para pagamento:', e)
+      alert('Erro ao preparar pagamento.')
+    })
+  } else {
+    alert('Chamada ainda não está no status "aceita".')
+  }
+}}
+
               podePagar={statusChamadas[f.uid || f.id] === 'aceita'}
             />
           ))}
