@@ -1,5 +1,5 @@
 // src/components/ModalPagamentoFreela.jsx
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
 import QRCode from 'react-qr-code'
@@ -7,36 +7,58 @@ import QRCode from 'react-qr-code'
 export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }) {
   const [pagamento, setPagamento] = useState(null)
   const [carregando, setCarregando] = useState(true)
+  const [pixGerado, setPixGerado] = useState(false)
 
-useEffect(() => {
-  if (!pagamentoDocId) return
-
-  // Gera cobrança Pix se ainda não tiver sido gerada
-  fetch('/api/gerar-pix', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chamadaId: pagamentoDocId }),
-  })
-    .then((res) => res.json())
-    .then((res) => {
-      if (res.erro) console.error('[Pix] Erro ao gerar:', res.erro)
-      else console.log('[Pix] Geração OK')
-    })
-    .catch((err) => console.error('[Pix] Falha:', err))
-
-  const unsub = onSnapshot(doc(db, 'pagamentos_usuarios', pagamentoDocId), (snap) => {
-    if (snap.exists()) {
-      const dados = snap.data()
-      setPagamento(dados)
-      setCarregando(false)
-    } else {
-      setCarregando(false)
+  const gerarPix = useCallback(async () => {
+    if (pixGerado) return
+    
+    try {
+      const response = await fetch('/api/gerar-pix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chamadaId: pagamentoDocId }),
+      })
+      
+      const result = await response.json()
+      if (result.erro) {
+        console.error('[Pix] Erro ao gerar:', result.erro)
+      } else {
+        console.log('[Pix] Geração OK')
+        setPixGerado(true)
+      }
+    } catch (err) {
+      console.error('[Pix] Falha:', err)
     }
-  })
+  }, [pagamentoDocId, pixGerado])
 
-  return () => unsub()
-}, [pagamentoDocId])
+    console.log('Modal aberto para pagamentoDocId:', pagamentoDocId)
+    console.log('Freela:', freela)
 
+  useEffect(() => {
+    if (!pagamentoDocId) {
+      setCarregando(false)
+      return
+    }
+
+    const unsub = onSnapshot(doc(db, 'pagamentos_usuarios', pagamentoDocId), (snap) => {
+      if (snap.exists()) {
+        const dados = snap.data()
+        setPagamento(dados)
+        
+        // Gerar PIX apenas se ainda não foi gerado e o status é pendente
+        if (!pixGerado && dados.status === 'pendente') {
+          gerarPix()
+        }
+        
+        setCarregando(false)
+      } else {
+        setCarregando(false)
+        console.error('Documento de pagamento não encontrado:', pagamentoDocId)
+      }
+    })
+
+    return () => unsub()
+  }, [pagamentoDocId, gerarPix, pixGerado])
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center px-4">
@@ -74,6 +96,10 @@ useEffect(() => {
 
             {pagamento.status === 'pago' && (
               <p className="text-green-600 text-center font-semibold">✅ Pagamento confirmado!</p>
+            )}
+            
+            {pagamento.status === 'pendente' && !pagamento.qrCode && (
+              <p className="text-yellow-600 text-center">Aguardando geração do PIX...</p>
             )}
           </div>
         )}
