@@ -52,7 +52,7 @@ function Estrelas({ media }) {
       {[...Array(vazias)].map((_, i) => <FaRegStar key={'v' + i} />)}
     </div>
   )
-}}
+}
 
 function FreelaCard({ freela, online, distancia, onChamar, chamando, observacao, setObservacao, onAbrirPagamento }) {
 
