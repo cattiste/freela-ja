@@ -130,26 +130,40 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
   const [statusChamadas, setStatusChamadas] = useState({})
 
   useEffect(() => {
-    const q = query(
-      collection(db, 'chamadas'), 
-      where('contratanteUid', '==', usuario.uid)
-    )
-    const unsub = onSnapshot(q, snap => {
-      const dados = {}
-      snap.forEach(doc => {
-        const d = doc.data()
-        // Armazena o objeto completo da chamada com ID
+  const q = query(
+    collection(db, 'chamadas'),
+    where('contratanteUid', '==', usuario.uid),
+    where('status', 'in', ['pendente', 'aceita']) // ✅ Filtra apenas chamadas ativas
+  )
+
+  const unsub = onSnapshot(q, snap => {
+    const dados = {}
+
+    snap.forEach(doc => {
+      const d = doc.data()
+      // Considera apenas a chamada mais recente por freela
+      const existente = dados[d.freelaUid]
+
+      // Se já existe uma chamada para esse freela, pega a mais nova
+      if (
+        !existente ||
+        (d.criadoEm?.seconds || 0) > (existente.criadoEm?.seconds || 0)
+      ) {
         dados[d.freelaUid] = {
           status: d.status,
           chamadaId: doc.id,
-          ...d
+          ...d,
         }
-      })
-      console.log('Chamadas atualizadas:', dados)
-      setStatusChamadas(dados)
+      }
     })
-    return () => unsub()
-  }, [usuario.uid])
+
+    console.log('Chamadas atualizadas:', dados)
+    setStatusChamadas(dados)
+  })
+
+  return () => unsub()
+}, [usuario.uid])
+
 
   useEffect(() => {
     async function carregarFreelas() {
