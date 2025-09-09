@@ -253,7 +253,7 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
           contratanteUid: usuario.uid,
           freelaUid: uid,
           freelaNome: freela.nome || '',
-          cpfContratante: usuario.cpf || '',
+          cpfContratante: usuario.responsavelCPF || usuario.cpf || '',
           contratanteNome: usuario.nome || '',
           valorDiaria: diaria,
           valorContratante: +(diaria * 1.10).toFixed(2),
