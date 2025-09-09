@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { db } from "../firebaseConfig";
+import { db } from "../services/firebaseConfig";
 import { doc, onSnapshot } from "firebase/firestore";
 
 export default function ModalPagamentoFreela({ chamada, onClose }) {
