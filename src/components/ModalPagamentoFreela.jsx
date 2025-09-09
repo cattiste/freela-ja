@@ -104,23 +104,27 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
               </>
             )}
 
-            {(pagamento.qrCodePix || pagamento.qrCode || pagamento.imagemQrCode) ? (
-              <div className="flex justify-center">
-                <QRCode
-                  value={
-                    pagamento.qrCodePix ||
-                    pagamento.qrCode ||
-                    pagamento.copiaCola ||
-                    ''
-                  }
-                  size={200}
-                />
-              </div>
-            ) : (
-              pixGerado && (
-                <p className="text-center text-yellow-600">Aguardando geração do PIX...</p>
-              )
-            )}
+ {pagamento.imagemQrCode ? (
+  <div className="flex justify-center">
+    <img
+      src={pagamento.imagemQrCode}
+      alt="QR Code Pix"
+      className="w-52 h-52 object-contain mx-auto"
+    />
+  </div>
+) : (pagamento.copiaCola || pagamento.pixCopiaECola) ? (
+  <div className="flex justify-center">
+    <QRCode
+      value={pagamento.copiaCola || pagamento.pixCopiaECola}
+      size={200}
+    />
+  </div>
+) : (
+  pixGerado && (
+    <p className="text-center text-yellow-600">Aguardando geração do PIX...</p>
+  )
+)}
+
 
             {(pagamento.copiaColaPix || pagamento.pixCopiaECola || pagamento.copiaCola) && (
               <div className="bg-gray-100 p-2 rounded-md text-sm text-center break-all">
