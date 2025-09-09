@@ -12,8 +12,7 @@ const gerarPix = async () => {
     setLoading(true);
     setStatus("pendente");
 
-    const chamadaId = chamada?.id || chamada?.chamadaId;
-    if (!chamadaId) {
+    if (!chamada?.id) {
       throw new Error("ID da chamada não encontrado");
     }
 
@@ -22,7 +21,7 @@ const gerarPix = async () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chamadaId }),
+        body: JSON.stringify({ chamadaId: chamada.id }),
       }
     );
 
@@ -36,6 +35,7 @@ const gerarPix = async () => {
     setLoading(false);
   }
 };
+
 
 
   // 🔎 Listener em tempo real para o pagamento

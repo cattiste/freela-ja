@@ -150,10 +150,11 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         (d.criadoEm?.seconds || 0) > (existente.criadoEm?.seconds || 0)
       ) {
         dados[d.freelaUid] = {
-          status: d.status,
-          chamadaId: doc.id,
-          ...d,
-        }
+         id: doc.id,          // 🔥 usa sempre "id", padrão Firestore
+        status: d.status,
+        ...d,
+       }
+
       }
     })
 
