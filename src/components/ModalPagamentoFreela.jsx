@@ -1,58 +1,56 @@
-import React, { useState } from 'react';
-import { db } from '../firebaseConfig';
-import { doc, updateDoc } from 'firebase/firestore';
+import React, { useState, useEffect } from "react";
+import { db } from "../firebaseConfig";
+import { doc, onSnapshot } from "firebase/firestore";
 
 export default function ModalPagamentoFreela({ chamada, onClose }) {
-  const [status, setStatus] = useState('pendente');
+  const [status, setStatus] = useState("pendente");
   const [pagamento, setPagamento] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const gerarPix = async () => {
     try {
       setLoading(true);
-      setStatus('pendente');
+      setStatus("pendente");
 
       const response = await fetch(
-        'https://api-kbaliknhja-rj.a.run.app/api/pix/cobrar',
+        "https://api-kbaliknhja-rj.a.run.app/api/pix/cobrar",
         {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ chamadaId: chamada.id }),
         }
       );
 
       if (!response.ok) {
-        throw new Error('Erro ao gerar cobrança Pix');
+        throw new Error("Erro ao gerar cobrança Pix");
       }
 
-      const data = await response.json();
-
-      // salvar no state para exibir no modal
-      setPagamento({
-        txid: data.txid,
-        copiaCola: data.qrcode || data.copiaCola,
-        imagemQrcode: data.imagemQrcode,
-      });
-
-      // atualizar Firestore também
-      await updateDoc(doc(db, 'chamadas', chamada.id), {
-        pagamento: {
-          txid: data.txid,
-          copiaCola: data.qrcode || data.copiaCola,
-          imagemQrcode: data.imagemQrcode,
-          status: 'pendente',
-          criadoEm: new Date(),
-        },
-      });
-
-      setStatus('gerado');
+      // não precisa salvar manualmente, o backend já salva no Firestore
+      // só aguardamos o onSnapshot atualizar em tempo real
     } catch (error) {
-      console.error('Erro ao gerar Pix:', error);
-      setStatus('erro');
+      console.error("Erro ao gerar Pix:", error);
+      setStatus("erro");
     } finally {
       setLoading(false);
     }
   };
+
+  // 🔎 Listener em tempo real para o pagamento
+  useEffect(() => {
+    if (!chamada?.id) return;
+
+    const unsub = onSnapshot(doc(db, "chamadas", chamada.id), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.pagamento) {
+          setPagamento(data.pagamento);
+          setStatus(data.pagamento.status || "pendente");
+        }
+      }
+    });
+
+    return () => unsub();
+  }, [chamada?.id]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
@@ -61,7 +59,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
           Pagamento via Pix
         </h2>
 
-        {status === 'pendente' && !pagamento && (
+        {status === "pendente" && !pagamento && (
           <div className="text-center">
             <p>Aguardando geração do Pix...</p>
             <button
@@ -69,16 +67,23 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
               className="mt-4 bg-orange-600 text-white px-4 py-2 rounded"
               disabled={loading}
             >
-              {loading ? 'Gerando...' : 'Gerar Pix'}
+              {loading ? "Gerando..." : "Gerar Pix"}
             </button>
           </div>
         )}
 
-        {status === 'gerado' && pagamento && (
+        {pagamento && (
           <div className="text-center">
-            <p className="text-green-600 font-medium mb-3">
-              Pix gerado com sucesso!
-            </p>
+            {status === "pendente" && (
+              <p className="text-yellow-600 font-medium mb-3">
+                ⏳ Aguardando pagamento...
+              </p>
+            )}
+            {status === "pago" && (
+              <p className="text-green-600 font-medium mb-3">
+                ✅ Pagamento confirmado!
+              </p>
+            )}
 
             {pagamento.imagemQrcode && (
               <div className="flex flex-col items-center mb-4">
@@ -115,7 +120,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
           </div>
         )}
 
-        {status === 'erro' && (
+        {status === "erro" && (
           <p className="text-center text-red-600 mt-3">
             ❌ Erro ao gerar Pix. Tente novamente.
           </p>
