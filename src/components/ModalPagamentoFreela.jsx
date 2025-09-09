@@ -46,16 +46,16 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
       return
     }
 
-    const unsub = onSnapshot(doc(db, 'pagamentos_usuarios', pagamentoDocId), (snap) => {
+    const unsub = onSnapshot(doc(db, 'chamadas', pagamentoDocId), (snap) => {
       console.log('📩 Snapshot recebido:', snap.exists() ? snap.data() : 'Documento não existe')
 
       if (snap.exists()) {
         const dados = snap.data()
-        setPagamento(dados)
+        setPagamento(dados.pagamento) // agora pega o campo "pagamento" dentro da chamada
         setCarregando(false)
       } else {
         setCarregando(false)
-        console.error('❌ Documento de pagamento não encontrado:', pagamentoDocId)
+        console.error('❌ Documento de chamada não encontrado:', pagamentoDocId)
       }
     })
 
@@ -104,9 +104,17 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
               </>
             )}
 
-            {pagamento.qrCodePix || pagamento.qrCode ? (
+            {(pagamento.qrCodePix || pagamento.qrCode || pagamento.imagemQrCode) ? (
               <div className="flex justify-center">
-                <QRCode value={pagamento.qrCodePix || pagamento.qrCode} size={200} />
+                <QRCode
+                  value={
+                    pagamento.qrCodePix ||
+                    pagamento.qrCode ||
+                    pagamento.copiaCola ||
+                    ''
+                  }
+                  size={200}
+                />
               </div>
             ) : (
               pixGerado && (
@@ -114,11 +122,11 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
               )
             )}
 
-            {pagamento.copiaColaPix || pagamento.pixCopiaECola ? (
+            {(pagamento.copiaColaPix || pagamento.pixCopiaECola || pagamento.copiaCola) && (
               <div className="bg-gray-100 p-2 rounded-md text-sm text-center break-all">
-                {pagamento.copiaColaPix || pagamento.pixCopiaECola}
+                {pagamento.copiaColaPix || pagamento.pixCopiaECola || pagamento.copiaCola}
               </div>
-            ) : null}
+            )}
 
             <div className="text-center text-sm text-gray-600">
               Status: <span className="font-bold text-orange-600">{pagamento.status}</span>
