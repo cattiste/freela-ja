@@ -7,7 +7,6 @@ import { doc, getDoc, serverTimestamp, setDoc, GeoPoint } from 'firebase/firesto
 import { useNavigate } from 'react-router-dom';
 import ContratoPrestacaoServico from '@/components/ContratoPrestacaoServico';
 
-
 const VERSAO_CONTRATO = '1.0.0';
 
 export default function CadastroContratante() {
@@ -27,7 +26,9 @@ export default function CadastroContratante() {
     celular: '',
     endereco: '',
     especialidade: '',
-    foto: ''
+    foto: '',
+    nomeResponsavel: '',
+    cpfResponsavel: ''
   });
 
   useEffect(() => {
@@ -43,7 +44,9 @@ export default function CadastroContratante() {
             celular: u.celular || '',
             endereco: u.endereco || '',
             especialidade: u.especialidade || '',
-            foto: u.foto || ''
+            foto: u.foto || '',
+            nomeResponsavel: u.nomeResponsavel || '',
+            cpfResponsavel: u.cpfResponsavel || ''
           });
           if (u.aceitouContrato && u.versaoContrato === VERSAO_CONTRATO) {
             setContratoOk(true);
@@ -83,7 +86,7 @@ export default function CadastroContratante() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    if (name === 'cpfOuCnpj') {
+    if (name === 'cpfOuCnpj' || name === 'cpfResponsavel') {
       const raw = value.replace(/\D/g, '');
       let formatado = raw;
 
@@ -113,62 +116,63 @@ export default function CadastroContratante() {
   };
 
   const salvar = async (e) => {
-  e.preventDefault()
-  if (!contratoOk) return
+    e.preventDefault();
+    if (!contratoOk) return;
 
-  let uid = auth.currentUser?.uid
-  const wantsNewAccount = forcarCriacao || (!!cred.email && !!cred.senha)
-  let user = auth.currentUser
+    let uid = auth.currentUser?.uid;
+    const wantsNewAccount = forcarCriacao || (!!cred.email && !!cred.senha);
+    let user = auth.currentUser;
 
-  // Criar nova conta
-  if (!uid && wantsNewAccount) {
-    if (!cred.email.trim()) return alert('E-mail obrigatório')
-    if (!cred.senha || cred.senha.length < 6) return alert('Senha muito curta')
+    if (!uid && wantsNewAccount) {
+      if (!cred.email.trim()) return alert('E-mail obrigatório');
+      if (!cred.senha || cred.senha.length < 6) return alert('Senha muito curta');
 
-    const userCredential = await createUserWithEmailAndPassword(auth, cred.email, cred.senha)
-    user = userCredential.user
-    uid = user.uid
+      const userCredential = await createUserWithEmailAndPassword(auth, cred.email, cred.senha);
+      user = userCredential.user;
+      uid = user.uid;
 
-    await sendEmailVerification(user)
-    alert('✅ Verifique seu e-mail para ativar sua conta!')
-  }
-
-  if (!form.nome || !form.cpfOuCnpj || !form.endereco) {
-    return alert('Preencha os campos obrigatórios.')
-  }
-
-  const rawDoc = form.cpfOuCnpj.replace(/\D/g, '')
-  const tipoConta = rawDoc.length > 11 ? 'comercial' : 'pessoa_fisica'
-
-  const payload = {
-    uid,
-    email: user?.email || '',
-    nome: form.nome,
-    cpfOuCnpj: form.cpfOuCnpj,
-    celular: form.celular,
-    endereco: form.endereco,
-    especialidade: form.especialidade,
-    foto: form.foto,
-    tipo: 'contratante',
-    tipoConta,
-    aceitouContrato: true,
-    versaoContrato: VERSAO_CONTRATO,
-    localizacao,
-    criadoEm: serverTimestamp(),
-    atualizadoEm: serverTimestamp()
-  }
-
-  const ref = doc(db, 'usuarios', uid)
-  await setDoc(ref, payload, { merge: true })
-
-  alert('✅ Cadastro salvo com sucesso!')
-  navigate('/verificar-email', {
-    state: {
-      nome: form.nome,
-      email: user?.email
+      await sendEmailVerification(user);
+      alert('✅ Verifique seu e-mail para ativar sua conta!');
     }
-  })
-}
+
+    if (!form.nome || !form.cpfOuCnpj || !form.endereco) {
+      return alert('Preencha os campos obrigatórios.');
+    }
+
+    const rawDoc = form.cpfOuCnpj.replace(/\D/g, '');
+    const tipoConta = rawDoc.length > 11 ? 'comercial' : 'pessoa_fisica';
+
+    const payload = {
+      uid,
+      email: user?.email || '',
+      nome: form.nome,
+      cpfOuCnpj: form.cpfOuCnpj,
+      celular: form.celular,
+      endereco: form.endereco,
+      especialidade: form.especialidade,
+      foto: form.foto,
+      tipo: 'contratante',
+      tipoConta,
+      nomeResponsavel: form.nomeResponsavel || '',
+      cpfResponsavel: form.cpfResponsavel || '',
+      aceitouContrato: true,
+      versaoContrato: VERSAO_CONTRATO,
+      localizacao,
+      criadoEm: serverTimestamp(),
+      atualizadoEm: serverTimestamp()
+    };
+
+    const ref = doc(db, 'usuarios', uid);
+    await setDoc(ref, payload, { merge: true });
+
+    alert('✅ Cadastro salvo com sucesso!');
+    navigate('/verificar-email', {
+      state: {
+        nome: form.nome,
+        email: user?.email
+      }
+    });
+  };
 
   if (carregando) return <div className="p-6 text-orange-600">Carregando...</div>;
 
@@ -181,89 +185,38 @@ export default function CadastroContratante() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label>Email*</label>
-              <input 
-                type="email" 
-                name="email" 
-                value={cred.email} 
-                onChange={handleCred} 
-                required 
-                className="w-full border px-3 py-2 rounded" 
-              />
+              <input type="email" name="email" value={cred.email} onChange={handleCred} required className="w-full border px-3 py-2 rounded" />
             </div>
             <div>
               <label>Senha*</label>
-              <input 
-                type="password" 
-                name="senha" 
-                value={cred.senha} 
-                onChange={handleCred} 
-                required 
-                className="w-full border px-3 py-2 rounded" 
-              />
+              <input type="password" name="senha" value={cred.senha} onChange={handleCred} required className="w-full border px-3 py-2 rounded" />
             </div>
           </div>
         )}
 
-        <input 
-          name="nome" 
-          value={form.nome} 
-          onChange={handleChange} 
-          placeholder="Nome completo ou fantasia" 
-          required 
-          className="w-full border px-3 py-2 rounded" 
-        />
-        <input 
-          name="cpfOuCnpj" 
-          value={form.cpfOuCnpj} 
-          onChange={handleChange} 
-          placeholder="CPF ou CNPJ" 
-          required 
-          className="w-full border px-3 py-2 rounded" 
-        />
-        <input 
-          name="celular" 
-          value={form.celular} 
-          onChange={handleChange} 
-          placeholder="Celular" 
-          className="w-full border px-3 py-2 rounded" 
-        />
-        <input 
-          name="endereco" 
-          value={form.endereco} 
-          onChange={handleChange} 
-          placeholder="Endereço" 
-          required 
-          className="w-full border px-3 py-2 rounded" 
-        />
-        <input 
-          name="especialidade" 
-          value={form.especialidade} 
-          onChange={handleChange} 
-          placeholder="Especialidade" 
-          className="w-full border px-3 py-2 rounded" 
-        />    
-        
+        <input name="nome" value={form.nome} onChange={handleChange} placeholder="Nome completo ou fantasia" required className="w-full border px-3 py-2 rounded" />
+        <input name="cpfOuCnpj" value={form.cpfOuCnpj} onChange={handleChange} placeholder="CPF ou CNPJ" required className="w-full border px-3 py-2 rounded" />
+        <input name="celular" value={form.celular} onChange={handleChange} placeholder="Celular" className="w-full border px-3 py-2 rounded" />
+        <input name="endereco" value={form.endereco} onChange={handleChange} placeholder="Endereço" required className="w-full border px-3 py-2 rounded" />
+        <input name="especialidade" value={form.especialidade} onChange={handleChange} placeholder="Especialidade" className="w-full border px-3 py-2 rounded" />
+
+        {/* Campos adicionais para CNPJ */}
+        {form.cpfOuCnpj.replace(/\D/g, '').length > 11 && (
+          <>
+            <input name="nomeResponsavel" value={form.nomeResponsavel} onChange={handleChange} placeholder="Nome do responsável legal" required className="w-full border px-3 py-2 rounded" />
+            <input name="cpfResponsavel" value={form.cpfResponsavel} onChange={handleChange} placeholder="CPF do responsável" required className="w-full border px-3 py-2 rounded" />
+          </>
+        )}
 
         <div>
           <label>Foto (opcional)</label>
           <input type="file" accept="image/*" onChange={onSelectFoto} />
-          {form.foto && (
-            <img 
-              src={form.foto} 
-              alt="preview" 
-              className="w-20 h-20 mt-2 object-cover rounded" 
-            />
-          )}
+          {form.foto && <img src={form.foto} alt="preview" className="w-20 h-20 mt-2 object-cover rounded" />}
         </div>
 
         <div>
           <label className="block mb-2">Localização</label>
-          <button 
-            type="button" 
-            onClick={obterLocalizacao}
-            disabled={obtendoLocalizacao}
-            className="w-full bg-blue-100 text-blue-700 py-2 rounded mb-2 disabled:opacity-50 hover:bg-blue-200 transition"
-          >
+          <button type="button" onClick={obterLocalizacao} disabled={obtendoLocalizacao} className="w-full bg-blue-100 text-blue-700 py-2 rounded mb-2 disabled:opacity-50 hover:bg-blue-200 transition">
             {obtendoLocalizacao ? 'Obtendo localização...' : 'Obter localização atual'}
           </button>
           {localizacao && (
@@ -273,17 +226,9 @@ export default function CadastroContratante() {
           )}
         </div>
 
-        <ContratoPrestacaoServico 
-          versao={VERSAO_CONTRATO} 
-          defaultChecked={contratoDefaultChecked} 
-          onChange={setContratoOk} 
-        />
+        <ContratoPrestacaoServico versao={VERSAO_CONTRATO} defaultChecked={contratoDefaultChecked} onChange={setContratoOk} />
 
-        <button 
-          type="submit" 
-          disabled={!contratoOk || obtendoLocalizacao} 
-          className="w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700 transition disabled:opacity-50"
-        >
+        <button type="submit" disabled={!contratoOk || obtendoLocalizacao} className="w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700 transition disabled:opacity-50">
           {modoEdicao ? 'Atualizar Cadastro' : 'Criar Conta'}
         </button>
       </form>
