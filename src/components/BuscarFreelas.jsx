@@ -130,32 +130,31 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
   const [statusChamadas, setStatusChamadas] = useState({})
 
   useEffect(() => {
-  const q = query(
-    collection(db, 'chamadas'),
-    where('contratanteUid', '==', usuario.uid),
-    where('status', 'in', ['pendente', 'aceita']) // ✅ Filtra apenas chamadas ativas
-  )
+    const q = query(
+      collection(db, 'chamadas'),
+      where('contratanteUid', '==', usuario.uid),
+      where('status', 'in', ['pendente', 'aceita'])
+    )
 
-  const unsub = onSnapshot(q, snap => {
-const dados = {};
-snap.forEach((docSnap) => {
-  const d = docSnap.data();
-  const existente = dados[d.freelaUid];
+    const unsub = onSnapshot(q, snap => {
+      const dados = {}
+      snap.forEach((docSnap) => {
+        const d = docSnap.data()
+        const existente = dados[d.freelaUid]
 
-  // mantém sua lógica de “pegar a mais recente”
-  if (!existente || (d.criadoEm?.seconds || 0) > (existente.criadoEm?.seconds || 0)) {
-    dados[d.freelaUid] = {
-      id: docSnap.id,        // ✅ garante o id do documento
-      status: d.status,
-      ...d,                  // mantém todos os seus outros campos
-    };
-  }
-});
-setStatusChamadas(dados);
+        if (!existente || (d.criadoEm?.seconds || 0) > (existente.criadoEm?.seconds || 0)) {
+          dados[d.freelaUid] = {
+            id: docSnap.id,
+            status: d.status,
+            ...d,
+          }
+        }
+      })
+      setStatusChamadas(dados)
+    })
 
-  return () => unsub()
-}, [usuario.uid])
-
+    return () => unsub()
+  }, [usuario.uid])
 
   useEffect(() => {
     async function carregarFreelas() {
@@ -204,9 +203,9 @@ setStatusChamadas(dados);
         const online = estaOnline(usuariosOnline[uid])
         const chamada = statusChamadas[uid] || {}
         const podePagar = chamada.status === 'aceita'
-        const chamadaId = chamada.chamadaId
+        const chamadaId = chamada.id // ✅ CORRIGIDO: usar chamada.id
         
-        console.log('Freela:', f.nome, 'Status:', chamada.status, 'Pode pagar:', podePagar)
+        console.log('Freela:', f.nome, 'Status:', chamada.status, 'Pode pagar:', podePagar, 'Chamada ID:', chamadaId)
         
         return { ...f, distancia, online, podePagar, chamadaId, uid }
       })
@@ -238,16 +237,16 @@ setStatusChamadas(dados);
         return
       }
 
-      const chamadaRef = doc(collection(db, "chamadas"));
-await setDoc(chamadaRef, {
-  id: chamadaRef.id,          // ✅ salva o id também no documento
-  freelaUid: freela.uid,
-  freelaNome: freela.nome,
-  contratanteUid: usuario.uid,
-  contratanteNome: usuario.nome,
-  valorDiaria: freela.valorDiaria,
-  status: "pendente",
-  criadoEm: serverTimestamp(),
+      const chamadaRef = doc(collection(db, "chamadas"))
+      await setDoc(chamadaRef, {
+        id: chamadaRef.id,
+        freelaUid: freela.uid || freela.id,
+        freelaNome: freela.nome,
+        contratanteUid: usuario.uid,
+        contratanteNome: usuario.nome,
+        valorDiaria: freela.valorDiaria,
+        status: "pendente",
+        criadoEm: serverTimestamp(),
       })
       chamadaId = chamadaRef.id
       console.log('Chamada criada com ID:', chamadaId)
@@ -284,15 +283,18 @@ await setDoc(chamadaRef, {
     }
   }
 
-const handleAbrirPagamento = (freela) => {
-  const chamada = statusChamadas[freela.uid];
-  if (chamada?.status === 'aceita') {
-    console.log('Abrindo pagamento para chamada ID:', chamada.chamadaId);
-    setFreelaSelecionado({ ...freela, chamada }); // ✅ envia a chamada completa
-  } else {
-    alert('Chamada ainda não está no status "aceita".');
+  const handleAbrirPagamento = (freela) => {
+    const chamada = statusChamadas[freela.uid || freela.id]
+    if (chamada?.status === 'aceita') {
+      console.log('Abrindo pagamento para chamada ID:', chamada.id)
+      setFreelaSelecionado({ 
+        ...freela, 
+        chamada // ✅ Envia a chamada completa
+      })
+    } else {
+      alert('Chamada ainda não está no status "aceita".')
+    }
   }
-};
 
   return (
     <div className="min-h-screen bg-cover bg-center p-4 pb-20"
@@ -328,12 +330,13 @@ const handleAbrirPagamento = (freela) => {
         </div>
       )}
 
-     {freelaSelecionado && freelaSelecionado.chamada && (
-  <ModalPagamentoFreela
-    chamada={freelaSelecionado.chamada}   // ✅ tem chamada.id garantido
-    onClose={() => setFreelaSelecionado(null)}
-  />
-)}
+      {freelaSelecionado && freelaSelecionado.chamada && (
+        <ModalPagamentoFreela
+          freela={freelaSelecionado}
+          pagamentoDocId={freelaSelecionado.chamada.id} // ✅ Agora usa chamada.id
+          onClose={() => setFreelaSelecionado(null)}
+        />
+      )}
     </div>
   )
 }
