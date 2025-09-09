@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../services/firebaseConfig";
 
 export default function ModalPagamentoFreela({ chamada, onClose }) {
-  const [status, setStatus] = useState("pendente"); // pendente | erro | ok
+  const [status, setStatus] = useState("pendente");
   const [loading, setLoading] = useState(false);
 
   const gerarPix = async () => {
@@ -15,30 +13,12 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
         throw new Error("ID da chamada não encontrado");
       }
 
-      // 🔎 Buscar contratante no Firestore
-      const contratanteSnap = await getDoc(
-        doc(db, "usuarios", chamada.contratanteUid)
-      );
-
-      if (!contratanteSnap.exists()) {
-        throw new Error("Contratante não encontrado");
-      }
-
-      const contratante = contratanteSnap.data();
-
-      // ⚡ Monta payload para API
-      const body = {
-        chamadaId: chamada.id,
-        nome: contratante.nome || "Pagador",
-        cpf: contratante.cpf?.replace(/\D/g, ""), // garante só números
-      };
-
       const response = await fetch(
         "https://api-kbaliknhja-rj.a.run.app/api/pix/cobrar",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+          body: JSON.stringify({ chamadaId: chamada.id }),
         }
       );
 
@@ -66,7 +46,9 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
           <p className="text-gray-600 mb-4">Aguardando geração do PIX...</p>
         )}
         {status === "erro" && (
-          <p className="text-red-600 mb-4">❌ Erro ao gerar Pix. Tente novamente.</p>
+          <p className="text-red-600 mb-4">
+            ❌ Erro ao gerar Pix. Tente novamente.
+          </p>
         )}
         {status === "ok" && (
           <p className="text-green-600 mb-4">

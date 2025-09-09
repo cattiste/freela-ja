@@ -137,30 +137,21 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
   )
 
   const unsub = onSnapshot(q, snap => {
-    const dados = {}
+const dados = {};
+snap.forEach((docSnap) => {
+  const d = docSnap.data();
+  const existente = dados[d.freelaUid];
 
-    snap.forEach(doc => {
-      const d = doc.data()
-      // Considera apenas a chamada mais recente por freela
-      const existente = dados[d.freelaUid]
-
-      // Se já existe uma chamada para esse freela, pega a mais nova
-      if (
-        !existente ||
-        (d.criadoEm?.seconds || 0) > (existente.criadoEm?.seconds || 0)
-      ) {
-        dados[d.freelaUid] = {
-         id: doc.id,          // 🔥 usa sempre "id", padrão Firestore
-        status: d.status,
-        ...d,
-       }
-
-      }
-    })
-
-    console.log('Chamadas atualizadas:', dados)
-    setStatusChamadas(dados)
-  })
+  // mantém sua lógica de “pegar a mais recente”
+  if (!existente || (d.criadoEm?.seconds || 0) > (existente.criadoEm?.seconds || 0)) {
+    dados[d.freelaUid] = {
+      id: docSnap.id,        // ✅ garante o id do documento
+      status: d.status,
+      ...d,                  // mantém todos os seus outros campos
+    };
+  }
+});
+setStatusChamadas(dados);
 
   return () => unsub()
 }, [usuario.uid])
@@ -247,16 +238,16 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         return
       }
 
-      const chamadaRef = await addDoc(collection(db, 'chamadas'), {
-        freelaUid: uid,
-        freelaNome: freela.nome,
-        valorDiaria: freela.valorDiaria || null,
-        contratanteUid: usuario.uid,
-        contratanteNome: usuario.responsavelNome || usuario.nome || '',
-        tipoContratante: usuario.tipo || usuario.tipoUsuario || '',
-        observacao: observacao[uid] || '',
-        status: 'pendente',
-        criadoEm: serverTimestamp()
+      const chamadaRef = doc(collection(db, "chamadas"));
+await setDoc(chamadaRef, {
+  id: chamadaRef.id,          // ✅ salva o id também no documento
+  freelaUid: freela.uid,
+  freelaNome: freela.nome,
+  contratanteUid: usuario.uid,
+  contratanteNome: usuario.nome,
+  valorDiaria: freela.valorDiaria,
+  status: "pendente",
+  criadoEm: serverTimestamp(),
       })
       chamadaId = chamadaRef.id
       console.log('Chamada criada com ID:', chamadaId)
@@ -293,15 +284,12 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
     }
   }
 
-  const handleAbrirPagamento = (f) => {
-    const uid = f.uid || f.id
-    const chamada = statusChamadas[uid]
-    
-    if (chamada && chamada.status === 'aceita') {
-      setFreelaSelecionado({
-        ...f,
-        chamadaId: chamada.chamadaId
-      })
+const handleAbrirPagamento = (freela) => {
+  const chamada = statusChamadas[freela.uid];
+  if (chamada) {
+    setFreelaSelecionado({ ...freela, chamada }); // ✅ envia a chamada completa
+  }
+};
       console.log('Abrindo pagamento para chamada ID:', chamada.chamadaId)
     } else {
       alert('Chamada ainda não está no status "aceita".')
@@ -342,13 +330,12 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         </div>
       )}
 
-      {freelaSelecionado && (
-        <ModalPagamentoFreela
-          freela={freelaSelecionado}
-          pagamentoDocId={freelaSelecionado.chamadaId}
-          onClose={() => setFreelaSelecionado(null)}
-        />
-      )}
+     {freelaSelecionado && freelaSelecionado.chamada && (
+  <ModalPagamentoFreela
+    chamada={freelaSelecionado.chamada}   // ✅ tem chamada.id garantido
+    onClose={() => setFreelaSelecionado(null)}
+  />
+)}
     </div>
   )
 }
