@@ -293,6 +293,7 @@ const handleAbrirPagamento = (freela) => {
     alert('Chamada ainda não está no status "aceita".');
   }
 };
+  }
 
   return (
     <div className="min-h-screen bg-cover bg-center p-4 pb-20"
