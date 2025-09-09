@@ -1,4 +1,3 @@
-// src/components/ModalPagamentoFreela.jsx
 import React, { useEffect, useState, useCallback } from 'react'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -8,34 +7,38 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
   const [pagamento, setPagamento] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [pixGerado, setPixGerado] = useState(false)
-
-  console.log('📦 Modal aberto para pagamentoDocId:', pagamentoDocId)
-  
+  const [nomePagador, setNomePagador] = useState('')
+  const [docPagador, setDocPagador] = useState('')
 
   const gerarPix = useCallback(async () => {
-  if (pixGerado) return;
-  try {
-    const response = await fetch(
-      'https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api/pix/cobrar',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chamadaId: pagamentoDocId }),
+    if (pixGerado || !nomePagador || !docPagador) return
+
+    try {
+      const response = await fetch(
+        'https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api/pix/cobrar',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chamadaId: pagamentoDocId,
+            nome: nomePagador,
+            cpfOuCnpj: docPagador
+          }),
+        }
+      )
+
+      const result = await response.json()
+
+      if (result.txid) {
+        console.log('✅ PIX gerado:', result)
+        setPixGerado(true)
+      } else {
+        console.error('❌ Erro ao gerar PIX:', result)
       }
-    );
-
-    const result = await response.json();
-
-    if (result.txid) {
-      console.log('✅ PIX gerado:', result);
-      setPixGerado(true);
-    } else {
-      console.error('❌ Erro ao gerar PIX:', result);
+    } catch (err) {
+      console.error('❌ Erro de rede ao gerar PIX:', err)
     }
-  } catch (err) {
-    console.error('❌ Erro de rede ao gerar PIX:', err);
-  }
-}, [pagamentoDocId, pixGerado]);
+  }, [pagamentoDocId, pixGerado, nomePagador, docPagador])
 
   useEffect(() => {
     if (!pagamentoDocId) {
@@ -49,11 +52,6 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
       if (snap.exists()) {
         const dados = snap.data()
         setPagamento(dados)
-
-        if (!pixGerado && dados.status === 'pendente') {
-          gerarPix()
-        }
-
         setCarregando(false)
       } else {
         setCarregando(false)
@@ -62,7 +60,7 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
     })
 
     return () => unsub()
-  }, [pagamentoDocId, gerarPix, pixGerado])
+  }, [pagamentoDocId])
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center px-4">
@@ -72,7 +70,7 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
           className="absolute top-2 right-3 text-gray-500 hover:text-gray-800"
         >✕</button>
 
-        <h2 className="text-lg font-bold text-orange-700 mb-2 text-center">Pagamento via Pix</h2>
+        <h2 className="text-lg font-bold text-orange-700 mb-4 text-center">Pagamento via Pix</h2>
 
         {carregando ? (
           <p className="text-center text-gray-500">Carregando dados do pagamento...</p>
@@ -80,12 +78,40 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
           <p className="text-center text-red-500">Pagamento não encontrado.</p>
         ) : (
           <div className="space-y-4">
+            {!pixGerado && (
+              <>
+                <input
+                  type="text"
+                  className="input input-bordered w-full"
+                  placeholder="Nome completo do pagador"
+                  value={nomePagador}
+                  onChange={(e) => setNomePagador(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="input input-bordered w-full"
+                  placeholder="CPF ou CNPJ do pagador"
+                  value={docPagador}
+                  onChange={(e) => setDocPagador(e.target.value)}
+                />
+                <button
+                  onClick={gerarPix}
+                  disabled={!nomePagador || !docPagador}
+                  className="btn btn-primary w-full"
+                >
+                  Gerar Pix
+                </button>
+              </>
+            )}
+
             {pagamento.qrCodePix || pagamento.qrCode ? (
               <div className="flex justify-center">
                 <QRCode value={pagamento.qrCodePix || pagamento.qrCode} size={200} />
               </div>
             ) : (
-              <p className="text-center text-gray-500">QR Code indisponível.</p>
+              pixGerado && (
+                <p className="text-center text-yellow-600">Aguardando geração do PIX...</p>
+              )
             )}
 
             {pagamento.copiaColaPix || pagamento.pixCopiaECola ? (
@@ -100,10 +126,6 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
 
             {pagamento.status === 'pago' && (
               <p className="text-green-600 text-center font-semibold">✅ Pagamento confirmado!</p>
-            )}
-
-            {pagamento.status === 'pendente' && !pagamento.qrCodePix && (
-              <p className="text-yellow-600 text-center">Aguardando geração do PIX...</p>
             )}
           </div>
         )}
