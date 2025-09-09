@@ -290,10 +290,11 @@ const handleAbrirPagamento = (freela) => {
     setFreelaSelecionado({ ...freela, chamada }); // ✅ envia a chamada completa
   }
 };
-      console.log('Abrindo pagamento para chamada ID:', chamada.chamadaId)
-    } else {
-      alert('Chamada ainda não está no status "aceita".')
-    }
+    console.log('Abrindo pagamento para chamada ID:', chamada.chamadaId);
+} else {
+  alert('Chamada ainda não está no status "aceita".');
+}
+
   }
 
   return (
