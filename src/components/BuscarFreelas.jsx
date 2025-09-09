@@ -286,16 +286,13 @@ await setDoc(chamadaRef, {
 
 const handleAbrirPagamento = (freela) => {
   const chamada = statusChamadas[freela.uid];
-  if (chamada) {
+  if (chamada?.status === 'aceita') {
+    console.log('Abrindo pagamento para chamada ID:', chamada.chamadaId);
     setFreelaSelecionado({ ...freela, chamada }); // ✅ envia a chamada completa
+  } else {
+    alert('Chamada ainda não está no status "aceita".');
   }
 };
-    console.log('Abrindo pagamento para chamada ID:', chamada.chamadaId);
-} else {
-  alert('Chamada ainda não está no status "aceita".');
-}
-
-  }
 
   return (
     <div className="min-h-screen bg-cover bg-center p-4 pb-20"
