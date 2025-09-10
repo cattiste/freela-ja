@@ -32,8 +32,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
     try {
       setCarregando(true);
 
-       const response = await fetch('https://api-kbaliknhja-rj.a.run.app/pix/cobrar', {
-
+      const response = await fetch('https://api-kbaliknhja-rj.a.run.app/pix/cobrar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -117,9 +116,15 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
               onFocus={(e) => e.target.select()}
             />
 
-            <p className="text-center text-green-600 font-bold mt-4">
-              Aguardando pagamento...
-            </p>
+            {pagamento?.status === 'pago' ? (
+              <p className="text-center text-green-600 font-bold mt-4">
+                ✅ Pagamento confirmado!
+              </p>
+            ) : (
+              <p className="text-center text-orange-600 font-semibold mt-4">
+                ⏳ Aguardando pagamento...
+              </p>
+            )}
           </>
         )}
       </div>
