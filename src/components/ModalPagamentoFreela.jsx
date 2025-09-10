@@ -12,29 +12,18 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
       setLoading(true);
       setStatus("pendente");
 
-      // Validação: chamada precisa ter ID
-      if (!chamada?.id) {
-        console.error("❌ Chamada inválida ou sem ID:", chamada);
-        setStatus("erro");
-        return;
-      }
-
-      console.log("📤 Enviando chamadaId para API:", chamada.id);
-
-      const response = await fetch(
-        "https://api-kbaliknhja-rj.a.run.app/api/pix/cobrar",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chamadaId: chamada.id }),
-        }
-      );
+      const response = await fetch("https://api-kbaliknhja-rj.a.run.app/api/pix/cobrar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chamadaId: chamada.id }),
+      });
 
       if (!response.ok) {
         throw new Error("Erro ao gerar cobrança Pix");
       }
 
-      // O backend já salva no Firestore — o listener abaixo atualizará a interface
+      // ⚠️ O backend já atualiza o Firestore automaticamente,
+      // então aqui não precisamos salvar manualmente.
     } catch (error) {
       console.error("Erro ao gerar Pix:", error);
       setStatus("erro");
@@ -43,16 +32,15 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
     }
   };
 
-  // 🔎 Listener para atualização em tempo real do pagamento via Firestore
   useEffect(() => {
     if (!chamada?.id) return;
 
     const unsub = onSnapshot(doc(db, "chamadas", chamada.id), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
-        if (data.pix) {
-          setPagamento(data.pix);
-          setStatus(data.pix.status || "pendente");
+        if (data.pagamento) {
+          setPagamento(data.pagamento);
+          setStatus(data.pagamento.status || "pendente");
         }
       }
     });
@@ -67,13 +55,12 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
           Pagamento via Pix
         </h2>
 
-        {/* Estado inicial */}
         {status === "pendente" && !pagamento && (
           <div className="text-center">
-            <p>Aguardando geração do Pix...</p>
+            <p className="text-gray-700">Clique para gerar o QR Code:</p>
             <button
               onClick={gerarPix}
-              className="mt-4 bg-orange-600 text-white px-4 py-2 rounded"
+              className="mt-4 bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700"
               disabled={loading}
             >
               {loading ? "Gerando..." : "Gerar Pix"}
@@ -81,7 +68,6 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
           </div>
         )}
 
-        {/* Pagamento gerado */}
         {pagamento && (
           <div className="text-center">
             {status === "pendente" && (
@@ -95,10 +81,10 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
               </p>
             )}
 
-            {pagamento.qrcode && (
+            {pagamento.imagemQrcode && (
               <div className="flex flex-col items-center mb-4">
                 <img
-                  src={pagamento.qrcode}
+                  src={pagamento.imagemQrcode}
                   alt="QR Code Pix"
                   className="w-64 h-64"
                 />
@@ -119,9 +105,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
                 />
                 <button
                   className="mt-2 bg-orange-600 text-white px-3 py-1 rounded"
-                  onClick={() =>
-                    navigator.clipboard.writeText(pagamento.copiaCola)
-                  }
+                  onClick={() => navigator.clipboard.writeText(pagamento.copiaCola)}
                 >
                   Copiar
                 </button>
@@ -130,7 +114,6 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
           </div>
         )}
 
-        {/* Erro */}
         {status === "erro" && (
           <p className="text-center text-red-600 mt-3">
             ❌ Erro ao gerar Pix. Tente novamente.
