@@ -20,7 +20,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
       console.log("📤 Gerando Pix para chamada ID:", chamada.id);
       setLoading(true);
 
-      const response = await fetch("https://api-kbaliknhja-rj.a.run.app/api/pix/cobrar", {
+      const response = await fetch("https://api-kbaliknhja-rj.a.run.app/api/pix/criarCobrancaPix", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
