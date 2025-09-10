@@ -7,33 +7,39 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
   const [pagamento, setPagamento] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const gerarPix = async () => {
-    try {
-      setLoading(true);
-      setStatus("pendente");
+const gerarPix = async () => {
+  if (!chamada?.id) {
+    console.error("Chamada inválida ou sem ID:", chamada);
+    setStatus("erro");
+    return;
+  }
 
-      const response = await fetch(
-        "https://api-kbaliknhja-rj.a.run.app/api/pix/cobrar",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chamadaId: chamada.id }),
-        }
-      );
+  try {
+    setLoading(true);
+    setStatus("pendente");
 
-      if (!response.ok) {
-        throw new Error("Erro ao gerar cobrança Pix");
+    const response = await fetch(
+      "https://api-kbaliknhja-rj.a.run.app/api/pix/cobrar",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chamadaId: chamada.id }),
       }
+    );
 
-      // não precisa salvar manualmente, o backend já salva no Firestore
-      // só aguardamos o onSnapshot atualizar em tempo real
-    } catch (error) {
-      console.error("Erro ao gerar Pix:", error);
-      setStatus("erro");
-    } finally {
-      setLoading(false);
+    if (!response.ok) {
+      throw new Error("Erro ao gerar cobrança Pix");
     }
-  };
+
+    // Aguardar snapshot para atualização automática
+  } catch (error) {
+    console.error("Erro ao gerar Pix:", error);
+    setStatus("erro");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // 🔎 Listener em tempo real para o pagamento
   useEffect(() => {
