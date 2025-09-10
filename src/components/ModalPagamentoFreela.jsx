@@ -7,50 +7,52 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
   const [pagamento, setPagamento] = useState(null);
   const [loading, setLoading] = useState(false);
 
-const gerarPix = async () => {
-  if (!chamada?.id) {
-    console.error("Chamada inválida ou sem ID:", chamada);
-    setStatus("erro");
-    return;
-  }
+  const gerarPix = async () => {
+    try {
+      setLoading(true);
+      setStatus("pendente");
 
-  try {
-    setLoading(true);
-    setStatus("pendente");
-
-    const response = await fetch(
-      "https://api-kbaliknhja-rj.a.run.app/api/pix/cobrar",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chamadaId: chamada.id }),
+      // Validação: chamada precisa ter ID
+      if (!chamada?.id) {
+        console.error("❌ Chamada inválida ou sem ID:", chamada);
+        setStatus("erro");
+        return;
       }
-    );
 
-    if (!response.ok) {
-      throw new Error("Erro ao gerar cobrança Pix");
+      console.log("📤 Enviando chamadaId para API:", chamada.id);
+
+      const response = await fetch(
+        "https://api-kbaliknhja-rj.a.run.app/api/pix/cobrar",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chamadaId: chamada.id }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Erro ao gerar cobrança Pix");
+      }
+
+      // O backend já salva no Firestore — o listener abaixo atualizará a interface
+    } catch (error) {
+      console.error("Erro ao gerar Pix:", error);
+      setStatus("erro");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // Aguardar snapshot para atualização automática
-  } catch (error) {
-    console.error("Erro ao gerar Pix:", error);
-    setStatus("erro");
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-  // 🔎 Listener em tempo real para o pagamento
+  // 🔎 Listener para atualização em tempo real do pagamento via Firestore
   useEffect(() => {
     if (!chamada?.id) return;
 
     const unsub = onSnapshot(doc(db, "chamadas", chamada.id), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
-        if (data.pagamento) {
-          setPagamento(data.pagamento);
-          setStatus(data.pagamento.status || "pendente");
+        if (data.pix) {
+          setPagamento(data.pix);
+          setStatus(data.pix.status || "pendente");
         }
       }
     });
@@ -65,6 +67,7 @@ const gerarPix = async () => {
           Pagamento via Pix
         </h2>
 
+        {/* Estado inicial */}
         {status === "pendente" && !pagamento && (
           <div className="text-center">
             <p>Aguardando geração do Pix...</p>
@@ -78,6 +81,7 @@ const gerarPix = async () => {
           </div>
         )}
 
+        {/* Pagamento gerado */}
         {pagamento && (
           <div className="text-center">
             {status === "pendente" && (
@@ -91,10 +95,10 @@ const gerarPix = async () => {
               </p>
             )}
 
-            {pagamento.imagemQrcode && (
+            {pagamento.qrcode && (
               <div className="flex flex-col items-center mb-4">
                 <img
-                  src={pagamento.imagemQrcode}
+                  src={pagamento.qrcode}
                   alt="QR Code Pix"
                   className="w-64 h-64"
                 />
@@ -126,6 +130,7 @@ const gerarPix = async () => {
           </div>
         )}
 
+        {/* Erro */}
         {status === "erro" && (
           <p className="text-center text-red-600 mt-3">
             ❌ Erro ao gerar Pix. Tente novamente.
