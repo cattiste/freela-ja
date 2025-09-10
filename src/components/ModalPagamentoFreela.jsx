@@ -1,25 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/firebase';
-import QRCode from 'react-qr-code';
+import React, { useEffect, useState } from "react";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "@/firebase";
+import QRCode from "react-qr-code";
 
 export default function ModalPagamentoFreela({ chamada, onClose }) {
   const [pagamento, setPagamento] = useState(null);
   const [carregando, setCarregando] = useState(false);
   const [pixGerado, setPixGerado] = useState(false);
 
-  // Escuta atualizações no Firestore
   useEffect(() => {
     if (!chamada?.id) return;
 
-    const unsub = onSnapshot(doc(db, 'chamadas', chamada.id), (snap) => {
+    const unsub = onSnapshot(doc(db, "chamadas", chamada.id), (snap) => {
       const data = snap.data();
       setPagamento(data?.pagamento || null);
 
-      if (
-        data?.pagamento?.status === 'pendente' &&
-        (data?.pagamento?.copiaCola || data?.pagamento?.qrCode?.qrcode)
-      ) {
+      if (data?.pagamento?.status === "pendente" && data?.pagamento?.copiaCola) {
         setPixGerado(true);
       }
     });
@@ -27,44 +23,44 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
     return () => unsub();
   }, [chamada?.id]);
 
-  // Gera Pix automaticamente ao abrir o modal
-  useEffect(() => {
-    const gerarPix = async () => {
-      if (!chamada?.id || pixGerado) return;
+  const gerarPix = async () => {
+    if (pixGerado) return;
 
-      try {
-        setCarregando(true);
+    try {
+      setCarregando(true);
 
-        const response = await fetch(
-          'https://api-kbaliknhja-rj.a.run.app/pix/cobrar',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chamadaId: chamada.id,
-              valor: chamada?.valorDiaria || chamada?.valor || 1, // usa valor da diária
-            }),
-          }
-        );
-
-        const data = await response.json();
-        console.log('📡 Resposta da API Pix:', data);
-
-        if (data?.copiaCola || data?.qrCode?.qrcode) {
-          setPixGerado(true);
-        } else {
-          throw new Error('Dados de Pix não retornados corretamente.');
+      const response = await fetch(
+        "https://api-kbaliknhja-rj.a.run.app/pix/cobrar",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chamadaId: chamada.id,
+            valor: chamada.valorDiaria || 0.01, // usa valor da diária do freela
+          }),
         }
-      } catch (err) {
-        console.error('❌ Erro ao gerar Pix:', err);
-        alert('Erro ao gerar Pix. Tente novamente.');
-      } finally {
-        setCarregando(false);
-      }
-    };
+      );
 
-    gerarPix();
-  }, [chamada?.id, pixGerado]);
+      const data = await response.json();
+
+      if (data?.copiaCola) {
+        setPixGerado(true);
+      } else {
+        throw new Error("Dados de Pix não retornados corretamente.");
+      }
+    } catch (err) {
+      console.error("❌ Erro ao gerar Pix:", err);
+      alert("Erro ao gerar Pix. Tente novamente.");
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!pixGerado) {
+      gerarPix(); // gera automaticamente ao abrir
+    }
+  }, [pixGerado]);
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -81,9 +77,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
         </h2>
 
         {!pixGerado ? (
-          <p className="text-center text-gray-600">
-            {carregando ? 'Gerando Pix...' : 'Preparando pagamento...'}
-          </p>
+          <p className="text-center text-gray-500">Preparando pagamento...</p>
         ) : (
           <>
             <div className="flex justify-center mb-4">
@@ -94,14 +88,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
                   className="w-48 h-48"
                 />
               ) : (
-                <QRCode
-                  value={
-                    pagamento?.copiaCola ||
-                    pagamento?.qrCode?.qrcode ||
-                    ''
-                  }
-                  size={192}
-                />
+                <QRCode value={pagamento?.copiaCola || ""} size={192} />
               )}
             </div>
 
@@ -111,11 +98,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
 
             <textarea
               readOnly
-              value={
-                pagamento?.copiaCola ||
-                pagamento?.qrCode?.qrcode ||
-                ''
-              }
+              value={pagamento?.copiaCola || ""}
               className="w-full text-sm border p-2 rounded bg-gray-100"
               rows={3}
               onFocus={(e) => e.target.select()}
