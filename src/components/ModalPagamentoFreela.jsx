@@ -7,8 +7,6 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
   const [pagamento, setPagamento] = useState(null);
   const [carregando, setCarregando] = useState(false);
   const [pixGerado, setPixGerado] = useState(false);
-  const [nomePagador, setNomePagador] = useState('');
-  const [docPagador, setDocPagador] = useState('');
 
   useEffect(() => {
     if (!chamada?.id) return;
@@ -17,7 +15,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
       const data = snap.data();
       setPagamento(data?.pagamento || null);
 
-      // Só considera Pix gerado se já tiver copia e cola
+      // Se já existir Pix pendente, considera gerado
       if (data?.pagamento?.status === 'pendente' && data?.pagamento?.copiaCola) {
         setPixGerado(true);
       }
@@ -27,19 +25,17 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
   }, [chamada?.id]);
 
   const gerarPix = async () => {
-    if (pixGerado || !nomePagador || !docPagador) return;
+    if (pixGerado) return;
 
     try {
       setCarregando(true);
 
-       const response = await fetch('https://api-kbaliknhja-rj.a.run.app/pix/cobrar', {
-
+      const response = await fetch('https://api-kbaliknhja-rj.a.run.app/pix/cobrar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chamadaId: chamada.id,
-          nomePagador,
-          docPagador
+          valor: chamada?.valorDiaria || chamada?.valor || 1 // 🔹 usa valor da chamada
         })
       });
 
@@ -71,32 +67,13 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
         <h2 className="text-xl font-bold text-orange-600 mb-4 text-center">Pagamento via Pix</h2>
 
         {!pixGerado ? (
-          <>
-            <div className="mb-4 space-y-2">
-              <input
-                type="text"
-                value={nomePagador}
-                onChange={(e) => setNomePagador(e.target.value)}
-                placeholder="Nome do pagador"
-                className="w-full border rounded p-2"
-              />
-              <input
-                type="text"
-                value={docPagador}
-                onChange={(e) => setDocPagador(e.target.value)}
-                placeholder="CPF ou CNPJ"
-                className="w-full border rounded p-2"
-              />
-            </div>
-
-            <button
-              onClick={gerarPix}
-              disabled={carregando || !nomePagador || !docPagador}
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-            >
-              {carregando ? 'Gerando Pix...' : 'Gerar Pix'}
-            </button>
-          </>
+          <button
+            onClick={gerarPix}
+            disabled={carregando}
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+          >
+            {carregando ? 'Gerando Pix...' : 'Gerar Pix'}
+          </button>
         ) : (
           <>
             <div className="flex justify-center mb-4">
@@ -107,7 +84,9 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
               )}
             </div>
 
-            <p className="text-center text-sm mb-2">📎 Copie o código abaixo e pague via seu app bancário:</p>
+            <p className="text-center text-sm mb-2">
+              📎 Copie o código abaixo e pague via seu app bancário:
+            </p>
 
             <textarea
               readOnly
