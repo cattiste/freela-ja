@@ -330,13 +330,12 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         </div>
       )}
 
-      {freelaSelecionado && freelaSelecionado.chamada && (
-        <ModalPagamentoFreela
-          freela={freelaSelecionado}
-          pagamentoDocId={freelaSelecionado.chamada.id} // ✅ Agora usa chamada.id
-          onClose={() => setFreelaSelecionado(null)}
-        />
-      )}
+      {freelaSelecionado && (
+       <ModalPagamentoFreela
+        chamada={freelaSelecionado.chamada} // ✅ Agora passa a chamada completa
+        onClose={() => setFreelaSelecionado(null)}
+      />
+     )}
     </div>
   )
 }
