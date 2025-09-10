@@ -7,46 +7,56 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
   const [pagamento, setPagamento] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const gerarPix = async () => {
-    try {
-      setLoading(true);
-      setStatus("pendente");
-
-      const response = await fetch("https://api-kbaliknhja-rj.a.run.app/api/pix/cobrar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chamadaId: chamada.id }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Erro ao gerar cobrança Pix");
-      }
-
-      // ⚠️ O backend já atualiza o Firestore automaticamente,
-      // então aqui não precisamos salvar manualmente.
-    } catch (error) {
-      console.error("Erro ao gerar Pix:", error);
+const gerarPix = async () => {
+  try {
+    if (!chamada || !chamada.id) {
+      console.error("❌ Chamada inválida ao tentar gerar Pix:", chamada);
       setStatus("erro");
-    } finally {
-      setLoading(false);
+      return;
     }
-  };
 
-  useEffect(() => {
-    if (!chamada?.id) return;
+    console.log("📤 Gerando Pix para chamada ID:", chamada.id);
+    setLoading(true);
+    setStatus("pendente");
 
-    const unsub = onSnapshot(doc(db, "chamadas", chamada.id), (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        if (data.pagamento) {
-          setPagamento(data.pagamento);
-          setStatus(data.pagamento.status || "pendente");
-        }
-      }
+    const response = await fetch("https://api-kbaliknhja-rj.a.run.app/api/pix/cobrar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chamadaId: chamada.id }),
     });
 
-    return () => unsub();
-  }, [chamada?.id]);
+    if (!response.ok) {
+      throw new Error("Erro ao gerar cobrança Pix");
+    }
+
+    // O backend vai atualizar o Firestore automaticamente
+  } catch (error) {
+    console.error("Erro ao gerar Pix:", error);
+    setStatus("erro");
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  if (!chamada?.id) {
+    console.warn("⚠️ Nenhuma chamada recebida para pagamento:", chamada);
+    return;
+  }
+
+  const unsub = onSnapshot(doc(db, "chamadas", chamada.id), (snap) => {
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data.pagamento) {
+        setPagamento(data.pagamento);
+        setStatus(data.pagamento.status || "pendente");
+      }
+    }
+  });
+
+  return () => unsub();
+}, [chamada?.id]);
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
