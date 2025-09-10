@@ -1,147 +1,135 @@
-import React, { useEffect, useState, useCallback } from 'react'
-import { doc, onSnapshot } from 'firebase/firestore'
-import { db } from '@/firebase'
-import QRCode from 'react-qr-code'
+import React, { useState } from 'react';
+import { db } from '../firebaseConfig';
+import { doc, updateDoc } from 'firebase/firestore';
 
-export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }) {
-  const [pagamento, setPagamento] = useState(null)
-  const [carregando, setCarregando] = useState(true)
-  const [pixGerado, setPixGerado] = useState(false)
-  const [nomePagador, setNomePagador] = useState('')
-  const [docPagador, setDocPagador] = useState('')
+export default function ModalPagamentoFreela({ chamada, onClose }) {
+  const [status, setStatus] = useState('pendente');
+  const [pagamento, setPagamento] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const gerarPix = useCallback(async () => {
-    if (pixGerado || !nomePagador || !docPagador) return
-
+  const gerarPix = async () => {
     try {
+      setLoading(true);
+      setStatus('pendente');
+
       const response = await fetch(
-        'https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api/pix/cobrar',
+        'https://api-kbaliknhja-rj.a.run.app/api/pix/cobrar',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chamadaId: pagamentoDocId,
-            nome: nomePagador,
-            cpfOuCnpj: docPagador
-          }),
+          body: JSON.stringify({ chamadaId: chamada.id }),
         }
-      )
+      );
 
-      const result = await response.json()
-
-      if (result.txid) {
-        console.log('✅ PIX gerado:', result)
-        setPixGerado(true)
-      } else {
-        console.error('❌ Erro ao gerar PIX:', result)
+      if (!response.ok) {
+        throw new Error('Erro ao gerar cobrança Pix');
       }
-    } catch (err) {
-      console.error('❌ Erro de rede ao gerar PIX:', err)
+
+      const data = await response.json();
+
+      // salvar no state para exibir no modal
+      setPagamento({
+        txid: data.txid,
+        copiaCola: data.qrcode || data.copiaCola,
+        imagemQrcode: data.imagemQrcode,
+      });
+
+      // atualizar Firestore também
+      await updateDoc(doc(db, 'chamadas', chamada.id), {
+        pagamento: {
+          txid: data.txid,
+          copiaCola: data.qrcode || data.copiaCola,
+          imagemQrcode: data.imagemQrcode,
+          status: 'pendente',
+          criadoEm: new Date(),
+        },
+      });
+
+      setStatus('gerado');
+    } catch (error) {
+      console.error('Erro ao gerar Pix:', error);
+      setStatus('erro');
+    } finally {
+      setLoading(false);
     }
-  }, [pagamentoDocId, pixGerado, nomePagador, docPagador])
-
-  useEffect(() => {
-    if (!pagamentoDocId) {
-      setCarregando(false)
-      return
-    }
-
-    const unsub = onSnapshot(doc(db, 'chamadas', pagamentoDocId), (snap) => {
-      console.log('📩 Snapshot recebido:', snap.exists() ? snap.data() : 'Documento não existe')
-
-      if (snap.exists()) {
-        const dados = snap.data()
-        setPagamento(dados.pagamento) // agora pega o campo "pagamento" dentro da chamada
-        setCarregando(false)
-      } else {
-        setCarregando(false)
-        console.error('❌ Documento de chamada não encontrado:', pagamentoDocId)
-      }
-    })
-
-    return () => unsub()
-  }, [pagamentoDocId])
+  };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center px-4">
-      <div className="bg-white p-6 rounded-xl shadow-xl max-w-md w-full relative">
-        <button
-          onClick={onClose}
-          className="absolute top-2 right-3 text-gray-500 hover:text-gray-800"
-        >✕</button>
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl p-6 shadow-lg w-full max-w-md">
+        <h2 className="text-xl font-bold text-center text-orange-700 mb-4">
+          Pagamento via Pix
+        </h2>
 
-        <h2 className="text-lg font-bold text-orange-700 mb-4 text-center">Pagamento via Pix</h2>
+        {status === 'pendente' && !pagamento && (
+          <div className="text-center">
+            <p>Aguardando geração do Pix...</p>
+            <button
+              onClick={gerarPix}
+              className="mt-4 bg-orange-600 text-white px-4 py-2 rounded"
+              disabled={loading}
+            >
+              {loading ? 'Gerando...' : 'Gerar Pix'}
+            </button>
+          </div>
+        )}
 
-        {carregando ? (
-          <p className="text-center text-gray-500">Carregando dados do pagamento...</p>
-        ) : !pagamento ? (
-          <p className="text-center text-red-500">Pagamento não encontrado.</p>
-        ) : (
-          <div className="space-y-4">
-            {!pixGerado && (
-              <>
-                <input
-                  type="text"
-                  className="input input-bordered w-full"
-                  placeholder="Nome completo do pagador"
-                  value={nomePagador}
-                  onChange={(e) => setNomePagador(e.target.value)}
+        {status === 'gerado' && pagamento && (
+          <div className="text-center">
+            <p className="text-green-600 font-medium mb-3">
+              Pix gerado com sucesso!
+            </p>
+
+            {pagamento.imagemQrcode && (
+              <div className="flex flex-col items-center mb-4">
+                <img
+                  src={pagamento.imagemQrcode}
+                  alt="QR Code Pix"
+                  className="w-64 h-64"
                 />
-                <input
-                  type="text"
-                  className="input input-bordered w-full"
-                  placeholder="CPF ou CNPJ do pagador"
-                  value={docPagador}
-                  onChange={(e) => setDocPagador(e.target.value)}
-                />
-                <button
-                  onClick={gerarPix}
-                  disabled={!nomePagador || !docPagador}
-                  className="btn btn-primary w-full"
-                >
-                  Gerar Pix
-                </button>
-              </>
-            )}
-
-            {pagamento.imagemQrCode ? (
-  <div className="flex justify-center">
-    <img
-      src={pagamento.imagemQrCode}
-      alt="QR Code Pix"
-      className="w-52 h-52 object-contain mx-auto"
-    />
-  </div>
-) : (pagamento.copiaCola || pagamento.pixCopiaECola) ? (
-  <div className="flex justify-center">
-    <QRCode
-      value={pagamento.copiaCola || pagamento.pixCopiaECola}
-      size={200}
-    />
-  </div>
-) : (
-  pixGerado && (
-    <p className="text-center text-yellow-600">Aguardando geração do PIX...</p>
-  )
-)}
-
-
-            {(pagamento.copiaColaPix || pagamento.pixCopiaECola || pagamento.copiaCola) && (
-              <div className="bg-gray-100 p-2 rounded-md text-sm text-center break-all">
-                {pagamento.copiaColaPix || pagamento.pixCopiaECola || pagamento.copiaCola}
+                <p className="mt-2 text-sm text-gray-600">
+                  Escaneie o QR Code acima para pagar
+                </p>
               </div>
             )}
 
-            <div className="text-center text-sm text-gray-600">
-              Status: <span className="font-bold text-orange-600">{pagamento.status}</span>
-            </div>
-
-            {pagamento.status === 'pago' && (
-              <p className="text-green-600 text-center font-semibold">✅ Pagamento confirmado!</p>
+            {pagamento.copiaCola && (
+              <div className="mt-2">
+                <p className="font-medium mb-1">Pix Copia e Cola:</p>
+                <textarea
+                  readOnly
+                  className="w-full p-2 border rounded text-sm"
+                  rows={3}
+                  value={pagamento.copiaCola}
+                />
+                <button
+                  className="mt-2 bg-orange-600 text-white px-3 py-1 rounded"
+                  onClick={() =>
+                    navigator.clipboard.writeText(pagamento.copiaCola)
+                  }
+                >
+                  Copiar
+                </button>
+              </div>
             )}
           </div>
         )}
+
+        {status === 'erro' && (
+          <p className="text-center text-red-600 mt-3">
+            ❌ Erro ao gerar Pix. Tente novamente.
+          </p>
+        )}
+
+        <div className="mt-6 text-center">
+          <button
+            onClick={onClose}
+            className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
+          >
+            Fechar
+          </button>
+        </div>
       </div>
     </div>
-  )
+  );
 }
