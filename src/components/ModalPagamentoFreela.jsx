@@ -15,7 +15,7 @@ export default function ModalPagamentoFreela({ freela, pagamentoDocId, onClose }
 
     try {
       const response = await fetch(
-        'https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/api/pix/cobrar',
+        'https://southamerica-east1-freelaja-web-50254.cloudfunctions.net/criarCobrancaPix',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
