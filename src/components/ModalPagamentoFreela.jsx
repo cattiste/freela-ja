@@ -32,7 +32,8 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
     try {
       setCarregando(true);
 
-       const response = await fetch("https://api-kbaliknhja-rj.a.run.app/api/pix/cobrar", {
+       const response = await fetch('https://api-kbaliknhja-rj.a.run.app/pix/cobrar', {
+
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
