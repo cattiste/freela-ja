@@ -142,7 +142,7 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
     const q = query(
       collection(db, 'chamadas'),
       where('contratanteUid', '==', usuario.uid),
-      where('status', 'in', ['pendente', 'aceita'])
+      where('status', 'in', ['pendente', 'aceita']) // continua igual
     )
 
     const unsub = onSnapshot(q, snap => {
@@ -211,6 +211,7 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
           : null
         const online = estaOnline(usuariosOnline[uid])
         const chamada = statusChamadas[uid] || {}
+        if (chamada.status === 'pago') return null // ✅ some do BuscarFreelas
         const pago = chamada?.pagamento?.status === 'pago'
         const podePagar = chamada.status === 'aceita' && !pago
         return { ...f, distancia, online, podePagar, chamada, uid }
@@ -248,15 +249,17 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
 
       const chamadaRef = doc(collection(db, "chamadas"))
       await setDoc(chamadaRef, {
-        id: chamadaRef.id,
-        freelaUid: freela.uid || freela.id,
-        freelaNome: freela.nome,
-        contratanteUid: usuario.uid,
-        contratanteNome: usuario.nome,
-        valorDiaria: freela.valorDiaria,
-        status: "pendente",
-        criadoEm: serverTimestamp(),
-      })
+  id: chamadaRef.id,
+  freelaUid: freela.uid || freela.id,
+  freelaNome: freela.nome,
+  contratanteUid: usuario.uid,
+  contratanteNome: usuario.nome,
+  valorDiaria: freela.valorDiaria,
+  status: "pendente",
+  criadoEm: serverTimestamp(),
+  coordenadasContratante: usuario.coordenadas || null, // ✅ salva
+  endereco: usuario.endereco || null // opcional
+})
       chamadaId = chamadaRef.id
       console.log('Chamada criada com ID:', chamadaId)
 
