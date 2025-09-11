@@ -1,5 +1,4 @@
-// src/pages/ChamadasFreela.jsx
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useChamadasDoFreela } from '@/hooks/useChamadasStream'
 import { CHAMADA_STATUS } from '@/constants/chamadaStatus'
@@ -11,7 +10,8 @@ import {
   doc,
   updateDoc,
   serverTimestamp,
-  runTransaction
+  runTransaction,
+  getDoc
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
@@ -48,6 +48,7 @@ export default function ChamadasFreela() {
 
 function ChamadaItem({ ch }) {
   const { usuario } = useAuth()
+  const [enderecoContratante, setEnderecoContratante] = useState(ch.endereco || null)
 
   const {
     podeVerEndereco,
@@ -56,7 +57,25 @@ function ChamadaItem({ ch }) {
     aguardandoPix,
   } = useChamadaFlags(ch.id)
 
-  const podeAceitar = String(ch.status || '').toLowerCase() === 'pendente'
+  const statusEfetivo = ch.pagamento?.status === 'pago' ? 'pago' : ch.status
+  const podeAceitar = String(statusEfetivo || '').toLowerCase() === 'pendente'
+
+  // 🔎 Se não veio endereço na chamada, busca no doc do usuário contratante
+  useEffect(() => {
+    async function carregarEndereco() {
+      if (!enderecoContratante && ch.contratanteUid) {
+        try {
+          const snap = await getDoc(doc(db, 'usuarios', ch.contratanteUid))
+          if (snap.exists()) {
+            setEnderecoContratante(snap.data().endereco || null)
+          }
+        } catch (e) {
+          console.error('[ChamadasFreela] Erro ao buscar endereço do contratante:', e)
+        }
+      }
+    }
+    carregarEndereco()
+  }, [ch.contratanteUid, enderecoContratante])
 
   async function aceitarChamada() {
     const ref = doc(db, 'chamadas', ch.id)
@@ -67,7 +86,6 @@ function ChamadaItem({ ch }) {
         const atual = snap.data()
         const statusAtual = String(atual.status || '').toLowerCase()
 
-        // garante que ninguém aceitou antes
         if (statusAtual !== 'pendente') {
           throw new Error('Essa chamada já foi aceita ou não está mais disponível.')
         }
@@ -80,7 +98,6 @@ function ChamadaItem({ ch }) {
           atualizadoEm: serverTimestamp(),
         })
       })
-
       toast.success('✅ Chamada aceita! Aguarde o pagamento do contratante.')
     } catch (e) {
       console.error('[aceitarChamada]', e)
@@ -93,8 +110,9 @@ function ChamadaItem({ ch }) {
       await updateDoc(doc(db, 'chamadas', ch.id), {
         checkinFreela: true,
         checkinFreelaEm: serverTimestamp(),
-        status: ch.status === 'pago' ? 'em_andamento' : (ch.status || 'em_andamento'),
+        status: statusEfetivo === 'pago' ? 'em_andamento' : (statusEfetivo || 'em_andamento'),
         atualizadoEm: serverTimestamp(),
+        freelaCoordenadas: usuario?.coordenadas || null, // 🔥 salva localização do freela
       })
       toast.success('Check-in realizado!')
     } catch (e) {
@@ -136,7 +154,7 @@ function ChamadaItem({ ch }) {
   return (
     <div className="bg-white border rounded-xl p-4 mb-4 space-y-2 shadow">
       <h2 className="font-semibold text-orange-600">Chamada #{String(ch.id).slice(-5)}</h2>
-      <p><strong>Status:</strong> {ch.status}</p>
+      <p><strong>Status:</strong> {statusEfetivo}</p>
       {typeof ch.valorDiaria === 'number' && (
         <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>
       )}
@@ -166,6 +184,15 @@ function ChamadaItem({ ch }) {
         </div>
       )}
 
+      {statusEfetivo === 'pago' && enderecoContratante && (
+        <div className="mt-3 p-2 bg-green-100 rounded text-green-700 text-center text-sm">
+          📍 Endereço: {enderecoContratante}
+          <p className="text-xs mt-1">
+            Procure o responsável no local para confirmar seu check-in.
+          </p>
+        </div>
+      )}
+
       {/* Ações do Freela */}
       <div className="flex flex-col sm:flex-row gap-2 mt-2">
         {podeAceitar && (
@@ -176,13 +203,6 @@ function ChamadaItem({ ch }) {
             ✅ Aceitar chamada
           </button>
         )}
-
-        {ch?.pagamento?.status === 'pago' && (
-          <div className="mt-3 p-2 bg-green-100 rounded text-green-700 text-center text-sm">
-             📍 Endereço liberado: {ch?.endereco || "Fornecido pelo contratante"}
-          <p className="text-xs mt-1">Procure o responsável no local para confirmar seu check-in.</p>
-       </div>
-      )}
 
         <button
           onClick={fazerCheckin}
@@ -200,7 +220,6 @@ function ChamadaItem({ ch }) {
           ⏳ Fazer Check-out
         </button>
 
-        {/* Cancelar: sempre disponível */}
         <button
           onClick={cancelarChamada}
           className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300"
@@ -211,7 +230,7 @@ function ChamadaItem({ ch }) {
 
       <RespostasRapidasFreela chamadaId={ch.id} />
 
-      {(ch.status === 'concluido' || ch.status === 'finalizada') && (
+      {(statusEfetivo === 'concluido' || statusEfetivo === 'finalizada') && (
         <span className="text-green-600 font-bold block text-center">
           ✅ Finalizada
         </span>
