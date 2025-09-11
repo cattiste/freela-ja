@@ -60,7 +60,7 @@ function ChamadaItem({ ch }) {
   const statusEfetivo = ch.pagamento?.status === 'pago' ? 'pago' : ch.status
   const podeAceitar = String(statusEfetivo || '').toLowerCase() === 'pendente'
 
-  // 🔎 Se não veio endereço na chamada, busca no doc do usuário contratante
+  // 🔎 Busca endereço do contratante se não veio na chamada
   useEffect(() => {
     async function carregarEndereco() {
       if (!enderecoContratante && ch.contratanteUid) {
@@ -112,7 +112,7 @@ function ChamadaItem({ ch }) {
         checkinFreelaEm: serverTimestamp(),
         status: statusEfetivo === 'pago' ? 'em_andamento' : (statusEfetivo || 'em_andamento'),
         atualizadoEm: serverTimestamp(),
-        freelaCoordenadas: usuario?.coordenadas || null, // 🔥 salva localização do freela
+        freelaCoordenadas: usuario?.coordenadas || null, // salva localização do freela
       })
       toast.success('Check-in realizado!')
     } catch (e) {
@@ -203,23 +203,24 @@ function ChamadaItem({ ch }) {
             ✅ Aceitar chamada
           </button>
         )}
-{/* 
-  Versão com trava original:
-  <button
-    onClick={fazerCheckin}
-    className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-    disabled={!podeCheckinFreela}
-  >
-    📍 Fazer Check-in
-  </button>
-*/}
 
-<button
-  onClick={fazerCheckin}  // ⚡ versão liberada para testes
-  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
->
-  📍 Fazer Check-in
-</button>
+        {/* 
+        Versão original com trava:
+        <button
+          onClick={fazerCheckin}
+          className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          disabled={!podeCheckinFreela}
+        >
+          📍 Fazer Check-in
+        </button>
+        */}
+
+        <button
+          onClick={fazerCheckin} // ⚡ versão liberada para testes
+          className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+        >
+          📍 Fazer Check-in
+        </button>
 
         <button
           onClick={fazerCheckout}
@@ -227,7 +228,7 @@ function ChamadaItem({ ch }) {
           disabled={!podeCheckoutFreela}
         >
           ⏳ Fazer Check-out
-        </button>        
+        </button>
 
         <button
           onClick={cancelarChamada}
