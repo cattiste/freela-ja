@@ -219,7 +219,10 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         console.log('Freela:', f.nome, 'Status:', chamada.status, 'Pode pagar:', podePagar, 'Chamada ID:', chamadaId)        
         
       })
-      .filter((f) => !filtro || f.funcao?.toLowerCase().includes(filtro.toLowerCase()))
+      .filter((f) => {
+       if (f.pago) return false // 🔥 remove freelas já pagos do Buscar
+        return !filtro || f.funcao?.toLowerCase().includes(filtro.toLowerCase())
+      })
       .sort((a, b) => {
         if (a.online && !b.online) return -1
         if (!a.online && b.online) return 1
