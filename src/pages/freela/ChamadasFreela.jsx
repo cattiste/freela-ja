@@ -11,7 +11,8 @@ import {
   updateDoc,
   serverTimestamp,
   runTransaction,
-  getDoc, onSnapshot
+  getDoc,
+  onSnapshot
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
@@ -49,9 +50,16 @@ export default function ChamadasFreela() {
 function ChamadaItem({ ch }) {
   const { usuario } = useAuth()
   const [enderecoContratante, setEnderecoContratante] = useState(ch.endereco || null)
-  const [statusPagamento, setStatusPagamento] = useState(ch.pagamento?.status || null)
+  const [statusPagamento, setStatusPagamento] = useState(null)
 
-  // Escuta o doc de pagamento do usuário (coleção pagamentos_usuarios)
+  const {
+    podeVerEndereco,
+    podeCheckinFreela,
+    podeCheckoutFreela,
+    aguardandoPix,
+  } = useChamadaFlags(ch.id)
+
+  // 🔎 escuta o doc de pagamento
   useEffect(() => {
     const ref = doc(db, 'pagamentos_usuarios', ch.id)
     const unsub = onSnapshot(ref, (snap) => {
@@ -63,22 +71,9 @@ function ChamadaItem({ ch }) {
   }, [ch.id])
 
   const statusEfetivo = statusPagamento === 'pago' ? 'pago' : ch.status
-
-function ChamadaItem({ ch }) {
-  const { usuario } = useAuth()
-  const [enderecoContratante, setEnderecoContratante] = useState(ch.endereco || null)
-
-  const {
-    podeVerEndereco,
-    podeCheckinFreela,
-    podeCheckoutFreela,
-    aguardandoPix,
-  } = useChamadaFlags(ch.id)
-
-  const statusEfetivo = ch.pagamento?.status === 'pago' ? 'pago' : ch.status
   const podeAceitar = String(statusEfetivo || '').toLowerCase() === 'pendente'
 
-  // 🔎 Busca endereço do contratante se não veio na chamada
+  // 🔎 busca endereço do contratante
   useEffect(() => {
     async function carregarEndereco() {
       if (!enderecoContratante && ch.contratanteUid) {
@@ -130,7 +125,7 @@ function ChamadaItem({ ch }) {
         checkinFreelaEm: serverTimestamp(),
         status: statusEfetivo === 'pago' ? 'em_andamento' : (statusEfetivo || 'em_andamento'),
         atualizadoEm: serverTimestamp(),
-        freelaCoordenadas: usuario?.coordenadas || null, // salva localização do freela
+        freelaCoordenadas: usuario?.coordenadas || null,
       })
       toast.success('Check-in realizado!')
     } catch (e) {
@@ -222,19 +217,8 @@ function ChamadaItem({ ch }) {
           </button>
         )}
 
-        {/* 
-        Versão original com trava:
         <button
           onClick={fazerCheckin}
-          className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          disabled={!podeCheckinFreela}
-        >
-          📍 Fazer Check-in
-        </button>
-        */}
-
-        <button
-          onClick={fazerCheckin} // ⚡ versão liberada para testes
           className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
         >
           📍 Fazer Check-in
