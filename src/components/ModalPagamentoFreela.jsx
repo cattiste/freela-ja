@@ -36,7 +36,9 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             chamadaId: chamada.id,
-            valor: chamada.valorDiaria || 0.01, // usa valor da diária do freela
+            valor: chamada.valorDiaria || 0.01, // valor da diária
+            nomePagador: chamada.contratanteNome || "Pagador",
+            docPagador: chamada.contratanteCpf || "00000000000", // CPF obrigatório para API
           }),
         }
       );
