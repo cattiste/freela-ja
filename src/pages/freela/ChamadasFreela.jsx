@@ -203,22 +203,23 @@ function ChamadaItem({ ch }) {
             ✅ Aceitar chamada
           </button>
         )}
+{/* 
+  Versão com trava original:
+  <button
+    onClick={fazerCheckin}
+    className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+    disabled={!podeCheckinFreela}
+  >
+    📍 Fazer Check-in
+  </button>
+*/}
 
-         <button
-        //  onClick={fazerCheckin}  DESATIVADO TEMPORARIAMENTE
-        //  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-        //  disabled={!podeCheckinFreela}
-        //>
-        //  📍 Fazer Check-in
-       // </button>
-
-        
-          onClick={fazerCheckin}  // RETIRAR TUDO APOS TESTE
-          className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
-        >
-         📍 Fazer Check-in
-        </button>
-
+<button
+  onClick={fazerCheckin}  // ⚡ versão liberada para testes
+  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+>
+  📍 Fazer Check-in
+</button>
 
         <button
           onClick={fazerCheckout}
