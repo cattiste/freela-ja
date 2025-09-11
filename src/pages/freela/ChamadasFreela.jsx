@@ -54,7 +54,6 @@ function ChamadaItem({ ch }) {
 
   const {
     podeVerEndereco,
-    podeCheckinFreela,
     podeCheckoutFreela,
     aguardandoPix,
   } = useChamadaFlags(ch.id)
@@ -70,6 +69,7 @@ function ChamadaItem({ ch }) {
     return () => unsub()
   }, [ch.id])
 
+  // statusEfetivo agora leva em conta o doc de pagamentos
   const statusEfetivo = statusPagamento === 'pago' ? 'pago' : ch.status
   const podeAceitar = String(statusEfetivo || '').toLowerCase() === 'pendente'
 
@@ -123,7 +123,7 @@ function ChamadaItem({ ch }) {
       await updateDoc(doc(db, 'chamadas', ch.id), {
         checkinFreela: true,
         checkinFreelaEm: serverTimestamp(),
-        status: statusEfetivo === 'pago' ? 'em_andamento' : (statusEfetivo || 'em_andamento'),
+        status: 'em_andamento',
         atualizadoEm: serverTimestamp(),
         freelaCoordenadas: usuario?.coordenadas || null,
       })
@@ -219,7 +219,8 @@ function ChamadaItem({ ch }) {
 
         <button
           onClick={fazerCheckin}
-          className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+          className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          disabled={statusEfetivo !== 'pago'}
         >
           📍 Fazer Check-in
         </button>
