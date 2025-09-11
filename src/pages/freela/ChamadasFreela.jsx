@@ -177,12 +177,12 @@ function ChamadaItem({ ch }) {
           </button>
         )}
 
-        {freela.chamada?.pagamento?.status === 'pago' && (
+        {ch?.pagamento?.status === 'pago' && (
           <div className="mt-3 p-2 bg-green-100 rounded text-green-700 text-center text-sm">
-            📍 Endereço liberado: {freela.chamada?.endereco || "Fornecido pelo contratante"}
+             📍 Endereço liberado: {ch?.endereco || "Fornecido pelo contratante"}
           <p className="text-xs mt-1">Procure o responsável no local para confirmar seu check-in.</p>
-          </div>
-        )}
+       </div>
+      )}
 
         <button
           onClick={fazerCheckin}

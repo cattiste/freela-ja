@@ -136,6 +136,12 @@ export default function ChamadasContratante({ usuario }) {
     </MapContainer>
   </div>
 )}
+             {ch.status === 'pago' && (
+               <span className="block mt-2 text-blue-600 font-semibold">
+                 💸 Pagamento confirmado — aguardando check-in
+               </span>
+             )}
+
             {ch.status === 'aceita' && ch.checkinFreela && !ch.checkinContratante && (
               <button
                 onClick={() => confirmarCheckin(ch.id)}

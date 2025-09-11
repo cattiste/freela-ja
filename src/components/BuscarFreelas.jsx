@@ -55,8 +55,8 @@ function Estrelas({ media }) {
 }
 
 function FreelaCard({
-  freela, online, distancia, onChamar, chamando,
-  observacao, setObservacao, onAbrirPagamento, podePagar
+   freela, online, distancia, onChamar, chamando,
+   observacao, setObservacao, onAbrirPagamento, podePagar, chamada
 }) {
   const uid = freela.uid || freela.id
 
@@ -213,11 +213,10 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
         const chamada = statusChamadas[uid] || {}
         const pago = chamada?.pagamento?.status === 'pago'
         const podePagar = chamada.status === 'aceita' && !pago
-        const chamadaId = chamada.id // ✅ CORRIGIDO: usar chamada.id
+        return { ...f, distancia, online, podePagar, chamada, uid }
         
-        console.log('Freela:', f.nome, 'Status:', chamada.status, 'Pode pagar:', podePagar, 'Chamada ID:', chamadaId)
+        console.log('Freela:', f.nome, 'Status:', chamada.status, 'Pode pagar:', podePagar, 'Chamada ID:', chamadaId)        
         
-        return { ...f, distancia, online, podePagar, chamadaId, uid }
       })
       .filter((f) => !filtro || f.funcao?.toLowerCase().includes(filtro.toLowerCase()))
       .sort((a, b) => {
@@ -335,6 +334,7 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
               setObservacao={setObservacao}
               onAbrirPagamento={() => handleAbrirPagamento(f)}
               podePagar={f.podePagar}
+              chamada={f.chamada}
             />
           ))}
         </div>
