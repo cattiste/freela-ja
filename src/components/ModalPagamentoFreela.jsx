@@ -35,13 +35,11 @@ const response = await fetch(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      chamadaId: chamada.id,
-      valor: chamada.valorDiaria || 0.01,
-      nomePagador: n.contratanteNome || "Pagador",
-      docPagador: n.contratanteCpf || "00000000000",
-    }),
-  }
-);
+    chamadaId: chamada.id,
+    valor: chamada.valorDiaria || 0.01,
+    nomePagador: chamada.contratanteNome || "Pagador",
+    docPagador: chamada.contratanteCpf || "00000000000",
+  }),
 
       const data = await response.json();
 
