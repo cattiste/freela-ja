@@ -1,4 +1,3 @@
-// src/pages/ChamadasContratante.jsx
 import React, { useEffect, useState } from 'react';
 import { db } from '@/firebase';
 import {
@@ -21,7 +20,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 })
-
 
 export default function ChamadasContratante({ usuario }) {
   const [chamadas, setChamadas] = useState([]);
@@ -90,83 +88,89 @@ export default function ChamadasContratante({ usuario }) {
       ) : chamadas.length === 0 ? (
         <p className="text-center text-gray-500">Nenhuma chamada ativa.</p>
       ) : (
-        chamadas.map((ch) => (
-          <div
-            key={ch.id}
-            className="bg-white rounded-xl shadow p-4 mb-4 border border-orange-200"
-          >
-            <h2 className="text-xl font-bold text-orange-600">{ch.freelaNome}</h2>
-            <p className="text-sm text-gray-600">Função: {ch.freelaFuncao || 'N/D'}</p>
-            <p className="text-sm text-gray-600">Status: {ch.status}</p>
-            {ch.observacao && (
-              <p className="text-sm text-gray-500 italic">
-                Observação: {ch.observacao}
-              </p>
-            )}
+        chamadas.map((ch) => {
+          const statusEfetivo = ch.pagamento?.status === 'pago' ? 'pago' : ch.status;
 
-            {ch.freelaCoordenadas && usuario?.coordenadas && (
-  <div className="w-full h-64 my-4 rounded-xl overflow-hidden border border-orange-200">
-    <MapContainer
-      center={[
-        ch.freelaCoordenadas.latitude,
-        ch.freelaCoordenadas.longitude
-      ]}
-      zoom={15}
-      scrollWheelZoom={false}
-      style={{ height: '100%', width: '100%' }}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+          return (
+            <div
+              key={ch.id}
+              className="bg-white rounded-xl shadow p-4 mb-4 border border-orange-200"
+            >
+              <h2 className="text-xl font-bold text-orange-600">{ch.freelaNome}</h2>
+              <p className="text-sm text-gray-600">Função: {ch.freelaFuncao || 'N/D'}</p>
+              <p className="text-sm text-gray-600">Status: {statusEfetivo}</p>
 
-      {/* Marcador do freela */}
-      <Marker position={[ch.freelaCoordenadas.latitude, ch.freelaCoordenadas.longitude]}>
-        <Popup>
-          Freelancer {ch.freelaNome}
-        </Popup>
-      </Marker>
+              {ch.observacao && (
+                <p className="text-sm text-gray-500 italic">
+                  Observação: {ch.observacao}
+                </p>
+              )}
 
-      {/* Marcador do contratante */}
-      <Marker position={[usuario.coordenadas.latitude, usuario.coordenadas.longitude]}>
-        <Popup>
-          Você (Contratante)
-        </Popup>
-      </Marker>
-    </MapContainer>
-  </div>
-)}
-             {ch.status === 'pago' && (
-               <span className="block mt-2 text-blue-600 font-semibold">
-                 💸 Pagamento confirmado — aguardando check-in
-               </span>
-             )}
+              {ch.freelaCoordenadas && usuario?.coordenadas && (
+                <div className="w-full h-64 my-4 rounded-xl overflow-hidden border border-orange-200">
+                  <MapContainer
+                    center={[
+                      ch.freelaCoordenadas.latitude,
+                      ch.freelaCoordenadas.longitude
+                    ]}
+                    zoom={15}
+                    scrollWheelZoom={false}
+                    style={{ height: '100%', width: '100%' }}
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
 
-            {ch.status === 'aceita' && ch.checkinFreela && !ch.checkinContratante && (
-              <button
-                onClick={() => confirmarCheckin(ch.id)}
-                className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-              >
-                ✅ Confirmar Check-in
-              </button>
-            )}
+                    {/* Marcador do freela */}
+                    <Marker position={[ch.freelaCoordenadas.latitude, ch.freelaCoordenadas.longitude]}>
+                      <Popup>
+                        Freelancer {ch.freelaNome}
+                      </Popup>
+                    </Marker>
 
-            {ch.status === 'em_andamento' && ch.checkoutFreela && !ch.checkoutContratante && (
-              <button
-                onClick={() => confirmarCheckout(ch.id)}
-                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                ✅ Confirmar Check-out
-              </button>
-            )}
+                    {/* Marcador do contratante */}
+                    <Marker position={[usuario.coordenadas.latitude, usuario.coordenadas.longitude]}>
+                      <Popup>
+                        Você (Contratante)
+                      </Popup>
+                    </Marker>
+                  </MapContainer>
+                </div>
+              )}
 
-            {(ch.status === 'concluido' || ch.status === 'finalizada') && (
-              <span className="block mt-2 text-green-600 font-semibold">
-                ✅ Chamada finalizada
-              </span>
-            )}
-          </div>
-        ))
+              {(statusEfetivo === 'pago') && (
+                <span className="block mt-2 text-blue-600 font-semibold">
+                  💸 Pagamento confirmado — aguardando check-in
+                </span>
+              )}
+
+              {statusEfetivo === 'aceita' && ch.checkinFreela && !ch.checkinContratante && (
+                <button
+                  onClick={() => confirmarCheckin(ch.id)}
+                  className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                >
+                  ✅ Confirmar Check-in
+                </button>
+              )}
+
+              {statusEfetivo === 'em_andamento' && ch.checkoutFreela && !ch.checkoutContratante && (
+                <button
+                  onClick={() => confirmarCheckout(ch.id)}
+                  className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  ✅ Confirmar Check-out
+                </button>
+              )}
+
+              {(statusEfetivo === 'concluido' || statusEfetivo === 'finalizada') && (
+                <span className="block mt-2 text-green-600 font-semibold">
+                  ✅ Chamada finalizada
+                </span>
+              )}
+            </div>
+          )
+        })
       )}
     </div>
   );
