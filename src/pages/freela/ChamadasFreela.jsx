@@ -11,7 +11,7 @@ import {
   updateDoc,
   serverTimestamp,
   runTransaction,
-  getDoc
+  getDoc, onSnapshot
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
@@ -45,6 +45,24 @@ export default function ChamadasFreela() {
     </div>
   )
 }
+
+function ChamadaItem({ ch }) {
+  const { usuario } = useAuth()
+  const [enderecoContratante, setEnderecoContratante] = useState(ch.endereco || null)
+  const [statusPagamento, setStatusPagamento] = useState(ch.pagamento?.status || null)
+
+  // Escuta o doc de pagamento do usuário (coleção pagamentos_usuarios)
+  useEffect(() => {
+    const ref = doc(db, 'pagamentos_usuarios', ch.id)
+    const unsub = onSnapshot(ref, (snap) => {
+      if (snap.exists()) {
+        setStatusPagamento(snap.data().status)
+      }
+    })
+    return () => unsub()
+  }, [ch.id])
+
+  const statusEfetivo = statusPagamento === 'pago' ? 'pago' : ch.status
 
 function ChamadaItem({ ch }) {
   const { usuario } = useAuth()
