@@ -204,13 +204,21 @@ function ChamadaItem({ ch }) {
           </button>
         )}
 
-        <button
-          onClick={fazerCheckin}
-          className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          disabled={!podeCheckinFreela}
+         <button
+        //  onClick={fazerCheckin}  DESATIVADO TEMPORARIAMENTE
+        //  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+        //  disabled={!podeCheckinFreela}
+        //>
+        //  📍 Fazer Check-in
+       // </button>
+
+        
+          onClick={fazerCheckin}  // RETIRAR TUDO APOS TESTE
+          className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
         >
-          📍 Fazer Check-in
+         📍 Fazer Check-in
         </button>
+
 
         <button
           onClick={fazerCheckout}
@@ -218,7 +226,7 @@ function ChamadaItem({ ch }) {
           disabled={!podeCheckoutFreela}
         >
           ⏳ Fazer Check-out
-        </button>
+        </button>        
 
         <button
           onClick={cancelarChamada}
