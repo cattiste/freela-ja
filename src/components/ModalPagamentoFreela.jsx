@@ -73,7 +73,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
       console.log("Abrindo pagamento para chamada ID:", chamada.id);
 
       const response = await fetch(
-        "https://api-kbaliknhja-rj.a.run.app/api/pix/cobrar",
+        "https://api-kbaliknhja-rj.a.run.app/pix/cobrar"
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
