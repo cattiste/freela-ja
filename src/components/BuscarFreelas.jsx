@@ -98,14 +98,23 @@ function FreelaCard({
         value={observacao[uid] || ''}
         onChange={(e) => setObservacao((prev) => ({ ...prev, [uid]: e.target.value }))}
       />
-      {podePagar && (
-        <button
-          onClick={onAbrirPagamento}
-          className="mt-2 w-full py-2 rounded-lg font-bold bg-orange-600 hover:bg-orange-700 text-white"
+      {chamada?.pagamento?.status === 'pago' ? (
+       <button
+         className="mt-2 w-full py-2 rounded-lg font-bold bg-green-600 text-white"
+         disabled
         >
-          💳 Pagar Freela
+         ✅ Pago
         </button>
-      )}
+      ) : (
+        podePagar && (
+          <button
+            onClick={onAbrirPagamento}
+            className="mt-2 w-full py-2 rounded-lg font-bold bg-orange-600 hover:bg-orange-700 text-white"
+          >
+            💳 Pagar Freela
+          </button>
+      )
+    )}
       <button
         onClick={() => onChamar(freela)}
         disabled={!online || chamando === uid}
@@ -202,7 +211,8 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
           : null
         const online = estaOnline(usuariosOnline[uid])
         const chamada = statusChamadas[uid] || {}
-        const podePagar = chamada.status === 'aceita'
+        const pago = chamada?.pagamento?.status === 'pago'
+        const podePagar = chamada.status === 'aceita' && !pago
         const chamadaId = chamada.id // ✅ CORRIGIDO: usar chamada.id
         
         console.log('Freela:', f.nome, 'Status:', chamada.status, 'Pode pagar:', podePagar, 'Chamada ID:', chamadaId)

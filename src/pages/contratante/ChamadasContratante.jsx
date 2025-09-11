@@ -33,12 +33,7 @@ export default function ChamadasContratante({ usuario }) {
     const q = query(
       collection(db, 'chamadas'),
       where('contratanteUid', '==', usuario.uid),
-      where('status', 'in', [
-        'aceita',
-        'confirmada',
-        'em_andamento',
-        'concluido',
-      ])
+      where('status', 'in', ['aceita','confirmada','em_andamento','concluido','pago'])
     );
 
     const unsubscribe = onSnapshot(
