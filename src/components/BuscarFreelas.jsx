@@ -197,41 +197,40 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
     carregarFreelas()
   }, [])
 
-  const filtrados = useMemo(() => {
-    return freelas
-      .map((f) => {
-        const uid = f.uid || f.id
-        const distancia = f.coordenadas && usuario?.coordenadas
-          ? calcularDistancia(
-              usuario.coordenadas.latitude,
-              usuario.coordenadas.longitude,
-              f.coordenadas.latitude,
-              f.coordenadas.longitude
-            )
-          : null
-        const online = estaOnline(usuariosOnline[uid])
-        const chamada = statusChamadas[uid] || {}
-        if (chamada.status === 'pago') return null // ✅ some do BuscarFreelas
-        const pago = chamada?.pagamento?.status === 'pago'
-        const podePagar = chamada.status === 'aceita' && !pago
-        return { ...f, distancia, online, podePagar, chamada, uid }
-        
-        console.log('Freela:', f.nome, 'Status:', chamada.status, 'Pode pagar:', podePagar, 'Chamada ID:', chamadaId)        
-        
-      })
-      .filter((f) => {
-       if (f.pago) return false // 🔥 remove freelas já pagos do Buscar
-        return !filtro || f.funcao?.toLowerCase().includes(filtro.toLowerCase())
-      })
-      .sort((a, b) => {
-        if (a.online && !b.online) return -1
-        if (!a.online && b.online) return 1
-        if (a.distancia != null && b.distancia != null) {
-          return a.distancia - b.distancia
-        }
-        return 0
-      })
-  }, [freelas, filtro, usuario, usuariosOnline, statusChamadas])
+// ... tudo igual até o useMemo
+
+const filtrados = useMemo(() => {
+  return freelas
+    .map((f) => {
+      const uid = f.uid || f.id
+      const distancia = f.coordenadas && usuario?.coordenadas
+        ? calcularDistancia(
+            usuario.coordenadas.latitude,
+            usuario.coordenadas.longitude,
+            f.coordenadas.latitude,
+            f.coordenadas.longitude
+          )
+        : null
+      const online = estaOnline(usuariosOnline[uid])
+      const chamada = statusChamadas[uid] || {}
+      const pago = chamada?.pagamento?.status === 'pago'
+      const podePagar = chamada.status === 'aceita' && !pago
+      return { ...f, distancia, online, podePagar, chamada, uid, pago }
+    })
+    .filter((f) => {
+      if (f.pago) return false // 🔥 remove freelas já pagos
+      return !filtro || f.funcao?.toLowerCase().includes(filtro.toLowerCase())
+    })
+    .sort((a, b) => {
+      if (a.online && !b.online) return -1
+      if (!a.online && b.online) return 1
+      if (a.distancia != null && b.distancia != null) {
+        return a.distancia - b.distancia
+      }
+      return 0
+    })
+}, [freelas, filtro, usuario, usuariosOnline, statusChamadas])
+
 
   const chamar = async (freela) => {
     const uid = freela.uid || freela.id
