@@ -29,19 +29,19 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
     try {
       setCarregando(true);
 
-      const response = await fetch(
-        "https://api-kbaliknhja-rj.a.run.app/pix/cobrar",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chamadaId: chamada.id,
-            valor: chamada.valorDiaria || 0.01, // valor da diária
-            nomePagador: chamada.contratanteNome || "Pagador",
-            docPagador: chamada.contratanteCpf || "00000000000", // CPF obrigatório para API
-          }),
-        }
-      );
+const response = await fetch(
+  "https://api-kbaliknhja-rj.a.run.app/api/pix/cobrar",
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chamadaId: chamada.id,
+      valor: chamada.valorDiaria || 0.01,
+      nomePagador: n.contratanteNome || "Pagador",
+      docPagador: n.contratanteCpf || "00000000000",
+    }),
+  }
+);
 
       const data = await response.json();
 
