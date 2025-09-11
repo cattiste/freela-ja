@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, getDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import QRCode from "react-qr-code";
 
@@ -8,44 +8,90 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
   const [carregando, setCarregando] = useState(false);
   const [pixGerado, setPixGerado] = useState(false);
 
+  // 🔹 estados do pagador (lidos em usuarios/{contratanteUid})
+  const [nomePagador, setNomePagador] = useState(null);
+  const [docPagador, setDocPagador] = useState(null);
+
+  // Observa a chamada para refletir pagamento
   useEffect(() => {
     if (!chamada?.id) return;
-
     const unsub = onSnapshot(doc(db, "chamadas", chamada.id), (snap) => {
       const data = snap.data();
       setPagamento(data?.pagamento || null);
-
       if (data?.pagamento?.status === "pendente" && data?.pagamento?.copiaCola) {
         setPixGerado(true);
       }
     });
-
     return () => unsub();
   }, [chamada?.id]);
 
+  // 🔎 Carrega nome/CPF do contratante (pagador) da coleção usuarios
+  useEffect(() => {
+    async function carregarPagador() {
+      try {
+        if (!chamada?.contratanteUid) return;
+        const snap = await getDoc(doc(db, "usuarios", chamada.contratanteUid));
+        if (!snap.exists()) return;
+
+        const u = snap.data() || {};
+        // Preferência: campos de responsável; fallback para outros nomes comuns
+        const nome =
+          u.responsavelNome ||
+          u.nome ||
+          u.nomeFantasia ||
+          u.razaoSocial ||
+          "Pagador";
+
+        // Preferência: CPF do responsável; fallback para cpf/cpfOuCnpj/cnpj (sanitiza)
+        const rawDoc =
+          u.responsavelCPF ||
+          u.cpf ||
+          u.cpfOuCnpj ||
+          u.cnpj ||
+          "";
+        const apenasDigitos = String(rawDoc).replace(/\D/g, "");
+
+        setNomePagador(nome);
+        setDocPagador(apenasDigitos || null);
+      } catch (e) {
+        console.error("[ModalPagamentoFreela] erro ao carregar pagador:", e);
+      }
+    }
+    carregarPagador();
+  }, [chamada?.contratanteUid]);
+
   const gerarPix = async () => {
     if (pixGerado) return;
+    // garante que temos dados do pagador
+    if (!nomePagador || !docPagador) {
+      console.warn("Pagador ainda não carregado — aguardando dados.");
+      return;
+    }
 
     try {
       setCarregando(true);
+      console.log("Abrindo pagamento para chamada ID:", chamada.id);
 
-const response = await fetch(
-  "https://api-kbaliknhja-rj.a.run.app/api/pix/cobrar",
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-    chamadaId: chamada.id,
-    valor: chamada.valorDiaria || 0.01,
-    nomePagador: chamada.contratanteNome || "Pagador",
-    docPagador: chamada.contratanteCpf || "00000000000",
-  }),
+      const response = await fetch(
+        "https://api-kbaliknhja-rj.a.run.app/api/pix/cobrar",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chamadaId: chamada.id,
+            valor: chamada.valorDiaria || 0.01,
+            nomePagador,
+            docPagador, // CPF (ou CNPJ sanitizado se for o caso)
+          }),
+        }
+      );
 
       const data = await response.json();
 
-      if (data?.copiaCola) {
+      if (response.ok && data?.copiaCola) {
         setPixGerado(true);
       } else {
+        console.error("Resposta da API Pix:", data);
         throw new Error("Dados de Pix não retornados corretamente.");
       }
     } catch (err) {
@@ -56,11 +102,14 @@ const response = await fetch(
     }
   };
 
+  // Gera automaticamente quando:
+  // 1) ainda não gerou e
+  // 2) já temos nome/CPF carregados
   useEffect(() => {
-    if (!pixGerado) {
-      gerarPix(); // gera automaticamente ao abrir
+    if (!pixGerado && nomePagador && docPagador) {
+      gerarPix();
     }
-  }, [pixGerado]);
+  }, [pixGerado, nomePagador, docPagador]); // eslint-disable-line
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -77,7 +126,9 @@ const response = await fetch(
         </h2>
 
         {!pixGerado ? (
-          <p className="text-center text-gray-500">Preparando pagamento...</p>
+          <p className="text-center text-gray-500">
+            {carregando ? "Preparando pagamento..." : "Preparando pagamento..."}
+          </p>
         ) : (
           <>
             <div className="flex justify-center mb-4">
