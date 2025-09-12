@@ -58,25 +58,33 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
           }
         );
 
-        if (!response.ok) {
-          throw new Error("Erro na resposta do servidor.");
+        let data;
+        try {
+          data = await response.json();
+        } catch {
+          data = null;
         }
 
-        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(
+            data?.message ||
+              `Erro ${response.status}: ${response.statusText || "Servidor"}`
+          );
+        }
 
         if (!data?.copiaCola || !data?.imagemQrcode) {
+          console.error("⚠️ Resposta Pix inválida:", data);
           throw new Error("Dados de Pix não retornados corretamente.");
         }
 
         setPagamento(data);
         toast.dismiss();
         toast.success("Cobrança Pix gerada com sucesso!");
-
       } catch (err) {
         console.error("❌ Erro ao gerar Pix:", err);
         setErro(err.message || "Erro desconhecido.");
         toast.dismiss();
-        toast.error("Erro ao gerar cobrança Pix.");
+        toast.error(err.message || "Erro ao gerar cobrança Pix.");
       } finally {
         setLoading(false);
       }
