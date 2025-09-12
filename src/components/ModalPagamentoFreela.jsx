@@ -1,153 +1,138 @@
 import React, { useEffect, useState } from "react";
-import { doc, onSnapshot, getDoc } from "firebase/firestore";
+import { useAuth } from "@/context/AuthContext";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import QRCode from "react-qr-code";
+import toast from "react-hot-toast";
 
 export default function ModalPagamentoFreela({ chamada, onClose }) {
+  const { usuario } = useAuth();
+  const [loading, setLoading] = useState(false);
   const [pagamento, setPagamento] = useState(null);
-  const [carregando, setCarregando] = useState(false);
-  const [pixGerado, setPixGerado] = useState(false);
+  const [erro, setErro] = useState(null);
 
-  // 🔹 estados do pagador (do doc em usuarios/{contratanteUid})
-  const [nomePagador, setNomePagador] = useState(null);
-  const [docPagador, setDocPagador] = useState(null);
-
-  // Observa a chamada no Firestore
   useEffect(() => {
-    if (!chamada?.id) return;
-    const unsub = onSnapshot(doc(db, "chamadas", chamada.id), (snap) => {
-      const data = snap.data();
-      setPagamento(data?.pagamento || null);
-      if (data?.pagamento?.status === "pendente" && data?.pagamento?.copiaCola) {
-        setPixGerado(true);
-      }
-    });
-    return () => unsub();
-  }, [chamada?.id]);
+    const gerarPagamento = async () => {
+      if (!chamada || !usuario) return;
 
-  // Carrega nome e CPF/CNPJ do contratante
-  useEffect(() => {
-    async function carregarPagador() {
       try {
-        if (!chamada?.contratanteUid) return;
-        const snap = await getDoc(doc(db, "usuarios", chamada.contratanteUid));
-        if (!snap.exists()) return;
+        setLoading(true);
+        setErro(null);
 
-        const u = snap.data() || {};
-        const nome =
-          u.responsavelNome ||
-          u.nome ||
-          u.nomeFantasia ||
-          u.razaoSocial ||
-          "Pagador";
+        // 📥 Busca dados do pagador (usuário logado)
+        const docRef = doc(db, "usuarios", usuario.uid);
+        const docSnap = await getDoc(docRef);
 
-        const rawDoc =
-          u.responsavelCPF ||
-          u.cpf ||
-          u.cpfOuCnpj ||
-          u.cnpj ||
-          "";
-        const apenasDigitos = String(rawDoc).replace(/\D/g, "");
+        if (!docSnap.exists()) {
+          throw new Error("Usuário não encontrado no banco de dados.");
+        }
 
-        setNomePagador(nome);
-        setDocPagador(apenasDigitos || null);
-      } catch (e) {
-        console.error("[ModalPagamentoFreela] erro ao carregar pagador:", e);
+        const userData = docSnap.data();
+        const nomePagador = userData.nome || "Pagador";
+        const docPagador = userData.cpf || userData.cnpj;
+
+        if (!docPagador) {
+          throw new Error("CPF ou CNPJ do pagador não informado.");
+        }
+
+        const valor = chamada.valorDiaria;
+        if (!valor || valor <= 0) {
+          throw new Error("Valor da diária inválido.");
+        }
+
+        toast.loading("Gerando cobrança Pix...");
+
+        const response = await fetch(
+          "https://api-kbaliknhja-rj.a.run.app/pix/cobrar",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              chamadaId: chamada.id,
+              valor,
+              nomePagador,
+              docPagador,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Erro na resposta do servidor.");
+        }
+
+        const data = await response.json();
+
+        if (!data?.copiaCola || !data?.imagemQrcode) {
+          throw new Error("Dados de Pix não retornados corretamente.");
+        }
+
+        setPagamento(data);
+        toast.dismiss();
+        toast.success("Cobrança Pix gerada com sucesso!");
+
+      } catch (err) {
+        console.error("❌ Erro ao gerar Pix:", err);
+        setErro(err.message || "Erro desconhecido.");
+        toast.dismiss();
+        toast.error("Erro ao gerar cobrança Pix.");
+      } finally {
+        setLoading(false);
       }
-    }
-    carregarPagador();
-  }, [chamada?.contratanteUid]);
+    };
 
-  const gerarPix = async () => {
-    if (pixGerado) return;
-    if (!nomePagador || !docPagador) return; // só chama se tiver pagador
+    gerarPagamento();
+  }, [chamada, usuario]);
 
-    try {
-      setCarregando(true);
-
-      const response = await fetch("https://api-kbaliknhja-rj.a.run.app/pix/cobrar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chamadaId: chamada.id,
-          valor: chamada.valorDiaria || 0.01,
-          nomePagador,
-          docPagador,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data?.copiaCola) {
-        setPixGerado(true);
-      } else {
-        console.error("Resposta Pix:", data);
-        throw new Error("Dados de Pix não retornados corretamente.");
-      }
-    } catch (err) {
-      console.error("❌ Erro ao gerar Pix:", err);
-      alert("Erro ao gerar Pix. Tente novamente.");
-    } finally {
-      setCarregando(false);
-    }
-  };
-
-  // Gera automaticamente quando tiver dados
-  useEffect(() => {
-    if (!pixGerado && nomePagador && docPagador) {
-      gerarPix();
-    }
-  }, [pixGerado, nomePagador, docPagador]); // eslint-disable-line
+  if (!chamada) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full relative">
-        <button
-          onClick={onClose}
-          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
-        >
-          ×
-        </button>
-
-        <h2 className="text-xl font-bold text-orange-600 mb-4 text-center">
-          Pagamento via Pix
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+      <div className="bg-white p-6 rounded-lg max-w-md w-full shadow-lg">
+        <h2 className="text-xl font-bold mb-4 text-center text-orange-600">
+          Pagamento da Chamada
         </h2>
 
-        {!pixGerado ? (
-          <p className="text-center text-gray-500">
-            {carregando ? "Preparando pagamento..." : "Preparando pagamento..."}
-          </p>
-        ) : (
-          <>
-            <div className="flex justify-center mb-4">
-              {pagamento?.imagemQrcode ? (
-                <img
-                  src={pagamento.imagemQrcode}
-                  alt="QR Code Pix"
-                  className="w-48 h-48"
-                />
-              ) : (
-                <QRCode value={pagamento?.copiaCola || ""} size={192} />
-              )}
-            </div>
+        {loading && <p className="text-center">⌛ Gerando Pix...</p>}
 
-            <p className="text-center text-sm mb-2">
-              📎 Copie o código abaixo e pague via seu app bancário:
+        {erro && (
+          <div className="text-red-600 text-sm text-center mb-4">
+            ❌ {erro}
+          </div>
+        )}
+
+        {pagamento && (
+          <div className="space-y-4">
+            <p className="text-center text-green-700 font-semibold">
+              Escaneie o QR Code ou copie o código abaixo:
             </p>
+
+            <div className="flex justify-center">
+              <QRCode value={pagamento.copiaCola} size={160} />
+            </div>
 
             <textarea
               readOnly
-              value={pagamento?.copiaCola || ""}
-              className="w-full text-sm border p-2 rounded bg-gray-100"
-              rows={3}
-              onFocus={(e) => e.target.select()}
+              className="w-full border rounded p-2 text-sm bg-gray-100"
+              value={pagamento.copiaCola}
+              rows={4}
             />
 
-            <p className="text-center text-green-600 font-bold mt-4">
-              Aguardando pagamento...
+            <p className="text-xs text-gray-500 text-center mt-2">
+              Para sua segurança, não armazenamos os dados do seu cartão de crédito.
             </p>
-          </>
+          </div>
         )}
+
+        <div className="flex justify-center mt-6">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded"
+          >
+            Fechar
+          </button>
+        </div>
       </div>
     </div>
   );
