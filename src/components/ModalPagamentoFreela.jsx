@@ -8,11 +8,11 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
   const [carregando, setCarregando] = useState(false);
   const [pixGerado, setPixGerado] = useState(false);
 
-  // 🔹 estados do pagador (lidos em usuarios/{contratanteUid})
+  // 🔹 estados do pagador (do doc em usuarios/{contratanteUid})
   const [nomePagador, setNomePagador] = useState(null);
   const [docPagador, setDocPagador] = useState(null);
 
-  // Observa a chamada para refletir pagamento
+  // Observa a chamada no Firestore
   useEffect(() => {
     if (!chamada?.id) return;
     const unsub = onSnapshot(doc(db, "chamadas", chamada.id), (snap) => {
@@ -25,7 +25,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
     return () => unsub();
   }, [chamada?.id]);
 
-  // 🔎 Carrega nome/CPF do contratante (pagador) da coleção usuarios
+  // Carrega nome e CPF/CNPJ do contratante
   useEffect(() => {
     async function carregarPagador() {
       try {
@@ -34,7 +34,6 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
         if (!snap.exists()) return;
 
         const u = snap.data() || {};
-        // Preferência: campos de responsável; fallback para outros nomes comuns
         const nome =
           u.responsavelNome ||
           u.nome ||
@@ -42,7 +41,6 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
           u.razaoSocial ||
           "Pagador";
 
-        // Preferência: CPF do responsável; fallback para cpf/cpfOuCnpj/cnpj (sanitiza)
         const rawDoc =
           u.responsavelCPF ||
           u.cpf ||
@@ -62,36 +60,28 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
 
   const gerarPix = async () => {
     if (pixGerado) return;
-    // garante que temos dados do pagador
-    if (!nomePagador || !docPagador) {
-      console.warn("Pagador ainda não carregado — aguardando dados.");
-      return;
-    }
+    if (!nomePagador || !docPagador) return; // só chama se tiver pagador
 
     try {
       setCarregando(true);
-      console.log("Abrindo pagamento para chamada ID:", chamada.id);
 
-      const response = await fetch(
-        "https://api-kbaliknhja-rj.a.run.app/pix/cobrar",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chamadaId: chamada.id,
-            valor: chamada.valorDiaria || 0.01,
-            nomePagador,
-            docPagador, // CPF (ou CNPJ sanitizado se for o caso)
-          }),
-        }
-      );
+      const response = await fetch("/pix/cobrar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chamadaId: chamada.id,
+          valor: chamada.valorDiaria || 0.01,
+          nomePagador,
+          docPagador,
+        }),
+      });
 
       const data = await response.json();
 
       if (response.ok && data?.copiaCola) {
         setPixGerado(true);
       } else {
-        console.error("Resposta da API Pix:", data);
+        console.error("Resposta Pix:", data);
         throw new Error("Dados de Pix não retornados corretamente.");
       }
     } catch (err) {
@@ -102,9 +92,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
     }
   };
 
-  // Gera automaticamente quando:
-  // 1) ainda não gerou e
-  // 2) já temos nome/CPF carregados
+  // Gera automaticamente quando tiver dados
   useEffect(() => {
     if (!pixGerado && nomePagador && docPagador) {
       gerarPix();
