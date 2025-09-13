@@ -51,10 +51,10 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               chamadaId: chamada.id,
-              valor,
+              valor: Number(valor).toFixed(2), // "1.00"
               nomePagador,
-              docPagador,
-            }),
+              docPagador: String(docPagador).replace(/\D/g, ""), // só números
+           }),
           }
         );
 
