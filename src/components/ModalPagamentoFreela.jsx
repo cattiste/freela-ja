@@ -13,7 +13,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
 
   useEffect(() => {
     const gerarPagamento = async () => {
-      if (!chamada || !usuario) return;
+      if (!chamada || !usuario || loading) return;
 
       try {
         setLoading(true);
@@ -32,7 +32,9 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
         const docPagador = userData.cpf || userData.cnpj;
 
         if (!docPagador) {
-          throw new Error("CPF ou CNPJ do pagador não informado.");
+          throw new Error(
+            "CPF ou CNPJ não informado. Atualize seus dados no perfil."
+          );
         }
 
         const valor = chamada.valorDiaria;
@@ -46,9 +48,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
           "https://api-kbaliknhja-uc.a.run.app/api/pix/cobrar",
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               chamadaId: chamada.id,
               valor,
@@ -62,7 +62,9 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
         try {
           data = await response.json();
         } catch {
-          data = null;
+          const text = await response.text();
+          console.error("⚠️ Resposta bruta:", text);
+          throw new Error("Resposta inesperada do servidor.");
         }
 
         if (!response.ok) {
@@ -94,6 +96,13 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
   }, [chamada, usuario]);
 
   if (!chamada) return null;
+
+  const copiarCodigo = () => {
+    if (pagamento?.copiaCola) {
+      navigator.clipboard.writeText(pagamento.copiaCola);
+      toast.success("Código Copia e Cola copiado!");
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
@@ -127,8 +136,18 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
               rows={4}
             />
 
+            <div className="flex justify-center">
+              <button
+                onClick={copiarCodigo}
+                className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded text-sm"
+              >
+                Copiar código
+              </button>
+            </div>
+
             <p className="text-xs text-gray-500 text-center mt-2">
-              Para sua segurança, não armazenamos os dados do seu cartão de crédito.
+              Para sua segurança, não armazenamos os dados do seu cartão de
+              crédito.
             </p>
           </div>
         )}
