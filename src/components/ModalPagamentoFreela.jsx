@@ -45,7 +45,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
         toast.loading("Gerando cobrança Pix...");
 
         const response = await fetch(
-          "https://api-kbaliknhja-uc.a.run.app/api/pix/cobrar",
+          "https://api-kbaliknhja-uc.a.run.app/api/pix/cobranca",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
