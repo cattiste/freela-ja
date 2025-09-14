@@ -150,6 +150,7 @@ function ChamadaContratanteItem({ ch, estab }) {
         alt={freela.nome}
         className="w-20 h-20 rounded-full object-cover border-2 border-orange-400"
       />
+        <div>
           <p className="font-semibold text-gray-800">
             {ch.freelaNome || ch.freelaUid}
           </p>
