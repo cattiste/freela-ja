@@ -89,17 +89,20 @@ export default function AvaliacaoContratante({ chamada }) {
   return (
     <div className="mt-2 border rounded p-2">
       <p className="font-semibold">Deixe sua avaliação:</p>
-      <div className="flex gap-2 mb-2">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <button
-            key={n}
-            onClick={() => setNota(n)}
-            className={`text-2xl ${nota >= n ? 'text-orange-400' : 'text-gray-300'}`}
-          >
-            ⭐
-          </button>
-        ))}
-      </div>
+      <div className="flex gap-1 mb-2">
+  {[1, 2, 3, 4, 5].map((n) => (
+    <button
+      key={n}
+      type="button"
+      onClick={() => setNota(n)}
+      className="text-2xl leading-none select-none"
+    >
+      <span className={nota >= n ? 'text-yellow-500' : 'text-gray-300'}>
+        {nota >= n ? '★' : '☆'}
+      </span>
+    </button>
+  ))}
+</div>
       <textarea
         className="w-full border rounded p-1"
         placeholder="Escreva um comentário..."
