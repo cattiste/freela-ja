@@ -1,7 +1,7 @@
 // src/pages/freela/PainelFreela.jsx
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
-import { collection, query, where, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, limit } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 import MenuInferiorFreela from '@/components/MenuInferiorFreela'
@@ -65,6 +65,7 @@ export default function PainelFreela() {
       query(
         collection(db, 'avaliacoesFreelas'),
         where('freelaUid', '==', usuario.uid)
+        limit(3)
       ),
       (snap) => setAlertas((prev) => ({ ...prev, avaliacoes: snap.size > 0 }))
     )

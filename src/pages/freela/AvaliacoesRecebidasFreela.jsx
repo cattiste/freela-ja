@@ -19,7 +19,7 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
         const q = query(
           collection(db, 'avaliacoesContratantes'),
           where('freelaUid', '==', uid),
-          limit(3)
+          limit(7)
         )
 
         const snapshot = await getDocs(q)
