@@ -86,7 +86,11 @@ export default function ChamadasContratante({ contratante }) {
 }
 
 function ChamadaContratanteItem({ ch, estab }) {
-  const statusEfetivo = ch.pagamento?.status === 'pago' ? 'pago' : ch.status
+  let statusEfetivo = ch.status
+  if (statusEfetivo === 'aceita' && ch.pagamento?.status === 'pago') {
+    statusEfetivo = 'pago'
+  }
+
   const [freelaData, setFreelaData] = useState(null)
   const [avaliacao, setAvaliacao] = useState(null)
 
@@ -98,7 +102,7 @@ function ChamadaContratanteItem({ ch, estab }) {
     })
   }, [ch.freelaUid])
 
-  // 🔎 Buscar avaliação já feita
+  // 🔎 Escuta avaliação já feita
   useEffect(() => {
     if (!ch.id) return
     const q = query(
