@@ -205,16 +205,16 @@ async function confirmarCheckin() {
         </span>
       )}
 
-      {statusEfetivo === "aceita" &&
-        ch.checkinFreela &&
-        !ch.checkinContratante && (
-          <button
-            onClick={confirmarCheckin}
-            className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            ✅ Confirmar Check-in
-          </button>
-        )}
+{(statusEfetivo === 'aceita' || statusEfetivo === 'checkin_freela') &&
+  ch.checkinFreela &&
+  !ch.checkinContratante && (
+    <button
+      onClick={confirmarCheckin}
+      className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+    >
+      ✅ Confirmar Check-in
+    </button>
+)}
 
       {statusEfetivo === "em_andamento" &&
         ch.checkoutFreela &&
