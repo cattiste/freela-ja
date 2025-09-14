@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext'
 
 export default function AvaliacoesRecebidasFreela({ freelaUid }) {
   const { usuario } = useAuth()
-  const uid = contratanteUid || usuario?.uid
+  const uid = freelaUid || usuario?.uid
   const [avaliacoes, setAvaliacoes] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erroPermissao, setErroPermissao] = useState(false)
