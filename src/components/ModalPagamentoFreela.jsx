@@ -146,8 +146,8 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
             </div>
 
             <p className="text-xs text-gray-500 text-center mt-2">
-              Para sua segurança, não armazenamos os dados do seu cartão de
-              crédito.
+              Por efetue o pagamento para liberar a chamada para o freela.
+              O endereço só será liberado após a confirmação do pagamento.
             </p>
           </div>
         )}
