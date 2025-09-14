@@ -248,7 +248,7 @@ const filtrados = useMemo(() => {
         alert('⚠️ Você já chamou esse freela e a chamada está ativa.')
         return
       }
-
+      const codigoCheckin = Math.floor(1000 + Math.random() * 9000);
       const chamadaRef = doc(collection(db, "chamadas"))
       await setDoc(chamadaRef, {
   id: chamadaRef.id,
@@ -260,7 +260,8 @@ const filtrados = useMemo(() => {
   status: "pendente",
   criadoEm: serverTimestamp(),
   coordenadasContratante: usuario.coordenadas || null, // ✅ salva
-  endereco: usuario.endereco || null // opcional
+  endereco: usuario.endereco || null, // opcional
+  codigoCheckin,
 })
       chamadaId = chamadaRef.id
       console.log('Chamada criada com ID:', chamadaId)
