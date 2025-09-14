@@ -17,6 +17,7 @@ import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
 
 export default function ChamadasFreela() {
+const { usuario } = useAuth()   // ✅ Agora `usuario` existe
 const { chamadas: chamadasAtivas, loading } = useChamadasDoFreela(usuario?.uid, [
   CHAMADA_STATUS.PENDENTE,
   CHAMADA_STATUS.ACEITA,
@@ -250,7 +251,7 @@ function ChamadaItem({ ch }) {
     ✅ Finalizada
   </span>
 )}
-      
+
     </div>
   )
 }
