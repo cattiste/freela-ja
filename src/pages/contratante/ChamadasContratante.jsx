@@ -97,7 +97,6 @@ export default function ChamadasContratante({ contratante }) {
 }
 
 function ChamadaContratanteItem({ ch, estab }) {
-  const statusEfetivo = ch.pagamento?.status === "pago" ? "pago" : ch.status;
   const [freelaData, setFreelaData] = useState(null);
 
   // 🔎 Carrega dados do freela (foto, etc.)
@@ -109,34 +108,39 @@ function ChamadaContratanteItem({ ch, estab }) {
     });
   }, [ch.freelaUid]);
 
-async function confirmarCheckin() {
-  try {
-    let endereco = null;
-
-    if (ch.freelaCoordenadas) {
-      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${ch.freelaCoordenadas.latitude}&lon=${ch.freelaCoordenadas.longitude}`;
-      const resp = await fetch(url, {
-        headers: { "User-Agent": "freelaja.com.br" },
-      });
-      const data = await resp.json();
-      endereco = data?.display_name || null;
-    }
-
-    await updateDoc(doc(db, "chamadas", ch.id), {
-      status: "em_andamento",
-      checkinContratante: true,
-      checkinContratanteEm: serverTimestamp(),
-      enderecoCheckInFreelaConfirmado: endereco,
-      atualizadoEm: serverTimestamp(),
-    });
-
-    toast.success("📍 Check-in confirmado pelo contratante!");
-  } catch (error) {
-    console.error("Erro ao confirmar check-in:", error);
-    toast.error("Falha ao confirmar check-in");
+  // ✅ statusEfetivo respeita a ordem dos eventos
+  let statusEfetivo = ch.status;
+  if (statusEfetivo === "aceita" && ch.pagamento?.status === "pago") {
+    statusEfetivo = "pago";
   }
-}
 
+  async function confirmarCheckin() {
+    try {
+      let endereco = null;
+
+      if (ch.freelaCoordenadas) {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${ch.freelaCoordenadas.latitude}&lon=${ch.freelaCoordenadas.longitude}`;
+        const resp = await fetch(url, {
+          headers: { "User-Agent": "freelaja.com.br" },
+        });
+        const data = await resp.json();
+        endereco = data?.display_name || null;
+      }
+
+      await updateDoc(doc(db, "chamadas", ch.id), {
+        status: "em_andamento",
+        checkinContratante: true,
+        checkinContratanteEm: serverTimestamp(),
+        enderecoCheckInFreelaConfirmado: endereco,
+        atualizadoEm: serverTimestamp(),
+      });
+
+      toast.success("📍 Check-in confirmado pelo contratante!");
+    } catch (error) {
+      console.error("Erro ao confirmar check-in:", error);
+      toast.error("Falha ao confirmar check-in");
+    }
+  }
 
   async function confirmarCheckout() {
     try {
@@ -205,16 +209,16 @@ async function confirmarCheckin() {
         </span>
       )}
 
-{(statusEfetivo === 'aceita' || statusEfetivo === 'checkin_freela') &&
-  ch.checkinFreela &&
-  !ch.checkinContratante && (
-    <button
-      onClick={confirmarCheckin}
-      className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-    >
-      ✅ Confirmar Check-in
-    </button>
-)}
+      {(statusEfetivo === "pago" || statusEfetivo === "aceita" || statusEfetivo === "checkin_freela") &&
+        ch.checkinFreela &&
+        !ch.checkinContratante && (
+          <button
+            onClick={confirmarCheckin}
+            className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            ✅ Confirmar Check-in
+          </button>
+      )}
 
       {statusEfetivo === "em_andamento" &&
         ch.checkoutFreela &&
