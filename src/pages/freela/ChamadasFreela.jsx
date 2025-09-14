@@ -165,9 +165,9 @@ await updateDoc(doc(db, "chamadas", ch.id), {
   async function fazerCheckout() {
     try {
       await updateDoc(doc(db, "chamadas", ch.id), {
+        status: "checkout_freela", // 👈 já muda status aqui
         checkoutFreela: true,
-        checkoutFreelaEm: serverTimestamp(),
-        status: "checkout_freela",
+        checkoutFreelaEm: serverTimestamp(),        
         atualizadoEm: serverTimestamp(),
       });
       toast.success("Check-out realizado!");

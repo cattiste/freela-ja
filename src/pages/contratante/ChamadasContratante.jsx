@@ -148,6 +148,7 @@ function ChamadaContratanteItem({ ch, estab }) {
         status: "concluido",
         checkoutContratante: true,
         checkoutContratanteEm: serverTimestamp(),
+        atualizadoEm: serverTimestamp(),
       });
       toast.success("⏳ Check-out confirmado!");
     } catch (error) {
