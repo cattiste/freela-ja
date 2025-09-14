@@ -146,7 +146,7 @@ function ChamadaContratanteItem({ ch, estab }) {
       {/* Foto + Nome do Freela */}
       <div className="flex items-center gap-3">
         <img
-          src={freelaData?.fotoUrl || "https://via.placeholder.com/80"}
+          src={freela.foto || 'https://via.placeholder.com/80'}}
           alt={ch.freelaNome}
           className="w-16 h-16 rounded-full border"
         />
