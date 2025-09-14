@@ -221,7 +221,7 @@ function ChamadaContratanteItem({ ch, estab }) {
           </button>
       )}
 
-      {statusEfetivo === "em_andamento" &&
+      {statusEfetivo === "checkout_freela" &&
         ch.checkoutFreela &&
         !ch.checkoutContratante && (
           <button
