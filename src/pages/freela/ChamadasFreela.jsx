@@ -240,4 +240,4 @@ return (
     )}
   </div> // <-- esse é o ÚNICO fechamento do card
 )
-
+}
