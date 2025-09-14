@@ -12,17 +12,7 @@ import {
 } from 'firebase/firestore'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
-import QRCode from 'react-qr-code'
-
-delete L.Icon.Default.prototype._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-})
+import AvaliacaoContratante from '@/components/AvaliacaoContratante'
 
 const STATUS_LISTA = [
   'pendente',
@@ -161,20 +151,19 @@ function ChamadaContratanteItem({ ch, estab }) {
       )}
       {ch.observacao && <p>📝 {ch.observacao}</p>}
 
+      {/* Exibir código numérico para o freela */}
       {statusEfetivo === 'pago' && ch.codigoCheckin && (
         <div className="mt-4 p-3 bg-gray-50 border rounded text-center">
           <p className="text-sm text-gray-600 mb-2">
-            Mostre este código ou QR Code para o freela confirmar presença:
+            Informe este código ao freela para confirmar o check-in:
           </p>
           <p className="text-2xl font-bold tracking-widest text-orange-600">
             {ch.codigoCheckin}
           </p>
-          <div className="flex justify-center mt-3">
-            <QRCode value={String(ch.codigoCheckin)} size={120} />
-          </div>
         </div>
       )}
 
+      {/* Confirmar checkin */}
       {(statusEfetivo === 'aceita' || statusEfetivo === 'pago') &&
         ch.checkinFreela &&
         !ch.checkinContratante && (
@@ -186,6 +175,7 @@ function ChamadaContratanteItem({ ch, estab }) {
           </button>
         )}
 
+      {/* Confirmar checkout */}
       {(statusEfetivo === 'pago' || statusEfetivo === 'checkout_freela') &&
         ch.checkoutFreela &&
         !ch.checkoutContratante && (
@@ -197,11 +187,32 @@ function ChamadaContratanteItem({ ch, estab }) {
           </button>
         )}
 
-      {(statusEfetivo === 'concluido' || statusEfetivo === 'finalizada') && (
-        <span className="block mt-2 text-green-600 font-semibold">
-          ✅ Chamada finalizada
-        </span>
-      )}
+      {/* Avaliação e finalização */}
+      {(statusEfetivo === 'concluido' || statusEfetivo === 'finalizada') ? (
+        <>
+          {!ch.avaliadoPeloContratante ? (
+            <AvaliacaoContratante chamada={ch} />
+          ) : (
+            <div className="mt-2 border rounded p-2 bg-gray-50">
+              <p className="font-semibold">Sua avaliação:</p>
+              <div className="flex gap-1 mb-1">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <span
+                    key={n}
+                    className={`text-xl ${ch.notaContratante >= n ? 'text-yellow-500' : 'text-gray-300'}`}
+                  >
+                    {ch.notaContratante >= n ? '★' : '☆'}
+                  </span>
+                ))}
+              </div>
+              <p className="text-gray-700">{ch.comentarioContratante}</p>
+            </div>
+          )}
+          <span className="block mt-2 text-green-600 font-semibold text-center">
+            ✅ Chamada finalizada
+          </span>
+        </>
+      ) : null}
     </div>
   )
 }
