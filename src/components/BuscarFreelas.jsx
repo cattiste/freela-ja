@@ -75,10 +75,15 @@ function FreelaCard({
         </p>
       )}
       {freela.mediaAvaliacoes ? (
-        <Estrelas media={freela.mediaAvaliacoes} />
-      ) : (
-        <p className="text-xs text-gray-400">(sem avaliações)</p>
-      )}
+  <div className="flex flex-col items-center mt-1">
+    <Estrelas media={freela.mediaAvaliacoes} />
+    <span className="text-xs text-gray-600 mt-1">
+      {freela.mediaAvaliacoes.toFixed(1)} / 5
+    </span>
+  </div>
+) : (
+  <p className="text-xs text-gray-400">(sem avaliações)</p>
+)}
       {freela.valorDiaria && (
         <p className="text-sm font-semibold text-orange-700 mt-1">💰 R$ {freela.valorDiaria}</p>
       )}
