@@ -15,7 +15,6 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
-import AvaliacaoFreela from '@/components/AvaliacaoFreela'
 
 export default function ChamadasFreela() {
   const { usuario } = useAuth()
@@ -25,9 +24,9 @@ export default function ChamadasFreela() {
     CHAMADA_STATUS.CONFIRMADA,
     CHAMADA_STATUS.CHECKIN_FREELA,
     CHAMADA_STATUS.EM_ANDAMENTO,
-    CHAMADA_STATUS.CHECKOUT_FREELA,    
+    CHAMADA_STATUS.CHECKOUT_FREELA,
+    CHAMADA_STATUS.CONCLUIDO,
     'pago',
-    'concluido'
   ])
 
   if (loading) return <div className="text-center mt-8">🔄 Carregando…</div>
@@ -240,11 +239,6 @@ function ChamadaItem({ ch }) {
       </div>
 
       <RespostasRapidasFreela chamadaId={ch.id} />
-
-      {/* Avaliação do contratante */}
-      {statusEfetivo === 'concluido' && !ch.avaliadoPorFreela && (
-        <AvaliacaoFreela chamada={ch} />
-      )}
 
       {(statusEfetivo === 'concluido' || statusEfetivo === 'finalizada') && (
         <span className="text-green-600 font-bold block text-center">
