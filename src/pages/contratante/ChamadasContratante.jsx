@@ -143,12 +143,12 @@ function ChamadaContratanteItem({ ch, estab }) {
         Chamada #{String(ch.id).slice(-5)}
       </h2>
 
-      {/* Foto + Nome do Freela */}
+     {/* Foto + Nome do Freela */}
       <div className="flex items-center gap-3">
         <img
-          src={freelaData?.fotoUrl || "https://via.placeholder.com/80"}
+          src={freelaData?.foto || "https://via.placeholder.com/80"}
           alt={ch.freelaNome}
-          className="w-16 h-16 rounded-full border"
+          className="w-16 h-16 rounded-full border object-cover"
         />
         <div>
           <p className="font-semibold text-gray-800">
