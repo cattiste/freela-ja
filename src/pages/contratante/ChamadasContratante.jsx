@@ -3,6 +3,11 @@ import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 
+export default function ChamadasContratante({ contratante }) {
+  ...
+}
+
+
 function ChamadaContratanteItem({ ch, estab }) {
   const statusEfetivo = ch.pagamento?.status === "pago" ? "pago" : ch.status;
   const [freelaData, setFreelaData] = useState(null);
