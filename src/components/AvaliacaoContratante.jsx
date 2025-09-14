@@ -15,7 +15,7 @@ export default function AvaliacaoContratante({ chamada }) {
     if (!nota || !comentario) return toast.error('Preencha todos os campos')
 
     try {
-      await addDoc(collection(db, 'avaliacoesContratantes'), {
+      await addDoc(collection(db, 'avaliacoesFreela'), {
         chamadaId: chamada.id,
         freelaUid: chamada.freelaUid,
         contratanteUid: usuario.uid,
@@ -46,7 +46,7 @@ export default function AvaliacaoContratante({ chamada }) {
           <button
             key={n}
             onClick={() => setNota(n)}
-            className={`text-2xl ${nota >= n ? 'text-yellow-400' : 'text-gray-300'}`}
+            className={`text-2xl ${nota >= n ? 'text-orange-400' : 'text-gray-300'}`}
           >
             {n} ⭐
           </button>

@@ -16,11 +16,12 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
       if (!uid) return
 
       try {
-        const q = query(
-          collection(db, 'avaliacoesContratantes'),
-          where('freelaUid', '==', uid),
-          limit(3)
-        )
+       const q = query(
+        collection(db, 'avaliacoesFreelas'),
+        where('freelaUid', '==', uid),
+        orderBy('criadoEm', 'desc'),
+        limit(3)
+      )
 
         const snapshot = await getDocs(q)
         const lista = snapshot.docs.map(doc => ({
