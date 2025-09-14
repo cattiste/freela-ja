@@ -34,23 +34,34 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
         const q = query(
           collection(db, "avaliacoesFreelas"),
           where("freelaUid", "==", freelaUid),
-          orderBy("criadoEm", "desc")
+          orderBy("criadoEm", "desc") // 🔑 ordena direto no Firestore
         )
 
         unsub = onSnapshot(q, (snap) => {
-          const lista = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+          let lista = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+          // 🔑 redundância: garante ordenação manual caso o Firestore ignore
+          lista.sort(
+            (a, b) =>
+              (b.criadoEm?.seconds || 0) - (a.criadoEm?.seconds || 0)
+          )
           setAvaliacoes(lista)
           setLoading(false)
         })
       } catch (err) {
         console.warn("⚠️ Fallback sem índice:", err.message)
 
-        // fallback: busca sem orderBy, ordena manualmente
+        // fallback sem orderBy
         const snap = await getDocs(
-          query(collection(db, "avaliacoesFreelas"), where("freelaUid", "==", freelaUid))
+          query(
+            collection(db, "avaliacoesFreelas"),
+            where("freelaUid", "==", freelaUid)
+          )
         )
-        const lista = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-        lista.sort((a, b) => (b.criadoEm?.seconds || 0) - (a.criadoEm?.seconds || 0))
+        let lista = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+        lista.sort(
+          (a, b) =>
+            (b.criadoEm?.seconds || 0) - (a.criadoEm?.seconds || 0)
+        )
         setAvaliacoes(lista)
         setLoading(false)
       }
@@ -80,7 +91,9 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
               className="border rounded-lg p-3 shadow-sm bg-gray-50"
             >
               <Estrelas nota={av.nota || 0} />
-              <p className="text-sm text-gray-700 mt-1">{av.comentario || "Sem comentário"}</p>
+              <p className="text-sm text-gray-700 mt-1">
+                {av.comentario || "Sem comentário"}
+              </p>
               <p className="text-xs text-gray-500 mt-1">
                 Contratante: {av.contratanteNome || "---"}
               </p>
