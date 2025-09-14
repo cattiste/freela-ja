@@ -204,40 +204,42 @@ function ChamadaItem({ ch }) {
         </div>
       )}
 
-      {/* Ações do Freela */}
-      <div className="flex flex-col sm:flex-row gap-2 mt-2">
-        {statusEfetivo === 'pendente' && (
+            {/* Ações do Freela */}
+      {statusEfetivo !== 'concluido' && statusEfetivo !== 'finalizada' && (
+        <div className="flex flex-col sm:flex-row gap-2 mt-2">
+          {statusEfetivo === 'pendente' && (
+            <button
+              onClick={aceitarChamada}
+              className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+            >
+              ✅ Aceitar chamada
+            </button>
+          )}
+
           <button
-            onClick={aceitarChamada}
-            className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+            onClick={fazerCheckin}
+            className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            disabled={statusEfetivo !== 'pago'}
           >
-            ✅ Aceitar chamada
+            📍 Fazer Check-in
           </button>
-        )}
 
-        <button
-          onClick={fazerCheckin}
-          className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          disabled={statusEfetivo !== 'pago'}
-        >
-          📍 Fazer Check-in
-        </button>
+          <button
+            onClick={fazerCheckout}
+            className="flex-1 bg-yellow-600 text-white py-2 rounded-lg hover:bg-yellow-700 disabled:opacity-50"
+            disabled={statusEfetivo !== 'em_andamento'}
+          >
+            ⏳ Fazer Check-out
+          </button>
 
-        <button
-          onClick={fazerCheckout}
-          className="flex-1 bg-yellow-600 text-white py-2 rounded-lg hover:bg-yellow-700 disabled:opacity-50"
-          disabled={statusEfetivo !== 'em_andamento'}
-        >
-          ⏳ Fazer Check-out
-        </button>
-
-        <button
-          onClick={cancelarChamada}
-          className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300"
-        >
-          ❌ Cancelar
-        </button>
-      </div>
+          <button
+            onClick={cancelarChamada}
+            className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300"
+          >
+            ❌ Cancelar
+          </button>
+        </div>
+      )}
 
       <RespostasRapidasFreela chamadaId={ch.id} />
 
