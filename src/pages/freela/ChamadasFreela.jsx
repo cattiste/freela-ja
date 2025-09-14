@@ -38,9 +38,7 @@ export default function ChamadasFreela() {
       </h1>
 
       {chamadas.length === 0 ? (
-        <p className="text-center text-gray-600">
-          Nenhuma chamada no momento.
-        </p>
+        <p className="text-center text-gray-600">Nenhuma chamada no momento.</p>
       ) : (
         chamadas.map((ch) => <ChamadaItem key={ch.id} ch={ch} />)
       )}
@@ -74,7 +72,6 @@ function ChamadaItem({ ch }) {
     return () => unsub();
   }, [ch.id]);
 
-  // statusEfetivo leva em conta o pagamento
   const statusEfetivo = statusPagamento === "pago" ? "pago" : ch.status;
   const podeAceitar = String(statusEfetivo || "").toLowerCase() === "pendente";
 
@@ -88,10 +85,7 @@ function ChamadaItem({ ch }) {
             setEnderecoContratante(snap.data().endereco || null);
           }
         } catch (e) {
-          console.error(
-            "[ChamadasFreela] Erro ao buscar endereço do contratante:",
-            e
-          );
+          console.error("[ChamadasFreela] Erro ao buscar endereço:", e);
         }
       }
     }
@@ -108,9 +102,7 @@ function ChamadaItem({ ch }) {
         const statusAtual = String(atual.status || "").toLowerCase();
 
         if (statusAtual !== "pendente") {
-          throw new Error(
-            "Essa chamada já foi aceita ou não está mais disponível."
-          );
+          throw new Error("Essa chamada já foi aceita ou não está mais disponível.");
         }
 
         tx.update(ref, {
@@ -128,7 +120,11 @@ function ChamadaItem({ ch }) {
     }
   }
 
+  // 🔑 fluxo antigo adaptado para rodar dentro do modal de código
   async function confirmarCheckin() {
+    console.log("🔎 [DEBUG] Código esperado:", codigoCheckin);
+    console.log("🔎 [DEBUG] Código digitado:", codigoInput);
+
     if (!codigoCheckin) {
       toast.error("⚠️ Código de check-in não definido pelo contratante.");
       return;
@@ -140,17 +136,30 @@ function ChamadaItem({ ch }) {
     }
 
     try {
+      let endereco = null;
+
+      if (usuario?.coordenadas) {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${usuario.coordenadas.latitude}&lon=${usuario.coordenadas.longitude}`;
+        const resp = await fetch(url, {
+          headers: { "User-Agent": "freelaja.com.br" },
+        });
+        const data = await resp.json();
+        endereco = data?.display_name || null;
+      }
+
       await updateDoc(doc(db, "chamadas", ch.id), {
+        status: "checkin_freela",
         checkinFreela: true,
         checkinFreelaEm: serverTimestamp(),
-        status: "em_andamento",
+        coordenadasCheckInFreela: usuario?.coordenadas || null,
+        enderecoCheckInFreela: endereco || null,
         atualizadoEm: serverTimestamp(),
-        freelaCoordenadas: usuario?.coordenadas || null, // mantém GPS registrado
       });
-      toast.success("✅ Check-in confirmado com sucesso!");
+
+      toast.success("📍 Check-in realizado com sucesso!");
       setModalCheckin(false);
     } catch (e) {
-      console.error(e);
+      console.error("❌ Erro ao fazer check-in:", e);
       toast.error("Falha ao fazer check-in.");
     }
   }
@@ -202,7 +211,7 @@ function ChamadaItem({ ch }) {
         <p className="text-sm text-gray-700">📝 {ch.observacao}</p>
       )}
 
-      {/* Mapa / endereço condicionado ao pagamento */}
+      {/* Endereço / mapa */}
       {podeVerEndereco && ch.coordenadasContratante ? (
         <MapContainer
           center={[
@@ -243,7 +252,7 @@ function ChamadaItem({ ch }) {
         </div>
       )}
 
-      {/* Ações do Freela */}
+      {/* Ações */}
       <div className="flex flex-col sm:flex-row gap-2 mt-2">
         {podeAceitar && (
           <button
@@ -278,7 +287,7 @@ function ChamadaItem({ ch }) {
         </button>
       </div>
 
-      {/* Modal para código de check-in */}
+      {/* Modal do código */}
       {modalCheckin && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white p-6 rounded-lg shadow max-w-sm w-full">
