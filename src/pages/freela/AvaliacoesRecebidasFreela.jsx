@@ -1,6 +1,6 @@
 // src/pages/freela/AvaliacoesRecebidasFreela.jsx
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, getDocs, limit } from 'firebase/firestore'
+import { query, collection, where, orderBy, limit, onSnapshot } from "firebase/firestore"
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 
@@ -19,7 +19,7 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
         const q = query(
           collection(db, 'avaliacoesContratantes'),
           where('freelaUid', '==', uid),
-          limit(10)
+          limit(3)
         )
 
         const snapshot = await getDocs(q)
