@@ -179,7 +179,7 @@ function ChamadaItem({ ch }) {
 
       {(statusEfetivo === 'concluido' || statusEfetivo === 'finalizada') ? (
         <>
-          {!ch.avaliadoPorFreela ? (
+           {!ch.avaliadoPorFreela ? (
             <AvaliacaoFreela chamada={ch} />
           ) : (
             <div className="mt-2 border rounded p-2 bg-gray-50">
@@ -197,6 +197,9 @@ function ChamadaItem({ ch }) {
               <p className="text-gray-700">{ch.comentarioFreela}</p>
             </div>
           )}
+        </>
+      )}
+
           <span className="text-green-600 font-bold block text-center mt-2">
             ✅ Chamada finalizada
           </span>
