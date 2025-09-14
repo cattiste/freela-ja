@@ -136,7 +136,7 @@ async function confirmarCheckin() {
     toast.error("Falha ao confirmar check-in");
   }
 }
-}
+
 
   async function confirmarCheckout() {
     try {
