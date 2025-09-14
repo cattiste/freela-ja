@@ -133,18 +133,36 @@ function ChamadaContratanteItem({ ch, estab }) {
   }
 
   async function confirmarCheckout() {
-    try {
-      await updateDoc(doc(db, 'chamadas', ch.id), {
-        status: 'concluido',
-        checkoutContratante: true,
-        checkoutContratanteEm: serverTimestamp(),
-      })
-      toast.success('⏳ Check-out confirmado!')
-    } catch (error) {
-      console.error('Erro ao confirmar check-out:', error)
-      toast.error('Falha ao confirmar check-out')
-    }
+  try {
+    // 1. Atualiza status no Firestore
+    await updateDoc(doc(db, 'chamadas', ch.id), {
+      status: 'concluido',
+      checkoutContratante: true,
+      checkoutContratanteEm: serverTimestamp(),
+    })
+
+    // 2. Chama backend para repassar Pix
+    const response = await fetch(
+      `https://api-kbaliknhja-uc.a.run.app/api/pix/transferir`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chamadaId: ch.id }),
+      }
+    )
+
+    if (!response.ok) throw new Error('Falha no repasse Pix')
+
+    const data = await response.json()
+    console.log('✅ Repasse Pix realizado:', data)
+
+    toast.success('⏳ Check-out confirmado e pagamento enviado!')
+  } catch (error) {
+    console.error('Erro ao confirmar check-out:', error)
+    toast.error('Falha ao confirmar check-out')
   }
+}
+
 
   return (
     <div className="bg-white rounded-xl shadow p-4 mb-4 border border-orange-200 space-y-2">
