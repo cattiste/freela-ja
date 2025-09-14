@@ -1,6 +1,6 @@
 // src/pages/freela/AvaliacoesRecebidasFreela.jsx
 import React, { useEffect, useState } from 'react'
-import { query, collection, where, orderBy, limit, onSnapshot } from "firebase/firestore"
+import { collection, query, where, getDocs, limit } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 
