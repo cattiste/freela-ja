@@ -144,12 +144,12 @@ function ChamadaContratanteItem({ ch, estab }) {
       </h2>
 
       {/* Foto + Nome do Freela */}
-    <div className="p-4 bg-white rounded-2xl shadow-lg border border-orange-100 flex flex-col items-center">
-      <img
-        src={freela.foto || 'https://via.placeholder.com/80'}
-        alt={freela.nome}
-        className="w-20 h-20 rounded-full object-cover border-2 border-orange-400"
-      />
+      <div className="flex items-center gap-3">
+        <img
+          src={freelaData?.fotoUrl || "https://via.placeholder.com/80"}
+          alt={ch.freelaNome}
+          className="w-16 h-16 rounded-full border"
+        />
         <div>
           <p className="font-semibold text-gray-800">
             {ch.freelaNome || ch.freelaUid}
