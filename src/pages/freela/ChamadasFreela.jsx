@@ -17,17 +17,20 @@ import { db } from '@/firebase'
 import { toast } from 'react-hot-toast'
 
 export default function ChamadasFreela() {
-  const { usuario } = useAuth()
-  const { chamadas, loading } = useChamadasDoFreela(usuario?.uid, [
-    CHAMADA_STATUS.PENDENTE,
-    CHAMADA_STATUS.ACEITA,
-    CHAMADA_STATUS.CONFIRMADA,
-    CHAMADA_STATUS.CHECKIN_FREELA,
-    CHAMADA_STATUS.EM_ANDAMENTO,
-    CHAMADA_STATUS.CHECKOUT_FREELA,
-    CHAMADA_STATUS.CONCLUIDO,
-    'pago',
-  ])
+const { chamadas: chamadasAtivas, loading } = useChamadasDoFreela(usuario?.uid, [
+  CHAMADA_STATUS.PENDENTE,
+  CHAMADA_STATUS.ACEITA,
+  CHAMADA_STATUS.CONFIRMADA,
+  CHAMADA_STATUS.CHECKIN_FREELA,
+  CHAMADA_STATUS.EM_ANDAMENTO,
+  CHAMADA_STATUS.CHECKOUT_FREELA,
+])
+
+const { chamadas: chamadasHistorico, loading: loadingHistorico } = useChamadasDoFreela(usuario?.uid, [
+  CHAMADA_STATUS.CONCLUIDO,
+  CHAMADA_STATUS.FINALIZADA,
+])
+
 
   if (loading) return <div className="text-center mt-8">🔄 Carregando…</div>
 
@@ -203,48 +206,51 @@ function ChamadaItem({ ch }) {
         </div>
       )}
 
-      {/* Ações do Freela */}
-      <div className="flex flex-col sm:flex-row gap-2 mt-2">
-        {statusEfetivo === 'pendente' && (
-          <button
-            onClick={aceitarChamada}
-            className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
-          >
-            ✅ Aceitar chamada
-          </button>
-        )}
+{/* Ações do Freela */}
+{!(statusEfetivo === 'concluido' || statusEfetivo === 'finalizada') && (
+  <div className="flex flex-col sm:flex-row gap-2 mt-2">
+    {statusEfetivo === 'pendente' && (
+      <button
+        onClick={aceitarChamada}
+        className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+      >
+        ✅ Aceitar chamada
+      </button>
+    )}
 
-        <button
-          onClick={fazerCheckin}
-          className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          disabled={statusEfetivo !== 'pago'}
-        >
-          📍 Fazer Check-in
-        </button>
+    <button
+      onClick={fazerCheckin}
+      className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+      disabled={statusEfetivo !== 'pago'}
+    >
+      📍 Fazer Check-in
+    </button>
 
-        <button
-          onClick={fazerCheckout}
-          className="flex-1 bg-yellow-600 text-white py-2 rounded-lg hover:bg-yellow-700 disabled:opacity-50"
-          disabled={statusEfetivo !== 'em_andamento'}
-        >
-          ⏳ Fazer Check-out
-        </button>
+    <button
+      onClick={fazerCheckout}
+      className="flex-1 bg-yellow-600 text-white py-2 rounded-lg hover:bg-yellow-700 disabled:opacity-50"
+      disabled={statusEfetivo !== 'em_andamento'}
+    >
+      ⏳ Fazer Check-out
+    </button>
 
-        <button
-          onClick={cancelarChamada}
-          className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300"
-        >
-          ❌ Cancelar
-        </button>
-      </div>
+    <button
+      onClick={cancelarChamada}
+      className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300"
+    >
+      ❌ Cancelar
+    </button>
+  </div>
+)}
 
-      <RespostasRapidasFreela chamadaId={ch.id} />
+<RespostasRapidasFreela chamadaId={ch.id} />
 
-      {(statusEfetivo === 'concluido' || statusEfetivo === 'finalizada') && (
-        <span className="text-green-600 font-bold block text-center">
-          ✅ Finalizada
-        </span>
-      )}
+{(statusEfetivo === 'concluido' || statusEfetivo === 'finalizada') && (
+  <span className="text-green-600 font-bold block text-center">
+    ✅ Finalizada
+  </span>
+)}
+      
     </div>
   )
 }
