@@ -161,51 +161,47 @@ function ChamadaItem({ ch }) {
   }
 
   return (
-    <div className="bg-white border rounded-xl p-4 mb-4 space-y-2 shadow">
-      <h2 className="font-semibold text-orange-600">
-        Chamada #{String(ch.id).slice(-5)}
-      </h2>
-      <p><strong>Status:</strong> {statusEfetivo}</p>
-      {typeof ch.valorDiaria === 'number' && (
-        <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>
-      )}
-      {ch.observacao && <p className="text-sm text-gray-700">📝 {ch.observacao}</p>}
+  <div className="bg-white border rounded-xl p-4 mb-4 space-y-2 shadow">
+    <h2 className="font-semibold text-orange-600">
+      Chamada #{String(ch.id).slice(-5)}
+    </h2>
 
-      {/* Mapa / endereço condicionado ao pagamento */}
-      {statusEfetivo === 'pago' && ch.coordenadasContratante ? (
-        <MapContainer
-          center={[ch.coordenadasContratante.latitude, ch.coordenadasContratante.longitude]}
-          zoom={17}
-          scrollWheelZoom={false}
-          style={{ height: 200, borderRadius: 8 }}
-        >
-          <TileLayer
-            attribution="&copy; OpenStreetMap"
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          <Marker position={[ch.coordenadasContratante.latitude, ch.coordenadasContratante.longitude]} />
-        </MapContainer>
-      ) : statusEfetivo === 'pago' ? (
-        <div className="text-sm p-2 rounded bg-yellow-50">
-          Aguardando liberação do endereço…
-        </div>
-      ) : (
-        <div className="text-sm p-2 rounded bg-gray-100">
-          Endereço será liberado após confirmação de pagamento.
-        </div>
-      )}
+    <p><strong>Status:</strong> {statusEfetivo}</p>
+    {typeof ch.valorDiaria === 'number' && (
+      <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>
+    )}
+    {ch.observacao && <p className="text-sm text-gray-700">📝 {ch.observacao}</p>}
 
-      {statusEfetivo === 'pago' && enderecoContratante && (
-        <div className="mt-3 p-2 bg-green-100 rounded text-green-700 text-center text-sm">
-          📍 Endereço: {enderecoContratante}
-          <p className="text-xs mt-1">
-            Procure o responsável no local para confirmar seu check-in.
-          </p>
-        </div>
-      )}
+    {/* 🔒 Se a chamada terminou → só mostra avaliação e finalizada */}
+    {(statusEfetivo === 'concluido' || statusEfetivo === 'finalizada') ? (
+      <>
+        {!ch.avaliadoPorFreela ? (
+          <AvaliacaoFreela chamada={ch} />
+        ) : (
+          <div className="mt-2 border rounded p-2 bg-gray-50">
+            <p className="font-semibold">Sua avaliação:</p>
+            <div className="flex gap-1 mb-1">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <span
+                  key={n}
+                  className={`text-xl ${ch.notaFreela >= n ? 'text-orange-400' : 'text-gray-300'}`}
+                >
+                  ⭐
+                </span>
+              ))}
+            </div>
+            <p className="text-gray-700">{ch.comentarioFreela}</p>
+          </div>
+        )}
 
-            {/* Ações do Freela */}
-      {statusEfetivo !== 'concluido' && statusEfetivo !== 'finalizada' && (
+        <span className="text-green-600 font-bold block text-center mt-2">
+          ✅ Chamada finalizada
+        </span>
+      </>
+    ) : (
+      <>
+        {/* 🔓 Caso ainda não tenha concluído → mostra botões e respostas rápidas */}
+        {/* Ações do Freela */}
         <div className="flex flex-col sm:flex-row gap-2 mt-2">
           {statusEfetivo === 'pendente' && (
             <button
@@ -239,39 +235,9 @@ function ChamadaItem({ ch }) {
             ❌ Cancelar
           </button>
         </div>
-      )}
 
-      <RespostasRapidasFreela chamadaId={ch.id} />
-
-{/* Avaliação do contratante pelo freela */}
-      {statusEfetivo === 'concluido' && (
-        <>
-          {!ch.avaliadoPorFreela ? (
-            <AvaliacaoFreela chamada={ch} />
-          ) : (
-            <div className="mt-2 border rounded p-2 bg-gray-50">
-              <p className="font-semibold">Sua avaliação:</p>
-              <div className="flex gap-1 mb-1">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <span
-                    key={n}
-                    className={`text-xl ${ch.notaFreela >= n ? 'text-orange-400' : 'text-gray-300'}`}
-                  >
-                    ⭐
-                  </span>
-                ))}
-              </div>
-              <p className="text-gray-700">{ch.comentarioFreela}</p>
-            </div>
-          )}
-        </>
-      )}
-
-      {(statusEfetivo === 'concluido' || statusEfetivo === 'finalizada') && (
-        <span className="text-green-600 font-bold block text-center">
-          ✅ Finalizada
-        </span>
-      )}
-    </div>
-  )
-}
+        <RespostasRapidasFreela chamadaId={ch.id} />
+      </>
+    )}
+  </div>
+)
