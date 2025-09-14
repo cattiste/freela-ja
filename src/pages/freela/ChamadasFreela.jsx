@@ -1,3 +1,4 @@
+// src/pages/freela/ChamadasFreela.jsx
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useChamadasDoFreela } from '@/hooks/useChamadasStream'
@@ -25,9 +26,9 @@ export default function ChamadasFreela() {
     CHAMADA_STATUS.CONFIRMADA,
     CHAMADA_STATUS.CHECKIN_FREELA,
     CHAMADA_STATUS.EM_ANDAMENTO,
-    CHAMADA_STATUS.CHECKOUT_FREELA,    
+    CHAMADA_STATUS.CHECKOUT_FREELA,
     'pago',
-    'concluido'
+    'concluido',
   ])
 
   if (loading) return <div className="text-center mt-8">🔄 Carregando…</div>
@@ -51,6 +52,8 @@ function ChamadaItem({ ch }) {
   const { usuario } = useAuth()
   const [enderecoContratante, setEnderecoContratante] = useState(ch.endereco || null)
   const [statusPagamento, setStatusPagamento] = useState(null)
+  const [mostrarModal, setMostrarModal] = useState(false)
+  const [codigoDigitado, setCodigoDigitado] = useState('')
 
   // 🔎 Escuta o doc de pagamento
   useEffect(() => {
@@ -114,7 +117,11 @@ function ChamadaItem({ ch }) {
     }
   }
 
-  async function fazerCheckin() {
+  async function confirmarCheckinComCodigo() {
+    if (codigoDigitado !== ch.codigoCheckin) {
+      toast.error('Código inválido!')
+      return
+    }
     try {
       await updateDoc(doc(db, 'chamadas', ch.id), {
         checkinFreela: true,
@@ -123,10 +130,11 @@ function ChamadaItem({ ch }) {
         atualizadoEm: serverTimestamp(),
         freelaCoordenadas: usuario?.coordenadas || null,
       })
-      toast.success('📍 Check-in realizado!')
+      toast.success('📍 Check-in confirmado!')
+      setMostrarModal(false)
     } catch (e) {
       console.error(e)
-      toast.error('Falha ao fazer check-in.')
+      toast.error('Erro ao confirmar check-in.')
     }
   }
 
@@ -160,84 +168,113 @@ function ChamadaItem({ ch }) {
     }
   }
 
-return (
-  <div className="bg-white border rounded-xl p-4 mb-4 space-y-2 shadow">
-    <h2 className="font-semibold text-orange-600">
-      Chamada #{String(ch.id).slice(-5)}
-    </h2>
+  return (
+    <div className="bg-white border rounded-xl p-4 mb-4 space-y-2 shadow">
+      <h2 className="font-semibold text-orange-600">
+        Chamada #{String(ch.id).slice(-5)}
+      </h2>
 
-    <p><strong>Status:</strong> {statusEfetivo}</p>
-    {typeof ch.valorDiaria === 'number' && (
-      <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>
-    )}
-    {ch.observacao && <p className="text-sm text-gray-700">📝 {ch.observacao}</p>}
+      <p><strong>Status:</strong> {statusEfetivo}</p>
+      {typeof ch.valorDiaria === 'number' && (
+        <p><strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}</p>
+      )}
+      {ch.observacao && <p className="text-sm text-gray-700">📝 {ch.observacao}</p>}
 
-    {/* 🔒 Se a chamada terminou → só mostra avaliação e finalizada */}
-    {(statusEfetivo === 'concluido' || statusEfetivo === 'finalizada') ? (
-      <>
-        {!ch.avaliadoPorFreela ? (
-          <AvaliacaoFreela chamada={ch} />
-        ) : (
-          <div className="mt-2 border rounded p-2 bg-gray-50">
-            <p className="font-semibold">Sua avaliação:</p>
-            <div className="flex gap-1 mb-1">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <span
-                  key={n}
-                  className={`text-xl ${ch.notaFreela >= n ? 'text-orange-400' : 'text-gray-300'}`}
-                >
-                  ⭐
-                </span>
-              ))}
+      {/* 🔒 Se a chamada terminou → só mostra avaliação e finalizada */}
+      {(statusEfetivo === 'concluido' || statusEfetivo === 'finalizada') ? (
+        <>
+          {!ch.avaliadoPorFreela ? (
+            <AvaliacaoFreela chamada={ch} />
+          ) : (
+            <div className="mt-2 border rounded p-2 bg-gray-50">
+              <p className="font-semibold">Sua avaliação:</p>
+              <div className="flex gap-1 mb-1">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <span
+                    key={n}
+                    className={`text-xl ${ch.notaFreela >= n ? 'text-orange-400' : 'text-gray-300'}`}
+                  >
+                    ⭐
+                  </span>
+                ))}
+              </div>
+              <p className="text-gray-700">{ch.comentarioFreela}</p>
             </div>
-            <p className="text-gray-700">{ch.comentarioFreela}</p>
-          </div>
-        )}
-
-        <span className="text-green-600 font-bold block text-center mt-2">
-          ✅ Chamada finalizada
-        </span>
-      </>
-    ) : (
-      <>
-        {/* 🔓 Caso ainda não tenha concluído → mostra botões e respostas rápidas */}
-        <div className="flex flex-col sm:flex-row gap-2 mt-2">
-          {statusEfetivo === 'pendente' && (
-            <button
-              onClick={aceitarChamada}
-              className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
-            >
-              ✅ Aceitar chamada
-            </button>
           )}
 
-          <button
-            onClick={fazerCheckin}
-            className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            disabled={statusEfetivo !== 'pago'}
-          >
-            📍 Fazer Check-in
-          </button>
+          <span className="text-green-600 font-bold block text-center mt-2">
+            ✅ Chamada finalizada
+          </span>
+        </>
+      ) : (
+        <>
+          {/* 🔓 Caso ainda não tenha concluído → mostra botões e respostas rápidas */}
+          <div className="flex flex-col sm:flex-row gap-2 mt-2">
+            {statusEfetivo === 'pendente' && (
+              <button
+                onClick={aceitarChamada}
+                className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+              >
+                ✅ Aceitar chamada
+              </button>
+            )}
 
-          <button
-            onClick={fazerCheckout}
-            className="flex-1 bg-yellow-600 text-white py-2 rounded-lg hover:bg-yellow-700 disabled:opacity-50"
-            disabled={statusEfetivo !== 'em_andamento'}
-          >
-            ⏳ Fazer Check-out
-          </button>
+            {statusEfetivo === 'pago' && (
+              <button
+                onClick={() => setMostrarModal(true)}
+                className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+              >
+                📍 Fazer Check-in
+              </button>
+            )}
 
-          <button
-            onClick={cancelarChamada}
-            className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300"
-          >
-            ❌ Cancelar
-          </button>
+            <button
+              onClick={fazerCheckout}
+              className="flex-1 bg-yellow-600 text-white py-2 rounded-lg hover:bg-yellow-700 disabled:opacity-50"
+              disabled={statusEfetivo !== 'em_andamento'}
+            >
+              ⏳ Fazer Check-out
+            </button>
+
+            <button
+              onClick={cancelarChamada}
+              className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300"
+            >
+              ❌ Cancelar
+            </button>
+          </div>
+
+          <RespostasRapidasFreela chamadaId={ch.id} />
+        </>
+      )}
+
+      {/* Modal de confirmação de código */}
+      {mostrarModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-80">
+            <h2 className="text-lg font-bold mb-4">Confirmar Check-in</h2>
+            <input
+              type="text"
+              placeholder="Digite o código do contratante"
+              value={codigoDigitado}
+              onChange={(e) => setCodigoDigitado(e.target.value)}
+              className="w-full border p-2 rounded mb-3"
+            />
+            <button
+              onClick={confirmarCheckinComCodigo}
+              className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+            >
+              Confirmar
+            </button>
+            <button
+              onClick={() => setMostrarModal(false)}
+              className="w-full mt-2 bg-gray-200 text-gray-800 py-2 rounded hover:bg-gray-300"
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
-
-        <RespostasRapidasFreela chamadaId={ch.id} />
-      </>
-    )}
-  </div> // <-- esse é o ÚNICO fechamento do card
-)
+      )}
+    </div>
+  )
 }
