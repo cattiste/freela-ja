@@ -121,20 +121,19 @@ function ChamadaItem({ ch }) {
   }
 
   // 🔑 fluxo antigo adaptado para rodar dentro do modal de código
-  async function confirmarCheckin() {
-    console.log("🔎 [DEBUG] Código esperado:", codigoCheckin);
-    console.log("🔎 [DEBUG] Código digitado:", codigoInput);
+async function confirmarCheckin() {
+  console.log("🔎 Código esperado:", codigoCheckin);
+  console.log("🔎 Código digitado:", codigoInput);
 
-    if (!codigoCheckin) {
-      toast.error("⚠️ Código de check-in não definido pelo contratante.");
-      return;
-    }
+  if (!codigoCheckin) {
+    toast.error("⚠️ Nenhum código definido pelo contratante.");
+    return;
+  }
 
-    if (String(codigoInput).trim() !== String(codigoCheckin).trim()) {
-      toast.error("❌ Código inválido. Tente novamente.");
-      return;
-    }
-
+  if (String(codigoInput).trim() !== String(codigoCheckin).trim()) {
+    toast.error("❌ Código inválido. Tente novamente.");
+    return;
+  }
     try {
       let endereco = null;
 
@@ -147,22 +146,21 @@ function ChamadaItem({ ch }) {
         endereco = data?.display_name || null;
       }
 
-      await updateDoc(doc(db, "chamadas", ch.id), {
-        status: "checkin_freela",
-        checkinFreela: true,
-        checkinFreelaEm: serverTimestamp(),
-        coordenadasCheckInFreela: usuario?.coordenadas || null,
-        enderecoCheckInFreela: endereco || null,
-        atualizadoEm: serverTimestamp(),
-      });
+await updateDoc(doc(db, "chamadas", ch.id), {
+      status: "checkin_freela", // 👈 já muda status aqui
+      checkinFreela: true,
+      checkinFreelaEm: serverTimestamp(),
+      coordenadasCheckInFreela: usuario?.coordenadas || null,
+      atualizadoEm: serverTimestamp(),
+    });
 
-      toast.success("📍 Check-in realizado com sucesso!");
-      setModalCheckin(false);
-    } catch (e) {
-      console.error("❌ Erro ao fazer check-in:", e);
-      toast.error("Falha ao fazer check-in.");
-    }
+    toast.success("✅ Check-in confirmado!");
+    setModalCheckin(false); // fecha modal
+  } catch (e) {
+    console.error("❌ Erro ao salvar check-in:", e);
+    toast.error("Erro ao fazer check-in.");
   }
+}
 
   async function fazerCheckout() {
     try {

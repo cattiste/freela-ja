@@ -109,19 +109,34 @@ function ChamadaContratanteItem({ ch, estab }) {
     });
   }, [ch.freelaUid]);
 
-  async function confirmarCheckin() {
-    try {
-      await updateDoc(doc(db, "chamadas", ch.id), {
-        status: "em_andamento",
-        checkinContratante: true,
-        checkinContratanteEm: serverTimestamp(),
+async function confirmarCheckin() {
+  try {
+    let endereco = null;
+
+    if (ch.freelaCoordenadas) {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${ch.freelaCoordenadas.latitude}&lon=${ch.freelaCoordenadas.longitude}`;
+      const resp = await fetch(url, {
+        headers: { "User-Agent": "freelaja.com.br" },
       });
-      toast.success("📍 Check-in confirmado!");
-    } catch (error) {
-      console.error("Erro ao confirmar check-in:", error);
-      toast.error("Falha ao confirmar check-in");
+      const data = await resp.json();
+      endereco = data?.display_name || null;
     }
+
+    await updateDoc(doc(db, "chamadas", ch.id), {
+      status: "em_andamento",
+      checkinContratante: true,
+      checkinContratanteEm: serverTimestamp(),
+      enderecoCheckInFreelaConfirmado: endereco,
+      atualizadoEm: serverTimestamp(),
+    });
+
+    toast.success("📍 Check-in confirmado pelo contratante!");
+  } catch (error) {
+    console.error("Erro ao confirmar check-in:", error);
+    toast.error("Falha ao confirmar check-in");
   }
+}
+}
 
   async function confirmarCheckout() {
     try {
