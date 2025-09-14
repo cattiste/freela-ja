@@ -241,9 +241,28 @@ function ChamadaItem({ ch }) {
 
       <RespostasRapidasFreela chamadaId={ch.id} />
 
-      {/* Avaliação do contratante */}
-      {statusEfetivo === 'concluido' && !ch.avaliadoPorFreela && (
-        <AvaliacaoFreela chamada={ch} />
+{/* Avaliação do contratante pelo freela */}
+      {statusEfetivo === 'concluido' && (
+        <>
+          {!ch.avaliadoPorFreela ? (
+            <AvaliacaoFreela chamada={ch} />
+          ) : (
+            <div className="mt-2 border rounded p-2 bg-gray-50">
+              <p className="font-semibold">Sua avaliação:</p>
+              <div className="flex gap-1 mb-1">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <span
+                    key={n}
+                    className={`text-xl ${ch.notaFreela >= n ? 'text-orange-400' : 'text-gray-300'}`}
+                  >
+                    ⭐
+                  </span>
+                ))}
+              </div>
+              <p className="text-gray-700">{ch.comentarioFreela}</p>
+            </div>
+          )}
+        </>
       )}
 
       {(statusEfetivo === 'concluido' || statusEfetivo === 'finalizada') && (
