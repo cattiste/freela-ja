@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/firebase";
 import QRCode from "react-qr-code";
 import toast from "react-hot-toast";
@@ -11,6 +11,25 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
   const [pagamento, setPagamento] = useState(null);
   const [erro, setErro] = useState(null);
 
+  // 🔎 Escuta em tempo real o status do pagamento
+  useEffect(() => {
+    if (!chamada?.id) return;
+
+    const unsub = onSnapshot(doc(db, "chamadas", chamada.id), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.pagamento?.status === "pago") {
+          toast.dismiss();
+          toast.success("✅ Pagamento confirmado!");
+          onClose(); // 👈 fecha modal automaticamente
+        }
+      }
+    });
+
+    return () => unsub();
+  }, [chamada?.id, onClose]);
+
+  // 🔄 Geração da cobrança
   useEffect(() => {
     const gerarPagamento = async () => {
       if (!chamada || !usuario || loading) return;
@@ -19,28 +38,18 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
         setLoading(true);
         setErro(null);
 
-        // 📥 Busca dados do pagador (usuário logado)
         const docRef = doc(db, "usuarios", usuario.uid);
         const docSnap = await getDoc(docRef);
 
-        if (!docSnap.exists()) {
-          throw new Error("Usuário não encontrado no banco de dados.");
-        }
+        if (!docSnap.exists()) throw new Error("Usuário não encontrado.");
 
         const userData = docSnap.data();
         const nomePagador = userData.nome || "Pagador";
         const docPagador = userData.cpf || userData.cnpj;
-
-        if (!docPagador) {
-          throw new Error(
-            "CPF ou CNPJ não informado. Atualize seus dados no perfil."
-          );
-        }
+        if (!docPagador) throw new Error("CPF ou CNPJ não informado.");
 
         const valor = chamada.valorDiaria;
-        if (!valor || valor <= 0) {
-          throw new Error("Valor da diária inválido.");
-        }
+        if (!valor || valor <= 0) throw new Error("Valor da diária inválido.");
 
         toast.loading("Gerando cobrança Pix...");
 
@@ -51,32 +60,20 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               chamadaId: chamada.id,
-              valor: Number(valor).toFixed(2), // "1.00"
+              valor: Number(valor).toFixed(2),
               nomePagador,
-              docPagador: String(docPagador).replace(/\D/g, ""), // só números
-           }),
+              docPagador: String(docPagador).replace(/\D/g, ""),
+            }),
           }
         );
 
-        let data;
-        try {
-          data = await response.json();
-        } catch {
-          const text = await response.text();
-          console.error("⚠️ Resposta bruta:", text);
-          throw new Error("Resposta inesperada do servidor.");
-        }
-
+        const data = await response.json();
         if (!response.ok) {
-          throw new Error(
-            data?.message ||
-              `Erro ${response.status}: ${response.statusText || "Servidor"}`
-          );
+          throw new Error(data?.message || `Erro ${response.status}`);
         }
 
         if (!data?.copiaCola || !data?.imagemQrcode) {
-          console.error("⚠️ Resposta Pix inválida:", data);
-          throw new Error("Dados de Pix não retornados corretamente.");
+          throw new Error("Dados de Pix inválidos.");
         }
 
         setPagamento(data);
@@ -146,7 +143,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
             </div>
 
             <p className="text-xs text-gray-500 text-center mt-2">
-              Por efetue o pagamento para liberar a chamada para o freela.
+              Efetue o pagamento para liberar a chamada para o freela.
               O endereço só será liberado após a confirmação do pagamento.
             </p>
           </div>
