@@ -17,8 +17,7 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
       try {
         const q = query(
           collection(db, 'avaliacoesFreelas'),
-          where('freelaUid', '==', uid),
-          orderBy('criadoEm', 'desc'),
+          where('freelaUid', '==', uid),          
           limit(3) // 👈 últimas 3 avaliações
         )
 
