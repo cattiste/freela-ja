@@ -97,13 +97,13 @@ export default function ChamadasContratante({ contratante }) {
 }
 
 function ChamadaContratanteItem({ ch, estab }) {
-  const statusEfetivo = ch.pagamento?.status === 'pago' ? 'pago' : ch.status;
+  const statusEfetivo = ch.pagamento?.status === "pago" ? "pago" : ch.status;
   const [freelaData, setFreelaData] = useState(null);
 
-  // 🔎 Carrega dados do freela (foto etc.)
+  // 🔎 Carrega dados do freela (foto, etc.)
   useEffect(() => {
     if (!ch.freelaUid) return;
-    const ref = doc(db, 'usuarios', ch.freelaUid);
+    const ref = doc(db, "usuarios", ch.freelaUid);
     getDoc(ref).then((snap) => {
       if (snap.exists()) setFreelaData(snap.data());
     });
@@ -111,29 +111,29 @@ function ChamadaContratanteItem({ ch, estab }) {
 
   async function confirmarCheckin() {
     try {
-      await updateDoc(doc(db, 'chamadas', ch.id), {
-        status: 'em_andamento',
+      await updateDoc(doc(db, "chamadas", ch.id), {
+        status: "em_andamento",
         checkinContratante: true,
         checkinContratanteEm: serverTimestamp(),
       });
-      toast.success('📍 Check-in confirmado!');
+      toast.success("📍 Check-in confirmado!");
     } catch (error) {
-      console.error('Erro ao confirmar check-in:', error);
-      toast.error('Falha ao confirmar check-in');
+      console.error("Erro ao confirmar check-in:", error);
+      toast.error("Falha ao confirmar check-in");
     }
   }
 
   async function confirmarCheckout() {
     try {
-      await updateDoc(doc(db, 'chamadas', ch.id), {
-        status: 'concluido',
+      await updateDoc(doc(db, "chamadas", ch.id), {
+        status: "concluido",
         checkoutContratante: true,
         checkoutContratanteEm: serverTimestamp(),
       });
-      toast.success('⏳ Check-out confirmado!');
+      toast.success("⏳ Check-out confirmado!");
     } catch (error) {
-      console.error('Erro ao confirmar check-out:', error);
-      toast.error('Falha ao confirmar check-out');
+      console.error("Erro ao confirmar check-out:", error);
+      toast.error("Falha ao confirmar check-out");
     }
   }
 
@@ -146,9 +146,9 @@ function ChamadaContratanteItem({ ch, estab }) {
       {/* Foto + Nome do Freela */}
       <div className="flex items-center gap-3">
         <img
-          src={freela.foto || 'https://via.placeholder.com/80'}
-          alt={freela.nome}
-          className="w-16 h-16 rounded-full border"
+          src={freelaData?.foto || "https://via.placeholder.com/80"}
+          alt={ch.freelaNome}
+          className="w-16 h-16 rounded-full border object-cover"
         />
         <div>
           <p className="font-semibold text-gray-800">
@@ -161,15 +161,15 @@ function ChamadaContratanteItem({ ch, estab }) {
       <p>
         <strong>Status:</strong> {statusEfetivo}
       </p>
-      {typeof ch.valorDiaria === 'number' && (
+      {typeof ch.valorDiaria === "number" && (
         <p>
           <strong>Diária:</strong> R$ {ch.valorDiaria.toFixed(2)}
         </p>
       )}
       {ch.observacao && <p>📝 {ch.observacao}</p>}
 
-      {/* Código e QR de Check-in */}
-      {statusEfetivo === 'pago' && ch.codigoCheckin && (
+      {/* Código de check-in + QR Code */}
+      {statusEfetivo === "pago" && ch.codigoCheckin && (
         <div className="mt-4 p-3 bg-gray-50 border rounded text-center">
           <p className="text-sm text-gray-600 mb-2">
             Mostre este código ou QR Code para o freela confirmar presença:
@@ -183,46 +183,14 @@ function ChamadaContratanteItem({ ch, estab }) {
         </div>
       )}
 
-      {/* Mapa se houver coordenadas */}
-      {ch.freelaCoordenadas && estab?.coordenadas && (
-        <div className="w-full h-64 my-4 rounded-xl overflow-hidden border border-orange-200">
-          <MapContainer
-            center={[ch.freelaCoordenadas.latitude, ch.freelaCoordenadas.longitude]}
-            zoom={15}
-            scrollWheelZoom={false}
-            style={{ height: '100%', width: '100%' }}
-          >
-            <TileLayer
-              attribution="&copy; OpenStreetMap"
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-
-            <Marker
-              position={[
-                ch.freelaCoordenadas.latitude,
-                ch.freelaCoordenadas.longitude,
-              ]}
-            >
-              <Popup>Freelancer {ch.freelaNome}</Popup>
-            </Marker>
-
-            <Marker
-              position={[estab.coordenadas.latitude, estab.coordenadas.longitude]}
-            >
-              <Popup>Você (Contratante)</Popup>
-            </Marker>
-          </MapContainer>
-        </div>
-      )}
-
-      {/* Status e botões */}
-      {statusEfetivo === 'pago' && (
+      {/* Status e botões de check-in/out */}
+      {statusEfetivo === "pago" && (
         <span className="block mt-2 text-blue-600 font-semibold">
           💸 Pagamento confirmado — aguardando check-in
         </span>
       )}
 
-      {statusEfetivo === 'aceita' &&
+      {statusEfetivo === "aceita" &&
         ch.checkinFreela &&
         !ch.checkinContratante && (
           <button
@@ -233,7 +201,7 @@ function ChamadaContratanteItem({ ch, estab }) {
           </button>
         )}
 
-      {statusEfetivo === 'em_andamento' &&
+      {statusEfetivo === "em_andamento" &&
         ch.checkoutFreela &&
         !ch.checkoutContratante && (
           <button
@@ -244,7 +212,7 @@ function ChamadaContratanteItem({ ch, estab }) {
           </button>
         )}
 
-      {(statusEfetivo === 'concluido' || statusEfetivo === 'finalizada') && (
+      {(statusEfetivo === "concluido" || statusEfetivo === "finalizada") && (
         <span className="block mt-2 text-green-600 font-semibold">
           ✅ Chamada finalizada
         </span>
@@ -252,4 +220,3 @@ function ChamadaContratanteItem({ ch, estab }) {
     </div>
   );
 }
-
