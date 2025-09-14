@@ -64,7 +64,7 @@ export default function PainelFreela() {
     const unsubAvaliacoes = onSnapshot(
       query(
         collection(db, 'avaliacoesFreelas'),
-        where('freelaUid', '==', usuario.uid)
+        where('freelaUid', '==', usuario.uid),
         limit(3)
       ),
       (snap) => setAlertas((prev) => ({ ...prev, avaliacoes: snap.size > 0 }))
