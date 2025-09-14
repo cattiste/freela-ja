@@ -1,89 +1,91 @@
-// src/pages/freela/AvaliacoesRecebidasFreela.jsx
-import React, { useEffect, useState } from "react"
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-  getDocs,
-} from "firebase/firestore"
-import { db } from "@/firebase"
-import { FaStar, FaRegStar } from "react-icons/fa"
-
-function Estrelas({ nota }) {
-  return (
-    <div className="flex text-yellow-400">
-      {[...Array(5)].map((_, i) =>
-        i < nota ? <FaStar key={i} /> : <FaRegStar key={i} />
-      )}
-    </div>
-  )
-}
+// src/pages/contratante/AvaliacoesRecebidasContratante.jsx
+import React, { useEffect, useState } from 'react'
+import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore'
+import { db } from '@/firebase'
+import { useAuth } from '@/context/AuthContext'
 
 export default function AvaliacoesRecebidasFreela({ freelaUid }) {
+  const { usuario } = useAuth()
+  const uid = contratanteUid || usuario?.uid
   const [avaliacoes, setAvaliacoes] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [carregando, setCarregando] = useState(true)
+  const [erroPermissao, setErroPermissao] = useState(false)
 
   useEffect(() => {
-    if (!freelaUid) return
+    const buscarAvaliacoes = async () => {
+      if (!uid) return
 
-    let unsub
-    async function carregarAvaliacoes() {
       try {
         const q = query(
-          collection(db, "avaliacoesFreelas"),
-          where("freelaUid", "==", freelaUid),
-          orderBy("criadoEm", "desc")
+          collection(db, 'avaliacoesFreelas'),
+          where('freelaUid', '==', uid),
+          orderBy('criadoEm', 'desc'),
+          limit(3) // 👈 últimas 3 avaliações
         )
 
-        unsub = onSnapshot(q, (snap) => {
-          const lista = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-          setAvaliacoes(lista)
-          setLoading(false)
-        })
-      } catch (err) {
-        console.warn("⚠️ Fallback sem índice:", err.message)
+        const snapshot = await getDocs(q)
+        const lista = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
 
-        // fallback: busca sem orderBy, ordena manualmente
-        const snap = await getDocs(
-          query(collection(db, "avaliacoesFreelas"), where("freelaUid", "==", freelaUid))
-        )
-        const lista = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-        lista.sort((a, b) => (b.criadoEm?.seconds || 0) - (a.criadoEm?.seconds || 0))
         setAvaliacoes(lista)
-        setLoading(false)
+      } catch (err) {
+        console.error('Erro ao buscar avaliações:', err)
+        if (err?.code === 'permission-denied') setErroPermissao(true)
+      } finally {
+        setCarregando(false)
       }
     }
 
-    carregarAvaliacoes()
-    return () => unsub && unsub()
-  }, [freelaUid])
+    buscarAvaliacoes()
+  }, [uid])
 
-  if (loading) return <p className="text-center">Carregando avaliações...</p>
+  if (!uid) {
+    return (
+      <div className="text-center text-red-600 mt-10">
+        ⚠️ Acesso não autorizado. Faça login novamente.
+      </div>
+    )
+  }
+
+  if (carregando) {
+    return (
+      <div className="text-center text-orange-600 mt-10">
+        🔄 Carregando avaliações recebidas...
+      </div>
+    )
+  }
+
+  if (erroPermissao) {
+    return (
+      <div className="text-center text-red-500 mt-6 text-sm">
+        ❌ Sem permissão para visualizar as avaliações. Verifique suas regras do Firestore.
+      </div>
+    )
+  }
 
   return (
-    <div className="bg-white rounded-xl shadow p-4">
-      <h2 className="text-xl font-bold text-orange-600 mb-3">
+    <div className="p-4 bg-white rounded-xl shadow col-span-1">
+      <h1 className="text-xl font-bold text-blue-700 mb-4 text-center">
         ⭐ Avaliações Recebidas
-      </h2>
+      </h1>
 
       {avaliacoes.length === 0 ? (
-        <p className="text-gray-600 text-center">
+        <p className="text-center text-gray-600">
           Nenhuma avaliação recebida ainda.
         </p>
       ) : (
-        <div className="space-y-3">
-          {avaliacoes.slice(0, 3).map((av) => (
-            <div
-              key={av.id}
-              className="border rounded-lg p-3 shadow-sm bg-gray-50"
-            >
-              <Estrelas nota={av.nota || 0} />
-              <p className="text-sm text-gray-700 mt-1">{av.comentario || "Sem comentário"}</p>
-              <p className="text-xs text-gray-500 mt-1">
-                Contratante: {av.contratanteNome || "---"}
+        <div className="space-y-4">
+          {avaliacoes.map((avaliacao) => (
+            <div key={avaliacao.id} className="bg-gray-50 border p-3 rounded-xl shadow-sm">
+              <p className="text-sm text-gray-800">
+                <strong>Contratante:</strong> {avaliacao.contratanteNome || '---'}
               </p>
+              <p className="text-sm text-gray-600 italic">
+                "{avaliacao.comentario || 'Sem comentário'}"
+              </p>
+              <p className="text-orange-600 mt-1">⭐ Nota: {avaliacao.nota || '---'}</p>
             </div>
           ))}
         </div>
