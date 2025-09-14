@@ -85,7 +85,7 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
               <p className="text-sm text-gray-600 italic">
                 "{avaliacao.comentario || 'Sem comentário'}"
               </p>
-              <p className="text-yellow-600 mt-1">⭐ Nota: {avaliacao.nota || '---'}</p>
+              <p className="text-orange-600 mt-1">⭐ Nota: {avaliacao.nota || '---'}</p>
             </div>
           ))}
         </div>

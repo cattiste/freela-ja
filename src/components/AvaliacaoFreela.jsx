@@ -46,7 +46,7 @@ export default function AvaliacaoFreela({ chamada }) {
           <button
             key={n}
             onClick={() => setNota(n)}
-            className={`text-2xl ${nota >= n ? 'text-yellow-400' : 'text-gray-300'}`}
+            className={`text-2xl ${nota >= n ? 'text-orange-400' : 'text-gray-300'}`}
           >
             {n} ⭐
           </button>
