@@ -16,19 +16,19 @@ export default function AvaliacoesRecebidasFreela({ freelaUid }) {
       if (!uid) return
 
       try {
-       const q = query(
-        collection(db, 'avaliacoesFreelas'),
-        where('freelaUid', '==', uid),
-        orderBy('criadoEm', 'desc'),
-        limit(3)
-      )
+        const q = query(
+          collection(db, 'avaliacoesFreelas'),
+          where('freelaUid', '==', uid),
+          orderBy('criadoEm', 'desc'),
+          limit(3) // 👈 últimas 3 avaliações
+        )
 
         const snapshot = await getDocs(q)
         const lista = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
         }))
-        
+
         setAvaliacoes(lista)
       } catch (err) {
         console.error('Erro ao buscar avaliações:', err)
