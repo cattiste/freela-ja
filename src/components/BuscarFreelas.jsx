@@ -177,7 +177,9 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
       s2.forEach((d) => lista.push({ id: d.id, ...d.data() }))
 
       for (const f of lista) {
-        const avalSnap = await getDocs(query(collection(db, 'avaliacoes'), where('freelaId', '==', f.uid || f.id)))
+       const avalSnap = await getDocs(
+         query(collection(db, 'avaliacoesFreelas'), where('freelaUid', '==', f.uid || f.id))
+          )
         const avals = avalSnap.docs.map((d) => d.data())
         if (avals.length > 0) {
           const media = avals.reduce((sum, a) => sum + (a.nota || 0), 0) / avals.length
