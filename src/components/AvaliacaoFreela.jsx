@@ -1,6 +1,5 @@
-
-import React, { useState } from 'react'
-import { addDoc, collection, serverTimestamp, doc, updateDoc } from 'firebase/firestore'
+import React, { useState, useEffect } from 'react'
+import { addDoc, collection, serverTimestamp, doc, updateDoc, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
@@ -9,26 +8,54 @@ export default function AvaliacaoFreela({ chamada }) {
   const { usuario } = useAuth()
   const [nota, setNota] = useState(0)
   const [comentario, setComentario] = useState('')
-  const [enviado, setEnviado] = useState(false)
+  const [avaliacaoExistente, setAvaliacaoExistente] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  // 🔎 Carregar se já existe avaliação do freela
+  useEffect(() => {
+    const carregarAvaliacao = async () => {
+      if (!usuario?.uid || !chamada?.id) return
+
+      try {
+        const q = query(
+          collection(db, 'avaliacoesContratantes'),
+          where('chamadaId', '==', chamada.id),
+          where('freelaUid', '==', usuario.uid)
+        )
+        const snap = await getDocs(q)
+
+        if (!snap.empty) {
+          const docData = snap.docs[0].data()
+          setAvaliacaoExistente(docData)
+        }
+      } catch (e) {
+        console.error('Erro ao buscar avaliação existente:', e)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    carregarAvaliacao()
+  }, [usuario?.uid, chamada?.id])
 
   const enviarAvaliacao = async () => {
     if (!nota || !comentario) return toast.error('Preencha todos os campos')
 
     try {
       await addDoc(collection(db, 'avaliacoesContratantes'), {
-       chamadaId: chamada.id,
-       freelaUid: usuario.uid,
-       contratanteUid: chamada.contratanteUid,
-       nota,
-       comentario,
-       criadoEm: serverTimestamp()
-    })
+        chamadaId: chamada.id,
+        freelaUid: usuario.uid,
+        contratanteUid: chamada.contratanteUid,
+        nota,
+        comentario,
+        criadoEm: serverTimestamp()
+      })
 
       await updateDoc(doc(db, 'chamadas', chamada.id), {
         avaliadoPorFreela: true
       })
 
-      setEnviado(true)
+      setAvaliacaoExistente({ nota, comentario })
       toast.success('Avaliação enviada!')
     } catch (e) {
       console.error('Erro ao enviar avaliação:', e)
@@ -36,8 +63,29 @@ export default function AvaliacaoFreela({ chamada }) {
     }
   }
 
-  if (enviado) return <p className="text-green-600">✅ Avaliação enviada</p>
+  if (loading) return <p>Carregando avaliação...</p>
 
+  // ✅ Já existe avaliação → mostrar resultado fixo
+  if (avaliacaoExistente) {
+    return (
+      <div className="mt-2 border rounded p-2 bg-gray-50">
+        <p className="font-semibold">Sua avaliação:</p>
+        <div className="flex gap-1 mb-1">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <span
+              key={n}
+              className={`text-xl ${avaliacaoExistente.nota >= n ? 'text-orange-400' : 'text-gray-300'}`}
+            >
+              ⭐
+            </span>
+          ))}
+        </div>
+        <p className="text-gray-700">{avaliacaoExistente.comentario}</p>
+      </div>
+    )
+  }
+
+  // ✍️ Ainda não avaliou → mostrar formulário
   return (
     <div className="mt-2 border rounded p-2">
       <p className="font-semibold">Deixe sua avaliação:</p>
@@ -48,7 +96,7 @@ export default function AvaliacaoFreela({ chamada }) {
             onClick={() => setNota(n)}
             className={`text-2xl ${nota >= n ? 'text-orange-400' : 'text-gray-300'}`}
           >
-            {n} ⭐
+            ⭐
           </button>
         ))}
       </div>
@@ -58,7 +106,10 @@ export default function AvaliacaoFreela({ chamada }) {
         value={comentario}
         onChange={(e) => setComentario(e.target.value)}
       />
-      <button onClick={enviarAvaliacao} className="mt-2 bg-blue-600 text-white px-4 py-1 rounded">
+      <button
+        onClick={enviarAvaliacao}
+        className="mt-2 bg-blue-600 text-white px-4 py-1 rounded"
+      >
         Enviar Avaliação
       </button>
     </div>
