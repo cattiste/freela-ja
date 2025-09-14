@@ -52,7 +52,9 @@ export default function AvaliacaoFreela({ chamada }) {
       })
 
       await updateDoc(doc(db, 'chamadas', chamada.id), {
-        avaliadoPorFreela: true
+       avaliadoPorFreela: true,
+       notaFreela: nota,
+       comentarioFreela: comentario,
       })
 
       setAvaliacaoExistente({ nota, comentario })
