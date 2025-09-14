@@ -160,7 +160,7 @@ function ChamadaItem({ ch }) {
     }
   }
 
-  return (
+return (
   <div className="bg-white border rounded-xl p-4 mb-4 space-y-2 shadow">
     <h2 className="font-semibold text-orange-600">
       Chamada #{String(ch.id).slice(-5)}
@@ -241,3 +241,36 @@ function ChamadaItem({ ch }) {
     )}
   </div>
 )
+
+{/* Avaliação do contratante pelo freela */}
+      {statusEfetivo === 'concluido' && (
+        <>
+          {!ch.avaliadoPorFreela ? (
+            <AvaliacaoFreela chamada={ch} />
+          ) : (
+            <div className="mt-2 border rounded p-2 bg-gray-50">
+              <p className="font-semibold">Sua avaliação:</p>
+              <div className="flex gap-1 mb-1">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <span
+                    key={n}
+                    className={`text-xl ${ch.notaFreela >= n ? 'text-orange-400' : 'text-gray-300'}`}
+                  >
+                    ⭐
+                  </span>
+                ))}
+              </div>
+              <p className="text-gray-700">{ch.comentarioFreela}</p>
+            </div>
+          )}
+        </>
+      )}
+
+      {(statusEfetivo === 'concluido' || statusEfetivo === 'finalizada') && (
+        <span className="text-green-600 font-bold block text-center">
+          ✅ Finalizada
+        </span>
+      )}
+    </div>
+  )
+}
