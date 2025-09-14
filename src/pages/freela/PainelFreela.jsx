@@ -1,4 +1,4 @@
-
+// src/pages/freela/PainelFreela.jsx
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
@@ -18,7 +18,6 @@ import RecebimentosFreela from '@/pages/freela/RecebimentosFreela'
 import ValidacaoDocumento from '@/components/ValidacaoDocumento'
 import toast from 'react-hot-toast'
 
-
 import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 
 export default function PainelFreela() {
@@ -36,7 +35,7 @@ export default function PainelFreela() {
 
   useEffect(() => {
     if (usuario?.statusDocumentos === 'aprovada') {
-     toast.success('✅ Documentos verificados com sucesso')
+      toast.success('✅ Documentos verificados com sucesso')
     }
   }, [usuario?.statusDocumentos])
 
@@ -63,7 +62,10 @@ export default function PainelFreela() {
     )
 
     const unsubAvaliacoes = onSnapshot(
-      query(collection(db, 'avaliacoesFreelas'), where('freelaUid', '==', usuario.uid)),
+      query(
+        collection(db, 'avaliacoesFreelas'),
+        where('freelaUid', '==', usuario.uid)
+      ),
       (snap) => setAlertas((prev) => ({ ...prev, avaliacoes: snap.size > 0 }))
     )
 
@@ -73,7 +75,12 @@ export default function PainelFreela() {
         where('freelaUid', '==', usuario.uid),
         where('status', 'in', ['finalizado', 'concluido'])
       ),
-      (snap) => setAlertas((prev) => ({ ...prev, recebimentos: snap.size > 0 }))
+      (snap) =>
+        setAlertas((prev) => ({ ...prev, recebimentos: snap.size > 0 })),
+      (err) => {
+        console.error('Erro ao buscar histórico de pagamentos:', err)
+        toast.error('Erro ao buscar histórico de pagamentos.')
+      }
     )
 
     return () => {
@@ -90,7 +97,12 @@ export default function PainelFreela() {
     const q = query(
       collection(db, 'chamadas'),
       where('freelaUid', '==', usuario.uid),
-      where('status', 'in', ['pendente', 'aceita', 'checkin_freela', 'checkout_freela'])
+      where('status', 'in', [
+        'pendente',
+        'aceita',
+        'checkin_freela',
+        'checkout_freela',
+      ])
     )
     const unsubscribe = onSnapshot(q, (snap) => {
       const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
@@ -99,8 +111,10 @@ export default function PainelFreela() {
     return () => unsubscribe()
   }, [usuario?.uid])
 
-  if (carregando) return <div className="text-center mt-10">Verificando autenticação...</div>
-  if (!usuario?.uid) return <div className="text-center mt-10">Usuário não autenticado.</div>
+  if (carregando)
+    return <div className="text-center mt-10">Verificando autenticação...</div>
+  if (!usuario?.uid)
+    return <div className="text-center mt-10">Usuário não autenticado.</div>
 
   const role = (usuario?.tipo || usuario?.tipoUsuario || '').toLowerCase()
   if (role && role !== 'freela') {
@@ -135,13 +149,11 @@ export default function PainelFreela() {
         return <Vagas freelaId={usuario.uid} />
       case 'config':
         return (
-      <>
-        <ConfiguracoesFreela />
-        {usuario?.statusDocumentos !== 'aprovado' && (
-          <ValidacaoDocumento />
-        )}
-      </>
-    )
+          <>
+            <ConfiguracoesFreela />
+            {usuario?.statusDocumentos !== 'aprovado' && <ValidacaoDocumento />}
+          </>
+        )
       case 'historico':
         return <HistoricoFreela freelaId={usuario.uid} />
       case 'recebimentos':
@@ -152,8 +164,16 @@ export default function PainelFreela() {
   }
 
   return (
-    <div className="p-4 pb-20">
-      {renderConteudo()}
+    <div
+      className="min-h-screen p-4 pb-20 bg-cover bg-center"
+      style={{
+        backgroundImage: "url('/img/fundo-login.jpg')",
+        backgroundAttachment: 'fixed',
+      }}
+    >
+      <div className="bg-white/90 p-4 rounded-2xl shadow-lg">
+        {renderConteudo()}
+      </div>
       <MenuInferiorFreela
         onSelect={setAbaSelecionada}
         abaAtiva={abaSelecionada}
