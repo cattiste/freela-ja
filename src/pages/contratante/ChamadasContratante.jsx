@@ -88,6 +88,7 @@ export default function ChamadasContratante({ contratante }) {
 function ChamadaContratanteItem({ ch, estab }) {
   const statusEfetivo = ch.pagamento?.status === 'pago' ? 'pago' : ch.status
   const [freelaData, setFreelaData] = useState(null)
+  const [avaliacao, setAvaliacao] = useState(null)
 
   useEffect(() => {
     if (!ch.freelaUid) return
@@ -96,6 +97,22 @@ function ChamadaContratanteItem({ ch, estab }) {
       if (snap.exists()) setFreelaData(snap.data())
     })
   }, [ch.freelaUid])
+
+  // 🔎 Buscar avaliação já feita
+  useEffect(() => {
+    if (!ch.id) return
+    const q = query(
+      collection(db, 'avaliacoesFreelas'),
+      where('chamadaId', '==', ch.id),
+      where('contratanteUid', '==', estab.uid)
+    )
+    const unsub = onSnapshot(q, (snap) => {
+      if (!snap.empty) {
+        setAvaliacao(snap.docs[0].data())
+      }
+    })
+    return () => unsub()
+  }, [ch.id, estab.uid])
 
   async function confirmarCheckin() {
     try {
@@ -151,7 +168,7 @@ function ChamadaContratanteItem({ ch, estab }) {
       )}
       {ch.observacao && <p>📝 {ch.observacao}</p>}
 
-      {/* Exibir código numérico para o freela */}
+      {/* Código numérico simples */}
       {statusEfetivo === 'pago' && ch.codigoCheckin && (
         <div className="mt-4 p-3 bg-gray-50 border rounded text-center">
           <p className="text-sm text-gray-600 mb-2">
@@ -187,10 +204,10 @@ function ChamadaContratanteItem({ ch, estab }) {
           </button>
         )}
 
-      {/* Avaliação e finalização */}
+      {/* Avaliação */}
       {(statusEfetivo === 'concluido' || statusEfetivo === 'finalizada') ? (
         <>
-          {!ch.avaliadoPeloContratante ? (
+          {!avaliacao ? (
             <AvaliacaoContratante chamada={ch} />
           ) : (
             <div className="mt-2 border rounded p-2 bg-gray-50">
@@ -199,13 +216,13 @@ function ChamadaContratanteItem({ ch, estab }) {
                 {[1, 2, 3, 4, 5].map((n) => (
                   <span
                     key={n}
-                    className={`text-xl ${ch.notaContratante >= n ? 'text-yellow-500' : 'text-gray-300'}`}
+                    className={`text-xl ${avaliacao.nota >= n ? 'text-yellow-500' : 'text-gray-300'}`}
                   >
-                    {ch.notaContratante >= n ? '★' : '☆'}
+                    {avaliacao.nota >= n ? '★' : '☆'}
                   </span>
                 ))}
               </div>
-              <p className="text-gray-700">{ch.comentarioContratante}</p>
+              <p className="text-gray-700">{avaliacao.comentario}</p>
             </div>
           )}
           <span className="block mt-2 text-green-600 font-semibold text-center">
@@ -216,3 +233,4 @@ function ChamadaContratanteItem({ ch, estab }) {
     </div>
   )
 }
+
