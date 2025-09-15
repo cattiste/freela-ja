@@ -201,18 +201,19 @@ function ChamadaContratanteItem({ ch, estab }) {
           </p>
         </div>
       )}
+      
+{/* Confirmar checkin */}
+{(statusEfetivo === 'aceita' || statusEfetivo === 'pago' || statusEfetivo === 'checkin_freela') &&
+  ch.checkinFreela &&
+  !ch.checkinContratante && (
+    <button
+      onClick={confirmarCheckin}
+      className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+    >
+      ✅ Confirmar Check-in
+    </button>
+  )}
 
-      {/* Confirmar checkin */}
-      {(statusEfetivo === 'aceita' || statusEfetivo === 'pago') &&
-        ch.checkinFreela &&
-        !ch.checkinContratante && (
-          <button
-            onClick={confirmarCheckin}
-            className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            ✅ Confirmar Check-in
-          </button>
-        )}
 
       {/* Confirmar checkout */}
       {(statusEfetivo === 'pago' || statusEfetivo === 'checkout_freela') &&
