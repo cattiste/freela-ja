@@ -102,7 +102,6 @@ function ChamadaContratanteItem({ ch, estab }) {
     })
   }, [ch.freelaUid])
 
-  // 🔎 Escuta avaliação já feita
   useEffect(() => {
     if (!ch.id) return
     const q = query(
@@ -133,36 +132,33 @@ function ChamadaContratanteItem({ ch, estab }) {
   }
 
   async function confirmarCheckout() {
-  try {
-    // 1. Atualiza status no Firestore
-    await updateDoc(doc(db, 'chamadas', ch.id), {
-      status: 'concluido',
-      checkoutContratante: true,
-      checkoutContratanteEm: serverTimestamp(),
-    })
+    try {
+      await updateDoc(doc(db, 'chamadas', ch.id), {
+        status: 'concluido',
+        checkoutContratante: true,
+        checkoutContratanteEm: serverTimestamp(),
+      })
 
-    // 2. Chama backend para repassar Pix
-    const response = await fetch(
-      `https://api-kbaliknhja-uc.a.run.app/api/pix/transferir`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chamadaId: ch.id }),
-      }
-    )
+      const response = await fetch(
+        `https://api-kbaliknhja-uc.a.run.app/api/pix/transferir`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chamadaId: ch.id }),
+        }
+      )
 
-    if (!response.ok) throw new Error('Falha no repasse Pix')
+      if (!response.ok) throw new Error('Falha no repasse Pix')
 
-    const data = await response.json()
-    console.log('✅ Repasse Pix realizado:', data)
+      const data = await response.json()
+      console.log('✅ Repasse Pix realizado:', data)
 
-    toast.success('⏳ Check-out confirmado e pagamento enviado!')
-  } catch (error) {
-    console.error('Erro ao confirmar check-out:', error)
-    toast.error('Falha ao confirmar check-out')
+      toast.success('⏳ Check-out confirmado e pagamento enviado!')
+    } catch (error) {
+      console.error('Erro ao confirmar check-out:', error)
+      toast.error('Falha ao confirmar check-out')
+    }
   }
-}
-
 
   return (
     <div className="bg-white rounded-xl shadow p-4 mb-4 border border-orange-200 space-y-2">
@@ -190,7 +186,6 @@ function ChamadaContratanteItem({ ch, estab }) {
       )}
       {ch.observacao && <p>📝 {ch.observacao}</p>}
 
-      {/* Código numérico simples */}
       {statusEfetivo === 'pago' && ch.codigoCheckin && (
         <div className="mt-4 p-3 bg-gray-50 border rounded text-center">
           <p className="text-sm text-gray-600 mb-2">
@@ -201,21 +196,19 @@ function ChamadaContratanteItem({ ch, estab }) {
           </p>
         </div>
       )}
-      
-{/* Confirmar checkin */}
-{(statusEfetivo === 'aceita' || statusEfetivo === 'pago' || statusEfetivo === 'checkin_freela') &&
-  ch.checkinFreela &&
-  !ch.checkinContratante && (
-    <button
-      onClick={confirmarCheckin}
-      className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-    >
-      ✅ Confirmar Check-in
-    </button>
-  )}
 
+      {/* ✅ Ajuste: incluir status "checkin_freela" */}
+      {(statusEfetivo === 'aceita' || statusEfetivo === 'pago' || statusEfetivo === 'checkin_freela') &&
+        ch.checkinFreela &&
+        !ch.checkinContratante && (
+          <button
+            onClick={confirmarCheckin}
+            className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            ✅ Confirmar Check-in
+          </button>
+        )}
 
-      {/* Confirmar checkout */}
       {(statusEfetivo === 'pago' || statusEfetivo === 'checkout_freela') &&
         ch.checkoutFreela &&
         !ch.checkoutContratante && (
@@ -227,7 +220,6 @@ function ChamadaContratanteItem({ ch, estab }) {
           </button>
         )}
 
-      {/* Avaliação */}
       {(statusEfetivo === 'concluido' || statusEfetivo === 'finalizada') ? (
         <>
           {!avaliacao ? (
