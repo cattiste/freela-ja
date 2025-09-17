@@ -90,11 +90,11 @@ export default function App() {
             <PainelFreela />
           </RequireRole>
         } />
-        <Route path="/freela/editarfreela" element={
+        <Route path="/editarfreela" element={
           <RequireRole allow={['freela', 'admin']}>
-            <EditarFreela />
+          <EditarFreela />
           </RequireRole>
-        } />
+       } />
 
         {/* 🏢 Contratante */}
         <Route path="/cadastrocontratante" element={<CadastroContratante />} />
