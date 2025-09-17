@@ -145,12 +145,12 @@ async function confirmarCheckout() {
     const response = await fetch(`${process.env.FUNCTIONS_BASE_URL}/api/pix/transferirPixAoCheckout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+        body: JSON.stringify({
         chamadaId: ch.id,
-        valor: ch.valorDiaria,               // diária do freela
-        chaveFavorecido: freelaData?.chavePix // chave Pix do freela
-      }),
-    })
+        valor: ch.valorDiaria, // diária do freela
+        chaveFavorecido: freelaData?.chavePix,
+     }),
+   });
 
     if (!response.ok) throw new Error('Falha no repasse Pix')
 
