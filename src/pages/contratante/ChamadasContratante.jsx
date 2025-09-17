@@ -131,39 +131,39 @@ function ChamadaContratanteItem({ ch, estab }) {
     }
   }
 
-  async function confirmarCheckout() {
-    try {
-      await updateDoc(doc(db, 'chamadas', ch.id), {
-        status: 'concluido',
-        checkoutContratante: true,
-        checkoutContratanteEm: serverTimestamp(),
-      })
+async function confirmarCheckout() {
+  try {
+    await updateDoc(doc(db, 'chamadas', ch.id), {
+      status: 'concluido',
+      checkoutContratante: true,
+      checkoutContratanteEm: serverTimestamp(),
+    })
 
-      // 🔥 Corrigido: usando variável de ambiente com prefixo VITE_
-      const response = await fetch(
-        `${import.meta.env.VITE_FUNCTIONS_BASE_URL}/api/pix/transferirPixAoCheckout`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chamadaId: ch.id,                       // id da chamada
-            valor: ch.valorDiaria,                  // diária do freela
-            chaveFavorecido: freelaData?.chavePix,  // chave Pix do freela
-          }),
-        }
-      )
+    const response = await fetch(
+      `${process.env.FUNCTIONS_BASE_URL}/api/pix/transferirPixAoCheckout`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chamadaId: ch.id,             // ⚡ aqui use `ch`, não `chamada`
+          valor: ch.valorDiaria,        // diária do freela
+          chaveFavorecido: freelaData?.chavePix, // ⚡ vem dos dados do freela
+        }),
+      }
+    )
 
-      if (!response.ok) throw new Error('Falha no repasse Pix')
+    if (!response.ok) throw new Error('Falha no repasse Pix')
 
-      const data = await response.json()
-      console.log('✅ Repasse Pix realizado:', data)
+    const data = await response.json()
+    console.log('✅ Repasse Pix solicitado:', data)
 
-      toast.success('⏳ Check-out confirmado e pagamento enviado!')
-    } catch (error) {
-      console.error('Erro ao confirmar check-out:', error)
-      toast.error('Falha ao confirmar check-out')
-    }
+    toast.success('⏳ Check-out confirmado e pagamento enviado!')
+  } catch (error) {
+    console.error('Erro ao confirmar check-out:', error)
+    toast.error('Falha ao confirmar check-out')
   }
+}
+
 
 
     if (!response.ok) throw new Error('Falha no repasse Pix')
