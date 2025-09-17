@@ -131,26 +131,40 @@ function ChamadaContratanteItem({ ch, estab }) {
     }
   }
 
-async function confirmarCheckout() {
-  try {
-    // Marca no Firestore como concluído (parte local da chamada)
-    await updateDoc(doc(db, 'chamadas', ch.id), {
-      status: 'concluido',
-      checkoutContratante: true,
-      checkoutContratanteEm: serverTimestamp(),
-      pagamento: { status: 'em_processamento' } // aguardando webhook
-    })
+  async function confirmarCheckout() {
+    try {
+      await updateDoc(doc(db, 'chamadas', ch.id), {
+        status: 'concluido',
+        checkoutContratante: true,
+        checkoutContratanteEm: serverTimestamp(),
+      })
 
-    // Faz chamada ao backend EFI
-    const response = await fetch(`${process.env.FUNCTIONS_BASE_URL}/api/pix/transferirPixAoCheckout`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-        chamadaId: ch.id,
-        valor: ch.valorDiaria, // diária do freela
-        chaveFavorecido: freelaData?.chavePix,
-     }),
-   });
+      // 🔥 Corrigido: usando variável de ambiente com prefixo VITE_
+      const response = await fetch(
+        `${import.meta.env.VITE_FUNCTIONS_BASE_URL}/api/pix/transferirPixAoCheckout`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chamadaId: ch.id,                       // id da chamada
+            valor: ch.valorDiaria,                  // diária do freela
+            chaveFavorecido: freelaData?.chavePix,  // chave Pix do freela
+          }),
+        }
+      )
+
+      if (!response.ok) throw new Error('Falha no repasse Pix')
+
+      const data = await response.json()
+      console.log('✅ Repasse Pix realizado:', data)
+
+      toast.success('⏳ Check-out confirmado e pagamento enviado!')
+    } catch (error) {
+      console.error('Erro ao confirmar check-out:', error)
+      toast.error('Falha ao confirmar check-out')
+    }
+  }
+
 
     if (!response.ok) throw new Error('Falha no repasse Pix')
 
