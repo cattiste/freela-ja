@@ -145,9 +145,9 @@ async function confirmarCheckout() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          chamadaId: ch.id,             // ⚡ aqui use `ch`, não `chamada`
-          valor: ch.valorDiaria,        // diária do freela
-          chaveFavorecido: freelaData?.chavePix, // ⚡ vem dos dados do freela
+          chamadaId: ch.id,                      // ⚡ agora certo
+          valor: ch.valorDiaria,                 // diária do freela
+          chaveFavorecido: freelaData?.chavePix, // ⚡ chave vinda do freela
         }),
       }
     )
@@ -163,6 +163,7 @@ async function confirmarCheckout() {
     toast.error('Falha ao confirmar check-out')
   }
 }
+
 
 
 
