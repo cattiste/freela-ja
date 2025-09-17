@@ -57,7 +57,7 @@ export default function PerfilFreela({ freelaId, onEditar }) {
 
       {onEditar && (
         <button
-          onClick={() => navigate('/freela/editarfreela')}
+          onClick={onEditar}
           className="mt-6 w-full bg-orange-500 text-white font-semibold py-2 rounded-full hover:bg-orange-600 transition"
         >
           ✏️ Editar Perfil
