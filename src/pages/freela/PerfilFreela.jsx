@@ -56,7 +56,7 @@ export default function PerfilFreela({ freelaId }) {
         <InfoItem icon={<Mail size={16} />} label={freela.email} />
         <InfoItem icon={<Home size={16} />} label={freela.endereco} />
         <InfoItem icon={<Fingerprint size={16} />} label={freela.cpf || 'CPF não informado'} />
-        <InfoItem icon={<BadgeDollarSign size={16} />} label={freela.valorDiaria ? `R$ ${freela.valorDiaria},00 / diária` : 'Valor da diária não informado'} />
+        <InfoItem icon={<BadgeDollarSign size={16} />} label={freela.valorDiaria ? `R$ ${freela.valorDiaria} / diária` : 'Valor da diária não informado'} />
       </div>
 
       <button
