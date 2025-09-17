@@ -164,22 +164,6 @@ async function confirmarCheckout() {
   }
 }
 
-
-
-
-    if (!response.ok) throw new Error('Falha no repasse Pix')
-
-    const data = await response.json()
-    console.log('✅ Repasse Pix solicitado:', data)
-
-    toast.success('⏳ Check-out confirmado! Pagamento em processamento...')
-  } catch (error) {
-    console.error('Erro ao confirmar check-out:', error)
-    toast.error('Falha ao confirmar check-out')
-  }
-}
-
-
   return (
     <div className="bg-white rounded-xl shadow p-4 mb-4 border border-orange-200 space-y-2">
       <h2 className="font-semibold text-orange-600">
