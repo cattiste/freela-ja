@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
+import { useNavigate } from 'react-router-dom'
 import {
   Mail, Phone, Briefcase, UserCircle2,
-  MapPin, Home, BadgeDollarSign, ScrollText, Fingerprint
+  Home, BadgeDollarSign, ScrollText, Fingerprint
 } from 'lucide-react'
 
-export default function PerfilFreela({ freelaId, onEditar }) {
+export default function PerfilFreela({ freelaId }) {
   const [freela, setFreela] = useState(null)
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (!freelaId) return
@@ -42,7 +44,9 @@ export default function PerfilFreela({ freelaId, onEditar }) {
             <UserCircle2 className="w-full h-full text-gray-300" />
           )}
         </div>
-        <h2 className="text-xl font-bold text-orange-700 mt-4 text-center">{freela.nome || 'Sem nome'}</h2>
+        <h2 className="text-xl font-bold text-orange-700 mt-4 text-center">
+          {freela.nome || 'Sem nome'}
+        </h2>
       </div>
 
       <div className="text-sm text-gray-700 space-y-2">
@@ -55,14 +59,12 @@ export default function PerfilFreela({ freelaId, onEditar }) {
         <InfoItem icon={<BadgeDollarSign size={16} />} label={freela.valorDiaria ? `R$ ${freela.valorDiaria},00 / diária` : 'Valor da diária não informado'} />
       </div>
 
-      {onEditar && (
-        <button
-          onClick={onEditar}
-          className="mt-6 w-full bg-orange-500 text-white font-semibold py-2 rounded-full hover:bg-orange-600 transition"
-        >
-          ✏️ Editar Perfil
-        </button>
-      )}
+      <button
+        onClick={() => navigate('/editarfreela')}
+        className="mt-6 w-full bg-orange-500 text-white font-semibold py-2 rounded-full hover:bg-orange-600 transition"
+      >
+        ✏️ Editar Perfil
+      </button>
     </div>
   )
 }

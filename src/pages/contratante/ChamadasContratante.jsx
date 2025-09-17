@@ -139,14 +139,15 @@ function ChamadaContratanteItem({ ch, estab }) {
         checkoutContratanteEm: serverTimestamp(),
       })
 
-      const response = await fetch(
-        `https://api-kbaliknhja-uc.a.run.app/api/pix/transferir`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chamadaId: ch.id }),
-        }
-      )
+      const response = await fetch(`${process.env.FUNCTIONS_BASE_URL}/api/pix/transferirPixAoCheckout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chamadaId: chamada.id,
+          valor: chamada.valorDiaria, // diária do freela
+          chaveFavorecido: freela.chavePix,
+       }),
+     });
 
       if (!response.ok) throw new Error('Falha no repasse Pix')
 
@@ -219,6 +220,8 @@ function ChamadaContratanteItem({ ch, estab }) {
             ✅ Confirmar Check-out
           </button>
         )}
+
+        
 
       {(statusEfetivo === 'concluido' || statusEfetivo === 'finalizada') ? (
         <>
