@@ -55,15 +55,17 @@ export default function PerfilFreela({ freelaId, onEditar }) {
         <InfoItem icon={<BadgeDollarSign size={16} />} label={freela.valorDiaria ? `R$ ${freela.valorDiaria},00 / diária` : 'Valor da diária não informado'} />
       </div>
 
-      <button
-                onClick={() => navigate('/freela/editarfreela')}
-                className="mt-4 w-full text-center bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition"
-              >
-               ✏️ Editar Perfil
-              </button>
-            </div>        
-      }
-      
+      {onEditar && (
+        <button
+          onClick={() => navigate('/freela/editarfreela')}
+          className="mt-6 w-full bg-orange-500 text-white font-semibold py-2 rounded-full hover:bg-orange-600 transition"
+        >
+          ✏️ Editar Perfil
+        </button>
+      )}
+    </div>
+  )
+}
 
 const InfoItem = ({ icon, label }) => (
   <div className="flex items-center gap-2">
