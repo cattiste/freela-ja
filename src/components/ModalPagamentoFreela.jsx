@@ -93,42 +93,56 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
   };
 
   const renderStatus = () => {
-    if (!statusFinanceiro) return null;
-    return (
-      <div className="mt-4 text-center">
-        <p className="text-sm">
-          <span className="font-semibold">Status cobrança:</span>{" "}
-          <span
-            className={
-              statusFinanceiro.statusCobranca === "pago"
-                ? "text-green-600 font-bold"
-                : statusFinanceiro.statusCobranca === "cancelado" ||
-                  statusFinanceiro.statusCobranca === "expirado"
-                ? "text-red-600 font-bold"
-                : "text-orange-600 font-semibold"
-            }
-          >
-            {statusFinanceiro.statusCobranca}
-          </span>
-        </p>
-        <p className="text-sm">
-          <span className="font-semibold">Status repasse:</span>{" "}
-          <span
-            className={
-              statusFinanceiro.statusRepasse === "enviado"
-                ? "text-green-600 font-bold"
-                : statusFinanceiro.statusRepasse === "falhou"
-                ? "text-red-600 font-bold"
-                : "text-gray-600 font-semibold"
-            }
-          >
-            {statusFinanceiro.statusRepasse}
-          </span>
-        </p>
-      </div>
-    );
-  };
+  if (!statusFinanceiro) return null;
+  return (
+    <div className="mt-4 text-center">
+      <p className="text-sm">
+        <span className="font-semibold">Status cobrança:</span>{" "}
+        <span
+          className={
+            statusFinanceiro.statusCobranca === "pago"
+              ? "text-green-600 font-bold"
+              : statusFinanceiro.statusCobranca === "cancelado" ||
+                statusFinanceiro.statusCobranca === "expirado"
+              ? "text-red-600 font-bold"
+              : "text-orange-600 font-semibold"
+          }
+        >
+          {statusFinanceiro.statusCobranca}
+        </span>
+      </p>
 
+      <p className="text-sm">
+        <span className="font-semibold">Status repasse:</span>{" "}
+        <span
+          className={
+            statusFinanceiro.statusRepasse === "enviado"
+              ? "text-green-600 font-bold"
+              : statusFinanceiro.statusRepasse === "falhou"
+              ? "text-red-600 font-bold"
+              : "text-gray-600 font-semibold"
+          }
+        >
+          {statusFinanceiro.statusRepasse}
+        </span>
+      </p>
+
+      {/* 🔹 Novo trecho: link do comprovante */}
+      {statusFinanceiro?.receiptUrl && (
+        <p className="text-sm mt-2">
+          <a
+            href={statusFinanceiro.receiptUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline"
+          >
+            📄 Ver comprovante do repasse
+          </a>
+        </p>
+      )}
+    </div>
+  );
+};
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
       <div className="bg-white p-6 rounded-lg max-w-md w-full shadow-lg">
