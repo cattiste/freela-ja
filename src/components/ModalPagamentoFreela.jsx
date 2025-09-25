@@ -10,17 +10,21 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
   const [loading, setLoading] = useState(false);
   const [cobranca, setCobranca] = useState(null);
   const [erro, setErro] = useState(null);
+  const [statusFinanceiro, setStatusFinanceiro] = useState(null);
 
-  // 🔎 Escuta status da cobrança
+  // 🔎 Escuta status financeiro em tempo real
   useEffect(() => {
     if (!chamada?.id) return;
     const unsub = onSnapshot(doc(db, "financeiro", chamada.id), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
+        setStatusFinanceiro(data);
+
+        // Quando status virar "pago", fecha modal automaticamente
         if (data.statusCobranca === "pago") {
           toast.dismiss();
           toast.success("✅ Pagamento confirmado!");
-          onClose();
+          setTimeout(() => onClose(), 1200);
         }
       }
     });
@@ -76,6 +80,43 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
     }
   };
 
+  const renderStatus = () => {
+    if (!statusFinanceiro) return null;
+    return (
+      <div className="mt-4 text-center">
+        <p className="text-sm">
+          <span className="font-semibold">Status cobrança:</span>{" "}
+          <span
+            className={
+              statusFinanceiro.statusCobranca === "pago"
+                ? "text-green-600 font-bold"
+                : statusFinanceiro.statusCobranca === "cancelado" ||
+                  statusFinanceiro.statusCobranca === "expirado"
+                ? "text-red-600 font-bold"
+                : "text-orange-600 font-semibold"
+            }
+          >
+            {statusFinanceiro.statusCobranca}
+          </span>
+        </p>
+        <p className="text-sm">
+          <span className="font-semibold">Status repasse:</span>{" "}
+          <span
+            className={
+              statusFinanceiro.statusRepasse === "enviado"
+                ? "text-green-600 font-bold"
+                : statusFinanceiro.statusRepasse === "falhou"
+                ? "text-red-600 font-bold"
+                : "text-gray-600 font-semibold"
+            }
+          >
+            {statusFinanceiro.statusRepasse}
+          </span>
+        </p>
+      </div>
+    );
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
       <div className="bg-white p-6 rounded-lg max-w-md w-full shadow-lg">
@@ -85,7 +126,9 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
 
         {loading && <p className="text-center">⌛ Gerando Pix...</p>}
 
-        {erro && <div className="text-red-600 text-sm text-center mb-4">❌ {erro}</div>}
+        {erro && (
+          <div className="text-red-600 text-sm text-center mb-4">❌ {erro}</div>
+        )}
 
         {cobranca && (
           <div className="space-y-4">
@@ -113,10 +156,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
               </button>
             </div>
 
-            <p className="text-xs text-gray-500 text-center mt-2">
-              Efetue o pagamento para liberar a chamada para o freela.
-              O endereço só será liberado após a confirmação do pagamento.
-            </p>
+            {renderStatus()}
           </div>
         )}
 
