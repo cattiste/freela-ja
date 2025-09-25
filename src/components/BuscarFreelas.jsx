@@ -275,7 +275,14 @@ const chamar = async (freela) => {
     console.log('Chamada criada com ID:', chamadaId);
 
     // 🔹 Cria documento financeiro via backend (Asaas)
-    try {
+if (!freela.dadosBancarios?.chavePix) {
+  alert("⚠️ Este freela ainda não cadastrou uma chave Pix. Não é possível prosseguir.");
+  setChamando(null);
+  return;
+}
+
+// 🔹 Cria documento financeiro via backend (Asaas)
+try {
   const response = await fetch(
     `${import.meta.env.VITE_FUNCTIONS_BASE_URL}/financeiro/criar`,
     {
@@ -286,17 +293,17 @@ const chamar = async (freela) => {
         freelaUid: uid,
         contratanteUid: usuario.uid,
         valorDiaria: freela.valorDiaria,
-        pixChaveFreela: freela.dadosBancarios?.chavePix || "pendente", // ✅ agora pega certo
+        pixChaveFreela: freela.dadosBancarios.chavePix, // ✅ obrigatório
       }),
     }
   );
   const data = await response.json();
-      const data = await response.json();
-      if (!response.ok) throw new Error(data?.message || "Erro ao criar financeiro");
-      console.log("✅ Financeiro criado:", data);
-    } catch (e) {
-      console.warn("[financeiro/criar] Falhou:", e);
-    }
+  if (!response.ok)
+    throw new Error(data?.message || "Erro ao criar financeiro");
+  console.log("✅ Financeiro criado:", data);
+} catch (e) {
+  console.warn("[financeiro/criar] Falhou:", e);
+}
 
     alert(`✅ ${freela.nome} foi chamado com sucesso!`);
   } catch (err) {
