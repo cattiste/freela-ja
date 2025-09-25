@@ -92,9 +92,9 @@ export default function App() {
         } />
         <Route path="/editarfreela" element={
           <RequireRole allow={['freela', 'admin']}>
-          <EditarFreela />
+            <EditarFreela />
           </RequireRole>
-       } />
+        } />
 
         {/* 🏢 Contratante */}
         <Route path="/cadastrocontratante" element={<CadastroContratante />} />
@@ -111,6 +111,8 @@ export default function App() {
         } />
         <Route path="/publicarvaga" element={<PublicarVaga />} />
         <Route path="/pagamentochamada/:id" element={<PagamentoChamada />} />
+
+        {/* 🔀 Atalho de rota (opcional) */}
         <Route path="/contratante/chamadascontratante" element={<Navigate to="/contratante/ativas" />} />
 
         {/* 404 opcional */}

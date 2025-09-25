@@ -3,15 +3,22 @@ import React from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 
+// ✅ Normaliza tipos para só freela / contratante / admin
 const normalizeTipo = (t) => {
   if (!t) return ''
-  return String(t).trim().toLowerCase().replace(/\s+/g, '_')
+  const norm = String(t).trim().toLowerCase().replace(/\s+/g, '_')
+  if (['freela', 'freelancer'].includes(norm)) return 'freela'
+  if (['contratante', 'pessoa_fisica', 'estabelecimento', 'cliente', 'empresa'].includes(norm)) {
+    return 'contratante'
+  }
+  if (norm === 'admin') return 'admin'
+  return '' // se não reconhecido, trata como inválido
 }
 
 const defaultPainelDe = {
   freela: '/painelfreela',
   contratante: '/painelcontratante',
-  admin: '/admin',
+  admin: '/painel-admin',
 }
 
 export default function RequireRole({ allow = [], children, routeMap }) {
@@ -29,26 +36,21 @@ export default function RequireRole({ allow = [], children, routeMap }) {
   const tipoNorm = normalizeTipo(usuario?.tipo)
   const allowNorm = allow.map(normalizeTipo)
 
-  // admin sempre tem acesso a tudo
+  // ✅ admin sempre tem acesso a tudo
   if (tipoNorm === 'admin') {
     return <>{children}</>
   }
 
-  // ⚠️ Se o tipo ainda não veio do Firestore, permite acesso temporariamente
+  // ⚠️ Se não tiver tipo definido ainda, bloqueia até carregar
   if (!tipoNorm) {
-    return <>{children}</>
+    return <Navigate to="/acesso-negado" replace />
   }
 
+  // 🚫 Se o tipo não está permitido
   if (allowNorm.length > 0 && !allowNorm.includes(tipoNorm)) {
-    const destino = painelDe[tipoNorm] || '/'
+    const destino = painelDe[tipoNorm] || '/acesso-negado'
     return <Navigate to={destino} replace />
   }
 
   return <>{children}</>
-
-  const redirecionamentos = {
-  freela: '/painelfreela',
-  contratante: '/painelcontratante',
-  admin: '/admin',
- }
 }

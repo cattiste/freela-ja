@@ -140,7 +140,7 @@ export default function CadastroContratante() {
     }
 
     const rawDoc = form.cpfOuCnpj.replace(/\D/g, '');
-    const tipoConta = rawDoc.length > 11 ? 'comercial' : 'pessoa_fisica';
+    const tipoConta = rawDoc.length > 11 ? 'cnpj' : 'cpf'; // ✅ simplificado
 
     const payload = {
       uid,
@@ -151,8 +151,8 @@ export default function CadastroContratante() {
       endereco: form.endereco,
       especialidade: form.especialidade,
       foto: form.foto,
-      tipo: 'contratante',
-      tipoConta,
+      tipo: 'contratante',       // ✅ unificado
+      tipoConta,                 // apenas cpf ou cnpj
       nomeResponsavel: form.nomeResponsavel || '',
       cpfResponsavel: form.cpfResponsavel || '',
       aceitouContrato: true,

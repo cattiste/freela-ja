@@ -117,12 +117,13 @@ export default function PainelFreela() {
   if (!usuario?.uid)
     return <div className="text-center mt-10">Usuário não autenticado.</div>
 
-  const role = (usuario?.tipo || usuario?.tipoUsuario || '').toLowerCase()
+  // ✅ agora só existem 2 tipos de usuário: freela ou contratante
+  const role = (usuario?.tipo || '').toLowerCase()
   if (role && role !== 'freela') {
     return (
       <div className="p-4">
         <div className="mb-4 text-sm text-gray-600">
-          Papel atual: <b>{role}</b> — esta tela é específica para freela.
+          Papel atual: <b>{role}</b> — esta tela é exclusiva para freelas.
         </div>
       </div>
     )

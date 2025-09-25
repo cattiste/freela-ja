@@ -1,4 +1,4 @@
-// PainelContratante.jsx original mantido, com Cartões adicionados de forma integrada
+// PainelContratante.jsx unificado para todos os contratantes
 import React, { useEffect, useMemo, useState } from 'react'
 import { Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
@@ -19,7 +19,6 @@ import ChamadasContratante from '@/pages/contratante/ChamadasContratante'
 import Calendar from 'react-calendar'
 import { useRealtimePresence } from '@/hooks/useRealtimePresence'
 import ValidacaoDocumento from '@/components/ValidacaoDocumento'
-//import CartoesContratante from '@/components/CartoesContratante'
 
 import 'react-calendar/dist/Calendar.css'
 import '@/styles/estiloAgenda.css'
@@ -66,7 +65,8 @@ export default function PainelContratante() {
   useEffect(() => {
     if (!contratante?.uid) return
     updateDoc(doc(db, 'usuarios', contratante.uid), {
-      ultimaAtividade: serverTimestamp()
+      ultimaAtividade: serverTimestamp(),
+      tipo: 'contratante' // ✅ força contratante
     }).catch(err => console.warn('[PainelContratante] ultimaAtividade falhou:', err))
   }, [contratante?.uid])
 
@@ -126,7 +126,7 @@ export default function PainelContratante() {
               <p>📞 {contratante?.celular || 'Telefone não informado'}</p>
               <p>📧 {contratante?.email}</p>
               <p>📍 {contratante?.endereco || 'Endereço não informado'}</p>
-              <p>🧾 {contratante?.cnpj || 'CNPJ não informado'}</p>
+              <p>🧾 {contratante?.cpf || contratante?.cnpj || 'Documento não informado'}</p>
             </div>
 
             <button

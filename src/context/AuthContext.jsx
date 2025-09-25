@@ -7,9 +7,15 @@ import { createContext, useContext, useEffect, useState, useMemo } from 'react'
 const Ctx = createContext(null)
 export const useAuth = () => useContext(Ctx)
 
+// ✅ Normaliza tipo de usuário para só "freela" ou "contratante"
 const normalizeTipo = (t) => {
   if (!t) return ''
-  return String(t).trim().toLowerCase().replace(/\s+/g, '_')
+  const norm = String(t).trim().toLowerCase().replace(/\s+/g, '_')
+  if (['freela', 'freelancer'].includes(norm)) return 'freela'
+  if (['contratante', 'pessoa_fisica', 'estabelecimento', 'cliente', 'empresa'].includes(norm)) {
+    return 'contratante'
+  }
+  return norm // fallback (se vier algo estranho, mantém mas não quebra)
 }
 
 export function AuthProvider({ children }) {
@@ -31,12 +37,12 @@ export function AuthProvider({ children }) {
         const ref = doc(db, 'usuarios', u.uid)
         const snap = await getDoc(ref)
 
-        // Cria perfil mínimo se ainda não existir (evita tipo indefinido)
+        // Cria perfil mínimo se ainda não existir
         if (!snap.exists()) {
           const perfilMinimo = {
             uid: u.uid,
             email: u.email ?? '',
-            tipo: '', // será definido no cadastro
+            tipo: 'contratante', // padrão se não definido
             criadoEm: serverTimestamp(),
             atualizadoEm: serverTimestamp(),
           }
@@ -57,8 +63,7 @@ export function AuthProvider({ children }) {
         })
       } catch (e) {
         console.error('[Auth] erro ao carregar perfil:', e)
-        // fallback: usuário básico logado
-        setUsuario({ uid: u.uid, email: u.email ?? '', tipo: '' })
+        setUsuario({ uid: u.uid, email: u.email ?? '', tipo: 'contratante' })
       } finally {
         setCarregando(false)
       }
