@@ -204,7 +204,6 @@ export default function BuscarFreelas({ usuario, usuariosOnline = {} }) {
     carregarFreelas()
   }, [])
 
-// ... tudo igual até o useMemo
 
 const filtrados = useMemo(() => {
   return freelas
@@ -245,6 +244,7 @@ const filtrados = useMemo(() => {
     let chamadaId = null
 
     try {
+      // ⚡ Verifica se já existe chamada ativa
       const snap = await getDocs(query(
         collection(db, 'chamadas'),
         where('freelaUid', '==', uid),
@@ -255,50 +255,56 @@ const filtrados = useMemo(() => {
         alert('⚠️ Você já chamou esse freela e a chamada está ativa.')
         return
       }
-      const codigoCheckin = Math.floor(1000 + Math.random() * 9000);
+
+      // 🔹 Cria documento em "chamadas"
+      const codigoCheckin = Math.floor(1000 + Math.random() * 9000)
       const chamadaRef = doc(collection(db, "chamadas"))
       await setDoc(chamadaRef, {
-  id: chamadaRef.id,
-  freelaUid: freela.uid || freela.id,
-  freelaNome: freela.nome,
-  contratanteUid: usuario.uid,
-  contratanteNome: usuario.nome,
-  valorDiaria: freela.valorDiaria,
-  status: "pendente",
-  criadoEm: serverTimestamp(),
-  coordenadasContratante: usuario.coordenadas || null, // ✅ salva
-  endereco: usuario.endereco || null, // opcional
-  codigoCheckin,
-})
+        id: chamadaRef.id,
+        freelaUid: uid,
+        freelaNome: freela.nome,
+        contratanteUid: usuario.uid,
+        contratanteNome: usuario.nome,
+        valorDiaria: freela.valorDiaria,
+        status: "pendente",
+        criadoEm: serverTimestamp(),
+        coordenadasContratante: usuario.coordenadas || null,
+        endereco: usuario.endereco || null,
+        codigoCheckin,
+      })
       chamadaId = chamadaRef.id
       console.log('Chamada criada com ID:', chamadaId)
 
+      // 🔹 Cria documento financeiro via backend (Asaas)
       try {
-        const diaria = Number(freela.valorDiaria || 0)
-        await setDoc(doc(db, 'pagamentos_usuarios', chamadaId), {
-          chamadaId,
-          contratanteUid: usuario.uid,
-          freelaUid: uid,
-          freelaNome: freela.nome || '',
-          cpfContratante: usuario.responsavelCPF || usuario.cpf || '',
-          contratanteNome: usuario.responsavelNome || usuario.nome || '',
-          valorDiaria: diaria,
-          valorContratante: +(diaria * 1.10).toFixed(2),
-          valorFreela: +(diaria * 0.90).toFixed(2),
-          status: 'pendente',
-          criadoEm: serverTimestamp()
-        }, { merge: true })
+        const response = await fetch(
+          `${import.meta.env.VITE_FUNCTIONS_BASE_URL}/financeiro/criar`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chamadaId,
+              freelaUid: uid,
+              contratanteUid: usuario.uid,
+              valorDiaria: freela.valorDiaria,
+              pixChaveFreela: freela.chavePix || "",
+            }),
+          }
+        )
+        const data = await response.json()
+        if (!response.ok) throw new Error(data?.message || "Erro ao criar financeiro")
+        console.log("✅ Financeiro criado:", data)
       } catch (e) {
-        console.warn('[pagamentos_usuarios] best-effort falhou:', e)
+        console.warn("[financeiro/criar] Falhou:", e)
       }
 
       alert(`✅ ${freela.nome} foi chamado com sucesso!`)
     } catch (err) {
-      console.error('Erro ao chamar freela:', err)
+      console.error("Erro ao chamar freela:", err)
       if (chamadaId) {
-        alert('✅ Chamada criada. ⚠️ Não foi possível preparar o pagamento agora (permissão).')
+        alert("✅ Chamada criada. ⚠️ Não foi possível preparar o financeiro agora.")
       } else {
-        alert('Erro ao chamar freelancer.')
+        alert("Erro ao chamar freelancer.")
       }
     } finally {
       setChamando(null)

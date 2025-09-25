@@ -137,30 +137,26 @@ async function confirmarCheckout() {
       status: 'concluido',
       checkoutContratante: true,
       checkoutContratanteEm: serverTimestamp(),
-    })
+    });
 
     const response = await fetch(
-      `${process.env.FUNCTIONS_BASE_URL}/api/pix/transferirPixAoCheckout`,
+      `${import.meta.env.VITE_FUNCTIONS_BASE_URL}/pix/transferir`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chamadaId: ch.id,                      // ⚡ agora certo
-          valor: ch.valorDiaria,                 // diária do freela
-          chaveFavorecido: freelaData?.chavePix, // ⚡ chave vinda do freela
-        }),
+        body: JSON.stringify({ chamadaId: ch.id }),
       }
-    )
+    );
 
-    if (!response.ok) throw new Error('Falha no repasse Pix')
+    if (!response.ok) throw new Error("Falha no repasse Pix");
 
-    const data = await response.json()
-    console.log('✅ Repasse Pix solicitado:', data)
+    const data = await response.json();
+    console.log("✅ Repasse Pix solicitado:", data);
 
-    toast.success('⏳ Check-out confirmado e pagamento enviado!')
+    toast.success("⏳ Check-out confirmado e pagamento enviado!");
   } catch (error) {
-    console.error('Erro ao confirmar check-out:', error)
-    toast.error('Falha ao confirmar check-out')
+    console.error("Erro ao confirmar check-out:", error);
+    toast.error("Falha ao confirmar check-out");
   }
 }
 

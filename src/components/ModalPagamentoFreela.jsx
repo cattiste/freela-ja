@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/firebase";
 import QRCode from "react-qr-code";
 import toast from "react-hot-toast";
@@ -8,77 +8,52 @@ import toast from "react-hot-toast";
 export default function ModalPagamentoFreela({ chamada, onClose }) {
   const { usuario } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [pagamento, setPagamento] = useState(null);
+  const [cobranca, setCobranca] = useState(null);
   const [erro, setErro] = useState(null);
 
-  // 🔎 Escuta em tempo real o status do pagamento
+  // 🔎 Escuta status da cobrança
   useEffect(() => {
     if (!chamada?.id) return;
-
-    const unsub = onSnapshot(doc(db, "chamadas", chamada.id), (snap) => {
+    const unsub = onSnapshot(doc(db, "financeiro", chamada.id), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
-        if (data.pagamento?.status === "pago") {
+        if (data.statusCobranca === "pago") {
           toast.dismiss();
           toast.success("✅ Pagamento confirmado!");
-          onClose(); // 👈 fecha modal automaticamente
+          onClose();
         }
       }
     });
-
     return () => unsub();
   }, [chamada?.id, onClose]);
 
-  // 🔄 Geração da cobrança
+  // 🔄 Gera cobrança Pix no Asaas
   useEffect(() => {
-    const gerarPagamento = async () => {
-      if (!chamada || !usuario || loading) return;
-
+    const gerarCobranca = async () => {
+      if (!chamada?.id || !usuario?.customerId || loading) return;
       try {
         setLoading(true);
         setErro(null);
-
-        const docRef = doc(db, "usuarios", usuario.uid);
-        const docSnap = await getDoc(docRef);
-
-        if (!docSnap.exists()) throw new Error("Usuário não encontrado.");
-
-        const userData = docSnap.data();
-        const nomePagador = userData.nome || "Pagador";
-        const docPagador = userData.cpf || userData.cnpj;
-        if (!docPagador) throw new Error("CPF ou CNPJ não informado.");
-
-        const valor = chamada.valorDiaria;
-        if (!valor || valor <= 0) throw new Error("Valor da diária inválido.");
-
         toast.loading("Gerando cobrança Pix...");
 
         const response = await fetch(
-          "https://api-kbaliknhja-uc.a.run.app/api/pix/cobrar",
+          `${import.meta.env.VITE_FUNCTIONS_BASE_URL}/pix/cobrar`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               chamadaId: chamada.id,
-              valor: Number(valor).toFixed(2),
-              nomePagador,
-              docPagador: String(docPagador).replace(/\D/g, ""),
+              customerId: usuario.customerId, // ⚡ precisa estar salvo no cadastro
             }),
           }
         );
 
         const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data?.message || `Erro ${response.status}`);
-        }
+        if (!response.ok) throw new Error(data?.message || "Erro ao gerar cobrança");
 
-        if (!data?.copiaCola || !data?.imagemQrcode) {
-          throw new Error("Dados de Pix inválidos.");
-        }
-
-        setPagamento(data);
+        setCobranca(data.cobranca);
         toast.dismiss();
-        toast.success("Cobrança Pix gerada com sucesso!");
+        toast.success("Cobrança Pix criada com sucesso!");
       } catch (err) {
         console.error("❌ Erro ao gerar Pix:", err);
         setErro(err.message || "Erro desconhecido.");
@@ -89,14 +64,14 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
       }
     };
 
-    gerarPagamento();
-  }, [chamada, usuario]);
+    gerarCobranca();
+  }, [chamada?.id, usuario?.customerId]);
 
   if (!chamada) return null;
 
   const copiarCodigo = () => {
-    if (pagamento?.copiaCola) {
-      navigator.clipboard.writeText(pagamento.copiaCola);
+    if (cobranca?.identificationField) {
+      navigator.clipboard.writeText(cobranca.identificationField);
       toast.success("Código Copia e Cola copiado!");
     }
   };
@@ -110,26 +85,22 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
 
         {loading && <p className="text-center">⌛ Gerando Pix...</p>}
 
-        {erro && (
-          <div className="text-red-600 text-sm text-center mb-4">
-            ❌ {erro}
-          </div>
-        )}
+        {erro && <div className="text-red-600 text-sm text-center mb-4">❌ {erro}</div>}
 
-        {pagamento && (
+        {cobranca && (
           <div className="space-y-4">
             <p className="text-center text-green-700 font-semibold">
               Escaneie o QR Code ou copie o código abaixo:
             </p>
 
             <div className="flex justify-center">
-              <QRCode value={pagamento.copiaCola} size={160} />
+              <QRCode value={cobranca.identificationField} size={160} />
             </div>
 
             <textarea
               readOnly
               className="w-full border rounded p-2 text-sm bg-gray-100"
-              value={pagamento.copiaCola}
+              value={cobranca.identificationField}
               rows={4}
             />
 
