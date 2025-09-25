@@ -237,79 +237,78 @@ const filtrados = useMemo(() => {
     })
 }, [freelas, filtro, usuario, usuariosOnline, statusChamadas])
 
+const chamar = async (freela) => {
+  const uid = freela.uid || freela.id;
+  setChamando(uid);
+  let chamadaId = null;
 
-  const chamar = async (freela) => {
-    const uid = freela.uid || freela.id
-    setChamando(uid)
-    let chamadaId = null
-
-    try {
-      // ⚡ Verifica se já existe chamada ativa
-      const snap = await getDocs(query(
-        collection(db, 'chamadas'),
-        where('freelaUid', '==', uid),
-        where('contratanteUid', '==', usuario.uid),
-        where('status', 'in', ['pendente', 'aceita', 'confirmada', 'em_andamento'])
-      ))
-      if (!snap.empty) {
-        alert('⚠️ Você já chamou esse freela e a chamada está ativa.')
-        return
-      }
-
-      // 🔹 Cria documento em "chamadas"
-      const codigoCheckin = Math.floor(1000 + Math.random() * 9000)
-      const chamadaRef = doc(collection(db, "chamadas"))
-      await setDoc(chamadaRef, {
-        id: chamadaRef.id,
-        freelaUid: uid,
-        freelaNome: freela.nome,
-        contratanteUid: usuario.uid,
-        contratanteNome: usuario.nome,
-        valorDiaria: freela.valorDiaria,
-        status: "pendente",
-        criadoEm: serverTimestamp(),
-        coordenadasContratante: usuario.coordenadas || null,
-        endereco: usuario.endereco || null,
-        codigoCheckin,
-      })
-      chamadaId = chamadaRef.id
-      console.log('Chamada criada com ID:', chamadaId)
-
-      // 🔹 Cria documento financeiro via backend (Asaas)
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_FUNCTIONS_BASE_URL}/financeiro/criar`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              chamadaId,
-              freelaUid: uid,
-              contratanteUid: usuario.uid,
-              valorDiaria: freela.valorDiaria,
-              pixChaveFreela: freela.chavePix || "",
-            }),
-          }
-        )
-        const data = await response.json()
-        if (!response.ok) throw new Error(data?.message || "Erro ao criar financeiro")
-        console.log("✅ Financeiro criado:", data)
-      } catch (e) {
-        console.warn("[financeiro/criar] Falhou:", e)
-      }
-
-      alert(`✅ ${freela.nome} foi chamado com sucesso!`)
-    } catch (err) {
-      console.error("Erro ao chamar freela:", err)
-      if (chamadaId) {
-        alert("✅ Chamada criada. ⚠️ Não foi possível preparar o financeiro agora.")
-      } else {
-        alert("Erro ao chamar freelancer.")
-      }
-    } finally {
-      setChamando(null)
+  try {
+    // ⚡ Verifica se já existe chamada ativa
+    const snap = await getDocs(query(
+      collection(db, 'chamadas'),
+      where('freelaUid', '==', uid),
+      where('contratanteUid', '==', usuario.uid),
+      where('status', 'in', ['pendente', 'aceita', 'confirmada', 'em_andamento'])
+    ));
+    if (!snap.empty) {
+      alert('⚠️ Você já chamou esse freela e a chamada está ativa.');
+      return;
     }
+
+    // 🔹 Cria documento em "chamadas"
+    const codigoCheckin = Math.floor(1000 + Math.random() * 9000);
+    const chamadaRef = doc(collection(db, "chamadas"));
+    await setDoc(chamadaRef, {
+      id: chamadaRef.id,
+      freelaUid: uid,
+      freelaNome: freela.nome,
+      contratanteUid: usuario.uid,
+      contratanteNome: usuario.nome,
+      valorDiaria: freela.valorDiaria,
+      status: "pendente",
+      criadoEm: serverTimestamp(),
+      coordenadasContratante: usuario.coordenadas || null,
+      endereco: usuario.endereco || null,
+      codigoCheckin,
+    });
+    chamadaId = chamadaRef.id;
+    console.log('Chamada criada com ID:', chamadaId);
+
+    // 🔹 Cria documento financeiro via backend (Asaas)
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_FUNCTIONS_BASE_URL}/financeiro/criar`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chamadaId,
+            freelaUid: uid,                // ✅ campo padronizado
+            contratanteUid: usuario.uid,   // ✅ campo padronizado
+            valorDiaria: freela.valorDiaria,
+            pixChaveFreela: freela.chavePix || "",
+          }),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.message || "Erro ao criar financeiro");
+      console.log("✅ Financeiro criado:", data);
+    } catch (e) {
+      console.warn("[financeiro/criar] Falhou:", e);
+    }
+
+    alert(`✅ ${freela.nome} foi chamado com sucesso!`);
+  } catch (err) {
+    console.error("Erro ao chamar freela:", err);
+    if (chamadaId) {
+      alert("✅ Chamada criada. ⚠️ Não foi possível preparar o financeiro agora.");
+    } else {
+      alert("Erro ao chamar freelancer.");
+    }
+  } finally {
+    setChamando(null);
   }
+};
 
   const handleAbrirPagamento = (freela) => {
     const chamada = statusChamadas[freela.uid || freela.id]
