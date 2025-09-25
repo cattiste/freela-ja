@@ -12,22 +12,34 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
   const [erro, setErro] = useState(null);
   const [statusFinanceiro, setStatusFinanceiro] = useState(null);
 
-  // 🔎 Escuta status financeiro em tempo real
+  // 🔎 Escuta status financeiro em tempo real (com proteção)
   useEffect(() => {
     if (!chamada?.id) return;
-    const unsub = onSnapshot(doc(db, "financeiro", chamada.id), (snap) => {
-      if (snap.exists()) {
+    const ref = doc(db, "financeiro", chamada.id);
+
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        if (!snap.exists()) {
+          console.log("📭 Documento financeiro ainda não existe:", chamada.id);
+          return; // não dá erro, só espera o backend criar
+        }
+
         const data = snap.data();
         setStatusFinanceiro(data);
 
-        // Quando status virar "pago", fecha modal automaticamente
         if (data.statusCobranca === "pago") {
           toast.dismiss();
           toast.success("✅ Pagamento confirmado!");
           setTimeout(() => onClose(), 1200);
         }
+      },
+      (err) => {
+        console.error("Erro no snapshot financeiro:", err);
+        toast.error("Erro ao acompanhar pagamento.");
       }
-    });
+    );
+
     return () => unsub();
   }, [chamada?.id, onClose]);
 
