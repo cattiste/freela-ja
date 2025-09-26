@@ -29,7 +29,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
         const data = snap.data();
         setStatusFinanceiro(data);
 
-        if (data.statusCobranca === "pago") {
+        if (data.statusCobranca === "pago" || data.statusCobranca === "CONFIRMED") {
           toast.dismiss();
           toast.success("✅ Pagamento confirmado!");
           setTimeout(() => onClose(), 1200);
