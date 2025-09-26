@@ -146,8 +146,11 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
     );
   };
 
-  {statusFinanceiro?.pixQrCode && (
-  <div className="flex justify-center">
+{statusFinanceiro?.pixQrCode && (
+  <div className="flex flex-col items-center mt-4 space-y-2">
+    <p className="text-center text-green-700 font-semibold">
+      Escaneie o QR Code para pagar:
+    </p>
     <img
       src={`data:image/png;base64,${statusFinanceiro.pixQrCode}`}
       alt="QR Code Pix"
@@ -157,10 +160,10 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
 )}
 
 {statusFinanceiro?.identificationField && (
-  <>
+  <div className="mt-4">
     <textarea
       readOnly
-      className="w-full border rounded p-2 text-sm bg-gray-100 mt-2"
+      className="w-full border rounded p-2 text-sm bg-gray-100"
       value={statusFinanceiro.identificationField}
       rows={4}
     />
@@ -171,12 +174,11 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
         }
         className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded text-sm"
       >
-        Copiar código
+        Copiar código Pix
       </button>
     </div>
-  </>
+  </div>
 )}
-
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
