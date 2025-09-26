@@ -146,6 +146,38 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
     );
   };
 
+  {statusFinanceiro?.pixQrCode && (
+  <div className="flex justify-center">
+    <img
+      src={`data:image/png;base64,${statusFinanceiro.pixQrCode}`}
+      alt="QR Code Pix"
+      className="w-40 h-40"
+    />
+  </div>
+)}
+
+{statusFinanceiro?.identificationField && (
+  <>
+    <textarea
+      readOnly
+      className="w-full border rounded p-2 text-sm bg-gray-100 mt-2"
+      value={statusFinanceiro.identificationField}
+      rows={4}
+    />
+    <div className="flex justify-center mt-2">
+      <button
+        onClick={() =>
+          navigator.clipboard.writeText(statusFinanceiro.identificationField)
+        }
+        className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded text-sm"
+      >
+        Copiar código
+      </button>
+    </div>
+  </>
+)}
+
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
       <div className="bg-white p-6 rounded-lg max-w-md w-full shadow-lg">
