@@ -246,3 +246,4 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
     </div>
   </div>
 );
+}
