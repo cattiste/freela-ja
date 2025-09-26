@@ -368,9 +368,15 @@ try {
 
       {freelaSelecionado && (
        <ModalPagamentoFreela
-        chamada={freelaSelecionado.chamada} // ✅ Agora passa a chamada completa
-        onClose={() => setFreelaSelecionado(null)}
-      />
+  chamada={{
+    id: freelaSelecionado.chamada?.id,
+    freelaUid: freelaSelecionado.uid,
+    contratanteUid: usuario.uid,
+    valorDiaria: freelaSelecionado.valorDiaria,
+    pixChaveFreela: freelaSelecionado.dadosBancarios?.chavePix,
+  }}
+  onClose={() => setFreelaSelecionado(null)}
+/>
      )}
     </div>
   )
