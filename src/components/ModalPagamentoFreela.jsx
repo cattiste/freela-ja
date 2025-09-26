@@ -1,3 +1,4 @@
+// src/components/ModalPagamentoFreela.jsx
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { doc, onSnapshot } from "firebase/firestore";
@@ -12,7 +13,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
   const [erro, setErro] = useState(null);
   const [statusFinanceiro, setStatusFinanceiro] = useState(null);
 
-  // 🔎 Escuta status financeiro em tempo real (com proteção)
+  // 🔎 Escuta status financeiro em tempo real
   useEffect(() => {
     if (!chamada?.id) return;
     const ref = doc(db, "financeiro", chamada.id);
@@ -22,7 +23,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
       (snap) => {
         if (!snap.exists()) {
           console.log("📭 Documento financeiro ainda não existe:", chamada.id);
-          return; // não dá erro, só espera o backend criar
+          return;
         }
 
         const data = snap.data();
@@ -59,7 +60,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               chamadaId: chamada.id,
-              customerId: usuario.customerId, // ⚡ precisa estar salvo no cadastro
+              customerId: usuario.customerId,
             }),
           }
         );
@@ -67,7 +68,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
         const data = await response.json();
         if (!response.ok) throw new Error(data?.message || "Erro ao gerar cobrança");
 
-        setCobranca(data.cobranca);
+        setCobranca(data.cobranca || null);
         toast.dismiss();
         toast.success("Cobrança Pix criada com sucesso!");
       } catch (err) {
@@ -89,60 +90,62 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
     if (cobranca?.identificationField) {
       navigator.clipboard.writeText(cobranca.identificationField);
       toast.success("Código Copia e Cola copiado!");
+    } else {
+      toast.error("Código Pix ainda não disponível.");
     }
   };
 
   const renderStatus = () => {
-  if (!statusFinanceiro) return null;
-  return (
-    <div className="mt-4 text-center">
-      <p className="text-sm">
-        <span className="font-semibold">Status cobrança:</span>{" "}
-        <span
-          className={
-            statusFinanceiro.statusCobranca === "pago"
-              ? "text-green-600 font-bold"
-              : statusFinanceiro.statusCobranca === "cancelado" ||
-                statusFinanceiro.statusCobranca === "expirado"
-              ? "text-red-600 font-bold"
-              : "text-orange-600 font-semibold"
-          }
-        >
-          {statusFinanceiro.statusCobranca}
-        </span>
-      </p>
-
-      <p className="text-sm">
-        <span className="font-semibold">Status repasse:</span>{" "}
-        <span
-          className={
-            statusFinanceiro.statusRepasse === "enviado"
-              ? "text-green-600 font-bold"
-              : statusFinanceiro.statusRepasse === "falhou"
-              ? "text-red-600 font-bold"
-              : "text-gray-600 font-semibold"
-          }
-        >
-          {statusFinanceiro.statusRepasse}
-        </span>
-      </p>
-
-      {/* 🔹 Novo trecho: link do comprovante */}
-      {statusFinanceiro?.receiptUrl && (
-        <p className="text-sm mt-2">
-          <a
-            href={statusFinanceiro.receiptUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 underline"
+    if (!statusFinanceiro) return null;
+    return (
+      <div className="mt-4 text-center">
+        <p className="text-sm">
+          <span className="font-semibold">Status cobrança:</span>{" "}
+          <span
+            className={
+              statusFinanceiro.statusCobranca === "pago"
+                ? "text-green-600 font-bold"
+                : statusFinanceiro.statusCobranca === "cancelado" ||
+                  statusFinanceiro.statusCobranca === "expirado"
+                ? "text-red-600 font-bold"
+                : "text-orange-600 font-semibold"
+            }
           >
-            📄 Ver comprovante do repasse
-          </a>
+            {statusFinanceiro.statusCobranca}
+          </span>
         </p>
-      )}
-    </div>
-  );
-};
+
+        <p className="text-sm">
+          <span className="font-semibold">Status repasse:</span>{" "}
+          <span
+            className={
+              statusFinanceiro.statusRepasse === "enviado"
+                ? "text-green-600 font-bold"
+                : statusFinanceiro.statusRepasse === "falhou"
+                ? "text-red-600 font-bold"
+                : "text-gray-600 font-semibold"
+            }
+          >
+            {statusFinanceiro.statusRepasse}
+          </span>
+        </p>
+
+        {statusFinanceiro?.receiptUrl && (
+          <p className="text-sm mt-2">
+            <a
+              href={statusFinanceiro.receiptUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 underline"
+            >
+              📄 Ver comprovante do repasse
+            </a>
+          </p>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
       <div className="bg-white p-6 rounded-lg max-w-md w-full shadow-lg">
@@ -156,7 +159,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
           <div className="text-red-600 text-sm text-center mb-4">❌ {erro}</div>
         )}
 
-        {cobranca && (
+        {cobranca?.identificationField ? (
           <div className="space-y-4">
             <p className="text-center text-green-700 font-semibold">
               Escaneie o QR Code ou copie o código abaixo:
@@ -184,6 +187,13 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
 
             {renderStatus()}
           </div>
+        ) : (
+          !loading &&
+          !erro && (
+            <p className="text-center text-gray-600">
+              ⏳ Aguardando retorno da cobrança Pix...
+            </p>
+          )
         )}
 
         <div className="flex justify-center mt-6">
