@@ -140,7 +140,7 @@ export default function CadastroContratante() {
     }
 
     const rawDoc = form.cpfOuCnpj.replace(/\D/g, '');
-    const tipoConta = rawDoc.length > 11 ? 'cnpj' : 'cpf'; // ✅ simplificado
+    const tipoConta = rawDoc.length > 11 ? 'cnpj' : 'cpf';
 
     const payload = {
       uid,
@@ -151,8 +151,8 @@ export default function CadastroContratante() {
       endereco: form.endereco,
       especialidade: form.especialidade,
       foto: form.foto,
-      tipo: 'contratante',       // ✅ unificado
-      tipoConta,                 // apenas cpf ou cnpj
+      tipo: 'contratante',
+      tipoConta,
       nomeResponsavel: form.nomeResponsavel || '',
       cpfResponsavel: form.cpfResponsavel || '',
       aceitouContrato: true,
@@ -164,6 +164,32 @@ export default function CadastroContratante() {
 
     const ref = doc(db, 'usuarios', uid);
     await setDoc(ref, payload, { merge: true });
+
+    // 🔹 Cria cliente no Asaas
+    try {
+      const resp = await fetch(
+        `${import.meta.env.VITE_FUNCTIONS_BASE_URL}/asaas/criarCliente`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            uid,
+            nome: form.nome,
+            cpfCnpj: rawDoc,
+            email: user?.email,
+            telefone: form.celular,
+          }),
+        }
+      );
+
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data?.message || "Erro ao criar cliente no Asaas");
+
+      console.log("✅ Cliente Asaas criado:", data.cliente);
+    } catch (err) {
+      console.error("❌ Erro ao criar cliente Asaas:", err);
+      alert("Erro ao integrar com o Asaas. Entre em contato com o suporte.");
+    }
 
     alert('✅ Cadastro salvo com sucesso!');
     navigate('/verificar-email', {
@@ -200,7 +226,6 @@ export default function CadastroContratante() {
         <input name="endereco" value={form.endereco} onChange={handleChange} placeholder="Endereço" required className="w-full border px-3 py-2 rounded" />
         <input name="especialidade" value={form.especialidade} onChange={handleChange} placeholder="Especialidade" className="w-full border px-3 py-2 rounded" />
 
-        {/* Campos adicionais para CNPJ */}
         {form.cpfOuCnpj.replace(/\D/g, '').length > 11 && (
           <>
             <input name="nomeResponsavel" value={form.nomeResponsavel} onChange={handleChange} placeholder="Nome do responsável legal" required className="w-full border px-3 py-2 rounded" />
