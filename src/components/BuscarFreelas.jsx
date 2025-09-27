@@ -304,6 +304,16 @@ try {
   console.warn("[financeiro/criar] Falhou:", e);
 }
 
+// 🔄 Gera cobrança Pix no Asaas
+await fetch(`${import.meta.env.VITE_FUNCTIONS_BASE_URL}/pix/cobrar`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    chamadaId: chamadaId,                // obrigatório
+    customerId: usuario.customerId,      // obrigatório
+  }),
+});
+
     alert(`✅ ${freela.nome} foi chamado com sucesso!`);
   } catch (err) {
     console.error("Erro ao chamar freela:", err);
