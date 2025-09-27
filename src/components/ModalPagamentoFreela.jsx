@@ -86,6 +86,15 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
 
   if (!chamada) return null;
 
+  const copiarCodigo = () => {
+    if (cobranca?.identificationField) {
+      navigator.clipboard.writeText(cobranca.identificationField);
+      toast.success("Código Copia e Cola copiado!");
+    } else {
+      toast.error("Código Pix ainda não disponível.");
+    }
+  };
+
   const renderStatus = () => {
     if (!statusFinanceiro) return null;
     return (
@@ -137,70 +146,104 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
     );
   };
 
+{statusFinanceiro?.pixQrCode && (
+  <div className="flex flex-col items-center mt-4 space-y-2">
+    <p className="text-center text-green-700 font-semibold">
+      Escaneie o QR Code para pagar:
+    </p>
+    <img
+      src={`data:image/png;base64,${statusFinanceiro.pixQrCode}`}
+      alt="QR Code Pix"
+      className="w-40 h-40"
+    />
+  </div>
+)}
+
+{statusFinanceiro?.identificationField && (
+  <div className="mt-4">
+    <textarea
+      readOnly
+      className="w-full border rounded p-2 text-sm bg-gray-100"
+      value={statusFinanceiro.identificationField}
+      rows={4}
+    />
+    <div className="flex justify-center mt-2">
+      <button
+        onClick={() =>
+          navigator.clipboard.writeText(statusFinanceiro.identificationField)
+        }
+        className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded text-sm"
+      >
+        Copiar código Pix
+      </button>
+    </div>
+  </div>
+)}
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-      <div className="bg-white p-6 rounded-lg max-w-md w-full shadow-lg">
-        <h2 className="text-xl font-bold mb-4 text-center text-orange-600">
-          Pagamento da Chamada
-        </h2>
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+    <div className="bg-white p-6 rounded-lg max-w-md w-full shadow-lg">
+      <h2 className="text-xl font-bold mb-4 text-center text-orange-600">
+        Pagamento da Chamada
+      </h2>
 
-        {loading && <p className="text-center">⌛ Gerando Pix...</p>}
+      {loading && <p className="text-center">⌛ Gerando Pix...</p>}
 
-        {erro && (
-          <div className="text-red-600 text-sm text-center mb-4">❌ {erro}</div>
-        )}
+      {erro && (
+        <div className="text-red-600 text-sm text-center mb-4">❌ {erro}</div>
+      )}
 
-        {/* 🔹 Exibe QR Code Pix vindo do Firestore */}
-        {statusFinanceiro?.pixQrCode && (
-          <div className="flex justify-center mb-4">
-            <img
-              src={`data:image/png;base64,${statusFinanceiro.pixQrCode}`}
-              alt="QR Code Pix"
-              className="w-40 h-40"
-            />
-          </div>
-        )}
-
-        {/* 🔹 Exibe código Copia e Cola */}
-        {statusFinanceiro?.identificationField && (
-          <>
-            <textarea
-              readOnly
-              className="w-full border rounded p-2 text-sm bg-gray-100 mt-2"
-              value={statusFinanceiro.identificationField}
-              rows={4}
-            />
-            <div className="flex justify-center mt-2">
-              <button
-                onClick={() =>
-                  navigator.clipboard.writeText(statusFinanceiro.identificationField)
-                }
-                className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded text-sm"
-              >
-                Copiar código
-              </button>
-            </div>
-          </>
-        )}
-
-        {/* 🔹 Status cobrança/repasse */}
-        {renderStatus()}
-
-        {!statusFinanceiro?.pixQrCode && !loading && !erro && (
-          <p className="text-center text-gray-600">
-            ⏳ Aguardando retorno da cobrança Pix...
-          </p>
-        )}
-
-        <div className="flex justify-center mt-6">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded"
-          >
-            Fechar
-          </button>
+      {/* 🔹 Exibe QR Code Pix vindo do Firestore */}
+      {statusFinanceiro?.pixQrCode && (
+        <div className="flex justify-center mb-4">
+          <img
+            src={`data:image/png;base64,${statusFinanceiro.pixQrCode}`}
+            alt="QR Code Pix"
+            className="w-40 h-40"
+          />
         </div>
+      )}
+
+      {/* 🔹 Exibe código Copia e Cola */}
+      {statusFinanceiro?.identificationField && (
+        <>
+          <textarea
+            readOnly
+            className="w-full border rounded p-2 text-sm bg-gray-100 mt-2"
+            value={statusFinanceiro.identificationField}
+            rows={4}
+          />
+          <div className="flex justify-center mt-2">
+            <button
+              onClick={() =>
+                navigator.clipboard.writeText(statusFinanceiro.identificationField)
+              }
+              className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded text-sm"
+            >
+              Copiar código
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* 🔹 Status cobrança/repasse */}
+      {renderStatus()}
+
+      {!statusFinanceiro?.pixQrCode && !loading && !erro && (
+        <p className="text-center text-gray-600">
+          ⏳ Aguardando retorno da cobrança Pix...
+        </p>
+      )}
+
+      <div className="flex justify-center mt-6">
+        <button
+          onClick={onClose}
+          className="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded"
+        >
+          Fechar
+        </button>
       </div>
     </div>
-  );
+  </div>
+);
 }
