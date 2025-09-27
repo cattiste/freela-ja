@@ -1,7 +1,6 @@
-// src/components/ModalPagamentoFreela.jsx
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/firebase";
 import QRCode from "react-qr-code";
 import toast from "react-hot-toast";
@@ -9,68 +8,77 @@ import toast from "react-hot-toast";
 export default function ModalPagamentoFreela({ chamada, onClose }) {
   const { usuario } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [cobranca, setCobranca] = useState(null);
+  const [pagamento, setPagamento] = useState(null);
   const [erro, setErro] = useState(null);
-  const [statusFinanceiro, setStatusFinanceiro] = useState(null);
 
-  // 🔎 Escuta status financeiro em tempo real
+  // 🔎 Escuta em tempo real o status do pagamento
   useEffect(() => {
     if (!chamada?.id) return;
-    const ref = doc(db, "financeiro", chamada.id);
 
-    const unsub = onSnapshot(
-      ref,
-      (snap) => {
-        if (!snap.exists()) {
-          console.log("📭 Documento financeiro ainda não existe:", chamada.id);
-          return;
-        }
-
+    const unsub = onSnapshot(doc(db, "chamadas", chamada.id), (snap) => {
+      if (snap.exists()) {
         const data = snap.data();
-        setStatusFinanceiro(data);
-
-        if (data.statusCobranca === "pago" || data.statusCobranca === "CONFIRMED") {
+        if (data.pagamento?.status === "pago") {
           toast.dismiss();
           toast.success("✅ Pagamento confirmado!");
-          setTimeout(() => onClose(), 1200);
+          onClose(); // 👈 fecha modal automaticamente
         }
-      },
-      (err) => {
-        console.error("Erro no snapshot financeiro:", err);
-        toast.error("Erro ao acompanhar pagamento.");
       }
-    );
+    });
 
     return () => unsub();
   }, [chamada?.id, onClose]);
 
-  // 🔄 Gera cobrança Pix no Asaas
+  // 🔄 Geração da cobrança
   useEffect(() => {
-    const gerarCobranca = async () => {
-      if (!chamada?.id || !usuario?.customerId || loading) return;
+    const gerarPagamento = async () => {
+      if (!chamada || !usuario || loading) return;
+
       try {
         setLoading(true);
         setErro(null);
+
+        const docRef = doc(db, "usuarios", usuario.uid);
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) throw new Error("Usuário não encontrado.");
+
+        const userData = docSnap.data();
+        const nomePagador = userData.nome || "Pagador";
+        const docPagador = userData.cpf || userData.cnpj;
+        if (!docPagador) throw new Error("CPF ou CNPJ não informado.");
+
+        const valor = chamada.valorDiaria;
+        if (!valor || valor <= 0) throw new Error("Valor da diária inválido.");
+
         toast.loading("Gerando cobrança Pix...");
 
         const response = await fetch(
-          `${import.meta.env.VITE_FUNCTIONS_BASE_URL}/pix/cobrar`,
+          "https://api-kbaliknhja-uc.a.run.app/api/pix/cobrar",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               chamadaId: chamada.id,
-              customerId: usuario.customerId,
+              valor: Number(valor).toFixed(2),
+              nomePagador,
+              docPagador: String(docPagador).replace(/\D/g, ""),
             }),
           }
         );
 
         const data = await response.json();
-        if (!response.ok) throw new Error(data?.message || "Erro ao gerar cobrança");
+        if (!response.ok) {
+          throw new Error(data?.message || `Erro ${response.status}`);
+        }
 
-        setCobranca(data.cobranca || null);
+        if (!data?.copiaCola || !data?.imagemQrcode) {
+          throw new Error("Dados de Pix inválidos.");
+        }
+
+        setPagamento(data);
         toast.dismiss();
-        toast.success("Cobrança Pix criada com sucesso!");
+        toast.success("Cobrança Pix gerada com sucesso!");
       } catch (err) {
         console.error("❌ Erro ao gerar Pix:", err);
         setErro(err.message || "Erro desconhecido.");
@@ -81,168 +89,75 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
       }
     };
 
-  }
+    gerarPagamento();
+  }, [chamada, usuario]);
 
   if (!chamada) return null;
 
   const copiarCodigo = () => {
-    if (cobranca?.identificationField) {
-      navigator.clipboard.writeText(cobranca.identificationField);
+    if (pagamento?.copiaCola) {
+      navigator.clipboard.writeText(pagamento.copiaCola);
       toast.success("Código Copia e Cola copiado!");
-    } else {
-      toast.error("Código Pix ainda não disponível.");
     }
   };
 
-  const renderStatus = () => {
-    if (!statusFinanceiro) return null;
-    return (
-      <div className="mt-4 text-center">
-        <p className="text-sm">
-          <span className="font-semibold">Status cobrança:</span>{" "}
-          <span
-            className={
-              statusFinanceiro.statusCobranca === "pago"
-                ? "text-green-600 font-bold"
-                : statusFinanceiro.statusCobranca === "cancelado" ||
-                  statusFinanceiro.statusCobranca === "expirado"
-                ? "text-red-600 font-bold"
-                : "text-orange-600 font-semibold"
-            }
-          >
-            {statusFinanceiro.statusCobranca}
-          </span>
-        </p>
-
-        <p className="text-sm">
-          <span className="font-semibold">Status repasse:</span>{" "}
-          <span
-            className={
-              statusFinanceiro.statusRepasse === "enviado"
-                ? "text-green-600 font-bold"
-                : statusFinanceiro.statusRepasse === "falhou"
-                ? "text-red-600 font-bold"
-                : "text-gray-600 font-semibold"
-            }
-          >
-            {statusFinanceiro.statusRepasse}
-          </span>
-        </p>
-
-        {statusFinanceiro?.receiptUrl && (
-          <p className="text-sm mt-2">
-            <a
-              href={statusFinanceiro.receiptUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 underline"
-            >
-              📄 Ver comprovante do repasse
-            </a>
-          </p>
-        )}
-      </div>
-    );
-  };
-
-{statusFinanceiro?.pixQrCode && (
-  <div className="flex flex-col items-center mt-4 space-y-2">
-    <p className="text-center text-green-700 font-semibold">
-      Escaneie o QR Code para pagar:
-    </p>
-    <img
-      src={`data:image/png;base64,${statusFinanceiro.pixQrCode}`}
-      alt="QR Code Pix"
-      className="w-40 h-40"
-    />
-  </div>
-)}
-
-{statusFinanceiro?.identificationField && (
-  <div className="mt-4">
-    <textarea
-      readOnly
-      className="w-full border rounded p-2 text-sm bg-gray-100"
-      value={statusFinanceiro.identificationField}
-      rows={4}
-    />
-    <div className="flex justify-center mt-2">
-      <button
-        onClick={() =>
-          navigator.clipboard.writeText(statusFinanceiro.identificationField)
-        }
-        className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded text-sm"
-      >
-        Copiar código Pix
-      </button>
-    </div>
-  </div>
-)}
-
   return (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-    <div className="bg-white p-6 rounded-lg max-w-md w-full shadow-lg">
-      <h2 className="text-xl font-bold mb-4 text-center text-orange-600">
-        Pagamento da Chamada
-      </h2>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+      <div className="bg-white p-6 rounded-lg max-w-md w-full shadow-lg">
+        <h2 className="text-xl font-bold mb-4 text-center text-orange-600">
+          Pagamento da Chamada
+        </h2>
 
-      {loading && <p className="text-center">⌛ Gerando Pix...</p>}
+        {loading && <p className="text-center">⌛ Gerando Pix...</p>}
 
-      {erro && (
-        <div className="text-red-600 text-sm text-center mb-4">❌ {erro}</div>
-      )}
-
-      {/* 🔹 Exibe QR Code Pix vindo do Firestore */}
-      {statusFinanceiro?.pixQrCode && (
-        <div className="flex justify-center mb-4">
-          <img
-            src={`data:image/png;base64,${statusFinanceiro.pixQrCode}`}
-            alt="QR Code Pix"
-            className="w-40 h-40"
-          />
-        </div>
-      )}
-
-      {/* 🔹 Exibe código Copia e Cola */}
-      {statusFinanceiro?.identificationField && (
-        <>
-          <textarea
-            readOnly
-            className="w-full border rounded p-2 text-sm bg-gray-100 mt-2"
-            value={statusFinanceiro.identificationField}
-            rows={4}
-          />
-          <div className="flex justify-center mt-2">
-            <button
-              onClick={() =>
-                navigator.clipboard.writeText(statusFinanceiro.identificationField)
-              }
-              className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded text-sm"
-            >
-              Copiar código
-            </button>
+        {erro && (
+          <div className="text-red-600 text-sm text-center mb-4">
+            ❌ {erro}
           </div>
-        </>
-      )}
+        )}
 
-      {/* 🔹 Status cobrança/repasse */}
-      {renderStatus()}
+        {pagamento && (
+          <div className="space-y-4">
+            <p className="text-center text-green-700 font-semibold">
+              Escaneie o QR Code ou copie o código abaixo:
+            </p>
 
-      {!statusFinanceiro?.pixQrCode && !loading && !erro && (
-        <p className="text-center text-gray-600">
-          ⏳ Aguardando retorno da cobrança Pix...
-        </p>
-      )}
+            <div className="flex justify-center">
+              <QRCode value={pagamento.copiaCola} size={160} />
+            </div>
 
-      <div className="flex justify-center mt-6">
-        <button
-          onClick={onClose}
-          className="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded"
-        >
-          Fechar
-        </button>
+            <textarea
+              readOnly
+              className="w-full border rounded p-2 text-sm bg-gray-100"
+              value={pagamento.copiaCola}
+              rows={4}
+            />
+
+            <div className="flex justify-center">
+              <button
+                onClick={copiarCodigo}
+                className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded text-sm"
+              >
+                Copiar código
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-500 text-center mt-2">
+              Efetue o pagamento para liberar a chamada para o freela.
+              O endereço só será liberado após a confirmação do pagamento.
+            </p>
+          </div>
+        )}
+
+        <div className="flex justify-center mt-6">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded"
+          >
+            Fechar
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
 }
