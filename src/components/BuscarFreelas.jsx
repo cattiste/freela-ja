@@ -284,7 +284,7 @@ if (!freela.dadosBancarios?.chavePix) {
 // 🔹 Cria documento financeiro via backend (Asaas)
 try {
   const response = await fetch(
-    `${import.meta.env.VITE_FUNCTIONS_BASE_URL}/financeiro/criar`,
+    `${import.meta.env.VITE_FUNCTIONS_BASE_URL}/pix/cobrar`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
