@@ -292,6 +292,7 @@ try {
         chamadaId,
         freelaUid: uid,
         contratanteUid: usuario.uid,
+        customerId: usuario.customerId, // ✅ FALTANDO
         valorDiaria: freela.valorDiaria,
         pixChaveFreela: freela.dadosBancarios.chavePix, // ✅ obrigatório
       }),
