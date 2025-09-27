@@ -81,9 +81,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
       }
     };
 
-    gerarCobranca();
-  }, [chamada?.id, usuario?.customerId]);
-
+    
   if (!chamada) return null;
 
   const copiarCodigo = () => {
