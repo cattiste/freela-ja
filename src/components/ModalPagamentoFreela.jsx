@@ -13,23 +13,6 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
   const [erro, setErro] = useState(null);
   const [statusFinanceiro, setStatusFinanceiro] = useState(null);
 
-
-  useEffect(() => {
-  const buscarFreela = async () => {
-    if (chamada?.freelaUid) {
-      const docRef = doc(db, "usuarios", chamada.freelaUid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const dados = docSnap.data();
-        setPixChaveFreela(dados.chavePix || "");
-        setCustomerId(dados.customerId || "");
-      }
-    }
-  };
-  buscarFreela();
-}, [chamada]);
-
-
   // 🔎 Escuta status financeiro em tempo real
   useEffect(() => {
     if (!chamada?.id) return;
