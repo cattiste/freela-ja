@@ -283,21 +283,19 @@ if (!freela.dadosBancarios?.chavePix) {
 
 // 🔹 Cria documento financeiro via backend (Asaas)
 try {
-  const response = await fetch(
-    `${import.meta.env.VITE_FUNCTIONS_BASE_URL}/pix/cobrar`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chamadaId,
-        freelaUid: uid,
-        contratanteUid: usuario.uid,
-        customerId: usuario.customerId, // ✅ FALTANDO
-        valorDiaria: freela.valorDiaria,
-        pixChaveFreela: freela.dadosBancarios.chavePix, // ✅ obrigatório
-      }),
-    }
-  );
+  const response = 
+    await fetch(`${import.meta.env.VITE_FUNCTIONS_BASE_URL}/financeiro/criar`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    chamadaId,
+    freelaUid: uid,
+    contratanteUid: usuario.uid,
+    customerId: usuario.customerId,
+    valorDiaria: freela.valorDiaria,
+    pixChaveFreela: freela.dadosBancarios.chavePix,
+  }),
+});
   const data = await response.json();
   if (!response.ok)
     throw new Error(data?.message || "Erro ao criar financeiro");

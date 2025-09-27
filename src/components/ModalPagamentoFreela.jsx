@@ -7,9 +7,8 @@ import toast from "react-hot-toast";
 
 export default function ModalPagamentoFreela({ chamada, onClose }) {
   const { usuario } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [erro, setErro] = useState(null);
   const [statusFinanceiro, setStatusFinanceiro] = useState(null);
+  const [erro, setErro] = useState(null);
 
   // 🔎 Escuta status financeiro em tempo real
   useEffect(() => {
@@ -56,8 +55,8 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
   const renderStatus = () => {
     if (!statusFinanceiro) return null;
     return (
-      <div className="mt-4 text-center">
-        <p className="text-sm">
+      <div className="mt-4 text-center text-sm">
+        <p>
           <span className="font-semibold">Status cobrança:</span>{" "}
           <span
             className={
@@ -73,7 +72,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
           </span>
         </p>
 
-        <p className="text-sm">
+        <p>
           <span className="font-semibold">Status repasse:</span>{" "}
           <span
             className={
@@ -89,7 +88,7 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
         </p>
 
         {statusFinanceiro?.receiptUrl && (
-          <p className="text-sm mt-2">
+          <p className="mt-2">
             <a
               href={statusFinanceiro.receiptUrl}
               target="_blank"
@@ -110,12 +109,6 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
         <h2 className="text-xl font-bold mb-4 text-center text-orange-600">
           Pagamento da Chamada
         </h2>
-
-        {loading && <p className="text-center">⌛ Gerando Pix...</p>}
-
-        {erro && (
-          <div className="text-red-600 text-sm text-center mb-4">❌ {erro}</div>
-        )}
 
         {/* 🔹 Exibe QR Code Pix vindo do Firestore */}
         {statusFinanceiro?.pixQrCode && (
@@ -151,9 +144,9 @@ export default function ModalPagamentoFreela({ chamada, onClose }) {
         {/* 🔹 Status cobrança/repasse */}
         {renderStatus()}
 
-        {!statusFinanceiro?.pixQrCode && !loading && !erro && (
-          <p className="text-center text-gray-600">
-            ⏳ Aguardando retorno da cobrança Pix...
+        {!statusFinanceiro?.pixQrCode && (
+          <p className="text-center text-gray-600 mt-4">
+            ⏳ Aguardando geração do QR Code Pix...
           </p>
         )}
 
